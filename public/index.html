@@ -34,7 +34,7 @@
         <div class="col-lg-6">
           <div class="badge rounded-pill text-bg-light mb-3"><i class="bi bi-lightning-charge"></i> MVP SaaS pronto para validação</div>
           <h1 class="display-5 fw-bold text-white">Orçamentos e recibos profissionais em PDF, em segundos.</h1>
-          <p class="lead text-white-75 mt-3">Ideal para autônomos, MEIs e pequenos prestadores de serviço que querem passar mais confiança para seus clientes.</p>
+          <p class="lead text-white-75 mt-3">Crie documentos bonitos, numerados e prontos para enviar ao cliente, sem instalar nada.</p>
           <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
             <a href="#app" class="btn btn-info btn-lg fw-semibold"><i class="bi bi-file-earmark-pdf"></i> Começar grátis</a>
             <a href="#app" class="btn btn-outline-light btn-lg"><i class="bi bi-play-circle"></i> Ver demonstração</a>
@@ -96,9 +96,11 @@
 
     <section class="py-5 bg-white">
       <div class="container">
-        <div class="text-center mb-4"><span class="section-kicker">Para quem é</span><h2 class="fw-bold">Profissionalize serviços simples e recorrentes</h2><p class="text-secondary">Eletricistas, pintores, diaristas, técnicos, designers, fotógrafos, manicures e prestadores de serviço em geral.</p></div>
+        <div class="text-center mb-4"><span class="section-kicker">Para quem é</span><h2 class="fw-bold">Profissionalize serviços simples e recorrentes</h2><div class="row g-3 justify-content-center mt-3"><div class="col-6 col-md-3 col-lg-2"><div class="benefit">Eletricistas</div></div><div class="col-6 col-md-3 col-lg-2"><div class="benefit">Pintores</div></div><div class="col-6 col-md-3 col-lg-2"><div class="benefit">Pedreiros</div></div><div class="col-6 col-md-3 col-lg-2"><div class="benefit">Diaristas</div></div><div class="col-6 col-md-3 col-lg-2"><div class="benefit">Técnicos</div></div><div class="col-6 col-md-3 col-lg-2"><div class="benefit">Designers</div></div><div class="col-6 col-md-3 col-lg-2"><div class="benefit">Fotógrafos</div></div><div class="col-6 col-md-3 col-lg-2"><div class="benefit">Manicures</div></div><div class="col-12 col-md-6 col-lg-4"><div class="benefit">Prestadores de serviço em geral</div></div></div></div>
       </div>
     </section>
+
+    <section class="py-5 bg-light"><div class="container"><div class="text-center mb-4"><span class="section-kicker">Por que usar</span><h2 class="fw-bold">Mais confiança e organização no seu atendimento</h2></div><div class="row g-3"><div class="col-md"><div class="benefit"><i class="bi bi-shield-check"></i>Passa mais confiança</div></div><div class="col-md"><div class="benefit"><i class="bi bi-clock"></i>Economiza tempo</div></div><div class="col-md"><div class="benefit"><i class="bi bi-archive"></i>Organiza o histórico</div></div><div class="col-md"><div class="benefit"><i class="bi bi-phone"></i>Gera PDF no celular</div></div><div class="col-md"><div class="benefit"><i class="bi bi-cash-coin"></i>Recibo por extenso</div></div></div></div></section>
 
     <section id="planos" class="py-5">
       <div class="container">
@@ -106,7 +108,7 @@
           <div class="col-lg-6"><div class="plan-card h-100"><h3>Grátis</h3><p class="price">R$ 0</p><p>Gere documentos com a marca OrçaFácil no PDF. Perfeito para validar e começar hoje.</p></div></div>
           <div class="col-lg-6"><div class="plan-card h-100 featured"><h3>Pro</h3><p class="price">R$ 19,90/mês</p><p>PDF sem marca, histórico completo e logo profissional para passar ainda mais confiança.</p></div></div>
         </div>
-        <div class="final-cta mt-4 text-center"><h3>Comece agora sem instalar nada.</h3><a href="#app" class="btn btn-success btn-lg mt-2">Começar grátis</a></div>
+        <div class="final-cta mt-4 text-center"><h3>Comece grátis e gere seu primeiro orçamento agora.</h3><a href="#app" class="btn btn-success btn-lg mt-2">Começar grátis</a></div>
       </div>
     </section>
 
@@ -148,12 +150,14 @@
 
         <div id="dashboardView" class="d-none">
           <ul class="nav nav-pills gap-2 mb-4" id="tabs">
-            <li class="nav-item"><button class="nav-link active" data-tab="docTab">Novo documento</button></li>
+            <li class="nav-item"><button class="nav-link active" data-tab="homeTab">Início</button></li><li class="nav-item"><button class="nav-link" data-tab="docTab">Novo documento</button></li>
             <li class="nav-item"><button class="nav-link" data-tab="historyTab">Histórico</button></li>
-            <li class="nav-item"><button class="nav-link" data-tab="profileTab">Emitente</button></li><li class="nav-item"><button class="nav-link" data-tab="subscriptionTab">Minha assinatura</button></li><li class="nav-item"><span id="proBadge" class="badge text-bg-success d-none mt-2">Pro</span></li>
+            <li class="nav-item"><button class="nav-link" data-tab="profileTab">Emitente</button></li><li class="nav-item"><button class="nav-link" data-tab="subscriptionTab">Minha assinatura</button></li><li class="nav-item"><button class="nav-link" data-tab="privacyTab">Privacidade</button></li><li class="nav-item"><span id="proBadge" class="badge text-bg-success d-none mt-2">Pro</span></li>
           </ul>
 
-          <div id="freeBanner" class="alert alert-warning d-flex flex-column flex-md-row justify-content-between gap-2"><span><strong>Plano Free:</strong> seus PDFs incluem a marca OrçaFácil.</span><button class="btn btn-sm btn-outline-dark btnProWhats" type="button">Remover marca dos PDFs</button></div><div id="docTab" class="tab-panel">
+          <div id="homeTab" class="tab-panel"></div>
+
+          <div id="freeBanner" class="alert alert-warning d-flex flex-column flex-md-row justify-content-between gap-2"><span><strong>Plano Free:</strong> seus PDFs incluem a marca OrçaFácil.</span><button class="btn btn-sm btn-outline-dark btnProWhats" type="button">Remover marca dos PDFs</button></div><div id="docTab" class="tab-panel d-none">
             <div class="row g-4">
               <div class="col-lg-8">
                 <div class="card border-0 shadow-sm"><div class="card-body p-4">
@@ -162,8 +166,8 @@
                     <input type="hidden" id="docId">
                     <div class="col-md-4"><label class="form-label">Tipo</label><select class="form-select" id="docType"><option value="orcamento">Orçamento</option><option value="recibo">Recibo</option></select></div>
                     <div class="col-md-4"><label class="form-label">Data</label><input class="form-control" type="date" id="docDate"></div>
-                    <div class="col-md-4 budget-only"><label class="form-label">Validade</label><input class="form-control" type="date" id="validUntil"></div>
-                    <div class="col-md-6"><label class="form-label">Cliente</label><input class="form-control" id="clientName" required placeholder="Nome do cliente"></div>
+                    <div class="col-md-2 budget-only"><label class="form-label">Validade</label><input class="form-control" type="date" id="validUntil"></div>
+                    <div class="col-md-2"><label class="form-label">Status</label><select class="form-select" id="docStatus"><option value="rascunho">Rascunho</option><option value="emitido">Emitido</option><option value="aprovado">Aprovado</option><option value="cancelado">Cancelado</option></select></div><div class="col-md-6"><label class="form-label">Cliente</label><input class="form-control" id="clientName" required placeholder="Nome do cliente"></div>
                     <div class="col-md-3"><label class="form-label">CPF/CNPJ cliente</label><input class="form-control" id="clientDoc"></div>
                     <div class="col-md-3"><label class="form-label">Contato</label><input class="form-control" id="clientContact"></div>
                     <div class="col-12"><label class="form-label">Cidade/UF</label><input class="form-control" id="clientCity" placeholder="Belém/PA"></div>
@@ -185,7 +189,7 @@
 
           <div id="historyTab" class="tab-panel d-none">
             <div class="card border-0 shadow-sm"><div class="card-body p-4">
-              <div class="row g-3 align-items-end mb-3"><div class="col-md-6"><label class="form-label">Buscar</label><input class="form-control" id="historySearch" placeholder="Cliente, número ou observação"></div><div class="col-md-3"><label class="form-label">Tipo</label><select class="form-select" id="historyType"><option value="">Todos</option><option value="orcamento">Orçamentos</option><option value="recibo">Recibos</option></select></div><div class="col-md-3 d-grid"><button class="btn btn-outline-primary" id="btnRefreshHistory"><i class="bi bi-arrow-clockwise"></i> Atualizar</button></div></div>
+              <div class="row g-3 align-items-end mb-3"><div class="col-md-4"><label class="form-label">Buscar por cliente</label><input class="form-control" id="historySearch" placeholder="Cliente, número ou observação"></div><div class="col-md-2"><label class="form-label">Tipo</label><select class="form-select" id="historyType"><option value="">Todos</option><option value="orcamento">Orçamentos</option><option value="recibo">Recibos</option></select></div><div class="col-md-2"><label class="form-label">Status</label><select class="form-select" id="historyStatus"><option value="">Todos</option><option value="rascunho">Rascunho</option><option value="emitido">Emitido</option><option value="aprovado">Aprovado</option><option value="cancelado">Cancelado</option></select></div><div class="col-md-4 d-flex gap-2 flex-wrap"><button class="btn btn-outline-primary flex-fill" id="btnRefreshHistory"><i class="bi bi-arrow-clockwise"></i> Atualizar</button><button class="btn btn-outline-success flex-fill" id="btnExportJson">Exportar meus documentos</button><button class="btn btn-outline-secondary flex-fill" id="btnExportCsv">Exportar CSV</button></div></div>
               <div id="historyList" class="vstack gap-3"></div>
             </div></div>
           </div>
@@ -196,7 +200,7 @@
               <form id="profileForm" class="row g-3">
                 <div class="col-md-6"><label class="form-label">Nome/Razão social</label><input class="form-control" id="issuerName" required></div>
                 <div class="col-md-3"><label class="form-label">CPF/CNPJ</label><input class="form-control" id="issuerDoc"></div>
-                <div class="col-md-3"><label class="form-label">Plano</label><select class="form-select" id="issuerPlan"><option value="free">Free</option><option value="pro">Pro</option></select></div>
+                <div class="col-md-3"><label class="form-label">Plano</label><input class="form-control" id="issuerPlanLabel" disabled value="Free"><input type="hidden" id="issuerPlan" value="free"></div>
                 <div class="col-md-4"><label class="form-label">Telefone/WhatsApp</label><input class="form-control" id="issuerPhone"></div>
                 <div class="col-md-4"><label class="form-label">E-mail</label><input class="form-control" id="issuerEmail" type="email"></div>
                 <div class="col-md-4"><label class="form-label">Cidade/UF</label><input class="form-control" id="issuerCity"></div>
@@ -207,16 +211,7 @@
             </div></div>
           </div>
 
-          <div id="subscriptionTab" class="tab-panel d-none">
-            <div class="card border-0 shadow-sm"><div class="card-body p-4">
-              <h4 class="fw-bold">Minha assinatura</h4>
-              <p>Plano atual: <strong id="currentPlanLabel">Free</strong></p>
-              <ul class="check-list"><li>PDF sem marca OrçaFácil.</li><li>Documento com visual mais profissional.</li><li>Suporte para recursos premium futuros.</li></ul>
-              <p class="price">R$ 19,90/mês <span class="fs-6 text-secondary">ou R$ 199/ano</span></p>
-              <button class="btn btn-success btnProWhats" type="button">Quero ativar o Pro</button>
-              <p class="small text-secondary mt-3 mb-0">Pagamento em breve. Fale com a MNSOFT para ativar seu plano Pro.</p>
-            </div></div>
-          </div>
+          <div id="subscriptionTab" class="tab-panel d-none"></div><div id="privacyTab" class="tab-panel d-none"><div class="card border-0 shadow-sm"><div class="card-body p-4"><h4 class="fw-bold">Privacidade</h4><p>Salvamos dados do emitente, clientes, itens, valores e histórico apenas para gerar PDFs e organizar seus documentos.</p><p>Cada usuário acessa apenas seus próprios dados. Você pode exportar seus documentos em JSON ou CSV a qualquer momento.</p><p>Para solicitar exclusão de conta e dados, entre em contato com a MNSOFT.</p></div></div></div>
         </div>
       </div>
     </section>

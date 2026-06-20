@@ -205,3 +205,43 @@ Documentado para próximas etapas, ainda não implementado:
 - Upload real da logo no Firebase Storage.
 - Dashboard financeiro.
 - Multiusuário por conta.
+
+
+## Funcionalidades comerciais desta versão
+
+- Painel inicial com totais de documentos, totais por tipo, valores somados, plano atual e últimos 5 documentos.
+- Tela **Minha assinatura** com comparativo Free x Pro, preços de **R$ 19,90/mês** e **R$ 199,00/ano**, e botão de WhatsApp para ativação com a MNSOFT.
+- Histórico com busca por cliente, filtro por tipo, filtro por status, ordenação por data recente e ações de abrir, editar, duplicar, gerar PDF e excluir.
+- Status do documento: `rascunho`, `emitido`, `aprovado` e `cancelado`.
+- Exportação de backup em JSON e exportação CSV com número, tipo, cliente, data, status e total.
+- Seção **Privacidade** em linguagem simples para usuários finais.
+
+## Ativação manual do plano Pro
+
+Enquanto o pagamento automático não está implementado, a ativação do Pro é feita manualmente no Firebase Console:
+
+1. Acesse **Firebase Console > Firestore Database**.
+2. Abra a coleção `users`.
+3. Encontre o documento com o `uid` do usuário.
+4. Altere ou crie o campo `plan` com o valor exato `pro`.
+5. Clique em **Salvar**.
+6. Peça para o usuário fazer logout/login ou atualizar a página.
+
+No modo Firebase, o usuário não consegue se tornar Pro sozinho pela interface. No modo demonstração local, a tela **Minha assinatura** permite alternar Free/Pro apenas para teste visual e de PDF.
+
+## Exportar backup
+
+No menu **Histórico**, use:
+
+- **Exportar meus documentos** para baixar `orcafacil-backup-AAAA-MM-DD.json` com os documentos carregados do usuário.
+- **Exportar CSV** para baixar uma planilha simples com número, tipo, cliente, data, status e total.
+
+No Firebase, a exportação usa os documentos carregados da subcoleção `users/{uid}/documents`. No modo demonstração, usa os documentos salvos no `localStorage`.
+
+## LGPD e dados salvos
+
+O OrçaFácil salva somente dados necessários para gerar documentos e manter histórico: dados do emitente, dados do cliente informados no documento, itens/serviços, valores, status e datas. Esses dados são usados para geração de PDFs e organização do histórico do próprio usuário. As regras do Firestore foram pensadas para cada usuário acessar apenas seus próprios dados. O usuário pode exportar seus documentos e pode solicitar exclusão da conta e dados entrando em contato com a MNSOFT.
+
+## Próxima etapa recomendada
+
+A próxima etapa do produto deve ser **pagamento e ativação automática do plano Pro**, provavelmente com Mercado Pago ou Stripe, mantendo a ativação manual como fallback administrativo.
