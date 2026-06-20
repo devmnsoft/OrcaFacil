@@ -1,98 +1,102 @@
 # OrçaFácil
 
-**Orçamentos e recibos profissionais em PDF, em segundos.**
+OrçaFácil é um SaaS freemium simples para autônomos, MEIs e pequenas empresas criarem **orçamentos e recibos profissionais em PDF** direto pelo navegador ou celular.
 
-Projeto MVP completo com front-end Bootstrap + JavaScript, Firebase Authentication/Firestore e servidor local em Node/Fastify.
+## Tecnologias
 
-## O que vem pronto
-
-- Landing page comercial.
-- Login e cadastro por e-mail/senha.
-- Modo demonstração local quando o Firebase ainda não está configurado.
-- Cadastro do emitente: nome, CPF/CNPJ, contato, Pix, cidade, logo e plano.
-- Criação de orçamento e recibo.
-- Itens com quantidade, valor unitário, desconto e total automático.
-- Validade e observações para orçamento.
-- Recibo com valor por extenso.
-- Histórico de documentos para abrir, editar, duplicar e reemitir PDF.
-- Numeração sequencial por usuário.
-- PDF profissional com logo, dados do emitente, cliente, itens e rodapé freemium.
-- Servidor local na porta **8095**.
-- Arquivos de deploy Firebase Hosting e regras Firestore.
+- HTML5, CSS3 e JavaScript puro
+- Bootstrap 5 e Bootstrap Icons
+- jsPDF e jsPDF AutoTable
+- Firebase Auth, Firestore e Hosting
+- Node.js com Fastify para servidor local
+- LocalStorage para modo demonstração sem Firebase
 
 ## Como rodar localmente
-
-1. Instale Node.js 18 ou superior.
-2. Extraia o ZIP.
-3. Abra o terminal na pasta do projeto.
-4. Execute:
 
 ```bash
 npm install
 npm start
 ```
 
-Acesse:
+Acesse: <http://localhost:8095>
 
-```text
-http://localhost:8095
-```
+O servidor local usa a porta **8095**.
 
-No Windows, também pode dar duplo clique em `start.bat`.
+## Modo demonstração
+
+Se `public/js/firebase-config.js` não estiver configurado, o app funciona em modo demonstração local. Nesse modo, perfil, plano, documentos, rascunho e histórico são salvos no `localStorage` do navegador.
 
 ## Configurar Firebase
 
-Abra `public/js/firebase-config.js` e cole a configuração do seu projeto Firebase:
+1. Crie um projeto no Firebase Console.
+2. Ative Authentication com provedor de e-mail/senha.
+3. Crie um banco Firestore.
+4. Copie as credenciais web para `public/js/firebase-config.js`.
+5. Publique as regras de segurança de `firestore.rules`.
 
-```js
-export const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  projectId: "SEU_PROJETO",
-  storageBucket: "SEU_PROJETO.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:000000000000"
-};
+Estrutura usada no Firestore:
+
+```text
+users/{uid}
+users/{uid}/documents/{documentId}
 ```
 
-Depois habilite no Firebase:
+Cada usuário acessa apenas o próprio documento, conforme `firestore.rules`.
 
-- Authentication > Sign-in method > E-mail/Senha.
-- Firestore Database.
-- Hosting, caso deseje publicar.
-
-## Deploy no Firebase Hosting
+## Publicar no Firebase Hosting
 
 ```bash
-npm install -g firebase-tools
 firebase login
-firebase init hosting firestore
+firebase init hosting
 firebase deploy
 ```
 
-Este projeto já inclui `firebase.json` e `firestore.rules`.
+Configure a pasta pública como `public` e mantenha o app como aplicação estática.
 
-## Estrutura
+## Alternar usuário Free/Pro
+
+- No app, entre em **Emitente**.
+- Altere o campo **Plano** para `Free` ou `Pro`.
+- Salve o emitente.
+
+Com o plano `free`, o PDF exibe a marca OrçaFácil. Com o plano `pro`, a marca é removida.
+
+## Estrutura de pastas
 
 ```text
-orcafacil/
-  public/
-    index.html
-    css/app.css
-    js/app.js
-    js/firebase-config.js
-    js/services.js
-    js/pdf.js
-    js/utils.js
-  server.js
-  package.json
-  firebase.json
-  firestore.rules
-  docs/
-    ESPECIFICACAO.md
-    PROMPT_CODEX.md
+server.js                 Servidor local Fastify na porta 8095
+firestore.rules           Regras de segurança do Firestore
+public/index.html         Landing page e interface principal
+public/css/app.css        Estilos visuais e responsividade
+public/js/app.js          UI, formulários, histórico, planos e fluxo do app
+public/js/pdf.js          Geração dos PDFs com jsPDF
+public/js/services.js     Camada LocalStorage/Firebase
+public/js/utils.js        Funções utilitárias, moeda, datas e cálculos
+public/js/firebase-config.js Configuração do Firebase
 ```
 
-## Observação
+## Funcionalidades atuais
 
-Enquanto o Firebase não estiver configurado, o sistema entra automaticamente em modo demonstração com localStorage. Isso permite testar o fluxo completo, gerar PDFs e validar o MVP sem depender de infraestrutura.
+- Landing page comercial com hero, como funciona, público-alvo, planos e CTA.
+- Login/cadastro quando Firebase está configurado.
+- Modo demonstração local sem Firebase.
+- Cadastro de dados do emitente, plano e logo.
+- Orçamentos e recibos com itens, quantidade, valor, desconto e total automático.
+- Máscara visual simples para moeda.
+- Rascunho local para evitar perda de dados ao navegar.
+- Histórico com filtro por tipo, busca por cliente/número/observação, total e data.
+- Ações no histórico: abrir, editar, duplicar, gerar PDF e excluir com confirmação.
+- Tela “Minha assinatura” com incentivo ao Pro.
+- PDFs com cabeçalho profissional, dados organizados, tabela limpa, total destacado, observações, rodapé, recibo com valor por extenso e assinatura.
+
+## Roadmap futuro
+
+- Pagamento recorrente.
+- Envio automático por WhatsApp.
+- Envio por e-mail.
+- Conversão de orçamento aprovado em recibo.
+- Upload real de logo no Firebase Storage.
+- Dashboard de faturamento.
+- Múltiplos usuários por conta.
+- Prefixo de numeração por ano.
+- Página pública para cliente aprovar orçamento.
