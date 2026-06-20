@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OrçaFácil — Orçamentos e recibos em PDF</title>
+  <meta name="description" content="Gere orçamentos e recibos profissionais em PDF, com sua marca, em segundos.">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="./css/app.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark of-navbar sticky-top">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#inicio">
+        <span class="brand-icon"><i class="bi bi-file-earmark-check"></i></span>
+        <span>Orça<span class="text-info">Fácil</span></span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"><span class="navbar-toggler-icon"></span></button>
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="#recursos">Recursos</a></li>
+          <li class="nav-item"><a class="nav-link" href="#planos">Planos</a></li>
+          <li class="nav-item"><a class="nav-link" href="#app">Sistema</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <header id="inicio" class="hero py-5">
+    <div class="container py-lg-5">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-6">
+          <div class="badge rounded-pill text-bg-light mb-3"><i class="bi bi-lightning-charge"></i> MVP SaaS pronto para validação</div>
+          <h1 class="display-5 fw-bold text-white">Orçamentos e recibos profissionais em PDF, em segundos.</h1>
+          <p class="lead text-white-75 mt-3">Uma ferramenta simples para autônomos, MEIs e pequenas empresas gerarem documentos com aparência profissional direto do celular.</p>
+          <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
+            <a href="#app" class="btn btn-info btn-lg fw-semibold"><i class="bi bi-file-earmark-pdf"></i> Começar agora</a>
+            <a href="#recursos" class="btn btn-outline-light btn-lg">Ver recursos</a>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="preview-card shadow-lg">
+            <div class="preview-top"><span></span><span></span><span></span></div>
+            <div class="p-4">
+              <div class="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                  <h4 class="mb-1">ORÇAMENTO Nº 0007</h4>
+                  <p class="text-secondary mb-0">Cliente: Maria Oliveira</p>
+                </div>
+                <div class="doc-icon"><i class="bi bi-check2-circle"></i></div>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                  <tbody>
+                    <tr><td>Instalação elétrica</td><td class="text-end">R$ 350,00</td></tr>
+                    <tr><td>Materiais</td><td class="text-end">R$ 180,00</td></tr>
+                    <tr class="fw-bold"><td>Total</td><td class="text-end">R$ 530,00</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="alert alert-success mb-0"><i class="bi bi-whatsapp"></i> Pronto para enviar ao cliente.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="recursos" class="py-5 bg-light">
+      <div class="container">
+        <div class="text-center mb-4">
+          <h2 class="fw-bold">Feito para quem precisa vender serviço sem complicação</h2>
+          <p class="text-secondary">Preenche, salva, gera PDF e envia. Sem instalação, sem planilha e sem documento amador.</p>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-4"><div class="feature"><i class="bi bi-phone"></i><h5>Funciona no celular</h5><p>Ideal para gerar o orçamento durante o atendimento.</p></div></div>
+          <div class="col-md-4"><div class="feature"><i class="bi bi-calculator"></i><h5>Total automático</h5><p>Itens, descontos e totais calculados sem erro manual.</p></div></div>
+          <div class="col-md-4"><div class="feature"><i class="bi bi-filetype-pdf"></i><h5>PDF profissional</h5><p>Documento com numeração, logo, dados do cliente e recibo por extenso.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="planos" class="py-5">
+      <div class="container">
+        <div class="row g-4 align-items-stretch">
+          <div class="col-lg-6"><div class="plan-card h-100"><h3>Grátis</h3><p class="price">R$ 0</p><p>Gere orçamentos e recibos ilimitados com a marca OrçaFácil no rodapé.</p></div></div>
+          <div class="col-lg-6"><div class="plan-card h-100 featured"><h3>Pro</h3><p class="price">R$ 19,90/mês</p><p>PDF sem marca, histórico completo e documento com visual mais profissional.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="app" class="py-5 app-shell">
+      <div class="container">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4">
+          <div>
+            <h2 class="fw-bold mb-1">Sistema OrçaFácil</h2>
+            <p class="text-secondary mb-0">Use em modo demonstração ou conecte ao Firebase.</p>
+          </div>
+          <div id="sessionBox" class="d-none d-flex align-items-center gap-2">
+            <span class="small text-secondary" id="currentUserLabel"></span>
+            <button class="btn btn-outline-danger btn-sm" id="btnLogout"><i class="bi bi-box-arrow-right"></i> Sair</button>
+          </div>
+        </div>
+
+        <div id="authView" class="row g-4">
+          <div class="col-lg-5">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-4">
+                <h4 class="fw-bold mb-3">Entrar ou cadastrar</h4>
+                <div class="alert alert-info small" id="modeAlert">Verificando Firebase...</div>
+                <form id="authForm" class="vstack gap-3">
+                  <div><label class="form-label">E-mail</label><input class="form-control" id="authEmail" type="email" required placeholder="voce@email.com"></div>
+                  <div><label class="form-label">Senha</label><input class="form-control" id="authPassword" type="password" required minlength="6" placeholder="mínimo 6 caracteres"></div>
+                  <div class="d-grid gap-2">
+                    <button class="btn btn-primary" type="submit" data-auth-action="login">Entrar</button>
+                    <button class="btn btn-outline-primary" type="button" id="btnRegister">Criar conta</button>
+                    <button class="btn btn-outline-secondary" type="button" id="btnDemo"><i class="bi bi-play-circle"></i> Usar demonstração local</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-7">
+            <div class="card border-0 shadow-sm h-100"><div class="card-body p-4"><h4>O que você testa aqui</h4><ul class="check-list"><li>Cadastro do emitente e logo.</li><li>Criação de orçamento ou recibo.</li><li>Geração de PDF.</li><li>Histórico e reemissão.</li><li>Marca freemium ou plano Pro.</li></ul></div></div>
+          </div>
+        </div>
+
+        <div id="dashboardView" class="d-none">
+          <ul class="nav nav-pills gap-2 mb-4" id="tabs">
+            <li class="nav-item"><button class="nav-link active" data-tab="docTab">Novo documento</button></li>
+            <li class="nav-item"><button class="nav-link" data-tab="historyTab">Histórico</button></li>
+            <li class="nav-item"><button class="nav-link" data-tab="profileTab">Emitente</button></li>
+          </ul>
+
+          <div id="docTab" class="tab-panel">
+            <div class="row g-4">
+              <div class="col-lg-8">
+                <div class="card border-0 shadow-sm"><div class="card-body p-4">
+                  <div class="d-flex justify-content-between gap-3 align-items-center mb-3"><h4 class="fw-bold mb-0">Documento</h4><span class="badge text-bg-primary" id="docNumberBadge">Novo</span></div>
+                  <form id="docForm" class="row g-3">
+                    <input type="hidden" id="docId">
+                    <div class="col-md-4"><label class="form-label">Tipo</label><select class="form-select" id="docType"><option value="orcamento">Orçamento</option><option value="recibo">Recibo</option></select></div>
+                    <div class="col-md-4"><label class="form-label">Data</label><input class="form-control" type="date" id="docDate"></div>
+                    <div class="col-md-4 budget-only"><label class="form-label">Validade</label><input class="form-control" type="date" id="validUntil"></div>
+                    <div class="col-md-6"><label class="form-label">Cliente</label><input class="form-control" id="clientName" required placeholder="Nome do cliente"></div>
+                    <div class="col-md-3"><label class="form-label">CPF/CNPJ cliente</label><input class="form-control" id="clientDoc"></div>
+                    <div class="col-md-3"><label class="form-label">Contato</label><input class="form-control" id="clientContact"></div>
+                    <div class="col-12"><label class="form-label">Cidade/UF</label><input class="form-control" id="clientCity" placeholder="Belém/PA"></div>
+                    <div class="col-12"><hr><div class="d-flex justify-content-between align-items-center"><h5>Itens</h5><button class="btn btn-outline-primary btn-sm" type="button" id="btnAddItem"><i class="bi bi-plus-lg"></i> Item</button></div><div id="itemsList" class="vstack gap-2 mt-3"></div></div>
+                    <div class="col-12"><label class="form-label">Observações</label><textarea class="form-control" id="notes" rows="3" placeholder="Condições, prazo, forma de pagamento..."></textarea></div>
+                    <div class="col-12 d-flex flex-column flex-md-row gap-2 justify-content-end">
+                      <button class="btn btn-outline-secondary" type="button" id="btnNewDoc">Limpar</button>
+                      <button class="btn btn-success" type="button" id="btnSaveDoc"><i class="bi bi-save"></i> Salvar</button>
+                      <button class="btn btn-primary" type="button" id="btnPdf"><i class="bi bi-file-earmark-pdf"></i> Gerar PDF</button>
+                    </div>
+                  </form>
+                </div></div>
+              </div>
+              <div class="col-lg-4">
+                <div class="card border-0 shadow-sm sticky-lg-top total-card"><div class="card-body p-4"><h5>Resumo</h5><div class="d-flex justify-content-between"><span>Subtotal</span><strong id="subtotalLabel">R$ 0,00</strong></div><div class="d-flex justify-content-between"><span>Descontos</span><strong id="discountLabel">R$ 0,00</strong></div><hr><div class="d-flex justify-content-between fs-4"><span>Total</span><strong id="totalLabel">R$ 0,00</strong></div><p class="small text-secondary mt-3 mb-0">No recibo, o total também aparece por extenso no PDF.</p></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="historyTab" class="tab-panel d-none">
+            <div class="card border-0 shadow-sm"><div class="card-body p-4">
+              <div class="row g-3 align-items-end mb-3"><div class="col-md-6"><label class="form-label">Buscar</label><input class="form-control" id="historySearch" placeholder="Cliente, número ou observação"></div><div class="col-md-3"><label class="form-label">Tipo</label><select class="form-select" id="historyType"><option value="">Todos</option><option value="orcamento">Orçamentos</option><option value="recibo">Recibos</option></select></div><div class="col-md-3 d-grid"><button class="btn btn-outline-primary" id="btnRefreshHistory"><i class="bi bi-arrow-clockwise"></i> Atualizar</button></div></div>
+              <div id="historyList" class="vstack gap-3"></div>
+            </div></div>
+          </div>
+
+          <div id="profileTab" class="tab-panel d-none">
+            <div class="card border-0 shadow-sm"><div class="card-body p-4">
+              <h4 class="fw-bold mb-3">Dados do emitente</h4>
+              <form id="profileForm" class="row g-3">
+                <div class="col-md-6"><label class="form-label">Nome/Razão social</label><input class="form-control" id="issuerName" required></div>
+                <div class="col-md-3"><label class="form-label">CPF/CNPJ</label><input class="form-control" id="issuerDoc"></div>
+                <div class="col-md-3"><label class="form-label">Plano</label><select class="form-select" id="issuerPlan"><option value="free">Free</option><option value="pro">Pro</option></select></div>
+                <div class="col-md-4"><label class="form-label">Telefone/WhatsApp</label><input class="form-control" id="issuerPhone"></div>
+                <div class="col-md-4"><label class="form-label">E-mail</label><input class="form-control" id="issuerEmail" type="email"></div>
+                <div class="col-md-4"><label class="form-label">Cidade/UF</label><input class="form-control" id="issuerCity"></div>
+                <div class="col-md-6"><label class="form-label">Chave Pix</label><input class="form-control" id="issuerPix"></div>
+                <div class="col-md-6"><label class="form-label">Logo</label><input class="form-control" type="file" id="issuerLogo" accept="image/*"></div>
+                <div class="col-12 d-flex align-items-center gap-3"><img id="logoPreview" alt="Prévia da logo" class="logo-preview d-none"><button class="btn btn-success" type="submit"><i class="bi bi-save"></i> Salvar emitente</button></div>
+              </form>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast-container position-fixed bottom-0 end-0 p-3"><div id="appToast" class="toast" role="alert"><div class="toast-header"><strong class="me-auto">OrçaFácil</strong><button type="button" class="btn-close" data-bs-dismiss="toast"></button></div><div class="toast-body" id="toastBody"></div></div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
