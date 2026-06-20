@@ -1,15 +1,19 @@
 # OrçaFácil
 
-OrçaFácil é um SaaS freemium simples para autônomos, MEIs e pequenas empresas criarem **orçamentos e recibos profissionais em PDF** direto pelo navegador ou celular.
+**Orçamentos e recibos profissionais em PDF, em segundos.**
+
+OrçaFácil é um SaaS freemium para autônomos, MEIs e pequenos prestadores de serviço criarem orçamentos e recibos profissionais em PDF diretamente do navegador ou celular.
 
 ## Tecnologias
 
-- HTML5, CSS3 e JavaScript puro
-- Bootstrap 5 e Bootstrap Icons
-- jsPDF e jsPDF AutoTable
-- Firebase Auth, Firestore e Hosting
-- Node.js com Fastify para servidor local
-- LocalStorage para modo demonstração sem Firebase
+- JavaScript puro em módulos ES no navegador.
+- Bootstrap 5 e Bootstrap Icons.
+- Firebase Web SDK por CDN/module.
+- Firebase Authentication com e-mail e senha.
+- Cloud Firestore para usuários, perfil e documentos.
+- Firebase Hosting.
+- jsPDF e jsPDF autoTable para geração de PDFs.
+- Node.js + Fastify local na porta **8095**.
 
 ## Como rodar localmente
 
@@ -24,79 +28,180 @@ O servidor local usa a porta **8095**.
 
 ## Modo demonstração
 
-Se `public/js/firebase-config.js` não estiver configurado, o app funciona em modo demonstração local. Nesse modo, perfil, plano, documentos, rascunho e histórico são salvos no `localStorage` do navegador.
+No Windows, use também:
 
-## Configurar Firebase
+```bat
+start.bat
+```
 
-1. Crie um projeto no Firebase Console.
-2. Ative Authentication com provedor de e-mail/senha.
-3. Crie um banco Firestore.
-4. Copie as credenciais web para `public/js/firebase-config.js`.
-5. Publique as regras de segurança de `firestore.rules`.
+## Firebase oficial configurado
 
-Estrutura usada no Firestore:
+O arquivo `public/js/firebase-config.js` já usa a configuração Web oficial do projeto:
+
+```js
+const firebaseConfig = {
+  apiKey: "AIzaSyDfNFeiUSr8lq6UHZoQN6tR-Y_DkuWjVnw",
+  authDomain: "orcafacil-b771c.firebaseapp.com",
+  projectId: "orcafacil-b771c",
+  storageBucket: "orcafacil-b771c.firebasestorage.app",
+  messagingSenderId: "124049832916",
+  appId: "1:124049832916:web:0f30944c6e2e8695e6f441",
+  measurementId: "G-WXJGMB50K3"
+};
+```
+
+> Essa configuração Web pode ficar no front-end. Não exponha service account, chave administrativa ou credenciais privadas do Firebase Admin.
+
+## Como habilitar Authentication
+
+1. Acesse o Firebase Console do projeto `orcafacil-b771c`.
+2. Vá em **Authentication > Sign-in method**.
+3. Habilite **E-mail/Senha**.
+4. Salve.
+
+## Como criar o Firestore Database
+
+1. Acesse **Firestore Database** no Firebase Console.
+2. Clique em **Create database**.
+3. Para testes reais, escolha o modo de produção e publique as regras deste repositório.
+4. Escolha uma região adequada para o público do projeto.
+
+## Regras de segurança
+
+As regras em `firestore.rules` garantem que cada usuário leia e escreva somente seus próprios dados:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+## Estrutura de dados
 
 ```text
 users/{uid}
+users/{uid}/settings/profile
 users/{uid}/documents/{documentId}
 ```
+
+### `users/{uid}`
+
+```js
+{
+  uid,
+  name,
+  email,
+  plan: "free",
+  createdAt,
+  updatedAt
+}
+```
+
+### `users/{uid}/settings/profile`
+
+```js
+{
+  businessName,
+  documentNumber,
+  phone,
+  email,
+  address,
+  pix,
+  logoBase64,
+  updatedAt
+}
+```
+
+### `users/{uid}/documents/{documentId}`
+
+```js
+{
+  id,
+  type: "orcamento" | "recibo",
+  number: "ORC-000001" | "REC-000001",
+  clientName,
+  clientDocument,
+  clientPhone,
+  clientEmail,
+  issueDate,
+  dueDate,
+  items: [],
+  subtotal,
+  discount,
+  total,
+  notes,
+  status,
+  createdAt,
+  updatedAt
+}
+```
+
+## Como testar usuário grátis
+
+1. Abra `http://localhost:8095`.
+2. Crie uma conta com e-mail e senha.
+3. Salve os dados do emitente.
+4. Crie um orçamento ou recibo.
+5. Gere o PDF.
+6. Confira a marca: **“Gerado com OrçaFácil — orçamentos e recibos profissionais em PDF”**.
+
+## Como alterar plano para Pro manualmente
+
+1. Acesse **Firestore Database**.
+2. Abra `users/{uid}`.
+3. Altere o campo `plan` para `pro`.
+4. Recarregue o sistema e gere um PDF.
+5. O PDF não deve exibir a marca OrçaFácil.
+
+## Modo demonstração
+
+O botão **Ver demonstração** ativa o modo localStorage. Ele mantém criação de perfil, documentos, histórico, duplicação, exclusão e PDF sem exigir login real no Firebase.
 
 Cada usuário acessa apenas o próprio documento, conforme `firestore.rules`.
 
 ## Publicar no Firebase Hosting
 
+O projeto já possui `firebase.json` com `public` apontando para `public` e rewrite para `index.html`.
+
 ```bash
 firebase login
-firebase init hosting
+firebase use orcafacil-b771c
 firebase deploy
 ```
 
-Configure a pasta pública como `public` e mantenha o app como aplicação estática.
+Para publicar somente hosting:
 
-## Alternar usuário Free/Pro
-
-- No app, entre em **Emitente**.
-- Altere o campo **Plano** para `Free` ou `Pro`.
-- Salve o emitente.
-
-Com o plano `free`, o PDF exibe a marca OrçaFácil. Com o plano `pro`, a marca é removida.
-
-## Estrutura de pastas
-
-```text
-server.js                 Servidor local Fastify na porta 8095
-firestore.rules           Regras de segurança do Firestore
-public/index.html         Landing page e interface principal
-public/css/app.css        Estilos visuais e responsividade
-public/js/app.js          UI, formulários, histórico, planos e fluxo do app
-public/js/pdf.js          Geração dos PDFs com jsPDF
-public/js/services.js     Camada LocalStorage/Firebase
-public/js/utils.js        Funções utilitárias, moeda, datas e cálculos
-public/js/firebase-config.js Configuração do Firebase
+```bash
+firebase deploy --only hosting
 ```
 
-## Funcionalidades atuais
+## Checklist de teste recomendado
 
-- Landing page comercial com hero, como funciona, público-alvo, planos e CTA.
-- Login/cadastro quando Firebase está configurado.
-- Modo demonstração local sem Firebase.
-- Cadastro de dados do emitente, plano e logo.
-- Orçamentos e recibos com itens, quantidade, valor, desconto e total automático.
-- Máscara visual simples para moeda.
-- Rascunho local para evitar perda de dados ao navegar.
-- Histórico com filtro por tipo, busca por cliente/número/observação, total e data.
-- Ações no histórico: abrir, editar, duplicar, gerar PDF e excluir com confirmação.
-- Tela “Minha assinatura” com incentivo ao Pro.
-- PDFs com cabeçalho profissional, dados organizados, tabela limpa, total destacado, observações, rodapé, recibo com valor por extenso e assinatura.
+- Abrir `http://localhost:8095`.
+- Criar conta.
+- Fazer login e logout.
+- Reabrir o navegador e validar sessão ativa.
+- Salvar perfil do emitente.
+- Criar orçamento.
+- Criar recibo.
+- Gerar PDF de orçamento e recibo.
+- Ver histórico.
+- Abrir/editar documento.
+- Duplicar documento.
+- Excluir documento.
+- Validar plano free com marca no PDF.
+- Alterar plano para `pro` no Firestore e validar PDF sem marca.
+- Testar modo demonstração localStorage.
+- Testar em tela mobile e verificar console sem erros.
 
 ## Roadmap futuro
 
+Documentado para próximas etapas, ainda não implementado:
+
 - Pagamento recorrente.
+- Mercado Pago/Stripe.
 - Envio automático por WhatsApp.
 - Envio por e-mail.
+- Aprovação online do orçamento pelo cliente.
 - Conversão de orçamento aprovado em recibo.
-- Upload real de logo no Firebase Storage.
-- Dashboard de faturamento.
-- Múltiplos usuários por conta.
-- Prefixo de numeração por ano.
-- Página pública para cliente aprovar orçamento.
+- Upload real da logo no Firebase Storage.
+- Dashboard financeiro.
+- Multiusuário por conta.

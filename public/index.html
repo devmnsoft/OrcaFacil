@@ -127,15 +127,15 @@
           <div class="col-lg-5">
             <div class="card border-0 shadow-sm">
               <div class="card-body p-4">
-                <h4 class="fw-bold mb-3">Entrar ou cadastrar</h4>
+                <h4 class="fw-bold mb-1">OrçaFácil</h4><p class="text-secondary">Acesse sua conta e gere documentos profissionais em segundos.</p>
                 <div class="alert alert-info small" id="modeAlert">Verificando Firebase...</div>
                 <form id="authForm" class="vstack gap-3">
-                  <div><label class="form-label">E-mail</label><input class="form-control" id="authEmail" type="email" required placeholder="voce@email.com"></div>
+                  <div><label class="form-label">Nome (para criar conta)</label><input class="form-control" id="authName" type="text" placeholder="Seu nome ou empresa"></div><div><label class="form-label">E-mail</label><input class="form-control" id="authEmail" type="email" required placeholder="voce@email.com"></div>
                   <div><label class="form-label">Senha</label><input class="form-control" id="authPassword" type="password" required minlength="6" placeholder="mínimo 6 caracteres"></div>
                   <div class="d-grid gap-2">
                     <button class="btn btn-primary" type="submit" data-auth-action="login">Entrar</button>
-                    <button class="btn btn-outline-primary" type="button" id="btnRegister">Criar conta</button>
-                    <button class="btn btn-outline-secondary" type="button" id="btnDemo"><i class="bi bi-play-circle"></i> Usar demonstração local</button>
+                    <button class="btn btn-outline-primary" type="button" id="btnRegister">Criar conta grátis</button>
+                    <button class="btn btn-outline-secondary" type="button" id="btnDemo"><i class="bi bi-play-circle"></i> Ver demonstração</button>
                   </div>
                 </form>
               </div>
@@ -150,12 +150,10 @@
           <ul class="nav nav-pills gap-2 mb-4" id="tabs">
             <li class="nav-item"><button class="nav-link active" data-tab="docTab">Novo documento</button></li>
             <li class="nav-item"><button class="nav-link" data-tab="historyTab">Histórico</button></li>
-            <li class="nav-item"><button class="nav-link" data-tab="profileTab">Emitente</button></li>
-            <li class="nav-item"><button class="nav-link" data-tab="subscriptionTab">Minha assinatura</button></li>
+            <li class="nav-item"><button class="nav-link" data-tab="profileTab">Emitente</button></li><li class="nav-item"><button class="nav-link" data-tab="subscriptionTab">Minha assinatura</button></li><li class="nav-item"><span id="proBadge" class="badge text-bg-success d-none mt-2">Pro</span></li>
           </ul>
 
-          <div id="upgradeBanner" class="alert alert-primary border-0 shadow-sm d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2"><span><strong>Plano grátis:</strong> seus PDFs saem com a marca OrçaFácil. Remova a marca no plano Pro.</span><button class="btn btn-sm btn-primary" type="button" data-tab-shortcut="subscriptionTab">Conhecer Pro</button></div>
-          <div id="docTab" class="tab-panel">
+          <div id="freeBanner" class="alert alert-warning d-flex flex-column flex-md-row justify-content-between gap-2"><span><strong>Plano Free:</strong> seus PDFs incluem a marca OrçaFácil.</span><button class="btn btn-sm btn-outline-dark btnProWhats" type="button">Remover marca dos PDFs</button></div><div id="docTab" class="tab-panel">
             <div class="row g-4">
               <div class="col-lg-8">
                 <div class="card border-0 shadow-sm"><div class="card-body p-4">
@@ -211,15 +209,12 @@
 
           <div id="subscriptionTab" class="tab-panel d-none">
             <div class="card border-0 shadow-sm"><div class="card-body p-4">
-              <span class="section-kicker">Minha assinatura</span>
-              <h4 class="fw-bold mb-2">Plano atual: <span id="subscriptionPlan">Grátis</span></h4>
-              <p class="text-secondary" id="subscriptionStatus">Seus PDFs incluem a marca OrçaFácil no rodapé.</p>
-              <div class="row g-3 my-2">
-                <div class="col-md-4"><div class="benefit"><i class="bi bi-patch-check"></i> PDF sem marca</div></div>
-                <div class="col-md-4"><div class="benefit"><i class="bi bi-clock-history"></i> Histórico completo</div></div>
-                <div class="col-md-4"><div class="benefit"><i class="bi bi-image"></i> Logo profissional</div></div>
-              </div>
-              <button class="btn btn-success btn-lg" id="btnUpgrade" type="button">Quero remover a marca dos PDFs</button>
+              <h4 class="fw-bold">Minha assinatura</h4>
+              <p>Plano atual: <strong id="currentPlanLabel">Free</strong></p>
+              <ul class="check-list"><li>PDF sem marca OrçaFácil.</li><li>Documento com visual mais profissional.</li><li>Suporte para recursos premium futuros.</li></ul>
+              <p class="price">R$ 19,90/mês <span class="fs-6 text-secondary">ou R$ 199/ano</span></p>
+              <button class="btn btn-success btnProWhats" type="button">Quero ativar o Pro</button>
+              <p class="small text-secondary mt-3 mb-0">Pagamento em breve. Fale com a MNSOFT para ativar seu plano Pro.</p>
             </div></div>
           </div>
         </div>
