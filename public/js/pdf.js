@@ -12,11 +12,11 @@ export function generatePdf(docData, profile={}){
   const totals = calcDocument(docData);
   const primary=[30,58,95], blue=[45,125,210], green=[31,157,107];
   pdf.setFillColor(...primary);pdf.rect(0,0,pageW,92,'F');
-  if(profile.logo){try{pdf.addImage(profile.logo,'PNG',margin,18,54,54);}catch{}}
-  pdf.setTextColor(255);pdf.setFont('helvetica','bold');pdf.setFontSize(20);pdf.text(profile.name||'Emitente não informado',profile.logo?110:margin,38);
+  const logo=profile.logo||profile.logoBase64;if(logo){try{pdf.addImage(logo,'PNG',margin,18,54,54);}catch{}}
+  pdf.setTextColor(255);pdf.setFont('helvetica','bold');pdf.setFontSize(20);pdf.text(profile.name||profile.businessName||'Emitente não informado',logo?110:margin,38);
   pdf.setFont('helvetica','normal');pdf.setFontSize(9);
-  const issuerLine=[profile.document,profile.phone,profile.email,profile.city].filter(Boolean).join(' • ');
-  pdf.text(issuerLine||'Complete os dados do emitente',profile.logo?110:margin,56,{maxWidth:360});
+  const issuerLine=[profile.document||profile.documentNumber,profile.phone,profile.email,profile.city||profile.address].filter(Boolean).join(' • ');
+  pdf.text(issuerLine||'Complete os dados do emitente',logo?110:margin,56,{maxWidth:360});
   pdf.setFont('helvetica','bold');pdf.setFontSize(18);pdf.text(`${docTitle(docData.type)} Nº ${pad(docData.number)}`,pageW-margin,38,{align:'right'});
   pdf.setFont('helvetica','normal');pdf.setFontSize(10);pdf.text(`Data: ${formatDate(docData.date)}`,pageW-margin,58,{align:'right'});
   let y=122;
@@ -36,11 +36,11 @@ export function generatePdf(docData, profile={}){
     pdf.setFont('helvetica','bold');pdf.setFontSize(11);pdf.text('Valor por extenso',margin,y);y+=16;
     pdf.setFont('helvetica','normal');pdf.text(valorPorExtenso(totals.total),margin,y,{maxWidth:pageW-margin*2});y+=36;
     pdf.text(`Declaro ter recebido de ${docData.clientName||'cliente'} a importância acima descrita.`,margin,y,{maxWidth:pageW-margin*2});y+=58;
-    pdf.line(pageW/2-100,y,pageW/2+100,y);pdf.text(profile.name||'Assinatura do emitente',pageW/2,y+16,{align:'center'});y+=30;
+    pdf.line(pageW/2-100,y,pageW/2+100,y);pdf.text(profile.name||profile.businessName||'Assinatura do emitente',pageW/2,y+16,{align:'center'});y+=30;
   }
   if(docData.notes){pdf.setFont('helvetica','bold');pdf.setFontSize(11);pdf.text('Observações',margin,y);y+=16;pdf.setFont('helvetica','normal');pdf.text(docData.notes,margin,y,{maxWidth:pageW-margin*2});}
   const isFree=(profile.plan||'free')!=='pro';
   const pages=pdf.internal.getNumberOfPages();
-  for(let i=1;i<=pages;i++){pdf.setPage(i);pdf.setFontSize(8);pdf.setTextColor(120);pdf.text(`Página ${i}/${pages}`,pageW-margin,820,{align:'right'});if(isFree){pdf.setTextColor(...green);pdf.setFont('helvetica','bold');pdf.text('Gerado com OrçaFácil — orçamentos e recibos em PDF',margin,820);}}
+  for(let i=1;i<=pages;i++){pdf.setPage(i);pdf.setFontSize(8);pdf.setTextColor(120);pdf.text(`Página ${i}/${pages}`,pageW-margin,820,{align:'right'});if(isFree){pdf.setTextColor(...green);pdf.setFont('helvetica','bold');pdf.text('Gerado com OrçaFácil — orçamentos e recibos profissionais em PDF',margin,820);}}
   pdf.save(`${docTitle(docData.type).toLowerCase()}-${pad(docData.number)}.pdf`);
 }

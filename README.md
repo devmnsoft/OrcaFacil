@@ -2,30 +2,20 @@
 
 **Orçamentos e recibos profissionais em PDF, em segundos.**
 
-Projeto MVP completo com front-end Bootstrap + JavaScript, Firebase Authentication/Firestore e servidor local em Node/Fastify.
+OrçaFácil é um SaaS freemium para autônomos, MEIs e pequenos prestadores de serviço criarem orçamentos e recibos profissionais em PDF diretamente do navegador ou celular.
 
-## O que vem pronto
+## Tecnologias
 
-- Landing page comercial.
-- Login e cadastro por e-mail/senha.
-- Modo demonstração local quando o Firebase ainda não está configurado.
-- Cadastro do emitente: nome, CPF/CNPJ, contato, Pix, cidade, logo e plano.
-- Criação de orçamento e recibo.
-- Itens com quantidade, valor unitário, desconto e total automático.
-- Validade e observações para orçamento.
-- Recibo com valor por extenso.
-- Histórico de documentos para abrir, editar, duplicar e reemitir PDF.
-- Numeração sequencial por usuário.
-- PDF profissional com logo, dados do emitente, cliente, itens e rodapé freemium.
-- Servidor local na porta **8095**.
-- Arquivos de deploy Firebase Hosting e regras Firestore.
+- JavaScript puro em módulos ES no navegador.
+- Bootstrap 5 e Bootstrap Icons.
+- Firebase Web SDK por CDN/module.
+- Firebase Authentication com e-mail e senha.
+- Cloud Firestore para usuários, perfil e documentos.
+- Firebase Hosting.
+- jsPDF e jsPDF autoTable para geração de PDFs.
+- Node.js + Fastify local na porta **8095**.
 
 ## Como rodar localmente
-
-1. Instale Node.js 18 ou superior.
-2. Extraia o ZIP.
-3. Abra o terminal na pasta do projeto.
-4. Execute:
 
 ```bash
 npm install
@@ -38,61 +28,179 @@ Acesse:
 http://localhost:8095
 ```
 
-No Windows, também pode dar duplo clique em `start.bat`.
+No Windows, use também:
 
-## Configurar Firebase
+```bat
+start.bat
+```
 
-Abra `public/js/firebase-config.js` e cole a configuração do seu projeto Firebase:
+## Firebase oficial configurado
+
+O arquivo `public/js/firebase-config.js` já usa a configuração Web oficial do projeto:
 
 ```js
-export const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  projectId: "SEU_PROJETO",
-  storageBucket: "SEU_PROJETO.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:000000000000"
+const firebaseConfig = {
+  apiKey: "AIzaSyDfNFeiUSr8lq6UHZoQN6tR-Y_DkuWjVnw",
+  authDomain: "orcafacil-b771c.firebaseapp.com",
+  projectId: "orcafacil-b771c",
+  storageBucket: "orcafacil-b771c.firebasestorage.app",
+  messagingSenderId: "124049832916",
+  appId: "1:124049832916:web:0f30944c6e2e8695e6f441",
+  measurementId: "G-WXJGMB50K3"
 };
 ```
 
-Depois habilite no Firebase:
+> Essa configuração Web pode ficar no front-end. Não exponha service account, chave administrativa ou credenciais privadas do Firebase Admin.
 
-- Authentication > Sign-in method > E-mail/Senha.
-- Firestore Database.
-- Hosting, caso deseje publicar.
+## Como habilitar Authentication
+
+1. Acesse o Firebase Console do projeto `orcafacil-b771c`.
+2. Vá em **Authentication > Sign-in method**.
+3. Habilite **E-mail/Senha**.
+4. Salve.
+
+## Como criar o Firestore Database
+
+1. Acesse **Firestore Database** no Firebase Console.
+2. Clique em **Create database**.
+3. Para testes reais, escolha o modo de produção e publique as regras deste repositório.
+4. Escolha uma região adequada para o público do projeto.
+
+## Regras de segurança
+
+As regras em `firestore.rules` garantem que cada usuário leia e escreva somente seus próprios dados:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+## Estrutura de dados
+
+```text
+users/{uid}
+users/{uid}/settings/profile
+users/{uid}/documents/{documentId}
+```
+
+### `users/{uid}`
+
+```js
+{
+  uid,
+  name,
+  email,
+  plan: "free",
+  createdAt,
+  updatedAt
+}
+```
+
+### `users/{uid}/settings/profile`
+
+```js
+{
+  businessName,
+  documentNumber,
+  phone,
+  email,
+  address,
+  pix,
+  logoBase64,
+  updatedAt
+}
+```
+
+### `users/{uid}/documents/{documentId}`
+
+```js
+{
+  id,
+  type: "orcamento" | "recibo",
+  number: "ORC-000001" | "REC-000001",
+  clientName,
+  clientDocument,
+  clientPhone,
+  clientEmail,
+  issueDate,
+  dueDate,
+  items: [],
+  subtotal,
+  discount,
+  total,
+  notes,
+  status,
+  createdAt,
+  updatedAt
+}
+```
+
+## Como testar usuário grátis
+
+1. Abra `http://localhost:8095`.
+2. Crie uma conta com e-mail e senha.
+3. Salve os dados do emitente.
+4. Crie um orçamento ou recibo.
+5. Gere o PDF.
+6. Confira a marca: **“Gerado com OrçaFácil — orçamentos e recibos profissionais em PDF”**.
+
+## Como alterar plano para Pro manualmente
+
+1. Acesse **Firestore Database**.
+2. Abra `users/{uid}`.
+3. Altere o campo `plan` para `pro`.
+4. Recarregue o sistema e gere um PDF.
+5. O PDF não deve exibir a marca OrçaFácil.
+
+## Modo demonstração
+
+O botão **Ver demonstração** ativa o modo localStorage. Ele mantém criação de perfil, documentos, histórico, duplicação, exclusão e PDF sem exigir login real no Firebase.
 
 ## Deploy no Firebase Hosting
+
+O projeto já possui `firebase.json` com `public` apontando para `public` e rewrite para `index.html`.
 
 ```bash
 npm install -g firebase-tools
 firebase login
-firebase init hosting firestore
+firebase use orcafacil-b771c
 firebase deploy
 ```
 
-Este projeto já inclui `firebase.json` e `firestore.rules`.
+Para publicar somente hosting:
 
-## Estrutura
-
-```text
-orcafacil/
-  public/
-    index.html
-    css/app.css
-    js/app.js
-    js/firebase-config.js
-    js/services.js
-    js/pdf.js
-    js/utils.js
-  server.js
-  package.json
-  firebase.json
-  firestore.rules
-  docs/
-    ESPECIFICACAO.md
-    PROMPT_CODEX.md
+```bash
+firebase deploy --only hosting
 ```
 
-## Observação
+## Checklist de teste recomendado
 
-Enquanto o Firebase não estiver configurado, o sistema entra automaticamente em modo demonstração com localStorage. Isso permite testar o fluxo completo, gerar PDFs e validar o MVP sem depender de infraestrutura.
+- Abrir `http://localhost:8095`.
+- Criar conta.
+- Fazer login e logout.
+- Reabrir o navegador e validar sessão ativa.
+- Salvar perfil do emitente.
+- Criar orçamento.
+- Criar recibo.
+- Gerar PDF de orçamento e recibo.
+- Ver histórico.
+- Abrir/editar documento.
+- Duplicar documento.
+- Excluir documento.
+- Validar plano free com marca no PDF.
+- Alterar plano para `pro` no Firestore e validar PDF sem marca.
+- Testar modo demonstração localStorage.
+- Testar em tela mobile e verificar console sem erros.
+
+## Roadmap futuro
+
+Documentado para próximas etapas, ainda não implementado:
+
+- Pagamento recorrente.
+- Mercado Pago/Stripe.
+- Envio automático por WhatsApp.
+- Envio por e-mail.
+- Aprovação online do orçamento pelo cliente.
+- Conversão de orçamento aprovado em recibo.
+- Upload real da logo no Firebase Storage.
+- Dashboard financeiro.
+- Multiusuário por conta.
