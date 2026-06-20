@@ -1,15 +1,16 @@
 import { createService } from './services.js';
 import { generatePdf } from './pdf.js';
-import { today, money, calcDocument, readFileAsDataUrl, escapeHtml, uid } from './utils.js';
+import { today, money, calcDocument, readFileAsDataUrl, escapeHtml, uid, parseCurrency, formatNumber } from './utils.js';
 
-let service, currentUser=null, profile={}, docs=[];
+let service, currentUser=null, profile={}, docs=[], draftTimer=null;
 const $=sel=>document.querySelector(sel);
 const $$=sel=>Array.from(document.querySelectorAll(sel));
 const toast=(msg)=>{ $('#toastBody').textContent=msg; bootstrap.Toast.getOrCreateInstance($('#appToast')).show(); };
+const draftKey=()=>`orcafacil:${currentUser?.uid||'demo'}:draft`;
 
 function itemTemplate(item={}){
   const id=uid();
-  return `<div class="item-row" data-item-id="${id}"><div class="row g-2 align-items-end"><div class="col-md-5"><label class="form-label small">Descrição</label><input class="form-control item-desc" value="${escapeHtml(item.description)}" placeholder="Serviço ou produto"></div><div class="col-4 col-md-2"><label class="form-label small">Qtd</label><input class="form-control item-qty" type="number" min="0" step="0.01" value="${item.qty??1}"></div><div class="col-4 col-md-2"><label class="form-label small">Valor</label><input class="form-control item-unit" type="number" min="0" step="0.01" value="${item.unit??0}"></div><div class="col-4 col-md-2"><label class="form-label small">Desconto</label><input class="form-control item-discount" type="number" min="0" step="0.01" value="${item.discount??0}"></div><div class="col-md-1 d-grid"><button class="btn btn-outline-danger btn-sm btn-remove-item" type="button"><i class="bi bi-trash"></i></button></div></div></div>`;
+  return `<div class="item-row" data-item-id="${id}"><div class="row g-2 align-items-end"><div class="col-md-5"><label class="form-label small">Descrição do item</label><input class="form-control item-desc" value="${escapeHtml(item.description)}" placeholder="Ex.: Instalação, manutenção, material"></div><div class="col-4 col-md-2"><label class="form-label small">Qtd.</label><input class="form-control item-qty" type="number" min="0" step="0.01" value="${item.qty??1}"></div><div class="col-4 col-md-2"><label class="form-label small">Valor unit.</label><div class="input-group"><span class="input-group-text">R$</span><input class="form-control item-unit money-input" inputmode="decimal" value="${formatNumber(item.unit??0)}"></div></div><div class="col-4 col-md-2"><label class="form-label small">Desconto</label><div class="input-group"><span class="input-group-text">R$</span><input class="form-control item-discount money-input" inputmode="decimal" value="${formatNumber(item.discount??0)}"></div></div><div class="col-md-1 d-grid"><button class="btn btn-outline-danger btn-sm btn-remove-item" type="button" title="Remover item"><i class="bi bi-trash"></i></button></div></div></div>`;
 }
 function addItem(item){$('#itemsList').insertAdjacentHTML('beforeend',itemTemplate(item));bindItemEvents();updateTotals();}
 function bindItemEvents(){ $$('.item-row input').forEach(i=>i.oninput=updateTotals); $$('.btn-remove-item').forEach(b=>b.onclick=e=>{e.currentTarget.closest('.item-row').remove();updateTotals();}); }

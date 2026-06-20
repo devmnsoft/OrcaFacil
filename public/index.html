@@ -34,10 +34,10 @@
         <div class="col-lg-6">
           <div class="badge rounded-pill text-bg-light mb-3"><i class="bi bi-lightning-charge"></i> MVP SaaS pronto para validação</div>
           <h1 class="display-5 fw-bold text-white">Orçamentos e recibos profissionais em PDF, em segundos.</h1>
-          <p class="lead text-white-75 mt-3">Uma ferramenta simples para autônomos, MEIs e pequenas empresas gerarem documentos com aparência profissional direto do celular.</p>
+          <p class="lead text-white-75 mt-3">Ideal para autônomos, MEIs e pequenos prestadores de serviço que querem passar mais confiança para seus clientes.</p>
           <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
-            <a href="#app" class="btn btn-info btn-lg fw-semibold"><i class="bi bi-file-earmark-pdf"></i> Começar agora</a>
-            <a href="#recursos" class="btn btn-outline-light btn-lg">Ver recursos</a>
+            <a href="#app" class="btn btn-info btn-lg fw-semibold"><i class="bi bi-file-earmark-pdf"></i> Começar grátis</a>
+            <a href="#app" class="btn btn-outline-light btn-lg"><i class="bi bi-play-circle"></i> Ver demonstração</a>
           </div>
         </div>
         <div class="col-lg-6">
@@ -69,6 +69,17 @@
   </header>
 
   <main>
+    <section class="py-5 bg-white">
+      <div class="container">
+        <div class="text-center mb-4"><span class="section-kicker">Como funciona</span><h2 class="fw-bold">Do atendimento ao PDF em 3 passos</h2></div>
+        <div class="row g-4">
+          <div class="col-md-4"><div class="step-card"><span>1</span><h5>Preencha os dados</h5><p>Informe cliente, itens, valores e observações em campos simples.</p></div></div>
+          <div class="col-md-4"><div class="step-card"><span>2</span><h5>Gere o PDF</h5><p>O OrçaFácil calcula totais, numera o documento e monta o arquivo.</p></div></div>
+          <div class="col-md-4"><div class="step-card"><span>3</span><h5>Envie para o cliente</h5><p>Baixe e compartilhe pelo WhatsApp, e-mail ou como preferir.</p></div></div>
+        </div>
+      </div>
+    </section>
+
     <section id="recursos" class="py-5 bg-light">
       <div class="container">
         <div class="text-center mb-4">
@@ -83,12 +94,19 @@
       </div>
     </section>
 
+    <section class="py-5 bg-white">
+      <div class="container">
+        <div class="text-center mb-4"><span class="section-kicker">Para quem é</span><h2 class="fw-bold">Profissionalize serviços simples e recorrentes</h2><p class="text-secondary">Eletricistas, pintores, diaristas, técnicos, designers, fotógrafos, manicures e prestadores de serviço em geral.</p></div>
+      </div>
+    </section>
+
     <section id="planos" class="py-5">
       <div class="container">
         <div class="row g-4 align-items-stretch">
-          <div class="col-lg-6"><div class="plan-card h-100"><h3>Grátis</h3><p class="price">R$ 0</p><p>Gere orçamentos e recibos ilimitados com a marca OrçaFácil no rodapé.</p></div></div>
-          <div class="col-lg-6"><div class="plan-card h-100 featured"><h3>Pro</h3><p class="price">R$ 19,90/mês</p><p>PDF sem marca, histórico completo e documento com visual mais profissional.</p></div></div>
+          <div class="col-lg-6"><div class="plan-card h-100"><h3>Grátis</h3><p class="price">R$ 0</p><p>Gere documentos com a marca OrçaFácil no PDF. Perfeito para validar e começar hoje.</p></div></div>
+          <div class="col-lg-6"><div class="plan-card h-100 featured"><h3>Pro</h3><p class="price">R$ 19,90/mês</p><p>PDF sem marca, histórico completo e logo profissional para passar ainda mais confiança.</p></div></div>
         </div>
+        <div class="final-cta mt-4 text-center"><h3>Comece agora sem instalar nada.</h3><a href="#app" class="btn btn-success btn-lg mt-2">Começar grátis</a></div>
       </div>
     </section>
 
@@ -100,7 +118,7 @@
             <p class="text-secondary mb-0">Use em modo demonstração ou conecte ao Firebase.</p>
           </div>
           <div id="sessionBox" class="d-none d-flex align-items-center gap-2">
-            <span class="small text-secondary" id="currentUserLabel"></span>
+            <span class="small text-secondary" id="currentUserLabel"></span><span id="planBadge" class="badge text-bg-light text-primary"></span>
             <button class="btn btn-outline-danger btn-sm" id="btnLogout"><i class="bi bi-box-arrow-right"></i> Sair</button>
           </div>
         </div>
@@ -149,7 +167,7 @@
                     <div class="col-md-3"><label class="form-label">CPF/CNPJ cliente</label><input class="form-control" id="clientDoc"></div>
                     <div class="col-md-3"><label class="form-label">Contato</label><input class="form-control" id="clientContact"></div>
                     <div class="col-12"><label class="form-label">Cidade/UF</label><input class="form-control" id="clientCity" placeholder="Belém/PA"></div>
-                    <div class="col-12"><hr><div class="d-flex justify-content-between align-items-center"><h5>Itens</h5><button class="btn btn-outline-primary btn-sm" type="button" id="btnAddItem"><i class="bi bi-plus-lg"></i> Item</button></div><div id="itemsList" class="vstack gap-2 mt-3"></div></div>
+                    <div class="col-12"><hr><div class="d-flex justify-content-between align-items-center"><h5>Itens</h5><button class="btn btn-primary btn-sm" type="button" id="btnAddItem"><i class="bi bi-plus-lg"></i> Adicionar item</button></div><div id="itemsList" class="vstack gap-2 mt-3"></div></div>
                     <div class="col-12"><label class="form-label">Observações</label><textarea class="form-control" id="notes" rows="3" placeholder="Condições, prazo, forma de pagamento..."></textarea></div>
                     <div class="col-12 d-flex flex-column flex-md-row gap-2 justify-content-end">
                       <button class="btn btn-outline-secondary" type="button" id="btnNewDoc">Limpar</button>

@@ -22,11 +22,11 @@ npm install
 npm start
 ```
 
-Acesse:
+Acesse: <http://localhost:8095>
 
-```text
-http://localhost:8095
-```
+O servidor local usa a porta **8095**.
+
+## Modo demonstração
 
 No Windows, use também:
 
@@ -155,12 +155,13 @@ users/{uid}/documents/{documentId}
 
 O botão **Ver demonstração** ativa o modo localStorage. Ele mantém criação de perfil, documentos, histórico, duplicação, exclusão e PDF sem exigir login real no Firebase.
 
-## Deploy no Firebase Hosting
+Cada usuário acessa apenas o próprio documento, conforme `firestore.rules`.
+
+## Publicar no Firebase Hosting
 
 O projeto já possui `firebase.json` com `public` apontando para `public` e rewrite para `index.html`.
 
 ```bash
-npm install -g firebase-tools
 firebase login
 firebase use orcafacil-b771c
 firebase deploy
