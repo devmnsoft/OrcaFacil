@@ -17,6 +17,13 @@ await app.register(fastifyStatic, {
   decorateReply: false
 });
 
+await app.register(fastifyStatic, {
+  root: path.join(__dirname, 'public'),
+  prefix: '/public/',
+  index: ['index.html'],
+  decorateReply: false
+});
+
 app.get('/health', async () => ({ status: 'ok', app: 'orcafacil', port: PORT }));
 
 app.setNotFoundHandler((req, reply) => {

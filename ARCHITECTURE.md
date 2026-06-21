@@ -106,3 +106,28 @@ Permitir que autônomos, MEIs e pequenos prestadores criem documentos profission
 - Evitar dependência de raiz `/`.
 - Não remover modo demonstração, login Firebase, histórico, PDF ou Free/Pro durante refatorações.
 - Preferir alterações pequenas e testáveis.
+
+## Execução estática e ambientes
+
+O OrçaFácil é uma aplicação front-end estática. O servidor Node/Fastify em `server.js` é apenas uma conveniência local para desenvolvimento, demonstração e validação rápida na porta `8095`; ele não é um backend de negócio obrigatório.
+
+### Ambientes suportados
+
+- **Firebase Hosting:** publicação oficial recomendada para produção estática. A pasta publicada deve ser `public/`.
+- **IIS:** pode servir diretamente `public/` como site/aplicação. Também pode apontar para a raiz do projeto; nesse caso, o `index.html` da raiz redireciona para `public/index.html` quando a origem é HTTP/HTTPS.
+- **Apache/Nginx/hospedagens estáticas:** devem servir a pasta `public/` ou preservar os caminhos relativos da raiz até `public/`.
+- **Node/Fastify local:** serve `public/` na raiz (`http://localhost:8095`) e também expõe `/public/` para validar cenários em que o site está abaixo de uma subpasta.
+
+### Por que `file://` não é suportado
+
+A aplicação usa ES Modules, imports entre arquivos, Firebase SDK modular por CDN, jsPDF/autoTable e armazenamento do navegador. Ao abrir `public/index.html` diretamente pelo sistema de arquivos, o navegador usa origem `null` e bloqueia imports locais por segurança, normalmente exibindo erro de CORS. Por isso, `file://` não é um ambiente suportado.
+
+O `index.html` da raiz não importa `app.js`; ele apenas detecta o protocolo. Em `file://`, mostra uma mensagem amigável com instruções. Em HTTP/HTTPS, redireciona para `./public/index.html`. O `public/index.html` também possui uma verificação mínima antes de inserir dinamicamente o módulo principal, evitando inicializar Firebase e módulos adicionais quando o protocolo é `file:`.
+
+### Caminhos relativos
+
+Mantenha CSS, JavaScript e páginas internas com caminhos relativos, como `./css/app.css`, `./js/app.js`, `./diagnostico.html` e `./aprovar.html`. Evite URLs iniciadas por `/`, pois elas quebram quando o OrçaFácil é publicado em subpastas como `https://dominio.com.br/orcafacil` ou `http://localhost/OrcaFacil`.
+
+### Sem dependência de backend próprio
+
+Regras de negócio do produto continuam no front-end modular e na camada Firebase/Firestore. O modo demonstração usa `localStorage`. Não introduza dependência obrigatória de build, SSR, API própria, Cloud Functions novas ou frameworks como React/Vue/Angular para manter a publicação compatível com hospedagem estática simples.
