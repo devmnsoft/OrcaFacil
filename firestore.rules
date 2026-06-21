@@ -39,11 +39,16 @@ service cloud.firestore {
       match /settings/{settingId} { allow read, write: if signedOwner(userId) || isSuperAdmin(); }
     }
 
+    match /systemLogs/{logId} {
+      allow read: if isSuperAdmin();
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && request.resource.data.level in ['debug','info','success','warning','error','critical'];
+      allow update, delete: if isSuperAdmin();
+    }
     match /systemEvents/{eventId} {
       allow read: if isSuperAdmin();
       allow create: if request.auth != null && validSeverity()
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.source in ['frontend','cloud_function','public_page'];
+        && request.resource.data.source in ['frontend','cloud_function','public_page','chatbot'];
       allow update, delete: if isSuperAdmin();
     }
     match /systemErrors/{errorId} {
@@ -56,7 +61,10 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
       allow update, delete: if isSuperAdmin();
     }
-    match /adminSettings/{settingId} { allow read, write: if isSuperAdmin(); }
+    match /adminSettings/{settingId} {
+      allow read: if isSuperAdmin() || settingId in ['contact','chatbot'];
+      allow write: if isSuperAdmin();
+    }
     match /telegramQueue/{messageId} {
       allow read, update, delete: if isSuperAdmin();
       allow create: if isSuperAdmin() || (request.auth != null && request.resource.data.status == 'pending');

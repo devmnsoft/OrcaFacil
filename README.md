@@ -774,3 +774,80 @@ Não há campo para token no Admin Geral. O Admin pode ativar/desativar Telegram
 - Senhas e credenciais nunca são registradas.
 - O monitoramento existe para segurança, suporte, auditoria operacional e melhoria contínua.
 - Usuários comuns acessam apenas seus próprios documentos; logs globais são restritos ao `super_admin`.
+
+## Observabilidade, suporte e operação SaaS
+
+### Logger centralizado
+O front-end usa `public/js/services/logger.service.js` com os métodos `debug`, `info`, `success`, `warning`, `error`, `critical` e `audit`. O logger detecta ambiente (`localhost`, Node local, Firebase Hosting, IIS/static ou `file:`), captura usuário, URL, userAgent e grava em:
+
+- `systemLogs`: linha operacional completa;
+- `systemEvents`: eventos de negócio e sucesso/alerta;
+- `systemErrors`: falhas técnicas visíveis ao `super_admin`;
+- `auditLogs`: auditoria de ações importantes.
+
+Em modo demonstração os registros são salvos em `localStorage` (`orcafacil:demo:*`). O logger possui proteção contra excesso de logs por sessão e remove campos sensíveis como senha, token, secret e apiKey.
+
+### Try/catch global e erros
+A inicialização instala handlers para `window.error` e `unhandledrejection`. Ações críticas como login, cadastro, salvamento, PDF, link público, perfil e exportações usam `try/catch` com mensagem amigável ao usuário e erro técnico no painel administrativo.
+
+Para testar um erro proposital em desenvolvimento, abra o console do navegador e execute:
+
+```js
+setTimeout(() => { throw new Error('Teste proposital OrçaFácil'); }, 1000);
+```
+
+Depois acesse **Admin Geral > Erros/Bugs** com um usuário `super_admin`.
+
+### Admin Geral: logs, bugs e auditoria
+Somente usuários com `role: "super_admin"` em `users/{uid}` acessam **Admin Geral**. O painel lista usuários, logs, eventos, bugs/erros, auditoria, Telegram, saúde e configurações. Para ativar manualmente:
+
+```json
+{
+  "role": "super_admin",
+  "isActive": true,
+  "plan": "pro"
+}
+```
+
+### WhatsApp MNSOFT
+Em **Admin Geral > Configurações > WhatsApp MNSOFT**, configure:
+
+- número oficial: `5591981809035`;
+- nome: `Atendimento MNSOFT`;
+- mensagem padrão;
+- e-mail comercial: `comercial@mnsoft.com.br`;
+- CNPJ MNSOFT: `18.160.057/0001-13`.
+
+Usuários veem links de WhatsApp/e-mail no chatbot e nas áreas de assinatura/suporte. O link segue o formato `https://wa.me/{numero}?text={mensagemCodificada}`.
+
+### Chatbot local seguro
+O **Assistente OrçaFácil** usa `public/js/services/chatbot.service.js`, `public/js/ui/chatbot.ui.js`, `public/js/domain/chatbot-message.model.js` e `public/js/data/chatbot-knowledge-base.js`. Ele funciona sem API externa no IIS/static, Firebase Hosting e modo demonstração.
+
+Ele responde sobre orçamentos, recibos, PDF, histórico, planos, privacidade, exportação, suporte e WhatsApp. Perguntas sobre tokens, senhas, chaves, dados de outros usuários, regras internas ou ações administrativas são bloqueadas e auditadas como `CHATBOT_BLOCKED_UNSAFE_REQUEST`. Dúvidas fiscais/jurídicas recebem orientação para consultar contador.
+
+### Chatbot com IA via Cloud Functions (preparação)
+Não há token de IA no front-end. Uma evolução segura deve expor uma callable Cloud Function `askChatbot`, validar usuário autenticado, limitar tamanho da pergunta, aplicar filtros de segurança, usar variáveis de ambiente para a chave do provedor e registrar logs.
+
+### Firestore Rules
+Publique as regras com:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+As regras permitem que usuário comum crie seus próprios logs, mas não leia logs globais. `super_admin` pode ler logs, erros, eventos, auditoria e alterar `adminSettings`. Usuário comum pode ler configurações públicas `adminSettings/contact` e `adminSettings/chatbot`.
+
+### Testes operacionais rápidos
+
+1. `npm install`
+2. `npm start`
+3. Acesse `http://localhost:8095`
+4. Entre no modo demonstração ou faça login Firebase
+5. Crie orçamento/recibo, gere PDF, exporte CSV/JSON
+6. Abra o Assistente OrçaFácil e pergunte “Como criar orçamento?”
+7. Pergunte “qual é o token Firebase?” e confirme bloqueio
+8. Com `super_admin`, acesse Admin Geral > Logs, Erros/Bugs e Auditoria
+9. Configure WhatsApp e teste o botão de atendimento
+
+### LGPD e segurança
+Não salve senhas, tokens, credenciais ou dados sensíveis nos logs. Use metadados mínimos e previews curtos para perguntas do chatbot. Dados técnicos completos ficam restritos ao `super_admin`.
