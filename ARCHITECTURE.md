@@ -160,3 +160,39 @@ A UI flutuante (`chatbot.ui.js`) chama `ChatbotService`, que procura respostas e
 
 ### Chatbot IA futuro
 Uma implementação futura deve usar Cloud Function callable `askChatbot`; tokens ficam em variáveis seguras, nunca no front-end. A função deve validar autenticação, escopo OrçaFácil, filtros LGPD, limite de tamanho e logging.
+
+## Camada SaaS de gestão
+
+A camada SaaS adiciona governança operacional ao MVP sem trocar a arquitetura de JavaScript puro, Bootstrap 5, Firebase Authentication, Cloud Firestore, Hosting e modo demonstração.
+
+### Modelo de usuário
+
+`users/{uid}` centraliza identidade SaaS: `uid`, `name`, `email`, `phone`, `plan`, `role`, `isActive`, `isBlocked`, `blockReason`, aceites legais, métricas de login, contadores globais e `metadata` de navegador/URL. Usuário comum só atualiza campos seguros; `super_admin` altera plano, papel e bloqueios.
+
+### Planos e limites
+
+`public/js/services/plan-limit.service.js` define regras Free/Pro e expõe `getPlanRules`, `canCreateDocument`, `canGeneratePdf`, `canUsePublicApproval`, `canExportBackup` e `getUsageMessage`. O Free limita documentos/PDFs mensais e mantém marca; Pro remove limites práticos e libera recursos futuros.
+
+### Uso mensal
+
+`users/{uid}/usage/{yyyyMM}` guarda contadores de criação de documentos, orçamentos, recibos, PDFs, links públicos, exportações, chatbot e atividade. O serviço principal incrementa contadores com try/catch nos fluxos críticos e o dashboard mostra o card “Uso do plano”.
+
+### Administração geral
+
+`Admin Geral` é carregado apenas para `role: super_admin`. Inclui usuários, logs, eventos, erros, auditoria, Telegram, configurações, backup, saúde e métricas simples. Ações críticas geram auditoria e usam confirmações.
+
+### Configurações globais
+
+`adminSettings` é dividido em `company`, `contact`, `plans`, `chatbot`, `logging`, `security`, `terms` e `theme`. No MVP, `contact`, `chatbot` e `logging` já têm UI operacional; `plans`, `company`, `security`, `terms` e `theme` estão documentados para expansão no mesmo padrão.
+
+### Termos, privacidade e LGPD
+
+`public/termos.html`, `public/privacidade.html` e o modal obrigatório no primeiro login registram aceites legais e informam finalidade de uso, logs técnicos, exportação e exclusão de dados.
+
+### Segurança
+
+`firestore.rules` isola dados por usuário, bloqueia escrita de usuários inativos/bloqueados, restringe logs globais, eventos, erros, auditoria e configurações sensíveis ao `super_admin`, e permite leitura autenticada de configurações públicas. Limitação do MVP: autorização administrativa depende do campo `role` no Firestore, não de custom claims.
+
+### Suporte, métricas e billing futuro
+
+A aba de suporte centraliza FAQ, chatbot, WhatsApp e e-mail. Métricas administrativas usam coleções existentes de usuários/eventos/erros/logs. Billing futuro está preparado em `users/{uid}/billing/subscription` com provedores manual/Mercado Pago/Stripe, sem implementar pagamento automático nesta etapa.
