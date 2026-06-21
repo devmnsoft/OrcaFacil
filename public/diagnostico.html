@@ -21,57 +21,6 @@
       </div>
     </div>
   </main>
-  <script type="module">
-    const results = document.querySelector('#results');
-    const guidance = document.querySelector('#guidance');
-    const add = (title, value, ok = true) => {
-      results.insertAdjacentHTML('beforeend', `<div class="col-md-6"><div class="p-3 rounded-4 border bg-white h-100"><div class="fw-bold">${title}</div><div class="${ok ? 'text-success' : 'text-danger'}">${value}</div></div></div>`);
-    };
-    const protocol = window.location.protocol;
-    const host = window.location.hostname;
-    const isFile = protocol === 'file:';
-    const isLocalhost = ['localhost', '127.0.0.1', '::1'].includes(host);
-    const looksFirebase = /web\.app$|firebaseapp\.com$/.test(host);
-    const looksIis = !looksFirebase && !isFile && /localhost|\.|^[\w-]+$/.test(host);
-
-    add('URL atual', window.location.href);
-    add('Protocolo', protocol, protocol === 'http:' || protocol === 'https:');
-    add('Tipo de acesso', isFile ? 'file:// detectado' : (protocol === 'https:' ? 'HTTPS' : 'HTTP'), !isFile);
-    add('Localhost', isLocalhost ? 'Sim' : 'Não');
-    add('Parece IIS', looksIis ? 'Possível/compatível com servidor estático' : 'Não identificado');
-    add('Parece Firebase Hosting', looksFirebase ? 'Sim' : 'Não');
-
-    try {
-      const config = await import('./js/core/config.js');
-      add('Teste de JS module', `OK — ${config.APP_NAME} ${config.APP_VERSION}`);
-      add('BASE_PATH', config.BASE_PATH || '/');
-    } catch (err) {
-      add('Teste de JS module', `Falhou: ${err.message}`, false);
-    }
-
-    try {
-      const fb = await import('./js/firebase-config.js');
-      add('Firebase config', `OK — projectId ${fb.firebaseConfig.projectId}`);
-    } catch (err) {
-      add('Firebase config', `Falhou: ${err.message}`, false);
-    }
-
-    try {
-      const key = 'orcafacil:diagnostico';
-      localStorage.setItem(key, new Date().toISOString());
-      add('localStorage', `OK — ${localStorage.getItem(key)}`);
-      localStorage.removeItem(key);
-    } catch (err) {
-      add('localStorage', `Falhou: ${err.message}`, false);
-    }
-
-    if (isFile) {
-      guidance.className = 'alert alert-warning mt-4';
-      guidance.innerHTML = '<strong>Correção:</strong> não abra por <code>file://</code>. Execute <code>npm start</code> e acesse <code>http://localhost:8095</code>, ou publique a pasta <code>public</code> em Firebase Hosting/IIS/Apache/Nginx.';
-    } else {
-      guidance.className = 'alert alert-success mt-4';
-      guidance.innerHTML = '<strong>Ambiente HTTP/HTTPS detectado.</strong> Se todos os testes estão OK, a publicação estática está pronta para uso. No Firebase Auth, confirme também o domínio autorizado no Console.';
-    }
-  </script>
+  <script type="module" src="./js/diagnostico.js"></script>
 </body>
 </html>

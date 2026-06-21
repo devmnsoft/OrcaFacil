@@ -7,13 +7,21 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "check": "node --check server.js"
+    "serve": "node server.js",
+    "serve:public": "PUBLIC_DIR=public node server.js",
+    "serve:root": "PUBLIC_DIR=. node server.js",
+    "check": "node --check server.js",
+    "check:js": "node scripts/check-js.mjs",
+    "emulators:start": "firebase emulators:start --only auth,firestore,functions,hosting",
+    "test:rules": "firebase emulators:exec --only firestore \"node tests/rules/run-rules-tests.mjs\"",
+    "test:functions": "firebase emulators:exec --only firestore,functions \"node tests/functions/run-functions-tests.mjs\"",
+    "test:security": "npm run test:rules && npm run test:functions",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "deploy:rules": "firebase deploy --only firestore:rules",
+    "deploy:functions": "firebase deploy --only functions",
+    "deploy": "firebase deploy"
   },
-  "dependencies": {
-    "@fastify/static": "^7.0.4",
-    "fastify": "^4.28.1"
-  },
-  "engines": {
-    "node": ">=18"
-  }
+  "engines": { "node": ">=18" },
+  "dependencies": {},
+  "devDependencies": {}
 }

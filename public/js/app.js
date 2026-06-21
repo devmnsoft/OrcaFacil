@@ -1,3 +1,4 @@
+import { bootstrapApp } from './core/bootstrap.js';
 import { createService } from './services.js';
 import { MonitoringService } from './services/monitoring.service.js';
 import { queueTelegramNotification } from './services/telegram-notification.service.js';
@@ -87,4 +88,4 @@ async function boot(){
   $('#historyList').onclick=historyAction; $('#historyList').onchange=historyAction; $('#historySearch').oninput=renderHistory; $('#historyType').onchange=renderHistory; $('#historyStatus').onchange=renderHistory; $('#btnRefreshHistory').onclick=loadDocs; $('#btnExportJson').onclick=exportJson; $('#btnExportCsv').onclick=exportCsv; document.body.addEventListener('click',e=>{if(e.target.closest('.btnProWhats'))openProWhatsApp();if(e.target.closest('[data-quick-tab]'))showTab(e.target.closest('[data-quick-tab]').dataset.quickTab);if(e.target.closest('#btnDemoPlan'))toggleDemoPlan();}); 
   resetDoc();
 }
-boot();
+bootstrapApp(boot);

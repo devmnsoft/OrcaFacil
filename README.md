@@ -917,3 +917,58 @@ As regras protegem dados por usuário, impedem alterações comuns em plano/pape
 ### Preparação para pagamento futuro
 
 A estrutura `users/{uid}/billing/subscription` já aceita provedores `manual`, `mercadopago` e `stripe`, status de assinatura, datas e IDs externos. A próxima etapa recomendada é pagamento manual/semiautomático do plano Pro com Mercado Pago.
+
+## Formas de iniciar o OrçaFácil
+
+### Windows — modo fácil
+Dê duplo clique em `iniciar-windows.bat` ou execute:
+
+```bat
+scripts\iniciar-windows.bat
+```
+
+### Linux/macOS
+```bash
+chmod +x iniciar-linux-mac.sh
+./iniciar-linux-mac.sh
+```
+
+### Terminal padrão
+```bash
+npm install
+npm start
+```
+Acesse `http://localhost:8095`. O healthcheck fica em `http://localhost:8095/health` e o diagnóstico em `http://localhost:8095/diagnostico.html`.
+
+### IIS recomendado
+- Physical Path: `C:\MNSOFT\OrcaFacil\public`
+- URL: `http://localhost/OrcaFacil`
+
+### IIS alternativo
+- Physical Path: `C:\MNSOFT\OrcaFacil`
+- URL: `http://localhost/OrcaFacil`
+- A raiz orienta/redireciona para `public/index.html`.
+
+### Firebase Hosting
+```bash
+firebase deploy --only hosting
+```
+
+### Firebase Emulators
+```bash
+npm run emulators:start
+```
+Emulator UI: `http://localhost:4000`.
+
+## Por que não abrir com file://
+Abrir `public/index.html` diretamente via `file://` não é suportado. ES Modules, imports dinâmicos e Firebase SDK modular precisam de HTTP/HTTPS; navegadores podem bloquear imports por CORS. Use `npm start`, IIS ou Firebase Hosting.
+
+## Diagnóstico
+Abra `/diagnostico.html` para validar URL, protocolo, host, localhost, IIS, Firebase Hosting, localStorage, ES Modules, Firebase config e recomendações de correção.
+
+## Scripts úteis
+- `npm run check`: valida sintaxe do servidor.
+- `npm run check:js`: valida sintaxe dos arquivos JavaScript locais.
+- `npm run test:rules`: placeholder/base para testes de regras Firestore com emulador.
+- `npm run test:functions`: placeholder/base para testes de functions com emulador.
+- `npm run test:security`: executa regras e functions.
