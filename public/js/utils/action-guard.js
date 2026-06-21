@@ -1,6 +1,15 @@
 const locks = new Map();
 const buckets = new Map();
 
+export async function withTryCatch(actionName, fn, options = {}){
+  try { return await fn(); }
+  catch (error) {
+    options.onError?.(error, actionName);
+    if (options.rethrow !== false) throw error;
+    return options.fallback;
+  }
+}
+
 export async function withButtonLoading(button, action){
   if(!button || button.disabled) return;
   const original = button.innerHTML;
@@ -10,7 +19,7 @@ export async function withButtonLoading(button, action){
   finally { button.disabled = false; button.innerHTML = original; }
 }
 
-export function preventDoubleSubmit(key, timeoutMs = 1500){
+export function preventDoubleClick(key, timeoutMs = 1500){
   const now = Date.now();
   const until = locks.get(key) || 0;
   if(now < until) return false;
@@ -27,3 +36,5 @@ export function rateLimit(key, limit = 5, windowMs = 60000){
   buckets.set(key, current);
   return true;
 }
+
+export const preventDoubleSubmit = preventDoubleClick;
