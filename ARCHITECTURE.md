@@ -1,0 +1,108 @@
+# Arquitetura do OrçaFácil
+
+## Visão geral
+
+O OrçaFácil é um SaaS freemium front-end first para geração de orçamentos e recibos em PDF. A aplicação principal fica em `public/` e roda como site estático em Firebase Hosting, IIS, Apache, Nginx ou pelo servidor local Node/Fastify.
+
+## Objetivo do projeto
+
+Permitir que autônomos, MEIs e pequenos prestadores criem documentos profissionais pelo navegador/celular, mantendo baixo custo operacional e arquitetura simples, sem build obrigatório e sem backend complexo nesta etapa.
+
+## Módulos principais
+
+- **Landing e aplicação:** `public/index.html`, `public/css/app.css` e módulos ES em `public/js/`.
+- **Autenticação:** Firebase Authentication quando conectado; modo demonstração em `localStorage` quando solicitado.
+- **Persistência:** Cloud Firestore para usuários reais; `localStorage` para demonstração.
+- **PDF:** `jsPDF` e `autoTable` em `public/js/pdf.js`.
+- **Aprovação pública:** `public/aprovar.html` e `public/js/public-approval.js`.
+- **Servidor local opcional:** `server.js`, servindo a pasta `public/` na porta 8095.
+
+## Estrutura de pastas planejada
+
+```text
+/public
+  /css
+    app.css
+  /js
+    /core              Configuração, constantes, eventos e bootstrap leve.
+    /domain            Classes simples do domínio.
+    /services          Casos de uso e orquestração.
+    /repositories      Isolamento de Firebase/localStorage.
+    /ui                Componentes de tela migrados gradualmente.
+    /utils             Utilitários pequenos e puros.
+    app.js             Aplicação atual mantida por compatibilidade.
+    firebase-config.js Configuração Web pública do Firebase.
+  index.html
+  aprovar.html
+```
+
+## Responsabilidade de cada camada
+
+- **Domain:** representa conceitos como `DocumentModel`, `DocumentItem`, `IssuerProfile`, `UserAccount`, `PlanModel` e `PublicQuoteModel`. Não deve acessar DOM, Firebase ou `localStorage`.
+- **Services:** expõe operações de negócio como salvar documento, autenticar, gerar PDF, exportar e gerenciar plano.
+- **Repositories:** encapsula a origem dos dados para evitar Firestore espalhado na UI.
+- **UI:** controla DOM e eventos de tela. A migração será feita em fases para não quebrar o MVP.
+- **Utils:** funções puras para moeda, data, validações, texto, IDs e erros.
+- **Core:** configurações estáticas, constantes e eventos internos.
+
+## Fluxo de criação de documento
+
+1. A UI coleta dados do formulário.
+2. `DocumentModel` normaliza itens, datas, status e totais.
+3. `NumberingService` calcula o próximo número `ORC-000001` ou `REC-000001`.
+4. `DocumentService` salva o documento.
+5. `DocumentRepository` persiste em Firestore ou `localStorage`, conforme o modo ativo.
+6. O histórico recarrega e exibe o documento salvo.
+
+## Fluxo de geração de PDF
+
+1. A UI valida o documento atual.
+2. O documento é salvo para garantir numeração e histórico.
+3. `PdfService` delega para o gerador existente em `public/js/pdf.js`.
+4. O PDF usa dados do emitente e plano atual.
+5. No plano Free, a marca OrçaFácil é exibida; no Pro, a marca é removida.
+
+## Fluxo de autenticação
+
+1. A aplicação inicializa o adapter atual em `public/js/services.js`.
+2. Firebase Authentication é usado quando disponível e quando o usuário não ativa demonstração.
+3. `AuthService` define a interface desejada: `login`, `register`, `logout`, `onAuthChanged` e `getCurrentUser`.
+4. Após login, o perfil e documentos do usuário são carregados.
+
+## Fluxo Firebase/localStorage
+
+- **Firebase:** dados ficam em `users/{uid}`, `users/{uid}/settings/profile`, `users/{uid}/documents/{documentId}` e `publicQuotes/{token}`.
+- **Demonstração:** dados equivalentes ficam no `localStorage` do navegador.
+- A UI deve evoluir para usar services/repositories, sem chamadas diretas ao Firestore.
+
+## Fluxo Free/Pro
+
+1. O plano é lido do documento do usuário/perfil.
+2. `PlanService` centraliza `isFree`, `isPro` e link de upgrade via WhatsApp.
+3. Recursos visuais e PDF reagem ao plano.
+4. A ativação Pro continua manual no Firestore nesta etapa.
+
+## Futuro fluxo de aprovação pública
+
+1. Um orçamento salvo gera token público.
+2. `PublicQuoteModel` representa o índice público.
+3. `PublicApprovalService` carrega o orçamento por token.
+4. O cliente aprova ou recusa sem login.
+5. A decisão atualiza documento e histórico.
+
+## Convenções de nomes
+
+- Arquivos de domínio: `*.model.js`.
+- Services: `*.service.js`.
+- Repositories: `*.repository.js`.
+- UI: `*.ui.js`.
+- Utilitários: nomes curtos por responsabilidade (`currency.js`, `date.js`).
+- Módulos sempre em ES Modules, sem build obrigatório.
+
+## Como evoluir sem quebrar
+
+- Migrar em fases: primeiro criar wrappers e classes, depois mover regras de negócio e por último quebrar `app.js` em telas menores.
+- Manter imports relativos (`./js/app.js`, `./css/app.css`) para suportar subpastas.
+- Evitar dependência de raiz `/`.
+- Não remover modo demonstração, login Firebase, histórico, PDF ou Free/Pro durante refatorações.
+- Preferir alterações pequenas e testáveis.

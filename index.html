@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="3; url=./public/index.html">
+  <title>OrçaFácil — Acessando o sistema</title>
+  <style>
+    :root{color-scheme:light;--primary:#0f172a;--accent:#06b6d4;--soft:#eef9fc}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(135deg,#0f172a,#155e75);color:#fff}.card{width:min(92vw,560px);padding:42px;border-radius:28px;background:rgba(255,255,255,.96);color:#0f172a;box-shadow:0 24px 70px rgba(0,0,0,.28);text-align:center}.brand{display:inline-flex;align-items:center;gap:10px;font-weight:800;font-size:1.8rem}.icon{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:var(--soft);color:#0891b2}.lead{color:#475569;line-height:1.6}.btn{display:inline-block;margin-top:18px;padding:14px 22px;border-radius:999px;background:#06b6d4;color:#06202a;text-decoration:none;font-weight:800}.small{margin-top:18px;color:#64748b;font-size:.95rem}</style>
+</head>
+<body>
+  <main class="card" aria-labelledby="title">
+    <div class="brand"><span class="icon">✓</span><span>Orça<span style="color:#0891b2">Fácil</span></span></div>
+    <h1 id="title">Acessando o sistema</h1>
+    <p class="lead">Você será redirecionado automaticamente para a aplicação em alguns segundos.</p>
+    <a class="btn" href="./public/index.html">Acessar sistema</a>
+    <p class="small">Se o redirecionamento não funcionar, clique no botão acima. Esta página é apenas uma entrada universal para servidores estáticos apontados para a raiz do projeto.</p>
+  </main>
+  <script>window.setTimeout(function(){ window.location.replace('./public/index.html'); }, 800);</script>
+</body>
+</html>
