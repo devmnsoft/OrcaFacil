@@ -62,3 +62,12 @@ Migrar funcionalidades gradualmente das telas grandes para módulos menores; man
 ### Expiração e administração
 
 `checkExpiredSubscriptions` roda diariamente e rebaixa assinaturas vencidas para Free. O super_admin consulta assinaturas, pagamentos, webhooks e pode ativar, renovar, cancelar ou voltar usuários para Free com auditoria.
+
+## CI/CD, release e operação
+
+- Ambientes: local, homologação por Firebase Preview/projeto futuro e produção no projeto `orcafacil-b771c`.
+- Build: `npm run build:prod` gera `dist`, aplica minificação/ofuscação disponível e cria `dist/version.json`.
+- CI: PR/push na `main` rodam validações e publicam artifact `orcafacil-dist`.
+- Deploy: produção é manual via workflow `deploy-production.yml`, com opções separadas para Hosting, Firestore Rules e Functions.
+- Rollback: Firebase Hosting pode usar releases/rollback; IIS restaura backup da pasta `dist` anterior.
+- Monitoramento pós-release: verificar `systemErrors`, `systemLogs`, Telegram, usuários novos, pagamentos, uso Firestore/Auth e evento `SYSTEM_RELEASE_DEPLOYED`.
