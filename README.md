@@ -1053,3 +1053,31 @@ firebase deploy --only hosting
 ```
 
 A versão atual usa pagamento por período no MVP: mensal adiciona 30 dias e anual adiciona 365 dias. Recorrência automática avançada fica para uma etapa futura.
+
+## Operação, build e deploy profissional
+
+### Rodar localmente
+- `npm install`
+- `npm start` ou `npm run dev` na porta 8095.
+- `npm run serve:dist` serve a pasta `dist` após o build.
+
+### Validação e build
+- `npm run validate` executa check de sintaxe, validação JS, build de produção e security check.
+- `npm run build:prod` gera `dist` com arquivos minificados e `dist/version.json`.
+- `npm run security:check` bloqueia arquivos proibidos, source maps e padrões sensíveis em `dist`.
+
+### GitHub Actions
+- `CI` roda em PR e push na `main`, valida o código, gera `dist` e publica artifact.
+- `Firebase Preview` roda em PR e publica canal preview usando `FIREBASE_SERVICE_ACCOUNT_ORCAFACIL` e `FIREBASE_PROJECT_ID`.
+- `Deploy Production` é apenas manual (`workflow_dispatch`) e permite escolher hosting, rules e functions.
+
+### Secrets necessários
+Configure sem expor em logs: `FIREBASE_SERVICE_ACCOUNT_ORCAFACIL`, `FIREBASE_PROJECT_ID`, `MERCADO_PAGO_ACCESS_TOKEN`, `MERCADO_PAGO_WEBHOOK_SECRET`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_DEFAULT_CHAT_ID`.
+
+### Publicação
+- Firebase: veja `DEPLOY.md`; hosting publica `dist`.
+- IIS: produção deve usar `C:\MNSOFT\OrcaFacil\dist`; `public` é desenvolvimento.
+- Rollback, backup e checklist estão em `DEPLOY.md`, `BACKUP.md` e `RELEASE_CHECKLIST.md`.
+
+### Versão
+Consulte `/version.json` no ambiente publicado e Admin Geral > Saúde.

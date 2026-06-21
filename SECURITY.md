@@ -53,3 +53,11 @@ Envie detalhes técnicos, URL afetada, impacto e passos de reprodução para o c
 - Dados sensíveis de cartão, token e identificação do pagador não devem ser persistidos; payloads de webhook são sanitizados em `paymentWebhooks`.
 - Escritas críticas em billing devem ocorrer preferencialmente via Cloud Functions/Admin SDK; Firestore Rules bloqueiam escrita direta de usuários comuns.
 - Eventos financeiros devem gerar `systemEvents`, `auditLogs`, `systemErrors` em falhas críticas e, quando habilitado, fila Telegram.
+
+## Segurança de CI/CD e releases
+
+- O CI executa `npm run security:check` após `npm run build:prod`.
+- A pasta `dist` não deve conter `.env`, source maps, documentação interna, código de testes ou tokens.
+- Segredos ficam somente em GitHub Secrets, Firebase environment config, `.env` local não versionado ou variáveis de Cloud Functions.
+- Deploy de produção é manual por GitHub Actions e deve ser precedido por backup e checklist de release.
+- Vulnerabilidades devem ser reportadas para `comercial@mnsoft.com.br` com passos de reprodução e impacto.

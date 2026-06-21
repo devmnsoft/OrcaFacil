@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = Number(process.env.PORT || 8095);
 const HOST = process.env.HOST || '0.0.0.0';
-const PUBLIC_DIR = process.env.PUBLIC_DIR || 'public';
+const PUBLIC_DIR = process.argv.includes('--dist') ? 'dist' : (process.env.PUBLIC_DIR || 'public');
 const ROOT_DIR = path.resolve(__dirname, PUBLIC_DIR);
 const packageJson = JSON.parse(await fs.readFile(path.join(__dirname, 'package.json'), 'utf8'));
 
