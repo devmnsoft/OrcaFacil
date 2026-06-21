@@ -152,7 +152,7 @@
           <ul class="nav nav-pills gap-2 mb-4" id="tabs">
             <li class="nav-item"><button class="nav-link active" data-tab="homeTab">Início</button></li><li class="nav-item"><button class="nav-link" data-tab="docTab">Novo documento</button></li>
             <li class="nav-item"><button class="nav-link" data-tab="historyTab">Histórico</button></li>
-            <li class="nav-item"><button class="nav-link" data-tab="profileTab">Emitente</button></li><li class="nav-item"><button class="nav-link" data-tab="subscriptionTab">Minha assinatura</button></li><li class="nav-item"><button class="nav-link" data-tab="privacyTab">Privacidade</button></li><li class="nav-item"><span id="proBadge" class="badge text-bg-success d-none mt-2">Pro</span></li>
+            <li class="nav-item"><button class="nav-link" data-tab="profileTab">Emitente</button></li><li class="nav-item"><button class="nav-link" data-tab="subscriptionTab">Minha assinatura</button></li><li class="nav-item"><button class="nav-link" data-tab="privacyTab">Privacidade</button></li><li class="nav-item d-none" id="adminNavItem"><button class="nav-link" data-tab="adminTab"><i class="bi bi-shield-lock"></i> Admin Geral</button></li><li class="nav-item"><span id="proBadge" class="badge text-bg-success d-none mt-2">Pro</span></li>
           </ul>
 
           <div id="homeTab" class="tab-panel"></div>
@@ -212,7 +212,7 @@
             </div></div>
           </div>
 
-          <div id="subscriptionTab" class="tab-panel d-none"></div><div id="privacyTab" class="tab-panel d-none"><div class="card border-0 shadow-sm"><div class="card-body p-4"><h4 class="fw-bold">Privacidade</h4><p>Salvamos dados do emitente, clientes, itens, valores e histórico apenas para gerar PDFs e organizar seus documentos.</p><p>Cada usuário acessa apenas seus próprios dados. Você pode exportar seus documentos em JSON ou CSV a qualquer momento.</p><p>Para solicitar exclusão de conta e dados, entre em contato com a MNSOFT.</p></div></div></div>
+          <div id="subscriptionTab" class="tab-panel d-none"></div><div id="privacyTab" class="tab-panel d-none"><div class="card border-0 shadow-sm"><div class="card-body p-4"><h4 class="fw-bold">Privacidade</h4><p>Salvamos dados do emitente, clientes, itens, valores e histórico apenas para gerar PDFs e organizar seus documentos.</p><p>O sistema também registra eventos técnicos e operacionais, logs de auditoria e erros de JavaScript/Firebase para segurança, suporte, monitoramento e melhoria contínua.</p><p>O Administrador Geral da MNSOFT pode visualizar eventos, erros e ações resumidas; evitamos registrar conteúdo excessivo dos documentos e nunca armazenamos senhas, tokens ou credenciais no OrçaFácil.</p><p>Cada usuário acessa apenas seus próprios dados. Você pode exportar seus documentos em JSON ou CSV e solicitar exclusão de conta e dados entrando em contato com a MNSOFT.</p></div></div></div><div id="adminTab" class="tab-panel d-none"></div>
         </div>
       </div>
     </section>

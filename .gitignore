@@ -5,3 +5,5 @@ node_modules/
 *.log
 .firebase/
 .firebaserc.local
+
+functions/.env
