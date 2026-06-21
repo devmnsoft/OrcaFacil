@@ -411,3 +411,159 @@ A arquitetura planejada está documentada em [`ARCHITECTURE.md`](./ARCHITECTURE.
 - **Fase 1:** documentação, classes de domínio, utilitários e contratos de services/repositories mantendo compatibilidade com os arquivos atuais.
 - **Fase 2:** migração progressiva de regras de negócio para services e repositories.
 - **Fase 3:** separação das telas em módulos de UI e limpeza dos arquivos legados.
+
+## Admin Geral, auditoria e monitoramento
+
+Esta etapa adiciona uma camada administrativa leve ao OrçaFácil sem remover o modo demonstração, Firebase Authentication, Firestore, geração de PDF, histórico, plano Free/Pro, IIS/static hosting, Firebase Hosting ou servidor local na porta `8095`.
+
+### Como ativar o primeiro `super_admin`
+
+1. Faça login normalmente no OrçaFácil para criar o documento em `users/{uid}`.
+2. Acesse o Firebase Console > Firestore.
+3. Abra `users/{uid}` do Administrador Geral da MNSOFT.
+4. Altere/adicone o campo:
+
+```js
+role = "super_admin"
+```
+
+5. Faça logout/login novamente. O menu **Admin Geral** aparecerá apenas para `role == "super_admin"`.
+
+O documento do usuário passa a conter campos administrativos como `uid`, `name`, `email`, `plan`, `role`, `isActive`, `createdAt`, `updatedAt`, `lastLoginAt` e `lastSeenAt`. Usuários comuns não podem alterar `role` nem `plan` diretamente pelas regras do Firestore.
+
+### Coleções de monitoramento
+
+O MVP usa estas coleções no Firestore:
+
+- `systemEvents/{eventId}`: eventos operacionais como cadastro, login, criação de documento, geração de PDF e exportações.
+- `systemErrors/{errorId}`: erros de JavaScript, Firebase, permissões, PDF e promises rejeitadas.
+- `auditLogs/{logId}`: trilha de auditoria das ações principais, salvando dados resumidos para LGPD.
+- `adminSettings/global`: configurações administrativas e preferências de notificação Telegram, sem token.
+- `telegramQueue/{messageId}`: fila segura de mensagens que serão enviadas pela Cloud Function.
+
+### Serviços front-end adicionados
+
+- `public/js/services/monitoring.service.js`: `trackEvent`, `trackError`, `audit`, `setUserContext` e captura global de `error`/`unhandledrejection`.
+- `public/js/services/telegram-notification.service.js`: cria mensagens em `telegramQueue`, sem chamar a API do Telegram e sem token no navegador.
+- `public/js/services/admin.service.js`: consultas e ações administrativas para dashboard, usuários, eventos, erros, auditoria, Telegram e saúde.
+- `public/js/ui/admin.ui.js`: renderiza a aba **Admin Geral** com Dashboard, Usuários, Eventos, Erros/Bugs, Auditoria, Telegram e Saúde do sistema.
+
+### Captura de erros e bugs
+
+A aplicação registra automaticamente:
+
+- erros globais de JavaScript;
+- promises rejeitadas;
+- falhas de permissão ou indisponibilidade do Firebase;
+- falhas de geração de PDF;
+- erros no carregamento do Admin Geral.
+
+Erros técnicos não são exibidos em detalhe para usuários comuns. O super_admin pode visualizar mensagem, stack trace, URL, userAgent, contexto e marcar como resolvido com observação administrativa.
+
+### Auditoria e LGPD
+
+A auditoria cobre login, logout, criação/edição de documentos, geração de PDF, atualização do emitente e exportações JSON/CSV. Para reduzir exposição de dados pessoais, os logs priorizam identificadores e resumos como `documentId`, `documentNumber`, `type`, `total` e `status`, evitando salvar conteúdo detalhado de itens quando não necessário.
+
+Senhas, tokens e credenciais nunca são armazenados pelo OrçaFácil nem exibidos na interface administrativa.
+
+## Telegram seguro com Firebase Cloud Functions
+
+O token do bot Telegram **não fica no front-end** e **não é salvo no Firestore**. O navegador apenas cria registros `pending` em `telegramQueue`; a Cloud Function `sendTelegramNotification` lê a fila e envia a mensagem usando variável de ambiente segura.
+
+### Passo 1: criar bot
+
+No Telegram, converse com **BotFather**, crie um bot e guarde o token em local seguro.
+
+### Passo 2: obter `chat_id`
+
+Envie uma mensagem para o bot e consulte `getUpdates` ou use um método equivalente para descobrir o `chat_id` do destino.
+
+### Passo 3: configurar ambiente
+
+Para Functions v2 com dotenv local, copie `functions/.env.example` para `functions/.env` e preencha:
+
+```env
+TELEGRAM_BOT_TOKEN=seu_token_seguro
+TELEGRAM_DEFAULT_CHAT_ID=seu_chat_id
+```
+
+Não versione `functions/.env`.
+
+Em projetos que ainda usam config clássica, também é possível manter o procedimento operacional documentado:
+
+```bash
+firebase functions:config:set telegram.bot_token="TOKEN"
+firebase functions:config:set telegram.default_chat_id="CHAT_ID"
+```
+
+> Observação: a função implementada lê `TELEGRAM_BOT_TOKEN` e `TELEGRAM_DEFAULT_CHAT_ID` via ambiente/dotenv. Se optar por `functions:config`, ajuste a leitura conforme seu padrão de deploy.
+
+### Passo 4: deploy das Functions
+
+```bash
+cd functions
+npm install
+cd ..
+firebase deploy --only functions
+```
+
+### Passo 5: ativar no Admin Geral
+
+1. Entre como `super_admin`.
+2. Abra **Admin Geral > Telegram**.
+3. Ative **Telegram ativo**.
+4. Informe o `chat_id`.
+5. Escolha os eventos que devem notificar.
+6. Clique em **Enviar teste**.
+
+A mensagem de teste cria um documento em `telegramQueue`. Após a Cloud Function processar, o status muda para `sent` ou `failed`.
+
+### Eventos que podem notificar
+
+- novo usuário cadastrado;
+- novo orçamento ou recibo criado;
+- PDF gerado, se habilitado;
+- orçamento aprovado/recusado;
+- erro crítico;
+- login, se habilitado;
+- exportação de dados, se habilitado;
+- teste administrativo.
+
+## Publicação das regras e hosting
+
+Publique as regras do Firestore:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+Publique o hosting estático:
+
+```bash
+firebase deploy --only hosting
+```
+
+O projeto continua compatível com Firebase Hosting, IIS, Apache, Nginx ou qualquer servidor estático, pois a integração Telegram segura roda separadamente nas Cloud Functions.
+
+## Testes sugeridos para aceite
+
+1. `npm install`
+2. `npm start`
+3. Abrir `http://localhost:8095`
+4. Entrar em modo demonstração e confirmar que documentos/PDF continuam funcionando.
+5. Fazer login Firebase como usuário comum e confirmar que **Admin Geral** não aparece.
+6. Criar orçamento/recibo, gerar PDF e exportar JSON/CSV.
+7. Ativar `role = "super_admin"` no Firestore e fazer login novamente.
+8. Abrir **Admin Geral** e conferir usuários, eventos, erros, auditoria e saúde.
+9. Criar erro proposital em ambiente de teste e confirmar registro em **Erros/Bugs**.
+10. Marcar erro como resolvido.
+11. Alterar plano/role de usuário com confirmação.
+12. Configurar Telegram, enviar teste e verificar `telegramQueue`.
+13. Fazer deploy das Functions e confirmar status `sent`.
+14. Publicar `firestore.rules` e testar acesso comum vs. super_admin.
+
+## Limitações atuais do MVP Admin
+
+- A proteção contra remoção do último `super_admin` está documentada, mas não totalmente automatizada no front-end; mantenha pelo menos uma conta `super_admin` ativa no Firestore.
+- Métricas agregadas são calculadas por consultas recentes e limites de documentos para manter o SaaS leve; relatórios avançados/BI ficam para etapa futura.
+- IP do usuário fica reservado como `ipInfo: null` para futura coleta segura no backend.

@@ -132,8 +132,8 @@ class FirebaseService{
   async ensureUserDocument(name=''){
     if(!this.user)return;
     const ref=this.userRef(); const snap=await getDoc(ref);
-    const base={uid:this.user.uid,name:name||this.user.displayName||this.user.email?.split('@')[0]||'',email:this.user.email||'',plan:'free',updatedAt:serverTimestamp()};
-    await setDoc(ref,snap.exists()?{...base,plan:snap.data().plan||'free'}:{...base,createdAt:serverTimestamp()},{merge:true});
+    const base={uid:this.user.uid,name:name||this.user.displayName||this.user.email?.split('@')[0]||'',email:this.user.email||'',plan:'free',role:'user',isActive:true,updatedAt:serverTimestamp(),lastLoginAt:serverTimestamp(),lastSeenAt:serverTimestamp()};
+    await setDoc(ref,snap.exists()?{...base,plan:snap.data().plan||'free',role:snap.data().role||'user',isActive:snap.data().isActive!==false}:{...base,createdAt:serverTimestamp()},{merge:true});
   }
   async getProfile(){const [userSnap, profileSnap]=await Promise.all([getDoc(this.userRef()),getDoc(this.profileRef())]);return normalizeProfile({...userSnap.data(),...profileSnap.data()},this.user);}
   async saveProfile(profile){const data=normalizeProfile(profile,this.user);const userSnap=await getDoc(this.userRef());const currentPlan=userSnap.exists()?(userSnap.data().plan||'free'):'free';await setDoc(this.profileRef(),{businessName:data.businessName,documentNumber:data.documentNumber,phone:data.phone,email:data.email,address:data.address,pix:data.pix,logoBase64:data.logoBase64,updatedAt:serverTimestamp()},{merge:true});await setDoc(this.userRef(),{name:data.businessName||data.name,email:this.user.email,plan:currentPlan,updatedAt:serverTimestamp()},{merge:true});}

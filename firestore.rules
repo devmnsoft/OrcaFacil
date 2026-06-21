@@ -2,41 +2,64 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
+    function signedOwner(userId) { return request.auth != null && request.auth.uid == userId; }
+    function isSuperAdmin() { return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin'; }
+    function onlyUserSafeFields() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','email','updatedAt','lastLoginAt','lastSeenAt','isActive']); }
     function publicDecisionOnly() {
-      return request.resource.data.diff(resource.data).affectedKeys()
-        .hasOnly(['clientDecision', 'clientDecisionAt', 'clientDecisionNote', 'status'])
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientDecision', 'clientDecisionAt', 'clientDecisionNote', 'status'])
         && request.resource.data.clientDecision in ['pendente', 'aprovado', 'recusado']
         && request.resource.data.status in ['rascunho', 'emitido', 'aprovado', 'cancelado'];
     }
+    function validSeverity() { return request.resource.data.severity in ['info','success','warning','error','critical']; }
 
     match /publicQuotes/{token} {
       allow get: if true;
       allow list: if false;
-      allow create, update: if request.auth != null
-        && request.resource.data.ownerUid == request.auth.uid;
+      allow create, update: if request.auth != null && request.resource.data.ownerUid == request.auth.uid;
       allow delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
     }
 
     match /users/{userId} {
-      allow read, write: if signedOwner(userId);
+      allow get: if signedOwner(userId) || isSuperAdmin();
+      allow list: if isSuperAdmin();
+      allow create: if signedOwner(userId)
+        && request.resource.data.uid == request.auth.uid
+        && (!('role' in request.resource.data) || request.resource.data.role == 'user')
+        && (!('plan' in request.resource.data) || request.resource.data.plan == 'free');
+      allow update: if isSuperAdmin() || (signedOwner(userId) && onlyUserSafeFields());
+      allow delete: if isSuperAdmin();
 
       match /documents/{documentId} {
-        allow get: if signedOwner(userId) || resource.data.publicEnabled == true;
-        allow list: if signedOwner(userId);
-        allow create, delete: if signedOwner(userId);
-        allow update: if signedOwner(userId)
-          || (resource.data.publicEnabled == true
-            && resource.data.type == 'orcamento'
-            && publicDecisionOnly());
+        allow get: if signedOwner(userId) || isSuperAdmin() || resource.data.publicEnabled == true;
+        allow list: if signedOwner(userId) || isSuperAdmin();
+        allow create, delete: if signedOwner(userId) || isSuperAdmin();
+        allow update: if signedOwner(userId) || isSuperAdmin()
+          || (resource.data.publicEnabled == true && resource.data.type == 'orcamento' && publicDecisionOnly());
       }
+      match /settings/{settingId} { allow read, write: if signedOwner(userId) || isSuperAdmin(); }
+    }
 
-      match /settings/{settingId} {
-        allow read, write: if signedOwner(userId);
-      }
+    match /systemEvents/{eventId} {
+      allow read: if isSuperAdmin();
+      allow create: if request.auth != null && validSeverity()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.source in ['frontend','cloud_function','public_page'];
+      allow update, delete: if isSuperAdmin();
+    }
+    match /systemErrors/{errorId} {
+      allow read: if isSuperAdmin();
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && validSeverity();
+      allow update, delete: if isSuperAdmin();
+    }
+    match /auditLogs/{logId} {
+      allow read: if isSuperAdmin();
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isSuperAdmin();
+    }
+    match /adminSettings/{settingId} { allow read, write: if isSuperAdmin(); }
+    match /telegramQueue/{messageId} {
+      allow read, update, delete: if isSuperAdmin();
+      allow create: if isSuperAdmin() || (request.auth != null && request.resource.data.status == 'pending');
     }
   }
 }

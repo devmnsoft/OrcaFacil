@@ -1,0 +1,28 @@
+import { db } from './firebase.service.js';
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
+import { uid, calcDocument } from '../utils.js';
+
+function clean(v){ return JSON.parse(JSON.stringify(v ?? null)); }
+function toDate(v){ return v?.toDate ? v.toDate() : (v ? new Date(v) : null); }
+function todayStart(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
+
+export class AdminService {
+  constructor(currentUser){ this.currentUser=currentUser; }
+  usersCol(){ return collection(db,'users'); }
+  async getCurrentUserRole(){ if(!this.currentUser?.uid || this.currentUser.demo) return this.currentUser?.role||'user'; const s=await getDoc(doc(db,'users',this.currentUser.uid)); return s.exists() ? (s.data().role||'user') : 'user'; }
+  async assertSuperAdmin(){ const role=await this.getCurrentUserRole(); if(role!=='super_admin') throw new Error('Acesso restrito ao super_admin.'); }
+  async listUsers(){ await this.assertSuperAdmin(); const s=await getDocs(query(this.usersCol(), orderBy('createdAt','desc'), limit(200))); return s.docs.map(d=>({id:d.id,...d.data()})); }
+  async getUserDetails(uidValue){ await this.assertSuperAdmin(); const s=await getDoc(doc(db,'users',uidValue)); return s.exists()?{id:s.id,...s.data()}:null; }
+  async updateUserPlan(uidValue, plan){ await this.assertSuperAdmin(); await updateDoc(doc(db,'users',uidValue), { plan, updatedAt:serverTimestamp() }); }
+  async updateUserRole(uidValue, role){ await this.assertSuperAdmin(); await updateDoc(doc(db,'users',uidValue), { role, updatedAt:serverTimestamp() }); }
+  async setUserActive(uidValue, isActive){ await this.assertSuperAdmin(); await updateDoc(doc(db,'users',uidValue), { isActive, updatedAt:serverTimestamp() }); }
+  async listEvents(){ await this.assertSuperAdmin(); const s=await getDocs(query(collection(db,'systemEvents'), orderBy('createdAt','desc'), limit(200))); return s.docs.map(d=>({id:d.id,...d.data()})); }
+  async listErrors(){ await this.assertSuperAdmin(); const s=await getDocs(query(collection(db,'systemErrors'), orderBy('createdAt','desc'), limit(200))); return s.docs.map(d=>({id:d.id,...d.data()})); }
+  async markErrorResolved(errorId, note=''){ await this.assertSuperAdmin(); await updateDoc(doc(db,'systemErrors',errorId), { resolved:true, resolvedAt:serverTimestamp(), resolvedBy:this.currentUser.uid, adminNote:note }); }
+  async listAuditLogs(){ await this.assertSuperAdmin(); const s=await getDocs(query(collection(db,'auditLogs'), orderBy('createdAt','desc'), limit(200))); return s.docs.map(d=>({id:d.id,...d.data()})); }
+  async getAdminSettings(){ await this.assertSuperAdmin(); const s=await getDoc(doc(db,'adminSettings','global')); return { telegramEnabled:false, telegramChatId:'', notifyOnUserRegister:true, notifyOnDocumentCreated:true, notifyOnPdfGenerated:false, notifyOnQuoteApproved:true, notifyOnCriticalError:true, notifyOnLogin:false, notifyOnExport:false, ...(s.exists()?s.data():{}) }; }
+  async saveAdminSettings(settings){ await this.assertSuperAdmin(); await setDoc(doc(db,'adminSettings','global'), { ...clean(settings), updatedAt:serverTimestamp(), updatedBy:this.currentUser.uid }, { merge:true }); }
+  async sendTelegramTest(){ await this.assertSuperAdmin(); const id=uid(); await setDoc(doc(db,'telegramQueue',id), { id, type:'ADMIN_TEST', title:'🧪 Teste OrçaFácil', message:`Mensagem de teste enviada por ${this.currentUser.email}`, severity:'info', payload:{}, status:'pending', createdAt:serverTimestamp(), sentAt:null, error:'' }); return id; }
+  async getDashboardMetrics(){ await this.assertSuperAdmin(); const [users, events, errors]=await Promise.all([this.listUsers(), this.listEvents(), this.listErrors()]); const t=todayStart(); const todayEvents=events.filter(e=>{const d=toDate(e.createdAt); return d && d>=t;}); return { totalUsers:users.length, activeUsers:users.filter(u=>u.isActive!==false).length, freeUsers:users.filter(u=>(u.plan||'free')==='free').length, proUsers:users.filter(u=>u.plan==='pro').length, documentsToday:todayEvents.filter(e=>e.type==='DOCUMENT_CREATED').length, pdfsToday:todayEvents.filter(e=>e.type==='PDF_GENERATED').length, quotes:events.filter(e=>e.metadata?.documentType==='orcamento').length, receipts:events.filter(e=>e.metadata?.documentType==='recibo').length, errors24h:errors.filter(e=>{const d=toDate(e.createdAt); return d && Date.now()-d.getTime()<86400000;}).length, lastCriticalError:errors.find(e=>e.severity==='critical')||null, lastEvents:events.slice(0,8) }; }
+  async getHealth(){ await this.assertSuperAdmin(); const [settings, errors]=await Promise.all([this.getAdminSettings(), this.listErrors()]); return { firebase:true, firestore:true, auth:Boolean(this.currentUser), errors24h:errors.filter(e=>{const d=toDate(e.createdAt); return d && Date.now()-d.getTime()<86400000;}).length, telegramEnabled:settings.telegramEnabled, environment:location.hostname==='localhost'?'Node local/localhost':(location.hostname.includes('web.app')||location.hostname.includes('firebaseapp.com')?'Firebase Hosting':'IIS/static ou servidor estático') }; }
+}
