@@ -16,12 +16,23 @@
     "test:rules": "firebase emulators:exec --only firestore \"node tests/rules/run-rules-tests.mjs\"",
     "test:functions": "firebase emulators:exec --only firestore,functions \"node tests/functions/run-functions-tests.mjs\"",
     "test:security": "npm run test:rules && npm run test:functions",
-    "deploy:hosting": "firebase deploy --only hosting",
+    "deploy:hosting": "npm run build:prod && firebase deploy --only hosting",
     "deploy:rules": "firebase deploy --only firestore:rules",
     "deploy:functions": "firebase deploy --only functions",
-    "deploy": "firebase deploy"
+    "deploy": "npm run build:prod && firebase deploy",
+    "clean": "node scripts/clean.mjs",
+    "build": "npm run clean && node scripts/build.mjs",
+    "build:prod": "npm run clean && node scripts/build.mjs --prod",
+    "security:check": "node scripts/security-check.mjs",
+    "serve:dist": "node scripts/set-public-dir.mjs dist"
   },
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "esbuild": "latest",
+    "terser": "latest",
+    "javascript-obfuscator": "latest"
+  }
 }

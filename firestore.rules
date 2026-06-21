@@ -7,39 +7,57 @@ service cloud.firestore {
     function isSuperAdmin() { return request.auth != null && userDoc(request.auth.uid).role == 'super_admin'; }
     function isNotBlocked() { return request.auth != null && userDoc(request.auth.uid).isActive != false && userDoc(request.auth.uid).isBlocked != true; }
     function onlyUserSafeFields() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','email','phone','updatedAt','lastLoginAt','lastSeenAt','acceptedTermsAt','acceptedPrivacyAt','metadata']); }
-    function publicDecisionOnly() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientDecision', 'clientDecisionAt', 'clientDecisionNote', 'status']) && request.resource.data.clientDecision in ['pendente', 'aprovado', 'recusado'] && request.resource.data.status in ['rascunho', 'emitido', 'aprovado', 'cancelado']; }
     function validSeverity() { return request.resource.data.severity in ['info','success','warning','error','critical']; }
+    function validLogText() { return (!('message' in request.resource.data) || (request.resource.data.message is string && request.resource.data.message.size() <= 2000)) && (!('title' in request.resource.data) || (request.resource.data.title is string && request.resource.data.title.size() <= 200)); }
+    function validPublicQuote() {
+      return request.resource.data.keys().hasOnly(['token','ownerUid','documentId','publicEnabled','issuerPublicName','issuerPublicContact','documentNumber','clientName','issueDate','validUntil','items','subtotal','discount','total','notes','status','clientDecision','clientDecisionAt','clientDecisionNote','createdAt'])
+        && request.resource.data.token is string
+        && request.resource.data.token.size() >= 20
+        && request.resource.data.ownerUid is string
+        && request.resource.data.documentId is string
+        && request.resource.data.publicEnabled is bool
+        && request.resource.data.clientName is string && request.resource.data.clientName.size() <= 160
+        && request.resource.data.notes is string && request.resource.data.notes.size() <= 2000
+        && request.resource.data.status in ['rascunho','emitido','aprovado','cancelado']
+        && request.resource.data.clientDecision in ['pendente','aprovado','recusado'];
+    }
+    function publicDecisionOnly() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientDecision', 'clientDecisionAt', 'clientDecisionNote', 'status'])
+        && request.resource.data.clientDecision in ['pendente', 'aprovado', 'recusado']
+        && request.resource.data.status in ['emitido', 'aprovado', 'cancelado']
+        && (!('clientDecisionNote' in request.resource.data) || request.resource.data.clientDecisionNote.size() <= 1000);
+    }
 
     match /publicQuotes/{token} {
-      allow get: if true;
+      allow get: if resource.data.publicEnabled == true && token == resource.data.token;
       allow list: if false;
-      allow create, update: if isNotBlocked() && request.resource.data.ownerUid == request.auth.uid;
+      allow create: if isNotBlocked() && request.resource.data.ownerUid == request.auth.uid && token == request.resource.data.token && validPublicQuote();
+      allow update: if (isNotBlocked() && resource.data.ownerUid == request.auth.uid && request.resource.data.ownerUid == resource.data.ownerUid && validPublicQuote()) || (resource.data.publicEnabled == true && publicDecisionOnly());
       allow delete: if isNotBlocked() && resource.data.ownerUid == request.auth.uid;
     }
 
     match /users/{userId} {
       allow get: if signedOwner(userId) || isSuperAdmin();
       allow list: if isSuperAdmin();
-      allow create: if signedOwner(userId) && request.resource.data.uid == request.auth.uid && (!('role' in request.resource.data) || request.resource.data.role == 'user') && (!('plan' in request.resource.data) || request.resource.data.plan == 'free') && (!('isBlocked' in request.resource.data) || request.resource.data.isBlocked == false);
+      allow create: if signedOwner(userId) && request.resource.data.uid == request.auth.uid && (!('role' in request.resource.data) || request.resource.data.role == 'user') && (!('plan' in request.resource.data) || request.resource.data.plan == 'free') && (!('isBlocked' in request.resource.data) || request.resource.data.isBlocked == false) && (!('isActive' in request.resource.data) || request.resource.data.isActive == true);
       allow update: if isSuperAdmin() || (signedOwner(userId) && onlyUserSafeFields());
       allow delete: if isSuperAdmin();
 
       match /documents/{documentId} {
-        allow get: if signedOwner(userId) || isSuperAdmin() || resource.data.publicEnabled == true;
-        allow list: if signedOwner(userId) || isSuperAdmin();
+        allow get, list: if signedOwner(userId) || isSuperAdmin();
         allow create, delete: if (signedOwner(userId) && isNotBlocked()) || isSuperAdmin();
-        allow update: if (signedOwner(userId) && isNotBlocked()) || isSuperAdmin() || (resource.data.publicEnabled == true && resource.data.type == 'orcamento' && publicDecisionOnly());
+        allow update: if (signedOwner(userId) && isNotBlocked()) || isSuperAdmin();
       }
       match /settings/{settingId} { allow read, write: if (signedOwner(userId) && isNotBlocked()) || isSuperAdmin(); }
       match /usage/{period} { allow read: if signedOwner(userId) || isSuperAdmin(); allow create, update: if (signedOwner(userId) && isNotBlocked()) || isSuperAdmin(); allow delete: if isSuperAdmin(); }
       match /billing/{docId} { allow read: if signedOwner(userId) || isSuperAdmin(); allow write: if isSuperAdmin(); }
     }
 
-    match /systemLogs/{logId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && request.resource.data.level in ['debug','info','success','warning','error','critical']; allow update, delete: if isSuperAdmin(); }
-    match /systemEvents/{eventId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && validSeverity() && request.resource.data.uid == request.auth.uid && request.resource.data.source in ['frontend','cloud_function','public_page','chatbot']; allow update, delete: if isSuperAdmin(); }
-    match /systemErrors/{errorId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && validSeverity(); allow update, delete: if isSuperAdmin(); }
-    match /auditLogs/{logId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid; allow update, delete: if isSuperAdmin(); }
+    match /systemLogs/{logId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && request.resource.data.level in ['debug','info','success','warning','error','critical'] && validLogText(); allow update, delete: if isSuperAdmin(); }
+    match /systemEvents/{eventId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && validSeverity() && request.resource.data.uid == request.auth.uid && request.resource.data.source in ['frontend','cloud_function','public_page','chatbot'] && validLogText(); allow update, delete: if isSuperAdmin(); }
+    match /systemErrors/{errorId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && validSeverity() && validLogText(); allow update, delete: if isSuperAdmin(); }
+    match /auditLogs/{logId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && validLogText(); allow update, delete: if isSuperAdmin(); }
     match /adminSettings/{settingId} { allow read: if isSuperAdmin() || (request.auth != null && settingId in ['company','contact','chatbot','terms','theme','plans']); allow write: if isSuperAdmin(); }
-    match /telegramQueue/{messageId} { allow read, update, delete: if isSuperAdmin(); allow create: if isSuperAdmin() || (request.auth != null && request.resource.data.status == 'pending'); }
+    match /telegramQueue/{messageId} { allow read, update, delete: if isSuperAdmin(); allow create: if isSuperAdmin() || (request.auth != null && request.resource.data.status == 'pending' && request.resource.data.keys().hasOnly(['id','uid','type','title','message','metadata','status','createdAt']) && request.resource.data.message is string && request.resource.data.message.size() <= 1000); }
   }
 }
