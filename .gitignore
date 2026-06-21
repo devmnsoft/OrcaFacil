@@ -7,3 +7,14 @@ node_modules/
 .firebaserc.local
 
 functions/.env
+
+# Build/produção
+node_modules/
+dist/
+.env
+.env.local
+.env.production
+functions/.env
+*.log
+*.map
+.DS_Store

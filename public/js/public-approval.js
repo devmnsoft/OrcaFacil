@@ -15,20 +15,14 @@ async function loadPublic(){
   const demo = demoIndex()[token];
   if(demo){
     if(!demo.publicEnabled) return unavailable();
-    const docs=JSON.parse(localStorage.getItem(`orcafacil:${demo.ownerUid}:docs`)||'[]');
-    const found=docs.find(d=>d.id===demo.documentId);
-    if(!found || found.type!=='orcamento' || !found.publicEnabled || found.publicToken!==token) return unavailable();
-    currentDoc=found; docRef={demo:true,ownerUid:demo.ownerUid,documentId:demo.documentId}; return render();
+    currentDoc={...demo,id:demo.documentId,type:'orcamento',number:demo.documentNumber,date:demo.issueDate,validUntil:demo.validUntil,clientDoc:'',clientContact:'',clientCity:'',issuerProfile:{name:demo.issuerPublicName,phone:demo.issuerPublicContact}};
+    docRef={demo:true,token}; return render();
   }
   const idxSnap=await getDoc(doc(db,'publicQuotes',token));
   if(!idxSnap.exists() || idxSnap.data().publicEnabled!==true) return unavailable();
-  const idx=idxSnap.data();
-  const ref=doc(db,'users',idx.ownerUid,'documents',idx.documentId);
-  const snap=await getDoc(ref);
-  if(!snap.exists()) return unavailable();
-  const data={id:snap.id,...snap.data()};
-  if(data.type!=='orcamento'||data.publicEnabled!==true||data.publicToken!==token) return unavailable();
-  currentDoc=data; docRef=ref; render();
+  const data=idxSnap.data();
+  currentDoc={...data,id:data.documentId,type:'orcamento',number:data.documentNumber,date:data.issueDate,validUntil:data.validUntil,clientDoc:'',clientContact:'',clientCity:'',issuerProfile:{name:data.issuerPublicName,phone:data.issuerPublicContact}};
+  docRef=doc(db,'publicQuotes',token); render();
 }
 function render(){
   const d=currentDoc, totals=calcDocument(d), p=d.issuerProfile||{};
@@ -46,7 +40,7 @@ function render(){
 async function decide(decision){
   if(!confirm(decision==='aprovado'?'Confirmar aprovação deste orçamento?':'Confirmar recusa deste orçamento?')) return;
   const payload={clientDecision:decision,clientDecisionAt:new Date().toISOString(),clientDecisionNote:$('#decisionNote').value.trim(),status:decision==='aprovado'?'aprovado':'cancelado'};
-  if(docRef.demo){const key=`orcafacil:${docRef.ownerUid}:docs`, docs=JSON.parse(localStorage.getItem(key)||'[]'), i=docs.findIndex(d=>d.id===docRef.documentId);docs[i]={...docs[i],...payload};localStorage.setItem(key,JSON.stringify(docs));currentDoc=docs[i];render();}
+  if(docRef.demo){const index=demoIndex();index[docRef.token]={...index[docRef.token],...payload};localStorage.setItem('orcafacil:publicQuotes',JSON.stringify(index));currentDoc={...currentDoc,...payload};render();}
   else {await updateDoc(docRef,payload);currentDoc={...currentDoc,...payload};render();}
   $('#decisionAlert').innerHTML=`<div class="alert alert-success">${decision==='aprovado'?'Orçamento aprovado com sucesso. O prestador será notificado pelo histórico do sistema.':'Resposta registrada. O prestador poderá visualizar sua mensagem no sistema.'}</div>`;
 }

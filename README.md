@@ -972,3 +972,36 @@ Abra `/diagnostico.html` para validar URL, protocolo, host, localhost, IIS, Fire
 - `npm run test:rules`: placeholder/base para testes de regras Firestore com emulador.
 - `npm run test:functions`: placeholder/base para testes de functions com emulador.
 - `npm run test:security`: executa regras e functions.
+
+## Desenvolvimento x produção segura
+
+- `public/` é a pasta de desenvolvimento usada por `npm start`.
+- `dist/` é gerada por build e deve ser usada em produção para reduzir exposição do código original.
+- Não abra o app por `file://`; use HTTP/HTTPS.
+
+### Comandos
+
+```bash
+npm start
+npm run build:prod
+npm run security:check
+npm run serve:dist
+npm run deploy:rules
+npm run deploy:hosting
+```
+
+### IIS
+
+Em produção, aponte o IIS para `dist/` depois de executar `npm run build:prod`. O arquivo `web.config` é copiado para `dist/` com MIME types e headers de segurança básicos.
+
+### Firebase Hosting
+
+`firebase.json` publica `dist/`, aplica headers de segurança e usa fallback para `index.html`. Use `npm run deploy:hosting` para gerar build e publicar.
+
+### App Check
+
+O front-end possui configuração opcional em `public/js/firebase-config.js`. Em desenvolvimento, mantenha desligado. Em produção, registre o app no Firebase App Check, configure reCAPTCHA Enterprise/v3, valide domínios e só depois aplique enforcement.
+
+### Limite da proteção de JavaScript
+
+JavaScript no navegador não fica invisível nem criptografado de forma real. O build reduz exposição com minificação, remoção de comentários e ausência de source maps; segredos e lógica sensível devem ficar em Firestore Rules e Cloud Functions.
