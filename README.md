@@ -245,3 +245,106 @@ O OrçaFácil salva somente dados necessários para gerar documentos e manter hi
 ## Próxima etapa recomendada
 
 A próxima etapa do produto deve ser **pagamento e ativação automática do plano Pro**, provavelmente com Mercado Pago ou Stripe, mantendo a ativação manual como fallback administrativo.
+
+## Aprovação pública de orçamento
+
+A aprovação pública permite que o prestador gere um link para o cliente visualizar um orçamento sem login, baixar o PDF e registrar uma decisão.
+
+### Como funciona
+
+1. Crie e salve um documento do tipo **Orçamento**.
+2. No histórico ou na tela do documento, clique em **Link de aprovação**.
+3. O OrçaFácil gera ou reutiliza um token público seguro e grava os campos públicos no orçamento.
+4. O modal mostra o link, ações para copiar, abrir e enviar pelo WhatsApp.
+5. O cliente abre `/aprovar.html?t=TOKEN`, visualiza o orçamento, baixa o PDF e pode aprovar ou recusar.
+6. A decisão aparece no histórico e no bloco **Resposta do cliente** ao abrir o orçamento no sistema interno.
+
+### Estrutura `publicQuotes/{token}`
+
+Ao gerar o link, é criado/atualizado um índice público no Firestore:
+
+```js
+{
+  token: "token-unico-seguro",
+  ownerUid: "uid-do-prestador",
+  documentId: "id-do-orcamento",
+  publicEnabled: true,
+  createdAt: "2026-06-21T..."
+}
+```
+
+A página pública usa esse índice para localizar `users/{ownerUid}/documents/{documentId}` e só exibe o documento se ele for um orçamento, estiver público e o token do documento bater com o token da URL.
+
+### Campos adicionados ao documento
+
+```js
+{
+  publicToken: "token-unico-seguro",
+  publicEnabled: true,
+  publicCreatedAt: "2026-06-21T...",
+  publicLastAccessAt: "",
+  clientDecision: "pendente", // pendente | aprovado | recusado
+  clientDecisionAt: null,
+  clientDecisionNote: "",
+  issuerProfile: { /* snapshot do emitente para a página pública/PDF */ }
+}
+```
+
+### Como testar localmente
+
+```bash
+npm install
+npm start
+```
+
+Acesse <http://localhost:8095>, faça login ou use o modo demonstração, crie um orçamento, clique em **Link de aprovação** e abra o link local no formato:
+
+```text
+http://localhost:8095/aprovar.html?t=TOKEN
+```
+
+No modo demonstração, o link público é simulado com `localStorage` e funciona no mesmo navegador/perfil. Para compartilhar um link real com outra pessoa, use Firebase Authentication + Firestore + Hosting.
+
+### Como testar no Firebase Hosting
+
+1. Publique as regras do Firestore:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+2. Publique o Hosting:
+
+```bash
+firebase deploy --only hosting
+```
+
+3. Acesse o domínio do Firebase Hosting e gere um link no formato:
+
+```text
+https://DOMINIO_DO_FIREBASE/aprovar.html?t=TOKEN
+```
+
+### Como copiar, enviar e desativar link
+
+- **Copiar link:** use o botão **Copiar link** no modal ou no histórico.
+- **WhatsApp:** use **Enviar pelo WhatsApp** para abrir `https://wa.me/?text=...` com a mensagem sugerida.
+- **Desativar link:** use **Desativar link**. O orçamento recebe `publicEnabled: false` e `publicQuotes/{token}` também recebe `publicEnabled: false`. A página pública passa a mostrar que o link não está mais disponível.
+
+### Aprovar ou recusar como cliente
+
+Na página pública, o cliente pode preencher uma mensagem opcional e clicar em:
+
+- **Aprovar orçamento:** grava `clientDecision: "aprovado"`, `status: "aprovado"` e a data da decisão.
+- **Recusar orçamento:** grava `clientDecision: "recusado"`, `status: "cancelado"` e a data da decisão.
+
+### Limitações do MVP
+
+- Não há envio automático de e-mail, WhatsApp ou push notification.
+- A segurança pública evita listagem de documentos e limita atualizações públicas aos campos de decisão, mas documentos públicos podem ser lidos por caminho direto enquanto `publicEnabled` estiver ativo.
+- O snapshot `issuerProfile` é gravado no orçamento ao gerar o link para permitir PDF público sem liberar leitura pública das configurações do usuário.
+- O modo demonstração só simula link público no mesmo navegador.
+
+### Próxima etapa recomendada
+
+Implementar notificações para o prestador e um fluxo de conversão de orçamento aprovado em recibo, mantendo o MVP sem Cloud Functions até validar o uso real.

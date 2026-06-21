@@ -2,15 +2,40 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function publicDecisionOnly() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['clientDecision', 'clientDecisionAt', 'clientDecisionNote', 'status'])
+        && request.resource.data.clientDecision in ['pendente', 'aprovado', 'recusado']
+        && request.resource.data.status in ['rascunho', 'emitido', 'aprovado', 'cancelado'];
+    }
+
+    match /publicQuotes/{token} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+    }
+
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if signedOwner(userId);
 
       match /documents/{documentId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow get: if signedOwner(userId) || resource.data.publicEnabled == true;
+        allow list: if signedOwner(userId);
+        allow create, delete: if signedOwner(userId);
+        allow update: if signedOwner(userId)
+          || (resource.data.publicEnabled == true
+            && resource.data.type == 'orcamento'
+            && publicDecisionOnly());
       }
 
       match /settings/{settingId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if signedOwner(userId);
       }
     }
   }

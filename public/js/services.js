@@ -63,9 +63,22 @@ function normalizeDoc(doc){
     discount: totals.discount,
     total: totals.total,
     notes: doc.notes || '',
-    status: doc.status || 'rascunho'
+    status: doc.status || 'rascunho',
+    publicToken: doc.publicToken || '',
+    publicEnabled: Boolean(doc.publicEnabled),
+    publicCreatedAt: doc.publicCreatedAt || '',
+    publicLastAccessAt: doc.publicLastAccessAt || '',
+    clientDecision: doc.clientDecision || 'pendente',
+    clientDecisionAt: doc.clientDecisionAt || null,
+    clientDecisionNote: doc.clientDecisionNote || '',
+    issuerProfile: doc.issuerProfile || null
   };
 }
+
+function publicBaseUrl(){return `${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '/')}`;}
+function publicApprovalUrl(token){return `${publicBaseUrl()}aprovar.html?t=${encodeURIComponent(token)}`;}
+function newPublicToken(){return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}-${uid()}`;}
+
 function normalizeProfile(profile, user){
   return {
     businessName: profile.businessName || profile.name || '',
@@ -99,6 +112,8 @@ class LocalService{
   async nextNumber(type){const docs=await this.listDocuments();const max=docs.filter(d=>d.type===type).reduce((m,d)=>Math.max(m,numberValue(d.number)),0);return formatNumber(type,max+1);}
   async saveDocument(docData){const docs=await this.listDocuments();const id=docData.id||uid();const idx=docs.findIndex(d=>d.id===id);const now=new Date().toISOString();const data={...normalizeDoc(docData),id,updatedAt:now,createdAt:docData.createdAt||now};if(idx>=0)docs[idx]=data;else docs.unshift(data);localStorage.setItem(this.key('docs'),JSON.stringify(docs));return data;}
   async getDocumentById(id){return (await this.listDocuments()).find(d=>d.id===id)||null;}
+  async enablePublicApproval(docData){const token=docData.publicToken||newPublicToken();const now=new Date().toISOString();const saved=await this.saveDocument({...docData,issuerProfile:docData.issuerProfile||await this.getProfile(),publicToken:token,publicEnabled:true,publicCreatedAt:docData.publicCreatedAt||now,publicLastAccessAt:docData.publicLastAccessAt||'',clientDecision:docData.clientDecision||'pendente',clientDecisionAt:docData.clientDecisionAt||null,clientDecisionNote:docData.clientDecisionNote||''});const index=JSON.parse(localStorage.getItem('orcafacil:publicQuotes')||'{}');index[token]={token,ownerUid:this.user?.uid||'demo-user',documentId:saved.id,publicEnabled:true,createdAt:saved.publicCreatedAt};localStorage.setItem('orcafacil:publicQuotes',JSON.stringify(index));return {...saved,publicUrl:publicApprovalUrl(token)};}
+  async disablePublicApproval(docData){if(!docData?.id)throw new Error('Documento não encontrado.');const saved=await this.saveDocument({...docData,publicEnabled:false});if(docData.publicToken){const index=JSON.parse(localStorage.getItem('orcafacil:publicQuotes')||'{}');index[docData.publicToken]={...(index[docData.publicToken]||{}),token:docData.publicToken,ownerUid:this.user?.uid||'demo-user',documentId:docData.id,publicEnabled:false};localStorage.setItem('orcafacil:publicQuotes',JSON.stringify(index));}return saved;}
   async deleteDocument(id){localStorage.setItem(this.key('docs'),JSON.stringify((await this.listDocuments()).filter(d=>d.id!==id)));}
   async duplicateDocument(id){const doc=await this.getDocumentById(id);if(!doc)throw new Error('Documento não encontrado.');return {...doc,id:'',number:'',clientName:`${doc.clientName} (cópia)`};}
 }
@@ -126,6 +141,8 @@ class FirebaseService{
   async nextNumber(type){const docs=await this.listDocuments();const max=docs.filter(d=>d.type===type).reduce((m,d)=>Math.max(m,numberValue(d.number)),0);return formatNumber(type,max+1);}
   async saveDocument(docData){const id=docData.id||uid();const ref=doc(db,'users',this.user.uid,'documents',id);const snap=await getDoc(ref);const now=new Date().toISOString();const data={...normalizeDoc(docData),id,updatedAt:now,createdAt:snap.exists()?(snap.data().createdAt||now):now};await setDoc(ref,data,{merge:true});return data;}
   async getDocumentById(id){const snap=await getDoc(doc(db,'users',this.user.uid,'documents',id));return snap.exists()?{id:snap.id,...snap.data()}:null;}
+  async enablePublicApproval(docData){const token=docData.publicToken||newPublicToken();const now=new Date().toISOString();const saved=await this.saveDocument({...docData,issuerProfile:docData.issuerProfile||await this.getProfile(),publicToken:token,publicEnabled:true,publicCreatedAt:docData.publicCreatedAt||now,publicLastAccessAt:docData.publicLastAccessAt||'',clientDecision:docData.clientDecision||'pendente',clientDecisionAt:docData.clientDecisionAt||null,clientDecisionNote:docData.clientDecisionNote||''});await setDoc(doc(db,'publicQuotes',token),{token,ownerUid:this.user.uid,documentId:saved.id,publicEnabled:true,createdAt:saved.publicCreatedAt||now},{merge:true});return {...saved,publicUrl:publicApprovalUrl(token)};}
+  async disablePublicApproval(docData){if(!docData?.id)throw new Error('Documento não encontrado.');const saved=await this.saveDocument({...docData,publicEnabled:false});if(docData.publicToken){await setDoc(doc(db,'publicQuotes',docData.publicToken),{token:docData.publicToken,ownerUid:this.user.uid,documentId:docData.id,publicEnabled:false},{merge:true});}return saved;}
   async deleteDocument(id){await deleteDoc(doc(db,'users',this.user.uid,'documents',id));}
   async duplicateDocument(id){const doc=await this.getDocumentById(id);if(!doc)throw new Error('Documento não encontrado.');return {...doc,id:'',number:'',clientName:`${doc.clientName} (cópia)`};}
 }
@@ -140,5 +157,7 @@ export const storage = {
   getDocumentById: id => activeService.getDocumentById(id),
   deleteDocument: id => activeService.deleteDocument(id),
   duplicateDocument: id => activeService.duplicateDocument(id),
+  enablePublicApproval: d => activeService.enablePublicApproval(d),
+  disablePublicApproval: d => activeService.disablePublicApproval(d),
   getNextDocumentNumber: type => activeService.nextNumber(type)
 };
