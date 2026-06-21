@@ -1005,3 +1005,51 @@ O front-end possui configuração opcional em `public/js/firebase-config.js`. Em
 ### Limite da proteção de JavaScript
 
 JavaScript no navegador não fica invisível nem criptografado de forma real. O build reduz exposição com minificação, remoção de comentários e ausência de source maps; segredos e lógica sensível devem ficar em Firestore Rules e Cloud Functions.
+
+## Camada comercial: Mercado Pago e Plano Pro
+
+O checkout do OrçaFácil é criado exclusivamente por Firebase Cloud Functions. O front-end chama `createCheckoutPreference`, recebe `init_point`/`sandbox_init_point` e redireciona o usuário; preço, plano e ativação nunca são definidos pelo navegador.
+
+### Configurar `.env` das Functions
+
+Copie `functions/.env.example` para `functions/.env` no ambiente local/CI seguro e configure:
+
+```env
+MERCADO_PAGO_ACCESS_TOKEN=seu_access_token_privado
+MERCADO_PAGO_PUBLIC_KEY=public_key_opcional
+MERCADO_PAGO_WEBHOOK_SECRET=segredo_para_validacao_futura
+APP_BASE_URL=https://orcafacil-b771c.web.app
+```
+
+Nunca publique `functions/.env` nem coloque access token no front-end.
+
+### Configurar Mercado Pago
+
+1. Crie credenciais de sandbox/produção no painel Mercado Pago.
+2. Cadastre as URLs de retorno:
+   - `https://orcafacil-b771c.web.app/pagamento-sucesso.html`
+   - `https://orcafacil-b771c.web.app/pagamento-pendente.html`
+   - `https://orcafacil-b771c.web.app/pagamento-falha.html`
+3. Cadastre a URL de webhook HTTPS da Function `mercadoPagoWebhook`.
+4. Teste mensal (`R$ 19,90`) e anual (`R$ 199,00`) no sandbox.
+
+### Fluxos de teste
+
+- Criar checkout: abra **Minha assinatura**, clique em **Assinar mensal** ou **Assinar anual** e confirme redirecionamento ao Mercado Pago.
+- Testar webhook: envie um payload de pagamento para `mercadoPagoWebhook`; a Function consulta a API Mercado Pago antes de ativar Pro.
+- Validar ativação: pagamento `approved` atualiza `users/{uid}.plan = "pro"`, `users/{uid}/billing/subscription` e `users/{uid}/billing/payments/{paymentId}`.
+- Validar rejeição: pagamento `rejected`/`cancelled` registra payment, mas não ativa Pro.
+- Consultar pagamentos: usuário vê **Minha assinatura**; super_admin vê **Admin Geral > Assinaturas**.
+- Ativar Pro manualmente: **Admin Geral > Usuários > Pro manual** ou **Assinaturas > Renovar**.
+
+### Publicação
+
+```bash
+npm run build:prod
+npm run security:check
+firebase deploy --only functions
+firebase deploy --only firestore:rules
+firebase deploy --only hosting
+```
+
+A versão atual usa pagamento por período no MVP: mensal adiciona 30 dias e anual adiciona 365 dias. Recorrência automática avançada fica para uma etapa futura.

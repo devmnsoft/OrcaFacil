@@ -50,7 +50,9 @@ service cloud.firestore {
       }
       match /settings/{settingId} { allow read, write: if (signedOwner(userId) && isNotBlocked()) || isSuperAdmin(); }
       match /usage/{period} { allow read: if signedOwner(userId) || isSuperAdmin(); allow create, update: if (signedOwner(userId) && isNotBlocked()) || isSuperAdmin(); allow delete: if isSuperAdmin(); }
-      match /billing/{docId} { allow read: if signedOwner(userId) || isSuperAdmin(); allow write: if isSuperAdmin(); }
+      match /billing/{docId} { allow read: if signedOwner(userId) || isSuperAdmin(); allow write: if isSuperAdmin();
+        match /payments/{paymentId} { allow read: if signedOwner(userId) || isSuperAdmin(); allow write: if isSuperAdmin(); }
+      }
     }
 
     match /systemLogs/{logId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && request.resource.data.level in ['debug','info','success','warning','error','critical'] && validLogText(); allow update, delete: if isSuperAdmin(); }
@@ -58,6 +60,7 @@ service cloud.firestore {
     match /systemErrors/{errorId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && validSeverity() && validLogText(); allow update, delete: if isSuperAdmin(); }
     match /auditLogs/{logId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && validLogText(); allow update, delete: if isSuperAdmin(); }
     match /adminSettings/{settingId} { allow read: if isSuperAdmin() || (request.auth != null && settingId in ['company','contact','chatbot','terms','theme','plans']); allow write: if isSuperAdmin(); }
+    match /paymentWebhooks/{webhookId} { allow read: if isSuperAdmin(); allow write: if isSuperAdmin(); }
     match /telegramQueue/{messageId} { allow read, update, delete: if isSuperAdmin(); allow create: if isSuperAdmin() || (request.auth != null && request.resource.data.status == 'pending' && request.resource.data.keys().hasOnly(['id','uid','type','title','message','metadata','status','createdAt']) && request.resource.data.message is string && request.resource.data.message.size() <= 1000); }
   }
 }
