@@ -348,3 +348,66 @@ Na página pública, o cliente pode preencher uma mensagem opcional e clicar em:
 ### Próxima etapa recomendada
 
 Implementar notificações para o prestador e um fluxo de conversão de orçamento aprovado em recibo, mantendo o MVP sem Cloud Functions até validar o uso real.
+
+## Formas de rodar o OrçaFácil
+
+### 1. Com Node local
+
+```bash
+npm install
+npm start
+```
+
+Acesse:
+
+- <http://localhost:8095>
+- <http://localhost:8095/public/index.html> também funciona quando servido por um servidor estático apontado para a raiz.
+
+### 2. Sem Node, usando servidor estático
+
+A aplicação principal está em `public/` e pode ser servida por IIS, Apache, Nginx, Live Server, Firebase Hosting ou hospedagem comum. Use sempre um servidor HTTP; abrir `file://` pode bloquear módulos ES em alguns navegadores.
+
+### 3. IIS apontando para a raiz do projeto
+
+1. Copie todo o projeto para `C:\inetpub\wwwroot\orcafacil`.
+2. Garanta que o `index.html` da raiz e o `web.config` estejam presentes.
+3. Configure **Documento Padrão** para `index.html`.
+4. Acesse `http://servidor/orcafacil`.
+5. A entrada da raiz redireciona para `public/index.html`.
+
+### 4. IIS apontando diretamente para `public`
+
+1. Copie a pasta `public` para `C:\inetpub\wwwroot\orcafacil` ou aponte o site diretamente para essa pasta.
+2. Configure **Documento Padrão** para `index.html`.
+3. Acesse `http://servidor/orcafacil`.
+
+**Recomendação:** para produção estática simples no IIS, aponte o site diretamente para a pasta `public`, pois ela contém a aplicação real e evita redirecionamento intermediário.
+
+### MIME types no IIS
+
+Se o IIS bloquear módulos ES, arquivos `.js` ou `.json`, confirme os MIME types:
+
+- `.js` como `application/javascript`.
+- `.mjs` como `application/javascript`.
+- `.json` como `application/json`.
+
+O `web.config` da raiz já inclui uma configuração estática para esses tipos e um fallback básico para `public/index.html`. Ele não depende de ASP.NET.
+
+### Domínios autorizados no Firebase Auth
+
+Firebase Authentication exige que o domínio esteja autorizado no Firebase Console:
+
+1. Acesse **Firebase Console > Authentication > Settings > Authorized domains**.
+2. Adicione o domínio do IIS, Apache, Nginx ou hospedagem usada.
+3. Para testes locais, mantenha/adiciona `localhost`.
+4. Para domínio próprio, adicione exatamente o domínio público usado pelos usuários.
+
+## Arquitetura front-end modular
+
+A arquitetura planejada está documentada em [`ARCHITECTURE.md`](./ARCHITECTURE.md). Nesta fase foram adicionadas as pastas `public/js/core`, `public/js/domain`, `public/js/services`, `public/js/repositories`, `public/js/ui` e `public/js/utils` para permitir migração gradual sem quebrar o MVP atual.
+
+### Fases de evolução
+
+- **Fase 1:** documentação, classes de domínio, utilitários e contratos de services/repositories mantendo compatibilidade com os arquivos atuais.
+- **Fase 2:** migração progressiva de regras de negócio para services e repositories.
+- **Fase 3:** separação das telas em módulos de UI e limpeza dos arquivos legados.
