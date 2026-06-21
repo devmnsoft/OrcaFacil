@@ -851,3 +851,69 @@ As regras permitem que usuário comum crie seus próprios logs, mas não leia lo
 
 ### LGPD e segurança
 Não salve senhas, tokens, credenciais ou dados sensíveis nos logs. Use metadados mínimos e previews curtos para perguntas do chatbot. Dados técnicos completos ficam restritos ao `super_admin`.
+
+## Camada SaaS de gestão (Free/Pro)
+
+O OrçaFácil agora padroniza `users/{uid}` com plano (`free`/`pro`), papel (`user`, `admin`, `super_admin`), status de ativação/bloqueio, aceite de termos/privacidade, métricas de login e metadados de navegador. O primeiro login cria/atualiza o documento do usuário sem permitir que o usuário comum altere `plan`, `role`, `isActive` ou `isBlocked`.
+
+### Ativar `super_admin`
+
+No Firestore, altere manualmente o documento `users/{uid}` da conta MNSOFT para:
+
+```json
+{ "role": "super_admin", "isActive": true, "isBlocked": false }
+```
+
+Depois faça logout/login. A aba **Admin Geral** ficará disponível apenas para `super_admin`.
+
+### Planos, limites e uso mensal
+
+As regras padrão ficam no front-end em `public/js/services/plan-limit.service.js` e podem ser espelhadas em `adminSettings/plans`:
+
+- Free: 20 documentos/mês, 20 PDFs/mês, PDF com marca OrçaFácil, histórico operacional limitado.
+- Pro: sem limites práticos no MVP, sem marca e com aprovação pública.
+
+O uso mensal é salvo em `users/{uid}/usage/{yyyyMM}` com contadores de documentos, orçamentos, recibos, PDFs, links públicos, exportações, chatbot e última atividade. Para testar o limite Free, ajuste manualmente `documentsCreated` ou `pdfGenerated` para `20` no período atual (ex.: `202606`) e tente salvar/gerar PDF; o sistema mostra a mensagem de upgrade Pro e abre o fluxo de WhatsApp.
+
+### Bloquear/desbloquear usuário
+
+Em **Admin Geral > Usuários**, use **Bloquear** e informe o motivo. O login bloqueado não carrega o dashboard e mostra contatos da MNSOFT. Use **Desbloquear** para liberar novamente. Toda ação gera auditoria (`USER_BLOCKED_BY_ADMIN`, `USER_UNBLOCKED_BY_ADMIN`, `USER_DISABLED_BY_ADMIN`, `USER_ENABLED_BY_ADMIN`).
+
+### Alterar plano e ativar Pro manual
+
+Em **Admin Geral > Usuários**, altere o campo de plano ou use **Pro manual**. A ativação manual cria/atualiza `users/{uid}/billing/subscription` com `provider: "manual"`, `status: "active"` e `plan: "pro"`, registrando `SUBSCRIPTION_MANUAL_ACTIVATION`.
+
+### Termos e privacidade
+
+As páginas públicas ficam em `public/termos.html` e `public/privacidade.html`. No primeiro login real, o usuário precisa aceitar o modal obrigatório; o aceite grava `acceptedTermsAt` e `acceptedPrivacyAt` e registra auditoria `TERMS_ACCEPTED` e `PRIVACY_ACCEPTED`.
+
+### WhatsApp, empresa e suporte
+
+O contato padrão da MNSOFT usa `5591981809035` e `comercial@mnsoft.com.br`. Em **Admin Geral > Configurações**, o `super_admin` altera `adminSettings/contact`. A seção **Ajuda e Suporte** reúne chatbot, WhatsApp, e-mail, FAQ, termos e privacidade.
+
+### Métricas e backup administrativo
+
+**Admin Geral** mostra usuários, Free/Pro, documentos, PDFs, erros, eventos, auditoria e saúde. **Admin Geral > Backup** exporta CSV de usuários, logs, erros e auditoria sem senhas ou tokens e registra auditoria administrativa.
+
+### Publicar Firestore Rules e Hosting
+
+```bash
+firebase deploy --only firestore:rules
+firebase deploy --only hosting
+```
+
+As regras protegem dados por usuário, impedem alterações comuns em plano/papel/status, liberam configurações públicas autenticadas e restringem logs/auditoria/configurações sensíveis ao `super_admin`. Limitação do MVP: como ainda não há custom claims, a regra consulta `users/{uid}.role`; mantenha esse documento protegido e altere `role` apenas por administrador confiável.
+
+### Testes recomendados de segurança e limites
+
+1. `npm install`
+2. `npm start`
+3. Acesse `http://localhost:8095`
+4. Crie usuário comum, aceite termos, crie orçamento/recibo e gere PDF.
+5. Simule limite Free em `users/{uid}/usage/{yyyyMM}` e valide a mensagem de upgrade.
+6. Ative `super_admin`, acesse Admin Geral, bloqueie/desbloqueie usuário, altere plano, exporte backup e confira auditoria.
+7. Teste modo demonstração, publicação estática/IIS e Firebase Hosting.
+
+### Preparação para pagamento futuro
+
+A estrutura `users/{uid}/billing/subscription` já aceita provedores `manual`, `mercadopago` e `stripe`, status de assinatura, datas e IDs externos. A próxima etapa recomendada é pagamento manual/semiautomático do plano Pro com Mercado Pago.
