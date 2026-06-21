@@ -26,6 +26,54 @@ Acesse: <http://localhost:8095>
 
 O servidor local usa a porta **8095**.
 
+
+## Importante: não abrir pelo file://
+
+Não abra o OrçaFácil diretamente pelo caminho local, por exemplo `file:///C:/MNSOFT/OrcaFacil/public/index.html`. O projeto usa JavaScript puro com **ES Modules**, imports entre arquivos, Firebase SDK modular, jsPDF/autoTable e recursos do navegador que exigem uma origem HTTP/HTTPS confiável. Por segurança, navegadores modernos tratam páginas `file://` como origem `null` e bloqueiam imports locais, gerando erros de CORS.
+
+Use sempre um servidor estático HTTP ou HTTPS. Exemplos corretos:
+
+### Com Node/Fastify local
+
+```bash
+npm install
+npm start
+```
+
+Acesse:
+
+<http://localhost:8095>
+
+Também é possível validar a URL explícita:
+
+<http://localhost:8095/public/index.html>
+
+### Com IIS apontando para `public`
+
+Physical Path:
+
+```text
+C:\MNSOFT\OrcaFacil\public
+```
+
+Acesse:
+
+<http://localhost/OrcaFacil>
+
+### Com IIS apontando para a raiz
+
+Physical Path:
+
+```text
+C:\MNSOFT\OrcaFacil
+```
+
+Acesse:
+
+<http://localhost/OrcaFacil>
+
+Nesse cenário, o `index.html` da raiz detecta `file://`, orienta o usuário quando necessário e, em HTTP/HTTPS, redireciona para `public/index.html`.
+
 ## Modo demonstração
 
 No Windows, use também:
@@ -150,6 +198,7 @@ users/{uid}/documents/{documentId}
 3. Altere o campo `plan` para `pro`.
 4. Recarregue o sistema e gere um PDF.
 5. O PDF não deve exibir a marca OrçaFácil.
+
 
 ## Modo demonstração
 
@@ -367,31 +416,64 @@ Acesse:
 
 A aplicação principal está em `public/` e pode ser servida por IIS, Apache, Nginx, Live Server, Firebase Hosting ou hospedagem comum. Use sempre um servidor HTTP; abrir `file://` pode bloquear módulos ES em alguns navegadores.
 
-### 3. IIS apontando para a raiz do projeto
+### 3. IIS apontando diretamente para `public` (recomendado para produção)
 
-1. Copie todo o projeto para `C:\inetpub\wwwroot\orcafacil`.
-2. Garanta que o `index.html` da raiz e o `web.config` estejam presentes.
-3. Configure **Documento Padrão** para `index.html`.
-4. Acesse `http://servidor/orcafacil`.
-5. A entrada da raiz redireciona para `public/index.html`.
+1. Abra o **IIS Manager**.
+2. Crie um site ou aplicação para o OrçaFácil.
+3. Configure **Physical Path** como:
 
-### 4. IIS apontando diretamente para `public`
+   ```text
+   C:\MNSOFT\OrcaFacil\public
+   ```
 
-1. Copie a pasta `public` para `C:\inetpub\wwwroot\orcafacil` ou aponte o site diretamente para essa pasta.
-2. Configure **Documento Padrão** para `index.html`.
-3. Acesse `http://servidor/orcafacil`.
+4. Configure o documento padrão como `index.html`.
+5. Garanta os MIME types:
+   - `.js` `application/javascript`
+   - `.mjs` `application/javascript`
+   - `.json` `application/json`
+   - `.css` `text/css`
+6. Acesse: <http://localhost/OrcaFacil>
 
-**Recomendação:** para produção estática simples no IIS, aponte o site diretamente para a pasta `public`, pois ela contém a aplicação real e evita redirecionamento intermediário.
+### 4. IIS apontando para a raiz do projeto
+
+1. Abra o **IIS Manager**.
+2. Crie um site ou aplicação com **Physical Path**:
+
+   ```text
+   C:\MNSOFT\OrcaFacil
+   ```
+
+3. Configure o documento padrão como `index.html`.
+4. Acesse: <http://localhost/OrcaFacil>
+5. O `index.html` da raiz redireciona para `public/index.html` quando a origem é HTTP/HTTPS.
+
+**Recomendação:** em produção, aponte o IIS diretamente para `public`. Isso publica apenas os arquivos da aplicação e evita expor arquivos de desenvolvimento da raiz.
 
 ### MIME types no IIS
 
-Se o IIS bloquear módulos ES, arquivos `.js` ou `.json`, confirme os MIME types:
+Os arquivos `web.config` da raiz e de `public/` configuram arquivos estáticos sem depender de ASP.NET:
 
 - `.js` como `application/javascript`.
 - `.mjs` como `application/javascript`.
 - `.json` como `application/json`.
+- `.css` como `text/css`.
+- `index.html` como documento padrão.
 
-O `web.config` da raiz já inclui uma configuração estática para esses tipos e um fallback básico para `public/index.html`. Ele não depende de ASP.NET.
+### Diagnóstico de publicação
+
+Após publicar, abra:
+
+```text
+/diagnostico.html
+```
+
+ou, se o IIS estiver apontando para a raiz:
+
+```text
+/public/diagnostico.html
+```
+
+A página mostra URL atual, protocolo, localhost, indícios de IIS/Firebase Hosting, teste de ES Module, Firebase config e `localStorage`, sem exigir login.
 
 ### Domínios autorizados no Firebase Auth
 

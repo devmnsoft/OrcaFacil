@@ -3,19 +3,42 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="refresh" content="3; url=./public/index.html">
-  <title>OrçaFácil — Acessando o sistema</title>
+  <title>OrçaFácil — Acesso ao sistema</title>
   <style>
-    :root{color-scheme:light;--primary:#0f172a;--accent:#06b6d4;--soft:#eef9fc}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(135deg,#0f172a,#155e75);color:#fff}.card{width:min(92vw,560px);padding:42px;border-radius:28px;background:rgba(255,255,255,.96);color:#0f172a;box-shadow:0 24px 70px rgba(0,0,0,.28);text-align:center}.brand{display:inline-flex;align-items:center;gap:10px;font-weight:800;font-size:1.8rem}.icon{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:var(--soft);color:#0891b2}.lead{color:#475569;line-height:1.6}.btn{display:inline-block;margin-top:18px;padding:14px 22px;border-radius:999px;background:#06b6d4;color:#06202a;text-decoration:none;font-weight:800}.small{margin-top:18px;color:#64748b;font-size:.95rem}</style>
+    :root{color-scheme:light;--primary:#0f172a;--secondary:#155e75;--accent:#06b6d4;--accent-dark:#0891b2;--soft:#eef9fc;--text:#0f172a;--muted:#64748b;--border:#dbeafe}*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(circle at top left,rgba(6,182,212,.28),transparent 34%),linear-gradient(135deg,var(--primary),var(--secondary));color:#fff}.wrap{width:min(1120px,94vw);margin:0 auto;padding:48px 0;display:grid;place-items:center;min-height:100vh}.card{width:100%;max-width:880px;padding:38px;border-radius:30px;background:rgba(255,255,255,.97);color:var(--text);box-shadow:0 28px 80px rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.5)}.brand{display:inline-flex;align-items:center;gap:12px;font-weight:900;font-size:1.95rem;letter-spacing:-.04em}.icon{display:grid;place-items:center;width:48px;height:48px;border-radius:16px;background:var(--soft);color:var(--accent-dark);box-shadow:inset 0 0 0 1px rgba(6,182,212,.16)}h1{margin:28px 0 12px;font-size:clamp(2rem,4vw,3.3rem);line-height:1.05;letter-spacing:-.06em}.lead{font-size:1.08rem;line-height:1.7;color:#475569;max-width:760px}.alert{margin:24px 0;padding:18px 20px;border-radius:18px;background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12}.ok{background:#ecfeff;border-color:#a5f3fc;color:#164e63}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:24px 0}.step{padding:16px;border:1px solid var(--border);border-radius:18px;background:#f8fafc}.step strong{display:block;margin-bottom:8px}.step code,.alert code{display:inline-block;padding:2px 7px;border-radius:8px;background:#e2e8f0;color:#0f172a}.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 22px;border-radius:999px;background:var(--accent);color:#06202a;text-decoration:none;font-weight:900;border:0}.btn.secondary{background:#e2e8f0;color:#0f172a}.small{margin-top:20px;color:var(--muted);font-size:.95rem}@media(max-width:760px){.card{padding:26px}.grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
-  <main class="card" aria-labelledby="title">
-    <div class="brand"><span class="icon">✓</span><span>Orça<span style="color:#0891b2">Fácil</span></span></div>
-    <h1 id="title">Acessando o sistema</h1>
-    <p class="lead">Você será redirecionado automaticamente para a aplicação em alguns segundos.</p>
-    <a class="btn" href="./public/index.html">Acessar sistema</a>
-    <p class="small">Se o redirecionamento não funcionar, clique no botão acima. Esta página é apenas uma entrada universal para servidores estáticos apontados para a raiz do projeto.</p>
+  <main class="wrap">
+    <section class="card" aria-labelledby="title">
+      <div class="brand"><span class="icon">✓</span><span>Orça<span style="color:#0891b2">Fácil</span></span></div>
+      <h1 id="title">Acesso seguro ao sistema</h1>
+      <p class="lead" id="intro">O OrçaFácil é uma aplicação estática com JavaScript ES Modules, Firebase e geração de PDF. Ela deve ser servida por HTTP ou HTTPS.</p>
+      <div id="statusBox" class="alert" role="status"></div>
+      <div class="grid" aria-label="Formas corretas de acesso">
+        <div class="step"><strong>Node/Fastify local</strong><code>npm install</code><br><code>npm start</code><br>Acesse <code>http://localhost:8095</code>.</div>
+        <div class="step"><strong>IIS / Apache / Nginx</strong>Aponte o site para <code>public</code> em produção. Se apontar para a raiz, esta entrada redireciona para <code>public/index.html</code>.</div>
+        <div class="step"><strong>Firebase Hosting</strong>Publique a pasta <code>public</code> com <code>firebase deploy --only hosting</code>.</div>
+      </div>
+      <div class="actions">
+        <a class="btn" id="accessButton" href="./public/index.html">Acessar sistema</a>
+        <a class="btn secondary" href="./public/diagnostico.html">Abrir diagnóstico</a>
+      </div>
+      <p class="small">Esta página não carrega <code>app.js</code> nem importa módulos. Assim, ao abrir por <code>file://</code>, ela evita a cascata de erros de CORS e mostra as instruções corretas.</p>
+    </section>
   </main>
-  <script>window.setTimeout(function(){ window.location.replace('./public/index.html'); }, 800);</script>
+  <script>
+    (function () {
+      var isFile = window.location.protocol === 'file:';
+      var box = document.getElementById('statusBox');
+      if (isFile) {
+        box.innerHTML = '<strong>Abertura por file:// detectada.</strong><br>O navegador bloqueia imports ES Modules, Firebase SDK modular e alguns recursos locais por segurança. Não abra <code>public/index.html</code> diretamente no Explorer; rode <code>npm start</code> ou publique em um servidor HTTP/HTTPS.';
+        return;
+      }
+      box.className = 'alert ok';
+      box.innerHTML = '<strong>Origem HTTP/HTTPS detectada.</strong><br>Você pode acessar o sistema agora. O redirecionamento automático será feito para <code>./public/index.html</code>.';
+      window.setTimeout(function () { window.location.replace('./public/index.html'); }, 900);
+    }());
+  </script>
 </body>
 </html>
