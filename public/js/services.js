@@ -1,4 +1,5 @@
 import { auth, db } from './firebase-config.js';
+import { BillingService } from './services/billing.service.js';
 import { uid, calcDocument } from './utils.js';
 import {
   createUserWithEmailAndPassword,
@@ -149,6 +150,9 @@ class LocalService{
   async enablePublicApproval(docData){const token=docData.publicToken||newPublicToken();const now=new Date().toISOString();const saved=await this.saveDocument({...docData,issuerProfile:docData.issuerProfile||await this.getProfile(),publicToken:token,publicEnabled:true,publicCreatedAt:docData.publicCreatedAt||now,publicLastAccessAt:docData.publicLastAccessAt||'',clientDecision:docData.clientDecision||'pendente',clientDecisionAt:docData.clientDecisionAt||null,clientDecisionNote:docData.clientDecisionNote||''});const index=JSON.parse(localStorage.getItem('orcafacil:publicQuotes')||'{}');index[token]=publicQuotePayload(token,saved,await this.getProfile(),this.user?.uid||'demo-user');localStorage.setItem('orcafacil:publicQuotes',JSON.stringify(index));return {...saved,publicUrl:publicApprovalUrl(token)};}
   async disablePublicApproval(docData){if(!docData?.id)throw new Error('Documento não encontrado.');const saved=await this.saveDocument({...docData,publicEnabled:false});if(docData.publicToken){const index=JSON.parse(localStorage.getItem('orcafacil:publicQuotes')||'{}');index[docData.publicToken]={...(index[docData.publicToken]||{}),token:docData.publicToken,ownerUid:this.user?.uid||'demo-user',documentId:docData.id,publicEnabled:false};localStorage.setItem('orcafacil:publicQuotes',JSON.stringify(index));}return saved;}
   async deleteDocument(id){localStorage.setItem(this.key('docs'),JSON.stringify((await this.listDocuments()).filter(d=>d.id!==id)));}
+  async getSubscription(){return {status:'none',plan:(await this.getProfile()).plan||'free',billingCycle:'monthly'};}
+  async listPayments(){return [];}
+  async createCheckoutPreference(){throw new Error('Checkout indisponível no modo demonstração. Faça login com Firebase.');}
   async duplicateDocument(id){const doc=await this.getDocumentById(id);if(!doc)throw new Error('Documento não encontrado.');return {...doc,id:'',number:'',clientName:`${doc.clientName} (cópia)`};}
 }
 
@@ -186,6 +190,10 @@ class FirebaseService{
   async enablePublicApproval(docData){const token=docData.publicToken||newPublicToken();const now=new Date().toISOString();const saved=await this.saveDocument({...docData,issuerProfile:docData.issuerProfile||await this.getProfile(),publicToken:token,publicEnabled:true,publicCreatedAt:docData.publicCreatedAt||now,publicLastAccessAt:docData.publicLastAccessAt||'',clientDecision:docData.clientDecision||'pendente',clientDecisionAt:docData.clientDecisionAt||null,clientDecisionNote:docData.clientDecisionNote||''});await setDoc(doc(db,'publicQuotes',token),publicQuotePayload(token,saved,await this.getProfile(),this.user.uid),{merge:true});await this.incrementUsage({publicLinksCreated:1});return {...saved,publicUrl:publicApprovalUrl(token)};}
   async disablePublicApproval(docData){if(!docData?.id)throw new Error('Documento não encontrado.');const saved=await this.saveDocument({...docData,publicEnabled:false});if(docData.publicToken){await setDoc(doc(db,'publicQuotes',docData.publicToken),{token:docData.publicToken,ownerUid:this.user.uid,documentId:docData.id,publicEnabled:false},{merge:true});}return saved;}
   async deleteDocument(id){await deleteDoc(doc(db,'users',this.user.uid,'documents',id));}
+
+  async getSubscription(){return new BillingService(this.user).getSubscription();}
+  async listPayments(max=10){return new BillingService(this.user).listPayments(max);}
+  async createCheckoutPreference(billingCycle='monthly'){return new BillingService(this.user).createCheckoutPreference(billingCycle);}
   async duplicateDocument(id){const doc=await this.getDocumentById(id);if(!doc)throw new Error('Documento não encontrado.');return {...doc,id:'',number:'',clientName:`${doc.clientName} (cópia)`};}
 }
 

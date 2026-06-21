@@ -43,3 +43,13 @@ O projeto está preparado em `public/js/firebase-config.js` com `APP_CHECK_ENABL
 ## Reporte de vulnerabilidades
 
 Envie detalhes técnicos, URL afetada, impacto e passos de reprodução para o canal oficial de suporte da MNSOFT/OrçaFácil.
+
+## Segurança financeira e Mercado Pago
+
+- O `MERCADO_PAGO_ACCESS_TOKEN` deve existir somente em Firebase Cloud Functions/variáveis seguras.
+- O front-end nunca define preço final, nunca chama a API Mercado Pago com credencial privada e nunca ativa Pro diretamente.
+- A Function `createCheckoutPreference` busca o preço em `adminSettings/plans` ou usa fallback seguro de servidor.
+- O webhook `mercadoPagoWebhook` deve consultar a API Mercado Pago antes de aprovar qualquer pagamento.
+- Dados sensíveis de cartão, token e identificação do pagador não devem ser persistidos; payloads de webhook são sanitizados em `paymentWebhooks`.
+- Escritas críticas em billing devem ocorrer preferencialmente via Cloud Functions/Admin SDK; Firestore Rules bloqueiam escrita direta de usuários comuns.
+- Eventos financeiros devem gerar `systemEvents`, `auditLogs`, `systemErrors` em falhas críticas e, quando habilitado, fila Telegram.

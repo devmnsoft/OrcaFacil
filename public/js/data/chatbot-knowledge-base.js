@@ -12,3 +12,13 @@ export const CHATBOT_KNOWLEDGE_BASE = [
   { category:'Publicação IIS/Firebase', questions:['publicar','firebase hosting','iis','servidor local'], answer:'O OrçaFácil funciona como aplicação estática no Firebase Hosting/IIS e também com servidor Node local na porta 8095 para testes.' },
   { category:'Limitações do sistema', questions:['nota fiscal','validade fiscal','contador','imposto'], answer:'O OrçaFácil gera orçamentos e recibos simples. Para validade fiscal, nota fiscal ou obrigação tributária, consulte seu contador.' }
 ];
+
+export const billingKnowledge = [
+  { q: 'Como assinar o Pro?', a: 'Abra Minha assinatura e escolha Assinar mensal ou Assinar anual. O checkout é feito pelo Mercado Pago com confirmação segura.' },
+  { q: 'Como renovar?', a: 'Abra Minha assinatura e clique novamente no ciclo desejado. Se precisar de ajuda, fale com a MNSOFT pelo WhatsApp.' },
+  { q: 'O que muda no Pro?', a: 'O Pro remove a marca do PDF, libera documentos e PDFs ilimitados, histórico completo, aprovação pública quando disponível e suporte prioritário.' },
+  { q: 'Meu pagamento foi aprovado?', a: 'Consulte Minha assinatura. O assistente não consulta dados sensíveis de pagamento; a ativação depende da confirmação do Mercado Pago.' },
+  { q: 'Quanto custa?', a: 'O Pro custa R$ 19,90 por mês ou R$ 199,00 por ano.' },
+  { q: 'O sistema emite nota fiscal?', a: 'Não. O OrçaFácil gera orçamentos e recibos, mas não emite nota fiscal.' },
+  { q: 'Posso cancelar?', a: 'Sim. Fale com a MNSOFT para suporte de cancelamento ou ajuste manual da assinatura.' }
+];

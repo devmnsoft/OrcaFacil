@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 const dist = path.resolve('dist');
 const forbiddenNames = ['.env','.env.local','.env.production','README.md','ARCHITECTURE.md','scripts','tests','functions','package.json'];
-const forbiddenContent = ['serviceAccount','private_key','TELEGRAM_BOT_TOKEN','OPENAI_API_KEY','sourceMappingURL'];
+const forbiddenContent = ['serviceAccount','private_key','TELEGRAM_BOT_TOKEN','OPENAI_API_KEY','MERCADO_PAGO_ACCESS_TOKEN','MERCADO_PAGO_WEBHOOK_SECRET','APP_USR-','TEST-','PROD_ACCESS_TOKEN','sourceMappingURL'];
 let errors = 0, warnings = 0;
 async function exists(p){try{await fs.access(p);return true;}catch{return false;}}
 async function walk(dir){const out=[]; for(const e of await fs.readdir(dir,{withFileTypes:true})){const p=path.join(dir,e.name); if(e.isDirectory()) out.push(...await walk(p)); else out.push(p);} return out;}

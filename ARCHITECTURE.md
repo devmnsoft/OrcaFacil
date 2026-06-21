@@ -34,3 +34,31 @@ Ações críticas devem usar `withTryCatch`, `withButtonLoading`, `preventDouble
 
 ## Evolução segura
 Migrar funcionalidades gradualmente das telas grandes para módulos menores; manter compatibilidade de exports existentes; criar testes de regras/functions antes de endurecer segurança; nunca remover login, demo, Firestore, PDF, histórico, chatbot, logger, admin ou compatibilidade estática sem etapa dedicada.
+
+## Arquitetura comercial e billing
+
+### Estruturas Firestore
+
+- `adminSettings/plans`: configuração global dos planos Free/Pro.
+- `users/{uid}/billing/subscription`: assinatura corrente, status, ciclo, datas e IDs externos.
+- `users/{uid}/billing/payments/{paymentId}`: histórico de pagamentos Mercado Pago.
+- `paymentWebhooks/{webhookId}`: registro idempotente e sanitizado de webhooks recebidos.
+
+### Fluxo de checkout
+
+1. Usuário autenticado abre **Minha assinatura** e escolhe ciclo mensal/anual.
+2. Front-end chama `createCheckoutPreference` sem enviar preço confiável.
+3. Cloud Function valida usuário, bloqueio, plano/ciclo e busca preço no servidor.
+4. Function cria preferência Mercado Pago, grava assinatura/payment `pending` e retorna URL de checkout.
+
+### Fluxo de webhook e ativação Pro
+
+1. Mercado Pago chama `mercadoPagoWebhook`.
+2. Function registra webhook sanitizado e consulta o pagamento real na API Mercado Pago.
+3. Status `approved` atualiza payment, assinatura `active`, `users/{uid}.plan = "pro"` e auditoria.
+4. Status não aprovado registra histórico e eventos, mas não altera o plano para Pro.
+5. Processamento duplicado de pagamento aprovado é ignorado com idempotência.
+
+### Expiração e administração
+
+`checkExpiredSubscriptions` roda diariamente e rebaixa assinaturas vencidas para Free. O super_admin consulta assinaturas, pagamentos, webhooks e pode ativar, renovar, cancelar ou voltar usuários para Free com auditoria.
