@@ -567,3 +567,128 @@ O projeto continua compatível com Firebase Hosting, IIS, Apache, Nginx ou qualq
 - A proteção contra remoção do último `super_admin` está documentada, mas não totalmente automatizada no front-end; mantenha pelo menos uma conta `super_admin` ativa no Firestore.
 - Métricas agregadas são calculadas por consultas recentes e limites de documentos para manter o SaaS leve; relatórios avançados/BI ficam para etapa futura.
 - IP do usuário fica reservado como `ipInfo: null` para futura coleta segura no backend.
+
+## Monitoramento Administrativo, Auditoria e Telegram
+
+### Perfil Administrador Geral (`super_admin`)
+
+O painel **Admin Geral** aparece somente para usuários autenticados cujo documento `users/{uid}` tenha `role = "super_admin"` e `isActive = true`. O primeiro Administrador Geral da MNSOFT deve ser ativado manualmente:
+
+1. Acesse o Firebase Console > Firestore Database.
+2. Abra a coleção `users` e o documento do usuário desejado (`users/{uid}`).
+3. Adicione ou altere os campos:
+   - `role`: `super_admin`
+   - `isActive`: `true`
+4. Faça logout/login no OrçaFácil.
+5. A aba **Admin Geral** ficará disponível no menu principal.
+
+Campos esperados em `users/{uid}`: `role` (`user`, `admin` ou `super_admin`), `isActive`, `lastLoginAt`, `lastSeenAt`, `createdAt` e `updatedAt`.
+
+### Coleções de monitoramento
+
+O MVP registra informações operacionais nas coleções:
+
+- `systemEvents/{eventId}`: eventos do produto, como cadastro, login, criação/edição/exclusão/duplicação de documentos, geração de PDF, exportações, links públicos, mudança de plano e status de notificações Telegram.
+- `systemErrors/{errorId}`: erros globais de JavaScript, rejeições de Promise, falhas de Firebase/Firestore, falhas de PDF e bugs críticos, com status de resolução e observação administrativa.
+- `auditLogs/{logId}`: trilha de auditoria para ações relevantes sem salvar senhas, tokens, credenciais ou dados sensíveis desnecessários.
+- `adminSettings/global`: preferências administrativas, incluindo Telegram ativo, Chat ID e eventos habilitados.
+- `telegramQueue/{messageId}`: fila segura de mensagens. O front-end apenas cria mensagens pendentes; a Cloud Function envia ao Telegram.
+
+Usuários comuns podem criar eventos/erros/auditorias próprios, mas não leem logs globais. O `super_admin` pode ler logs, usuários, configurações e alterar `plan`, `role` e `isActive`. Como este MVP ainda não usa custom claims, as regras consultam `users/{uid}.role`; publique as regras antes dos testes.
+
+### Painel Admin Geral
+
+Subáreas disponíveis:
+
+- **Dashboard**: total de usuários, ativos, Free, Pro, documentos criados hoje, PDFs gerados hoje, orçamentos, recibos, erros 24h, críticos, Telegram pendente e último erro crítico.
+- **Usuários**: lista nome, e-mail, plano, role, cadastro, último login e permite alterar plano, role e ativo/inativo com confirmação para alterações sensíveis.
+- **Eventos**: lista eventos recentes.
+- **Erros/Bugs**: lista erros, detalhes, stack trace, URL, navegador/contexto e permite marcar como resolvido com observação.
+- **Auditoria**: exibe ações auditadas e diffs resumidos.
+- **Telegram**: mostra Telegram ativo, Chat ID, eventos habilitados, fila, últimas mensagens/falhas e botão de mensagem teste.
+- **Saúde do sistema**: ambiente detectado (Node local/localhost, Firebase Hosting ou IIS/static), Firebase/Auth/Firestore, fila Telegram, erros 24h e versão/estado operacional.
+
+### Telegram seguro via Firebase Cloud Functions
+
+O token do bot **nunca** deve ser salvo no front-end, README, Firestore ou arquivo público. Use somente variável segura/local das Functions.
+
+Chat ID padrão configurado para notificações: `7535235489`.
+
+Crie o bot no Telegram usando o **BotFather**, gere um novo token e crie o arquivo local não versionado:
+
+```txt
+functions/.env
+```
+
+Conteúdo local:
+
+```env
+TELEGRAM_BOT_TOKEN=NOVO_TOKEN_GERADO_NO_BOTFATHER
+TELEGRAM_DEFAULT_CHAT_ID=7535235489
+```
+
+O repositório contém apenas `functions/.env.example`:
+
+```env
+TELEGRAM_BOT_TOKEN=coloque_aqui_o_token_do_bot
+TELEGRAM_DEFAULT_CHAT_ID=7535235489
+```
+
+Instalação e deploy das Functions:
+
+```bash
+cd functions
+npm install
+firebase deploy --only functions
+```
+
+Publicação das regras e Hosting:
+
+```bash
+firebase deploy --only firestore:rules
+firebase deploy --only hosting
+```
+
+A Cloud Function `sendTelegramNotification` monitora `telegramQueue/{messageId}`. Quando `status = "pending"`, ela lê `TELEGRAM_BOT_TOKEN` e `TELEGRAM_DEFAULT_CHAT_ID`, chama `https://api.telegram.org/bot{TOKEN}/sendMessage`, atualiza o status para `sent` ou `failed`, registra evento `TELEGRAM_NOTIFICATION_SENT` e grava falhas em `systemErrors`.
+
+### Eventos Telegram padrão
+
+Por padrão, o sistema pode notificar:
+
+- Novo usuário cadastrado;
+- Novo orçamento ou recibo criado;
+- Orçamento aprovado ou recusado;
+- Erro crítico;
+- Falha de permissão no Firestore;
+- Falha de geração de PDF;
+- Alteração de plano para Pro;
+- Desativação de link público.
+
+Não há campo para token no Admin Geral. O Admin pode ativar/desativar Telegram, editar Chat ID, habilitar eventos e enviar mensagem teste.
+
+### Testes recomendados
+
+1. `npm install`
+2. `npm start`
+3. Abrir `http://localhost:8095`.
+4. Criar conta e fazer login.
+5. Ativar `super_admin` manualmente no Firestore e fazer logout/login.
+6. Ver a aba **Admin Geral**.
+7. Criar orçamento/recibo e gerar PDF.
+8. Conferir `systemEvents` e `auditLogs`.
+9. Gerar erro proposital em teste e conferir `systemErrors`.
+10. Marcar erro como resolvido com observação.
+11. Configurar `functions/.env` com o token seguro.
+12. Fazer deploy das Functions.
+13. No Admin Geral > Telegram, enviar mensagem teste.
+14. Validar recebimento no Telegram.
+15. Criar novo usuário/documento e validar notificações conforme flags.
+16. Testar modo demonstração, IIS/static e Firebase Hosting.
+
+### Segurança e LGPD
+
+- Não versionar `functions/.env`, `.env`, tokens, senhas, Service Accounts ou chaves privadas.
+- Logs e auditorias devem evitar dados sensíveis desnecessários.
+- Senhas e credenciais nunca são registradas.
+- O monitoramento existe para segurança, suporte, auditoria operacional e melhoria contínua.
+- Usuários comuns acessam apenas seus próprios documentos; logs globais são restritos ao `super_admin`.
