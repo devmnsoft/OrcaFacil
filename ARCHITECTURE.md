@@ -131,3 +131,32 @@ Mantenha CSS, JavaScript e páginas internas com caminhos relativos, como `./css
 ### Sem dependência de backend próprio
 
 Regras de negócio do produto continuam no front-end modular e na camada Firebase/Firestore. O modo demonstração usa `localStorage`. Não introduza dependência obrigatória de build, SSR, API própria, Cloud Functions novas ou frameworks como React/Vue/Angular para manter a publicação compatível com hospedagem estática simples.
+
+## Camada de observabilidade e suporte
+
+### Logger e auditoria
+`logger.service.js` é a camada central para logs de front-end. Ele cria modelos compatíveis com `system-log.model.js`, persiste em Firestore ou `localStorage` no modo demo e separa logs operacionais (`systemLogs`), eventos (`systemEvents`), erros (`systemErrors`) e auditoria (`auditLogs`). A auditoria cobre login, cadastro, perfil, documentos, PDF, exportações, links públicos, WhatsApp, Telegram e chatbot.
+
+### Fluxo de erro
+1. A ação crítica inicia com `try/catch`.
+2. Em sucesso, registra evento `*_SUCCESS` ou auditoria.
+3. Em falha, mostra mensagem amigável ao usuário.
+4. O erro técnico, stack, URL, userAgent e ambiente vão para `systemErrors`.
+5. O `super_admin` consulta e resolve em **Admin Geral > Erros/Bugs**.
+
+### Monitoramento administrativo
+`AdminUI` expõe abas para usuários, logs, eventos, bugs, auditoria, Telegram, configurações e saúde. `AdminService` centraliza consultas e escrita em `adminSettings/contact`, `adminSettings/chatbot` e `adminSettings/logging`.
+
+### Configurações administrativas
+- `adminSettings/contact`: WhatsApp/e-mail público da MNSOFT.
+- `adminSettings/chatbot`: modo local, nome, exibição e escalação.
+- `adminSettings/logging`: nível mínimo e limite de logs por sessão.
+
+### Fluxo de suporte via WhatsApp
+Usuário clica em WhatsApp no chatbot ou assinatura. O sistema monta `https://wa.me/{whatsappNumber}?text={mensagem}` com dados públicos da MNSOFT. Nenhuma credencial é usada no front-end.
+
+### Chatbot local
+A UI flutuante (`chatbot.ui.js`) chama `ChatbotService`, que procura respostas em `chatbot-knowledge-base.js`, aplica filtros de segurança, registra eventos/auditoria e salva histórico local no navegador. O modo local funciona em Firebase Hosting, IIS/static, Node local e demonstração.
+
+### Chatbot IA futuro
+Uma implementação futura deve usar Cloud Function callable `askChatbot`; tokens ficam em variáveis seguras, nunca no front-end. A função deve validar autenticação, escopo OrçaFácil, filtros LGPD, limite de tamanho e logging.
