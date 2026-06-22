@@ -21,6 +21,16 @@ Nunca coloque no front-end: Admin SDK, service account, `private_key`, tokens Te
 
 O projeto está preparado em `public/js/firebase-config.js` com `APP_CHECK_ENABLED = false` e `APP_CHECK_SITE_KEY = ""`. Para produção: registre o app Web no Firebase App Check, escolha reCAPTCHA Enterprise ou v3, configure domínios autorizados, preencha a site key pública, teste sem enforcement e só depois aplique enforcement no Firestore.
 
+
+## Segurança de logs e auditoria
+
+- Logs anônimos não são gravados remotamente no Firestore; antes do login eles ficam no console e em buffer local de memória.
+- No modo demonstração, logs e auditorias usam `localStorage` e não criam registros remotos.
+- Escritas em `systemLogs`, `systemEvents`, `systemErrors` e `auditLogs` exigem usuário autenticado pelas Firestore Rules.
+- Logs nunca devem conter tokens, senhas, secrets, chaves privadas ou credenciais de integração.
+- Stack traces e detalhes técnicos não devem ser exibidos para usuário comum; mensagens de interface devem ser amigáveis.
+- Usuários `super_admin` podem visualizar erros técnicos, eventos e auditoria no Admin Geral para suporte, segurança e observabilidade.
+
 ## Publicação
 
 - Desenvolvimento: `npm start` e acesse `http://localhost:8095`.

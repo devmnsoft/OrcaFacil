@@ -785,7 +785,17 @@ O front-end usa `public/js/services/logger.service.js` com os métodos `debug`, 
 - `systemErrors`: falhas técnicas visíveis ao `super_admin`;
 - `auditLogs`: auditoria de ações importantes.
 
-Em modo demonstração os registros são salvos em `localStorage` (`orcafacil:demo:*`). O logger possui proteção contra excesso de logs por sessão e remove campos sensíveis como senha, token, secret e apiKey.
+### Como funciona o logger
+
+O logger trabalha em camadas para não quebrar o boot e não depender de permissões anônimas no Firestore:
+
+1. **Antes do login:** os eventos aparecem no console e ficam em um buffer em memória, limitado aos logs mais recentes da sessão.
+2. **Modo demonstração:** os registros são salvos somente no `localStorage` (`orcafacil:demo:*`) e não tentam escrever no Firestore.
+3. **Após login:** quando `logger.setUserContext(user)` recebe um usuário com `uid`, os novos logs e os pendentes podem ser enviados para `systemLogs`, `systemEvents`, `systemErrors` e `auditLogs`.
+4. **Permissões:** as Firestore Rules continuam exigindo autenticação para criar logs. Não existe escrita anônima em `systemLogs` ou auditoria.
+5. **Leitura:** o `super_admin` lê logs globais pelo Admin Geral; usuários comuns não leem logs globais.
+
+O logger possui proteção contra excesso de logs por sessão, deduplicação de eventos repetidos, warning controlado para `permission-denied` e remove campos sensíveis como senha, token, secret e apiKey. Logs de boot, como `APP_BOOT_START`, `ENVIRONMENT_DETECTED` e `APP_BOOT_SUCCESS`, não exigem Firestore para a aplicação iniciar.
 
 ### Try/catch global e erros
 A inicialização instala handlers para `window.error` e `unhandledrejection`. Ações críticas como login, cadastro, salvamento, PDF, link público, perfil e exportações usam `try/catch` com mensagem amigável ao usuário e erro técnico no painel administrativo.
