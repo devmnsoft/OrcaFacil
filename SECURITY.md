@@ -87,3 +87,12 @@ Entradas públicas são limitadas, sanitizadas para reduzir risco de XSS e regis
 - O logger sanitiza campos sensíveis (`password`, `senha`, `token`, `secret`, `apiKey`, `authorization`, `privateKey`, `accessToken`, `refreshToken`) antes de persistir console/localStorage/Firestore.
 - Stack trace e detalhes técnicos ficam no Admin Geral; o diagnóstico público não exibe tokens, rules, dados de usuário, logs internos ou stack traces.
 - `permission-denied` em logs é tratado como falha observável controlada: o app continua, registra fallback local quando possível e não entra em loop.
+
+## Segurança no fluxo de autenticação e monitoramento
+
+- Usuários comuns não podem alterar `role`, `plan`, `isActive`, `isBlocked` ou contadores administrativos do próprio documento `users/{uid}`.
+- As Firestore Security Rules permitem criação inicial segura de `users/{uid}` com `role: "user"`, `plan: "free"`, conta ativa e não bloqueada.
+- Atualizações feitas pelo próprio usuário ficam limitadas a campos seguros de perfil, aceite, datas de sessão e `metadata`.
+- Logs, auditoria, eventos e erros de sistema exigem autenticação para escrita remota; antes disso, a aplicação usa buffer/localStorage.
+- Erros de autenticação usam mensagens genéricas e não expõem detalhes sensíveis sobre existência da conta além dos fluxos esperados de cadastro.
+- Telegram não é enfileirado em modo demonstração, sem usuário autenticado ou sem configuração/flag ativa, e falhas da fila não interrompem a experiência do usuário.

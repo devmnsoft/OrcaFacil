@@ -1146,3 +1146,16 @@ firebase deploy --only firestore:rules
 ```
 
 Se ocorrer `permission-denied`, não afrouxe segurança com `allow write: if true`. Verifique se o usuário está autenticado, se o documento contém `uid` igual ao `request.auth.uid`, se `level`/`severity` estão nos valores permitidos e se o usuário leitor é `super_admin`.
+
+## Fluxo de autenticação e criação do usuário
+
+O OrçaFácil separa o fluxo de Firebase Authentication do fluxo de dados do aplicativo no Cloud Firestore:
+
+1. O Firebase Authentication cria e valida a credencial de e-mail e senha.
+2. O documento `users/{uid}` guarda os dados operacionais do app, como plano, papel, status da conta, aceite de termos e metadados de sessão.
+3. `role`, `plan`, `isActive`, `isBlocked` e contadores administrativos não são alteráveis pelo usuário comum após a criação inicial.
+4. Erros de Auth e Firestore são tratados separadamente para não confundir senha incorreta com falha de permissão ou indisponibilidade do banco.
+5. O monitoramento grava localmente em modo demonstração, faz buffer antes da autenticação e nunca deve quebrar login, cadastro ou onboarding.
+6. Telegram e monitoramento remoto exigem usuário autenticado e configuração ativa; falhas de permissão são registradas como aviso controlado.
+
+Para testar manualmente, valide: login inválido, cadastro com e-mail já existente, cadastro novo, falha simulada de `users/{uid}`, modo demonstração e login real com logs remotos permitidos pelas rules.

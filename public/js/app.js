@@ -11,12 +11,38 @@ import { getDocumentStatusMeta, getAllowedStatuses } from './domain/document-sta
 import { withButtonLoading, preventDoubleSubmit, rateLimit } from './utils/action-guard.js';
 import { PlanLimitService } from './services/plan-limit.service.js';
 import { todayISO as today, money, calcDocument, readFileAsDataUrl, escapeHtml, uid, parseCurrency, formatNumber, formatCurrency, formatDateBR, isValidEmail, hasMinDigits, handleError } from './utils.js';
+import { friendlyAuthError, friendlyFirestoreError } from './utils/firebase-errors.js';
 
 let service, currentUser=null, userAccount=null, currentUsage={}, profile={}, docs=[], draftTimer=null;
 const $=sel=>document.querySelector(sel);
 const $$=sel=>Array.from(document.querySelectorAll(sel));
 const toast=(msg,type='info')=>{ const el=$('#appToast'); $('#toastBody').textContent=msg; el.className=`toast border-${type==='error'?'danger':type==='success'?'success':'primary'}`; bootstrap.Toast.getOrCreateInstance(el).show(); };
 const draftKey=()=>`orcafacil:${currentUser?.uid||'demo'}:draft`;
+
+function showAuthMessage(message, type='danger'){
+  const box=$('#authFeedback'); if(!box) return;
+  box.className=`alert alert-${type} small mb-0`;
+  box.textContent=message;
+  box.classList.remove('d-none');
+}
+function clearAuthMessage(){ $('#authFeedback')?.classList.add('d-none'); }
+function setAuthMode(mode){
+  const isRegister=mode==='register';
+  $('#authMode') && ($('#authMode').value=mode);
+  $('#authTitle') && ($('#authTitle').textContent=isRegister?'Crie sua conta grátis':'Entre no OrçaFácil');
+  $('#authSubtitle') && ($('#authSubtitle').textContent=isRegister?'Comece no plano grátis e prepare seu primeiro PDF em minutos.':'Gere orçamentos e recibos profissionais em PDF, direto do navegador.');
+  $('#authNameGroup')?.classList.toggle('d-none',!isRegister);
+  $('#authConfirmGroup')?.classList.toggle('d-none',!isRegister);
+  $('#authTermsGroup')?.classList.toggle('d-none',!isRegister);
+  $('#btnAuthSubmit') && ($('#btnAuthSubmit').innerHTML=isRegister?'<i class="bi bi-person-plus"></i> Criar conta grátis':'<i class="bi bi-box-arrow-in-right"></i> Entrar');
+  $$('.auth-mode-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.authMode===mode));
+  clearAuthMessage();
+}
+function showOnboarding(){
+  let el=$('#onboardingModal');
+  if(!el){document.body.insertAdjacentHTML('beforeend',`<div class="modal fade" id="onboardingModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Bem-vindo ao OrçaFácil</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p class="text-secondary">Seu ambiente está pronto. Siga estes passos para gerar seu primeiro documento profissional:</p><ol class="vstack gap-2"><li>Cadastre seus dados de emitente.</li><li>Crie seu primeiro orçamento.</li><li>Gere o PDF e envie ao cliente.</li></ol><div class="d-grid gap-2 mt-3"><button class="btn btn-primary" data-bs-dismiss="modal" data-quick-tab="profileTab">Cadastrar emitente agora</button><button class="btn btn-success" data-bs-dismiss="modal" data-quick-tab="docTab">Criar primeiro orçamento</button><button class="btn btn-outline-secondary" id="btnOnboardingDemo" data-bs-dismiss="modal">Ver demonstração guiada</button></div></div></div></div></div>`);el=$('#onboardingModal');$('#btnOnboardingDemo').onclick=()=>toast('Use a demonstração para explorar sem salvar no Firebase.','info');}
+  bootstrap.Modal.getOrCreateInstance(el).show();
+}
 
 function itemTemplate(item={}){
   const id=uid();
@@ -91,9 +117,12 @@ async function boot(){
   logger.info('APP_BOOT_START','Iniciando aplicação OrçaFácil'); service=await createService(); const info=await service.init(); logger.info('APP_ENVIRONMENT_DETECTED','Ambiente detectado',{mode:service.mode}); logger.success('APP_FIREBASE_INIT_SUCCESS','Serviço principal inicializado',{mode:service.mode}); MonitoringService.installGlobalHandlers(toast); logger.installGlobalHandlers((m)=>toast(m,'error')); new ChatbotUI().init();
   $('#modeAlert').textContent=service.mode==='firebase'?'Firebase oficial conectado: login real habilitado.':'Modo demonstração local com localStorage.';
   service.onAuth(async (user)=>{ logger.info('APP_AUTH_STATE_CHANGED','Estado de autenticação alterado',{authenticated:Boolean(user)}); await setLoggedIn(user); });
-  $('#authForm').onsubmit=async e=>{e.preventDefault();try{await service.login($('#authEmail').value,$('#authPassword').value);await MonitoringService.trackEvent('USER_LOGIN',{title:'Login realizado'});toast('Login realizado.');}catch(err){await logger.error('AUTH_LOGIN_ERROR','Erro ao realizar login',err,{});await MonitoringService.trackError(err,{type:'AUTH_LOGIN_ERROR'});toast(handleError(err,err.message),'error');}};
-  $('#btnRegister').onclick=async()=>{try{const u=await service.register($('#authEmail').value,$('#authPassword').value,$('#authName').value.trim());await MonitoringService.trackEvent('USER_REGISTERED',{title:'Novo usuário cadastrado',severity:'success'});await MonitoringService.audit('USER_REGISTERED','user',u.uid);await queueTelegramNotification('USER_REGISTERED','🆕 Novo usuário no OrçaFácil',`Nome: ${$('#authName').value.trim()||'-'}\nE-mail: ${$('#authEmail').value}\nPlano: Free`,{uid:u.uid,email:$('#authEmail').value},'success');toast('Conta criada.');}catch(err){await MonitoringService.trackError(err,{type:'OPERATION_FAILED'});toast(handleError(err,err.message),'error');}};
-  $('#btnDemo').onclick=async()=>{try{localStorage.setItem('orcafacil:demo-enabled','1'); service=await createService(); await service.init(); await service.demo(); await setLoggedIn(service.user);toast('Demonstração iniciada.');}catch(err){await MonitoringService.trackError(err,{type:'OPERATION_FAILED'});toast(handleError(err,err.message),'error');}};
+  setAuthMode('login');
+  $$('.auth-mode-btn').forEach(btn=>btn.onclick=()=>setAuthMode(btn.dataset.authMode));
+  $('#authForm').onsubmit=async e=>{e.preventDefault();clearAuthMessage();const mode=$('#authMode')?.value||'login';const btn=$('#btnAuthSubmit');await withButtonLoading(btn, async()=>{try{const email=$('#authEmail').value.trim();const password=$('#authPassword').value;if(mode==='register'){if(password!==$('#authPasswordConfirm').value)throw new Error('As senhas não conferem.');if(!$('#authTerms').checked)throw new Error('Aceite os Termos de Uso e a Política de Privacidade.');const result=await service.register(email,password,$('#authName').value.trim());const user=result.user||result;if(result.partial){showAuthMessage(result.warning,'warning');toast(result.warning,'warning');return;}await MonitoringService.trackEvent('USER_REGISTERED',{title:'Novo usuário cadastrado',severity:'success'});await MonitoringService.audit('USER_REGISTERED','user',user.uid);await queueTelegramNotification('USER_REGISTERED','🆕 Novo usuário no OrçaFácil',`Nome: ${$('#authName').value.trim()||'-'}
+E-mail: ${email}
+Plano: Free`,{uid:user.uid,email},'success');toast('Conta criada com sucesso. Preparando seu ambiente...','success');showOnboarding();return;}await service.login(email,password);await MonitoringService.trackEvent('USER_LOGIN',{title:'Login realizado'});toast('Login realizado com sucesso.','success');}catch(err){const friendly=String(err?.code||'').startsWith('auth/')?friendlyAuthError(err):(err?.code?friendlyFirestoreError(err):err);await logger.error('AUTH_FLOW_ERROR','Erro controlado no fluxo de autenticação',err,{});await MonitoringService.trackError(err,{type:'AUTH_FLOW_ERROR',telegram:false});showAuthMessage(friendly.message||'Não foi possível concluir a operação.','danger');toast(friendly.message||'Não foi possível concluir a operação.','error');}});};
+  $('#btnDemo').onclick=async(e)=>withButtonLoading(e.currentTarget, async()=>{try{localStorage.setItem('orcafacil:demo-enabled','1'); service=await createService(); await service.init(); await service.demo(); await setLoggedIn(service.user);toast('Demonstração iniciada.','success');}catch(err){await MonitoringService.trackError(err,{type:'OPERATION_FAILED',telegram:false});toast(handleError(err,err.message),'error');}});
   $('#btnLogout').onclick=async()=>{await MonitoringService.trackEvent('USER_LOGOUT',{title:'Logout'});await MonitoringService.audit('USER_LOGOUT','user',currentUser?.uid);await service.logout();await setLoggedIn(null);};
   $$('#tabs .nav-link').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
   $('#docType').onchange=toggleType; $('#btnAddItem').onclick=()=>addItem({qty:1}); $('#btnNewDoc').onclick=resetDoc;

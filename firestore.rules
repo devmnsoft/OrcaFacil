@@ -44,7 +44,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if signedOwner(userId) || isSuperAdmin();
       allow list: if isSuperAdmin();
-      allow create: if signedOwner(userId) && request.resource.data.uid == request.auth.uid && (!('role' in request.resource.data) || request.resource.data.role == 'user') && (!('plan' in request.resource.data) || request.resource.data.plan == 'free') && (!('isBlocked' in request.resource.data) || request.resource.data.isBlocked == false) && (!('isActive' in request.resource.data) || request.resource.data.isActive == true);
+      allow create: if signedOwner(userId) && request.resource.data.uid == request.auth.uid && request.resource.data.keys().hasOnly(['uid','name','email','phone','plan','role','isActive','isBlocked','blockReason','acceptedTermsAt','acceptedPrivacyAt','createdAt','updatedAt','lastLoginAt','lastSeenAt','loginCount','documentsCount','pdfGeneratedCount','freeLimitNotifiedAt','metadata']) && request.resource.data.role == 'user' && request.resource.data.plan == 'free' && request.resource.data.isBlocked == false && request.resource.data.isActive == true;
       allow update: if isSuperAdmin() || (signedOwner(userId) && onlyUserSafeFields());
       allow delete: if isSuperAdmin();
 
