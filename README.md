@@ -1159,3 +1159,59 @@ O OrçaFácil separa o fluxo de Firebase Authentication do fluxo de dados do apl
 6. Telegram e monitoramento remoto exigem usuário autenticado e configuração ativa; falhas de permissão são registradas como aviso controlado.
 
 Para testar manualmente, valide: login inválido, cadastro com e-mail já existente, cadastro novo, falha simulada de `users/{uid}`, modo demonstração e login real com logs remotos permitidos pelas rules.
+
+## Publicar no IIS com 1 clique
+
+O OrçaFácil possui um publicador local para Windows que gera uma pasta `dist/` pronta para IIS estático.
+
+### Como publicar
+
+1. Baixe ou atualize o projeto.
+2. Instale Node.js 18 ou superior.
+3. Na raiz do projeto, dê duplo clique em:
+
+```bat
+publicar-iis.bat
+```
+
+O publicador verifica Node.js/npm, instala dependências quando `node_modules` não existir, limpa builds anteriores, gera `dist/`, cria `web.config`, valida arquivos obrigatórios, tenta criar um ZIP opcional em `publish/orcafacil-iis-dist.zip` e abre a pasta final.
+
+Também é possível executar pelo terminal:
+
+```bash
+npm run publish:iis
+```
+
+### Onde publicar no IIS
+
+Copie o conteúdo da pasta `dist/` para o IIS, por exemplo:
+
+```text
+C:\inetpub\wwwroot\orcafacil
+```
+
+Depois crie um site ou aplicação no IIS apontando para essa pasta e configure `index.html` como documento padrão.
+
+### Testar a dist localmente
+
+```bash
+npm run serve:dist
+```
+
+Acesse:
+
+<http://localhost:8095>
+
+### Importante
+
+- Não abra `index.html` por `file://`.
+- O sistema precisa rodar por HTTP ou HTTPS.
+- Node.js é necessário apenas para gerar `dist/`; depois disso, o IIS não precisa de Node.
+- Adicione o domínio usado no Firebase Authentication em **Authorized domains**.
+
+### Diferença entre `public/` e `dist/`
+
+- `public/` é a pasta usada no desenvolvimento local e no fluxo atual do projeto.
+- `dist/` é a pasta gerada para publicação IIS/produção estática.
+
+Consulte o passo a passo detalhado em [`DEPLOY-IIS.md`](DEPLOY-IIS.md).
