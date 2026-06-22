@@ -79,3 +79,11 @@ Os links públicos usam tokens longos e imprevisíveis gerados por `crypto.rando
 `publicQuotes` deve conter apenas os dados necessários para visualização comercial do orçamento. Dados administrativos, plano, papéis, billing, logs internos e outros documentos não são expostos. As regras Firestore bloqueiam listagem pública e restringem atualizações anônimas aos campos de visualização e decisão.
 
 Entradas públicas são limitadas, sanitizadas para reduzir risco de XSS e registram evidências mínimas: data, nome informado, navegador e hash SHA-256. O aceite é simples/comercial e não substitui assinatura digital certificada ICP-Brasil.
+
+## Segurança de logs e observabilidade
+
+- Logs remotos exigem Firebase Authentication e `uid == request.auth.uid`; não há escrita anônima em `systemLogs`, `systemEvents`, `systemErrors` ou `auditLogs`.
+- Usuários comuns não leem logs globais. A leitura e atualização administrativa ficam restritas a `super_admin`.
+- O logger sanitiza campos sensíveis (`password`, `senha`, `token`, `secret`, `apiKey`, `authorization`, `privateKey`, `accessToken`, `refreshToken`) antes de persistir console/localStorage/Firestore.
+- Stack trace e detalhes técnicos ficam no Admin Geral; o diagnóstico público não exibe tokens, rules, dados de usuário, logs internos ou stack traces.
+- `permission-denied` em logs é tratado como falha observável controlada: o app continua, registra fallback local quando possível e não entra em loop.

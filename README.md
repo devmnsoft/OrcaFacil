@@ -1115,3 +1115,34 @@ Este aceite eletrônico simples não substitui assinatura digital certificada IC
 7. Converta em recibo e confira o vínculo entre orçamento e recibo.
 
 As regras do Firestore permitem `get` público somente por token em `publicQuotes/{token}`, bloqueiam listagem pública e restringem update público a visualização/decisão. O documento original em `users/{uid}/documents/{documentId}` continua privado.
+
+## Logger e Observabilidade
+
+O logger do OrçaFácil é resiliente e trabalha em quatro camadas para manter o boot silencioso e preservar as Firestore Rules seguras:
+
+1. **Console:** em ambiente local (`localhost`/porta `8095`) os eventos de boot e erros aparecem no console para depuração.
+2. **Buffer em memória:** antes do login, eventos como `APP_BOOT_START`, `ENVIRONMENT_DETECTED`, `FIREBASE_INIT_SUCCESS`, `AUTH_STATE_CHANGED` e `APP_BOOT_SUCCESS` ficam em memória, limitados por `maxPendingLogsBeforeLogin`.
+3. **Modo demonstração:** com usuário demo ou flag `orcafacil:demo-enabled`, logs e auditoria são gravados em `localStorage` nas chaves `orcafacil:demo:*`; nada é enviado ao Firestore.
+4. **Firestore autenticado:** após `logger.setUserContext(user)` receber `uid`, logs novos e pendentes recentes são enviados para `systemLogs`, `systemEvents`, `systemErrors` e `auditLogs`, sempre com `uid == request.auth.uid`.
+
+O logger sanitiza `password`, `senha`, `token`, `secret`, `apiKey`, `authorization`, `privateKey`, `accessToken` e `refreshToken`; deduplica eventos repetitivos; limita logs por sessão; e trata `permission-denied` sem lançar exceção nem chamar `logger.error` internamente. A mensagem controlada esperada é: `[logger] Firestore recusou gravação de log neste contexto. O sistema continuará normalmente.`
+
+### Como testar observabilidade
+
+- **Sem login:** rode `npm start`, abra `http://localhost:8095` e confirme que o console mostra o boot sem `logger failed` e sem spam de `permission-denied`.
+- **Modo demo:** clique em **Ver demonstração**, crie orçamento/recibo e gere PDF. Confira `localStorage` com chaves `orcafacil:demo:systemLogs`, `orcafacil:demo:systemEvents` e, se houver falha, `orcafacil:demo:systemErrors`.
+- **Login real:** autentique com Firebase; o logger esvazia o buffer recente e persiste logs remotos conforme as rules.
+- **Admin Geral > Logs:** filtre por nível, tipo, usuário, ambiente e mensagem/data; abra detalhes para metadados, URL, userAgent e erro; exporte CSV/JSON.
+- **Admin Geral > Erros/Bugs:** veja erros não resolvidos, críticos e últimas 24h; copie detalhes, marque como resolvido com observação ou reabra.
+- **Admin Geral > Saúde:** execute a visão de ambiente, Auth, Firestore, Logger, Telegram Queue, LocalStorage, versão, último crítico, erros 24h, logs pendentes, usuários ativos hoje e PDFs hoje.
+- **Diagnóstico público:** abra `/diagnostico.html` para validar protocolo, ambiente, localStorage, ES Modules e Firebase config pública sem expor tokens, stack traces, rules ou dados de usuário.
+
+### Publicação das Firestore Rules
+
+As coleções globais de observabilidade não permitem escrita anônima. Publique as rules com:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+Se ocorrer `permission-denied`, não afrouxe segurança com `allow write: if true`. Verifique se o usuário está autenticado, se o documento contém `uid` igual ao `request.auth.uid`, se `level`/`severity` estão nos valores permitidos e se o usuário leitor é `super_admin`.

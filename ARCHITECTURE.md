@@ -81,3 +81,25 @@ Migrar funcionalidades gradualmente das telas grandes para módulos menores; man
 5. Orçamentos aprovados podem ser convertidos em recibo, preservando origem no recibo e destino no orçamento.
 
 O modelo de status comercial fica em `public/js/domain/document-status.model.js`, separando status de orçamento e recibo, labels, badges e regras de transição.
+
+## Fluxos de observabilidade
+
+### Fluxo do logger
+
+`public/js/services/logger.service.js` cria o log padronizado, sanitiza metadados, aplica deduplicação e escolhe o destino: console local, buffer em memória antes do login, `localStorage` no modo demo ou Firestore quando há usuário autenticado. `flushPendingLogs()` é chamado após `setUserContext(user)` e associa `uid`, e-mail, nome e role aos registros pendentes recentes.
+
+### Fluxo de auditoria
+
+`logger.audit(...)` grava ações relevantes em `auditLogs` somente com usuário autenticado ou em armazenamento local no demo. Antes do login os registros ficam no buffer e sempre devem conter resumo do documento/entidade, evitando snapshots completos desnecessários.
+
+### Fluxo de erro global
+
+Handlers globais convertem `window.error` e `unhandledrejection` em eventos `APP_CRITICAL_ERROR`/`UNHANDLED_REJECTION`, persistindo `systemErrors` quando permitido. `permission-denied` nunca chama o próprio logger novamente, evitando loop.
+
+### Fluxo do painel de saúde
+
+`AdminService.runSystemHealthCheck()` agrega Auth, Firestore, Logger, Telegram Queue, LocalStorage, versão, último erro crítico, erros 24h, usuários ativos e PDFs do dia. A UI de Admin Geral renderiza esses dados na aba **Saúde**.
+
+### Fluxo do Telegram
+
+O logger não envia Telegram diretamente. Eventos notificáveis usam `telegram-notification.service.js`, que cria documentos `pending` em `telegramQueue` quando habilitado e autenticado. A Cloud Function é responsável por enviar a mensagem e atualizar o status.
