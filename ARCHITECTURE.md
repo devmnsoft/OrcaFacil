@@ -71,3 +71,13 @@ Migrar funcionalidades gradualmente das telas grandes para módulos menores; man
 - Deploy: produção é manual via workflow `deploy-production.yml`, com opções separadas para Hosting, Firestore Rules e Functions.
 - Rollback: Firebase Hosting pode usar releases/rollback; IIS restaura backup da pasta `dist` anterior.
 - Monitoramento pós-release: verificar `systemErrors`, `systemLogs`, Telegram, usuários novos, pagamentos, uso Firestore/Auth e evento `SYSTEM_RELEASE_DEPLOYED`.
+
+## Fluxo de aprovação pública
+
+1. O prestador gera um token seguro para um orçamento e o app grava `publicQuotes/{token}` com snapshot mínimo de emitente, cliente, documento, decisão e timeline.
+2. `aprovar.html` carrega apenas `publicQuotes/{token}`. Links inválidos, expirados ou desativados exibem estado próprio.
+3. A visualização incrementa `viewCount`, atualiza `lastAccessAt`, move status para `visualizado` quando aplicável e adiciona evento de timeline.
+4. A aprovação/recusa atualiza `decision`, `document.status`, status legado, evidência e timeline. A sincronização com o documento interno pode ser feita ao abrir o painel do prestador ou por Cloud Function futura.
+5. Orçamentos aprovados podem ser convertidos em recibo, preservando origem no recibo e destino no orçamento.
+
+O modelo de status comercial fica em `public/js/domain/document-status.model.js`, separando status de orçamento e recibo, labels, badges e regras de transição.

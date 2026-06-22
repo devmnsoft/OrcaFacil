@@ -1081,3 +1081,27 @@ Configure sem expor em logs: `FIREBASE_SERVICE_ACCOUNT_ORCAFACIL`, `FIREBASE_PRO
 
 ### Versão
 Consulte `/version.json` no ambiente publicado e Admin Geral > Saúde.
+
+## Aprovação pública de orçamentos
+
+O OrçaFácil possui um fluxo comercial de aprovação pública para orçamentos. No histórico ou na tela do documento, use **Link de aprovação / Compartilhar** para gerar um token público imprevisível (`oqf_...`) e compartilhar por cópia, WhatsApp ou e-mail. A página `public/aprovar.html?t=TOKEN` abre sem login e lê apenas `publicQuotes/{token}`.
+
+O cliente visualiza emitente, cliente, itens, validade, total e condições comerciais. Ao abrir um link válido, o sistema registra visualização, `viewCount`, `lastAccessAt` e timeline. O cliente pode aprovar com nome e aceite obrigatório ou recusar com justificativa. A decisão salva data/hora, navegador e um código SHA-256 de evidência.
+
+Quando aprovado, o PDF do orçamento exibe o bloco **Aprovação do cliente** com status, aprovador, data, observação e evidência. Orçamentos aprovados podem ser convertidos em recibo pelo histórico; o recibo recebe `originBudgetId/originBudgetNumber` e o orçamento recebe `convertedReceiptId/convertedReceiptNumber` e status `convertido`.
+
+### Aceite eletrônico simples
+
+Este aceite eletrônico simples não substitui assinatura digital certificada ICP-Brasil, certificado digital, contrato formal ou orientação jurídica. Ele serve como evidência comercial operacional para autônomos, MEIs e pequenos prestadores.
+
+### Teste rápido
+
+1. Crie e salve um orçamento.
+2. Gere o link público e copie a URL.
+3. Abra a URL em aba anônima ou outro navegador.
+4. Aprove com nome e checkbox ou recuse com motivo.
+5. Verifique status, timeline, visualizações e código de evidência no histórico.
+6. Gere o PDF aprovado e confira o bloco de aprovação.
+7. Converta em recibo e confira o vínculo entre orçamento e recibo.
+
+As regras do Firestore permitem `get` público somente por token em `publicQuotes/{token}`, bloqueiam listagem pública e restringem update público a visualização/decisão. O documento original em `users/{uid}/documents/{documentId}` continua privado.

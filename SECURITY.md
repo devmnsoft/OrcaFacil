@@ -61,3 +61,11 @@ Envie detalhes técnicos, URL afetada, impacto e passos de reprodução para o c
 - Segredos ficam somente em GitHub Secrets, Firebase environment config, `.env` local não versionado ou variáveis de Cloud Functions.
 - Deploy de produção é manual por GitHub Actions e deve ser precedido por backup e checklist de release.
 - Vulnerabilidades devem ser reportadas para `comercial@mnsoft.com.br` com passos de reprodução e impacto.
+
+## Segurança do link público de orçamento
+
+Os links públicos usam tokens longos e imprevisíveis gerados por `crypto.randomUUID()` ou `crypto.getRandomValues()`, com prefixo `oqf_`. A página pública lê somente `publicQuotes/{token}` e nunca acessa diretamente `users/{uid}/documents/{documentId}`.
+
+`publicQuotes` deve conter apenas os dados necessários para visualização comercial do orçamento. Dados administrativos, plano, papéis, billing, logs internos e outros documentos não são expostos. As regras Firestore bloqueiam listagem pública e restringem atualizações anônimas aos campos de visualização e decisão.
+
+Entradas públicas são limitadas, sanitizadas para reduzir risco de XSS e registram evidências mínimas: data, nome informado, navegador e hash SHA-256. O aceite é simples/comercial e não substitui assinatura digital certificada ICP-Brasil.

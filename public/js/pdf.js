@@ -38,6 +38,18 @@ export function generatePdf(docData, profile={}){
   pdf.text(`Descontos: ${money.format(totals.discount)}`,pageW-margin,y,{align:'right'});y+=22;
   pdf.setFillColor(...primary);pdf.roundedRect(pageW-238,y-18,196,40,8,8,'F');pdf.setTextColor(255);pdf.setFont('helvetica','bold');pdf.setFontSize(15);pdf.text(`Total: ${money.format(totals.total)}`,pageW-margin,y+7,{align:'right'});pdf.setTextColor(28,36,48);y+=52;
 
+  if(docData.type==='orcamento' && (docData.clientDecision==='aprovado' || docData.clientDecision==='recusado' || docData.decision?.status==='aprovado' || docData.decision?.status==='recusado')){
+    const decision=docData.decision||{status:docData.clientDecision,note:docData.clientDecisionNote,decidedAt:docData.clientDecisionAt,decidedByName:docData.decidedByName,evidenceHash:docData.evidenceHash};
+    y=ensureSpace(pdf,y,118);pdf.setFillColor(decision.status==='aprovado'?232:254,decision.status==='aprovado'?248:242,decision.status==='aprovado'?241:242);pdf.roundedRect(margin,y,pageW-margin*2,96,8,8,'F');y+=22;
+    pdf.setFont('helvetica','bold');pdf.setFontSize(12);pdf.text(decision.status==='aprovado'?'Aprovação do cliente':'Recusa do cliente',margin+14,y);y+=17;
+    pdf.setFont('helvetica','normal');pdf.setFontSize(9);
+    pdf.text(`Status: ${decision.status==='aprovado'?'Aprovado pelo cliente':'Recusado pelo cliente'}`,margin+14,y);y+=14;
+    if(decision.decidedByName){pdf.text(`${decision.status==='aprovado'?'Aprovado por':'Informado por'}: ${decision.decidedByName}`,margin+14,y);y+=14;}
+    if(decision.decidedAt){pdf.text(`Data: ${formatDate(decision.decidedAt)}`,margin+14,y);y+=14;}
+    if(decision.note){pdf.text(`${decision.status==='aprovado'?'Observação':'Motivo'}: ${decision.note}`,margin+14,y,{maxWidth:pageW-margin*2-28});y+=14;}
+    if(decision.evidenceHash){pdf.text(`Código de evidência: ${decision.evidenceHash}`,margin+14,y,{maxWidth:pageW-margin*2-28});}
+    y+=34;
+  }
   if(docData.type==='recibo'){
     y=ensureSpace(pdf,y,135);pdf.setFillColor(232,248,241);pdf.roundedRect(margin,y,pageW-margin*2,66,8,8,'F');y+=22;
     pdf.setFont('helvetica','bold');pdf.setFontSize(11);pdf.text('Valor por extenso',margin+14,y);y+=17;

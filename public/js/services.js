@@ -67,6 +67,11 @@ function normalizeDoc(doc){
     total: totals.total,
     notes: doc.notes || '',
     status: doc.status || 'rascunho',
+    timeline: Array.isArray(doc.timeline) ? doc.timeline : [],
+    convertedReceiptId: doc.convertedReceiptId || '',
+    convertedReceiptNumber: doc.convertedReceiptNumber || '',
+    originBudgetId: doc.originBudgetId || '',
+    originBudgetNumber: doc.originBudgetNumber || '',
     publicToken: doc.publicToken || '',
     publicEnabled: Boolean(doc.publicEnabled),
     publicCreatedAt: doc.publicCreatedAt || '',
@@ -80,15 +85,30 @@ function normalizeDoc(doc){
 
 function publicBaseUrl(){return `${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '/')}`;}
 function publicApprovalUrl(token){return `${publicBaseUrl()}aprovar.html?t=${encodeURIComponent(token)}`;}
-function newPublicToken(){return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}-${uid()}`;}
+function newPublicToken(){
+  if (crypto.randomUUID) return `oqf_${crypto.randomUUID().replace(/-/g,'')}`;
+  const bytes = new Uint8Array(16); crypto.getRandomValues(bytes);
+  return `oqf_${Array.from(bytes, b => b.toString(16).padStart(2,'0')).join('')}`;
+}
 
 function publicQuotePayload(token, saved, profile, ownerUid){
   const totals = calcDocument(saved);
+  const now = new Date().toISOString();
+  const decision = saved.decision || { status: saved.clientDecision || 'pendente', note: saved.clientDecisionNote || '', decidedAt: saved.clientDecisionAt || null, decidedByName: '', decidedByDocument: '', decidedByEmail: '', acceptedTerms: false, ipInfo: null, userAgent: '', evidenceHash: '' };
   return {
     token,
     ownerUid,
     documentId: saved.id,
+    type: 'orcamento',
     publicEnabled: true,
+    issuer: { name: profile?.name || profile?.businessName || '', documentNumber: profile?.documentNumber || profile?.document || '', phone: profile?.phone || '', email: profile?.email || '', city: profile?.city || profile?.address || '', logoBase64: profile?.logoBase64 || profile?.logo || '' },
+    client: { name: saved.clientName || '', document: saved.clientDoc || saved.clientDocument || '', phone: saved.clientContact || saved.clientPhone || '', email: saved.clientEmail || '', city: saved.clientCity || '' },
+    document: { number: saved.number || '', issueDate: saved.issueDate || saved.date || '', validUntil: saved.validUntil || saved.dueDate || '', items: (saved.items || []).map((item) => ({ description: item.description || '', qty: Number(item.qty) || 0, unit: Number(item.unit) || 0, discount: Number(item.discount) || 0 })), subtotal: totals.subtotal, discount: totals.discount, total: totals.total, notes: saved.notes || '', status: saved.status || 'emitido' },
+    decision,
+    timeline: saved.timeline || [],
+    expiresAt: saved.validUntil || saved.dueDate || '',
+    lastAccessAt: saved.publicLastAccessAt || '',
+    viewCount: Number(saved.publicViewCount || 0),
     issuerPublicName: profile?.name || profile?.businessName || '',
     issuerPublicContact: [profile?.phone, profile?.email, profile?.city || profile?.address].filter(Boolean).join(' • '),
     documentNumber: saved.number || '',
@@ -104,7 +124,8 @@ function publicQuotePayload(token, saved, profile, ownerUid){
     clientDecision: saved.clientDecision || 'pendente',
     clientDecisionAt: saved.clientDecisionAt || null,
     clientDecisionNote: saved.clientDecisionNote || '',
-    createdAt: saved.publicCreatedAt || new Date().toISOString()
+    updatedAt: now,
+    createdAt: saved.publicCreatedAt || now
   };
 }
 
@@ -143,12 +164,13 @@ class LocalService{
   async incrementUsage(updates={}){const u=await this.getCurrentUsage();for(const [k,v] of Object.entries(updates))u[k]=Number(u[k]||0)+Number(v||0);u.lastActivityAt=new Date().toISOString();u.updatedAt=u.lastActivityAt;localStorage.setItem(this.usageKey(),JSON.stringify(u));return u;}
   async getProfile(){return JSON.parse(localStorage.getItem(this.key('profile'))||'{}');}
   async saveProfile(profile){localStorage.setItem(this.key('profile'),JSON.stringify({...normalizeProfile(profile,this.user),updatedAt:new Date().toISOString()}));}
-  async listDocuments(){return JSON.parse(localStorage.getItem(this.key('docs'))||'[]').sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));}
+  async listDocuments(){let docs=JSON.parse(localStorage.getItem(this.key('docs'))||'[]').sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));const pub=JSON.parse(localStorage.getItem('orcafacil:publicQuotes')||'{}');let changed=false;docs=docs.map(d=>{const q=d.publicToken&&pub[d.publicToken];if(q?.decision?.status&&q.decision.status!=='pendente'&&d.clientDecision!==q.decision.status){changed=true;return {...d,status:q.document?.status||q.decision.status,clientDecision:q.decision.status,clientDecisionAt:q.decision.decidedAt,clientDecisionNote:q.decision.note,evidenceHash:q.decision.evidenceHash,publicViewCount:q.viewCount||d.publicViewCount,timeline:q.timeline||d.timeline};}return q?{...d,publicViewCount:q.viewCount||d.publicViewCount,publicLastAccessAt:q.lastAccessAt||d.publicLastAccessAt,status:q.document?.status||d.status,timeline:q.timeline||d.timeline}:d;});if(changed)localStorage.setItem(this.key('docs'),JSON.stringify(docs));return docs;}
   async nextNumber(type){const docs=await this.listDocuments();const max=docs.filter(d=>d.type===type).reduce((m,d)=>Math.max(m,numberValue(d.number)),0);return formatNumber(type,max+1);}
-  async saveDocument(docData){const docs=await this.listDocuments();const id=docData.id||uid();const idx=docs.findIndex(d=>d.id===id);const now=new Date().toISOString();const data={...normalizeDoc(docData),id,updatedAt:now,createdAt:docData.createdAt||now};if(idx>=0)docs[idx]=data;else {docs.unshift(data); const incs={documentsCreated:1}; if(data.type==='recibo') incs.receiptsCreated=1; else incs.budgetsCreated=1; await this.incrementUsage(incs);}localStorage.setItem(this.key('docs'),JSON.stringify(docs));return data;}
+  async saveDocument(docData){const docs=await this.listDocuments();const id=docData.id||uid();const idx=docs.findIndex(d=>d.id===id);const now=new Date().toISOString();const timeline=[...(docData.timeline||[])]; if(!docData.id&&!timeline.length) timeline.push({id:uid(),type:'created',title:'Documento criado',message:'Documento criado no OrçaFácil.',createdAt:now,source:'user',metadata:{}}); const data={...normalizeDoc(docData),id,timeline,updatedAt:now,createdAt:docData.createdAt||now};if(idx>=0)docs[idx]=data;else {docs.unshift(data); const incs={documentsCreated:1}; if(data.type==='recibo') incs.receiptsCreated=1; else incs.budgetsCreated=1; await this.incrementUsage(incs);}localStorage.setItem(this.key('docs'),JSON.stringify(docs));return data;}
   async getDocumentById(id){return (await this.listDocuments()).find(d=>d.id===id)||null;}
-  async enablePublicApproval(docData){const token=docData.publicToken||newPublicToken();const now=new Date().toISOString();const saved=await this.saveDocument({...docData,issuerProfile:docData.issuerProfile||await this.getProfile(),publicToken:token,publicEnabled:true,publicCreatedAt:docData.publicCreatedAt||now,publicLastAccessAt:docData.publicLastAccessAt||'',clientDecision:docData.clientDecision||'pendente',clientDecisionAt:docData.clientDecisionAt||null,clientDecisionNote:docData.clientDecisionNote||''});const index=JSON.parse(localStorage.getItem('orcafacil:publicQuotes')||'{}');index[token]=publicQuotePayload(token,saved,await this.getProfile(),this.user?.uid||'demo-user');localStorage.setItem('orcafacil:publicQuotes',JSON.stringify(index));return {...saved,publicUrl:publicApprovalUrl(token)};}
+  async enablePublicApproval(docData){const token=docData.publicToken||newPublicToken();const now=new Date().toISOString();const saved=await this.saveDocument({...docData,issuerProfile:docData.issuerProfile||await this.getProfile(),publicToken:token,publicEnabled:true,status: docData.status==='rascunho'?'emitido':docData.status,publicCreatedAt:docData.publicCreatedAt||now,publicLastAccessAt:docData.publicLastAccessAt||'',clientDecision:docData.clientDecision||'pendente',clientDecisionAt:docData.clientDecisionAt||null,clientDecisionNote:docData.clientDecisionNote||''});const index=JSON.parse(localStorage.getItem('orcafacil:publicQuotes')||'{}');index[token]=publicQuotePayload(token,saved,await this.getProfile(),this.user?.uid||'demo-user');localStorage.setItem('orcafacil:publicQuotes',JSON.stringify(index));return {...saved,publicUrl:publicApprovalUrl(token)};}
   async disablePublicApproval(docData){if(!docData?.id)throw new Error('Documento não encontrado.');const saved=await this.saveDocument({...docData,publicEnabled:false});if(docData.publicToken){const index=JSON.parse(localStorage.getItem('orcafacil:publicQuotes')||'{}');index[docData.publicToken]={...(index[docData.publicToken]||{}),token:docData.publicToken,ownerUid:this.user?.uid||'demo-user',documentId:docData.id,publicEnabled:false};localStorage.setItem('orcafacil:publicQuotes',JSON.stringify(index));}return saved;}
+  async convertBudgetToReceipt(budget){if(!budget?.id||budget.type!=='orcamento'||budget.status!=='aprovado')throw new Error('Somente orçamento aprovado pode virar recibo.');const number=await this.nextNumber('recibo');const now=new Date().toISOString();const receipt=await this.saveDocument({...budget,id:'',type:'recibo',number,status:'emitido',publicToken:'',publicEnabled:false,clientDecision:'pendente',notes:`Recibo gerado a partir do orçamento ${budget.number}.`,originBudgetId:budget.id,originBudgetNumber:budget.number,timeline:[{id:uid(),type:'converted_from_budget',title:'Recibo criado',message:`Recibo gerado a partir do orçamento ${budget.number}.`,createdAt:now,source:'user',metadata:{budgetId:budget.id}}]});await this.saveDocument({...budget,status:'convertido',convertedReceiptId:receipt.id,convertedReceiptNumber:receipt.number,timeline:[...(budget.timeline||[]),{id:uid(),type:'converted',title:'Convertido em recibo',message:`Recibo ${receipt.number} criado a partir deste orçamento.`,createdAt:now,source:'user',metadata:{receiptId:receipt.id}}]});return receipt;}
   async deleteDocument(id){localStorage.setItem(this.key('docs'),JSON.stringify((await this.listDocuments()).filter(d=>d.id!==id)));}
   async getSubscription(){return {status:'none',plan:(await this.getProfile()).plan||'free',billingCycle:'monthly'};}
   async listPayments(){return [];}
@@ -183,12 +205,13 @@ class FirebaseService{
   async acceptTerms(){await setDoc(this.userRef(),{acceptedTermsAt:serverTimestamp(),acceptedPrivacyAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true});}
   async getProfile(){const [userSnap, profileSnap]=await Promise.all([getDoc(this.userRef()),getDoc(this.profileRef())]);return normalizeProfile({...userSnap.data(),...profileSnap.data()},this.user);}
   async saveProfile(profile){const data=normalizeProfile(profile,this.user);const userSnap=await getDoc(this.userRef());const currentPlan=userSnap.exists()?(userSnap.data().plan||'free'):'free';await setDoc(this.profileRef(),{businessName:data.businessName,documentNumber:data.documentNumber,phone:data.phone,email:data.email,address:data.address,pix:data.pix,logoBase64:data.logoBase64,updatedAt:serverTimestamp()},{merge:true});await setDoc(this.userRef(),{name:data.businessName||data.name,email:this.user.email,plan:currentPlan,updatedAt:serverTimestamp()},{merge:true});}
-  async listDocuments(){const q=query(this.docsCol(),orderBy('createdAt','desc'));const s=await getDocs(q);return s.docs.map(d=>({id:d.id,...d.data()}));}
+  async listDocuments(){const q=query(this.docsCol(),orderBy('createdAt','desc'));const s=await getDocs(q);const docs=s.docs.map(d=>({id:d.id,...d.data()}));return Promise.all(docs.map(async d=>{if(!d.publicToken)return d;try{const ps=await getDoc(doc(db,'publicQuotes',d.publicToken));if(!ps.exists())return d;const pub=ps.data();const merged={...d,publicViewCount:pub.viewCount||d.publicViewCount,publicLastAccessAt:pub.lastAccessAt||d.publicLastAccessAt,status:pub.document?.status||d.status,timeline:pub.timeline||d.timeline};if(pub.decision?.status&&pub.decision.status!=='pendente'&&d.clientDecision!==pub.decision.status){const next={...merged,status:pub.document?.status||pub.decision.status,clientDecision:pub.decision.status,clientDecisionAt:pub.decision.decidedAt,clientDecisionNote:pub.decision.note,evidenceHash:pub.decision.evidenceHash};await this.saveDocument(next);return next;}return merged;}catch{return d;}}));}
   async nextNumber(type){const docs=await this.listDocuments();const max=docs.filter(d=>d.type===type).reduce((m,d)=>Math.max(m,numberValue(d.number)),0);return formatNumber(type,max+1);}
-  async saveDocument(docData){const id=docData.id||uid();const ref=doc(db,'users',this.user.uid,'documents',id);const snap=await getDoc(ref);const now=new Date().toISOString();const data={...normalizeDoc(docData),id,updatedAt:now,createdAt:snap.exists()?(snap.data().createdAt||now):now};await setDoc(ref,data,{merge:true});if(!snap.exists()){const incs={documentsCreated:1}; if(data.type==='recibo') incs.receiptsCreated=1; else incs.budgetsCreated=1; await this.incrementUsage(incs); await updateDoc(this.userRef(),{documentsCount:increment(1),lastSeenAt:serverTimestamp()});}return data;}
+  async saveDocument(docData){const id=docData.id||uid();const ref=doc(db,'users',this.user.uid,'documents',id);const snap=await getDoc(ref);const now=new Date().toISOString();const timeline=[...(docData.timeline||[])]; if(!snap.exists()&&!timeline.length) timeline.push({id:uid(),type:'created',title:'Documento criado',message:'Documento criado no OrçaFácil.',createdAt:now,source:'user',metadata:{}}); const data={...normalizeDoc(docData),id,timeline,updatedAt:now,createdAt:snap.exists()?(snap.data().createdAt||now):now};await setDoc(ref,data,{merge:true});if(!snap.exists()){const incs={documentsCreated:1}; if(data.type==='recibo') incs.receiptsCreated=1; else incs.budgetsCreated=1; await this.incrementUsage(incs); await updateDoc(this.userRef(),{documentsCount:increment(1),lastSeenAt:serverTimestamp()});}return data;}
   async getDocumentById(id){const snap=await getDoc(doc(db,'users',this.user.uid,'documents',id));return snap.exists()?{id:snap.id,...snap.data()}:null;}
-  async enablePublicApproval(docData){const token=docData.publicToken||newPublicToken();const now=new Date().toISOString();const saved=await this.saveDocument({...docData,issuerProfile:docData.issuerProfile||await this.getProfile(),publicToken:token,publicEnabled:true,publicCreatedAt:docData.publicCreatedAt||now,publicLastAccessAt:docData.publicLastAccessAt||'',clientDecision:docData.clientDecision||'pendente',clientDecisionAt:docData.clientDecisionAt||null,clientDecisionNote:docData.clientDecisionNote||''});await setDoc(doc(db,'publicQuotes',token),publicQuotePayload(token,saved,await this.getProfile(),this.user.uid),{merge:true});await this.incrementUsage({publicLinksCreated:1});return {...saved,publicUrl:publicApprovalUrl(token)};}
+  async enablePublicApproval(docData){const token=docData.publicToken||newPublicToken();const now=new Date().toISOString();const saved=await this.saveDocument({...docData,issuerProfile:docData.issuerProfile||await this.getProfile(),publicToken:token,publicEnabled:true,status: docData.status==='rascunho'?'emitido':docData.status,publicCreatedAt:docData.publicCreatedAt||now,publicLastAccessAt:docData.publicLastAccessAt||'',clientDecision:docData.clientDecision||'pendente',clientDecisionAt:docData.clientDecisionAt||null,clientDecisionNote:docData.clientDecisionNote||''});await setDoc(doc(db,'publicQuotes',token),publicQuotePayload(token,saved,await this.getProfile(),this.user.uid),{merge:true});await this.incrementUsage({publicLinksCreated:1});return {...saved,publicUrl:publicApprovalUrl(token)};}
   async disablePublicApproval(docData){if(!docData?.id)throw new Error('Documento não encontrado.');const saved=await this.saveDocument({...docData,publicEnabled:false});if(docData.publicToken){await setDoc(doc(db,'publicQuotes',docData.publicToken),{token:docData.publicToken,ownerUid:this.user.uid,documentId:docData.id,publicEnabled:false},{merge:true});}return saved;}
+  async convertBudgetToReceipt(budget){if(!budget?.id||budget.type!=='orcamento'||budget.status!=='aprovado')throw new Error('Somente orçamento aprovado pode virar recibo.');const number=await this.nextNumber('recibo');const now=new Date().toISOString();const receipt=await this.saveDocument({...budget,id:'',type:'recibo',number,status:'emitido',publicToken:'',publicEnabled:false,clientDecision:'pendente',notes:`Recibo gerado a partir do orçamento ${budget.number}.`,originBudgetId:budget.id,originBudgetNumber:budget.number,timeline:[{id:uid(),type:'converted_from_budget',title:'Recibo criado',message:`Recibo gerado a partir do orçamento ${budget.number}.`,createdAt:now,source:'user',metadata:{budgetId:budget.id}}]});await this.saveDocument({...budget,status:'convertido',convertedReceiptId:receipt.id,convertedReceiptNumber:receipt.number,timeline:[...(budget.timeline||[]),{id:uid(),type:'converted',title:'Convertido em recibo',message:`Recibo ${receipt.number} criado a partir deste orçamento.`,createdAt:now,source:'user',metadata:{receiptId:receipt.id}}]});return receipt;}
   async deleteDocument(id){await deleteDoc(doc(db,'users',this.user.uid,'documents',id));}
 
   async getSubscription(){return new BillingService(this.user).getSubscription();}
@@ -209,5 +232,6 @@ export const storage = {
   duplicateDocument: id => activeService.duplicateDocument(id),
   enablePublicApproval: d => activeService.enablePublicApproval(d),
   disablePublicApproval: d => activeService.disablePublicApproval(d),
-  getNextDocumentNumber: type => activeService.nextNumber(type)
+  getNextDocumentNumber: type => activeService.nextNumber(type),
+  convertBudgetToReceipt: d => activeService.convertBudgetToReceipt(d)
 };

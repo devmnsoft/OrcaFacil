@@ -10,21 +10,26 @@ service cloud.firestore {
     function validSeverity() { return request.resource.data.severity in ['info','success','warning','error','critical']; }
     function validLogText() { return (!('message' in request.resource.data) || (request.resource.data.message is string && request.resource.data.message.size() <= 2000)) && (!('title' in request.resource.data) || (request.resource.data.title is string && request.resource.data.title.size() <= 200)); }
     function validPublicQuote() {
-      return request.resource.data.keys().hasOnly(['token','ownerUid','documentId','publicEnabled','issuerPublicName','issuerPublicContact','documentNumber','clientName','issueDate','validUntil','items','subtotal','discount','total','notes','status','clientDecision','clientDecisionAt','clientDecisionNote','createdAt'])
+      return request.resource.data.keys().hasOnly(['token','ownerUid','documentId','type','publicEnabled','issuer','client','document','decision','timeline','expiresAt','lastAccessAt','viewCount','issuerPublicName','issuerPublicContact','documentNumber','clientName','issueDate','validUntil','items','subtotal','discount','total','notes','status','clientDecision','clientDecisionAt','clientDecisionNote','evidenceHash','createdAt','updatedAt'])
         && request.resource.data.token is string
         && request.resource.data.token.size() >= 20
         && request.resource.data.ownerUid is string
         && request.resource.data.documentId is string
         && request.resource.data.publicEnabled is bool
+        && (!('type' in request.resource.data) || request.resource.data.type == 'orcamento')
+        && (!('document' in request.resource.data) || request.resource.data.document.status in ['rascunho','emitido','enviado','visualizado','aprovado','recusado','cancelado','convertido'])
+        && (!('decision' in request.resource.data) || request.resource.data.decision.status in ['pendente','aprovado','recusado'])
         && request.resource.data.clientName is string && request.resource.data.clientName.size() <= 160
         && request.resource.data.notes is string && request.resource.data.notes.size() <= 2000
-        && request.resource.data.status in ['rascunho','emitido','aprovado','cancelado']
+        && request.resource.data.status in ['rascunho','emitido','enviado','visualizado','aprovado','recusado','cancelado','convertido']
         && request.resource.data.clientDecision in ['pendente','aprovado','recusado'];
     }
     function publicDecisionOnly() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientDecision', 'clientDecisionAt', 'clientDecisionNote', 'status'])
-        && request.resource.data.clientDecision in ['pendente', 'aprovado', 'recusado']
-        && request.resource.data.status in ['emitido', 'aprovado', 'cancelado']
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientDecision', 'clientDecisionAt', 'clientDecisionNote', 'evidenceHash', 'status', 'decision', 'document', 'timeline', 'lastAccessAt', 'viewCount', 'updatedAt'])
+        && (!('clientDecision' in request.resource.data) || request.resource.data.clientDecision in ['pendente', 'aprovado', 'recusado'])
+        && (!('decision' in request.resource.data) || request.resource.data.decision.status in ['pendente', 'aprovado', 'recusado'])
+        && (!('document' in request.resource.data) || request.resource.data.document.diff(resource.data.document).affectedKeys().hasOnly(['status']))
+        && request.resource.data.status in ['emitido', 'enviado', 'visualizado', 'aprovado', 'recusado']
         && (!('clientDecisionNote' in request.resource.data) || request.resource.data.clientDecisionNote.size() <= 1000);
     }
 
