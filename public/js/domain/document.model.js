@@ -20,6 +20,11 @@ export class DocumentModel {
     this.total = Number(data.total) || 0;
     this.notes = data.notes || '';
     this.status = data.status || 'rascunho';
+    this.timeline = Array.isArray(data.timeline) ? data.timeline : [];
+    this.convertedReceiptId = data.convertedReceiptId || '';
+    this.convertedReceiptNumber = data.convertedReceiptNumber || '';
+    this.originBudgetId = data.originBudgetId || '';
+    this.originBudgetNumber = data.originBudgetNumber || '';
     this.publicToken = data.publicToken || '';
     this.publicEnabled = Boolean(data.publicEnabled);
     this.clientDecision = data.clientDecision || 'pendente';
