@@ -61,8 +61,8 @@ service cloud.firestore {
     }
 
     match /systemLogs/{logId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && request.resource.data.level in ['debug','info','success','warning','error','critical'] && validLogText(); allow update, delete: if isSuperAdmin(); }
-    match /systemEvents/{eventId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && validSeverity() && request.resource.data.uid == request.auth.uid && request.resource.data.source in ['frontend','cloud_function','public_page','chatbot'] && validLogText(); allow update, delete: if isSuperAdmin(); }
-    match /systemErrors/{errorId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && validSeverity() && validLogText(); allow update, delete: if isSuperAdmin(); }
+    match /systemEvents/{eventId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && request.resource.data.severity in ['info','success','warning','error','critical'] && request.resource.data.source in ['frontend','cloud_function','public_page','chatbot'] && validLogText(); allow update, delete: if isSuperAdmin(); }
+    match /systemErrors/{errorId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && request.resource.data.severity in ['warning','error','critical'] && validLogText(); allow update, delete: if isSuperAdmin(); }
     match /auditLogs/{logId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && validLogText(); allow update, delete: if isSuperAdmin(); }
     match /adminSettings/{settingId} { allow read: if isSuperAdmin() || (request.auth != null && settingId in ['global','company','contact','chatbot','terms','theme','plans']); allow write: if isSuperAdmin(); }
     match /paymentWebhooks/{webhookId} { allow read: if isSuperAdmin(); allow write: if isSuperAdmin(); }
