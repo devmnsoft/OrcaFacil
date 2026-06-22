@@ -125,18 +125,28 @@
           </div>
         </div>
 
-        <div id="authView" class="row g-4">
+        <div id="authView" class="row g-4 align-items-stretch auth-section">
           <div class="col-lg-5">
-            <div class="card border-0 shadow-sm">
-              <div class="card-body p-4">
-                <h4 class="fw-bold mb-1">OrçaFácil</h4><p class="text-secondary">Acesse sua conta e gere documentos profissionais em segundos.</p>
+            <div class="card border-0 shadow-sm auth-card h-100">
+              <div class="card-body p-4 p-md-5">
+                <span class="section-kicker">Acesso seguro</span>
+                <h3 class="fw-bold mb-1" id="authTitle">Entre no OrçaFácil</h3>
+                <p class="text-secondary" id="authSubtitle">Gere orçamentos e recibos profissionais em PDF, direto do navegador.</p>
                 <div class="alert alert-info small" id="modeAlert">Verificando Firebase...</div>
+                <div class="btn-group w-100 auth-switch mb-3" role="group" aria-label="Escolha entrar ou criar conta">
+                  <button class="btn btn-outline-primary auth-mode-btn active" type="button" data-auth-mode="login">Entrar</button>
+                  <button class="btn btn-outline-primary auth-mode-btn" type="button" data-auth-mode="register">Criar conta grátis</button>
+                </div>
                 <form id="authForm" class="vstack gap-3">
-                  <div><label class="form-label">Nome (para criar conta)</label><input class="form-control" id="authName" type="text" placeholder="Seu nome ou empresa"></div><div><label class="form-label">E-mail</label><input class="form-control" id="authEmail" type="email" required placeholder="voce@email.com"></div>
-                  <div><label class="form-label">Senha</label><input class="form-control" id="authPassword" type="password" required minlength="6" placeholder="mínimo 6 caracteres"></div>
+                  <input type="hidden" id="authMode" value="login">
+                  <div id="authFeedback" class="alert alert-danger small mb-0 d-none" role="alert"></div>
+                  <div id="authNameGroup" class="d-none"><label class="form-label">Nome ou empresa</label><input class="form-control" id="authName" type="text" autocomplete="organization" placeholder="Seu nome ou empresa"></div>
+                  <div><label class="form-label">E-mail</label><input class="form-control" id="authEmail" type="email" required autocomplete="email" placeholder="voce@email.com"></div>
+                  <div><label class="form-label">Senha</label><input class="form-control" id="authPassword" type="password" required minlength="6" autocomplete="current-password" placeholder="mínimo 6 caracteres"></div>
+                  <div id="authConfirmGroup" class="d-none"><label class="form-label">Confirme a senha</label><input class="form-control" id="authPasswordConfirm" type="password" minlength="6" autocomplete="new-password" placeholder="digite a senha novamente"></div>
+                  <div id="authTermsGroup" class="form-check small d-none"><input class="form-check-input" id="authTerms" type="checkbox"><label class="form-check-label" for="authTerms">Aceito os <a href="termos.html" target="_blank" rel="noopener">Termos de Uso</a> e a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.</label></div>
                   <div class="d-grid gap-2">
-                    <button class="btn btn-primary" type="submit" data-auth-action="login">Entrar</button>
-                    <button class="btn btn-outline-primary" type="button" id="btnRegister">Criar conta grátis</button>
+                    <button class="btn btn-primary" type="submit" id="btnAuthSubmit"><i class="bi bi-box-arrow-in-right"></i> Entrar</button>
                     <button class="btn btn-outline-secondary" type="button" id="btnDemo"><i class="bi bi-play-circle"></i> Ver demonstração</button>
                   </div>
                 </form>
@@ -144,7 +154,7 @@
             </div>
           </div>
           <div class="col-lg-7">
-            <div class="card border-0 shadow-sm h-100"><div class="card-body p-4"><h4>O que você testa aqui</h4><ul class="check-list"><li>Cadastro do emitente e logo.</li><li>Criação de orçamento ou recibo.</li><li>Geração de PDF.</li><li>Histórico e reemissão.</li><li>Marca freemium ou plano Pro.</li></ul></div></div>
+            <div class="card border-0 shadow-sm h-100 auth-benefits"><div class="card-body p-4 p-md-5"><span class="section-kicker">Comece melhor</span><h4 class="fw-bold">Tudo para vender seu serviço com mais confiança</h4><p class="text-secondary">Ideal para autônomos, MEIs e pequenos prestadores que precisam entregar documentos claros, organizados e com aparência profissional.</p><div class="row g-3 mt-2"><div class="col-sm-6"><div class="auth-benefit"><i class="bi bi-filetype-pdf"></i><strong>PDF profissional</strong><span>Logo, numeração e dados do cliente.</span></div></div><div class="col-sm-6"><div class="auth-benefit"><i class="bi bi-archive"></i><strong>Histórico organizado</strong><span>Reemita e acompanhe documentos.</span></div></div><div class="col-sm-6"><div class="auth-benefit"><i class="bi bi-cash-coin"></i><strong>Recibo por extenso</strong><span>Mais clareza na cobrança e entrega.</span></div></div><div class="col-sm-6"><div class="auth-benefit"><i class="bi bi-stars"></i><strong>Plano grátis</strong><span>Comece sem cartão de crédito.</span></div></div></div></div></div>
           </div>
         </div>
 

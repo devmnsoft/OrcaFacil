@@ -1,5 +1,6 @@
 import { auth, db } from './firebase-config.js';
 import { BillingService } from './services/billing.service.js';
+import { friendlyAuthError, friendlyFirestoreError } from './utils/firebase-errors.js';
 import { uid, calcDocument } from './utils.js';
 import {
   createUserWithEmailAndPassword,
@@ -25,20 +26,7 @@ import {
 const PREFIX = { orcamento: 'ORC', recibo: 'REC' };
 const DEMO_KEY = 'orcafacil:demo-enabled';
 
-function friendlyError(err){
-  const code = err?.code || '';
-  const messages = {
-    'auth/invalid-email': 'E-mail inválido.',
-    'auth/weak-password': 'Senha fraca. Use pelo menos 6 caracteres.',
-    'auth/user-not-found': 'Usuário não encontrado.',
-    'auth/invalid-credential': 'E-mail ou senha incorretos.',
-    'auth/wrong-password': 'Senha incorreta.',
-    'auth/email-already-in-use': 'E-mail já cadastrado.',
-    'auth/network-request-failed': 'Erro de conexão. Verifique sua internet.',
-    'auth/operation-not-allowed': 'Operação não permitida. Habilite e-mail/senha no Firebase Authentication.'
-  };
-  return new Error(messages[code] || err?.message || 'Não foi possível concluir a operação.');
-}
+function friendlyError(err){ return friendlyAuthError(err); }
 function numberValue(number){
   const m = String(number || '').match(/(\d+)$/);
   return m ? Number(m[1]) : Number(number) || 0;
@@ -181,21 +169,24 @@ class LocalService{
 class FirebaseService{
   constructor(){this.mode='firebase';this.user=null;}
   async init(){return {configured:true,mode:'firebase'};}
-  onAuth(cb){return onAuthStateChanged(auth,async u=>{this.user=u;if(u)await this.ensureUserDocument();cb(u);});}
-  async login(email,password){try{const res=await signInWithEmailAndPassword(auth,email,password);this.user=res.user;await this.ensureUserDocument();return res.user;}catch(e){throw friendlyError(e);}}
-  async register(email,password,name=''){try{const res=await createUserWithEmailAndPassword(auth,email,password);this.user=res.user;if(name)await updateProfile(res.user,{displayName:name});await this.ensureUserDocument(name);return res.user;}catch(e){throw friendlyError(e);}}
+  onAuth(cb){return onAuthStateChanged(auth,async u=>{this.user=u;if(u){try{await this.ensureUserDocument();}catch(e){console.warn('[auth] Sessão ativa, mas não foi possível sincronizar users/{uid}.', e);}}cb(u);});}
+  async login(email,password){try{const res=await signInWithEmailAndPassword(auth,email,password);this.user=res.user;try{await this.ensureUserDocument();}catch(profileError){console.warn('[auth] Login realizado, mas não foi possível sincronizar users/{uid}.', profileError);const e=friendlyFirestoreError(profileError);e.authSucceeded=true;throw e;}return res.user;}catch(e){if(e?.authSucceeded)throw e;throw friendlyAuthError(e);}}
+  async register(email,password,name=''){try{const res=await createUserWithEmailAndPassword(auth,email,password);this.user=res.user;if(name){try{await updateProfile(res.user,{displayName:name});}catch(profileUpdateError){console.warn('[auth] Conta criada, mas nome não foi atualizado.', profileUpdateError);}}try{await this.ensureUserDocument(name);}catch(userDocError){console.error('[auth] Conta criada, mas users/{uid} não foi criado.', userDocError);return {user:res.user,partial:true,warning:'Conta criada, mas não foi possível preparar seus dados no sistema. Faça login novamente ou contate o suporte.'};}return {user:res.user,partial:false};}catch(e){throw friendlyAuthError(e);}}
   async demo(){const local=new LocalService();return local.demo();}
   async logout(){localStorage.removeItem(DEMO_KEY);await signOut(auth);this.user=null;}
   userRef(){return doc(db,'users',this.user.uid);}
   profileRef(){return doc(db,'users',this.user.uid,'settings','profile');}
   docsCol(){return collection(db,'users',this.user.uid,'documents');}
   async ensureUserDocument(name=''){
-    if(!this.user)return;
+    if(!this.user?.uid)return;
     const ref=this.userRef(); const snap=await getDoc(ref);
-    const firstUserAgent=navigator.userAgent||''; const firstUrl=location.href;
-    const base={uid:this.user.uid,name:name||this.user.displayName||this.user.email?.split('@')[0]||'',email:this.user.email||'',phone:'',plan:'free',role:'user',isActive:true,isBlocked:false,blockReason:'',acceptedTermsAt:null,acceptedPrivacyAt:null,updatedAt:serverTimestamp(),lastLoginAt:serverTimestamp(),lastSeenAt:serverTimestamp(),loginCount:increment(1),documentsCount:0,pdfGeneratedCount:0,freeLimitNotifiedAt:null,metadata:{firstUserAgent,lastUserAgent:firstUserAgent,firstUrl,lastUrl:firstUrl}};
-    const old=snap.exists()?snap.data():{};
-    await setDoc(ref,snap.exists()?{...base,phone:old.phone||'',plan:old.plan||'free',role:old.role||'user',isActive:old.isActive!==false,isBlocked:old.isBlocked===true,blockReason:old.blockReason||'',acceptedTermsAt:old.acceptedTermsAt||null,acceptedPrivacyAt:old.acceptedPrivacyAt||null,createdAt:old.createdAt||serverTimestamp(),documentsCount:old.documentsCount||0,pdfGeneratedCount:old.pdfGeneratedCount||0,metadata:{...(old.metadata||{}),lastUserAgent:firstUserAgent,lastUrl:firstUrl}}:{...base,createdAt:serverTimestamp()},{merge:true});
+    const lastUserAgent=navigator.userAgent||''; const lastUrl=location.href;
+    if(!snap.exists()){
+      await setDoc(ref,{uid:this.user.uid,name:name||this.user.displayName||this.user.email?.split('@')[0]||'',email:this.user.email||'',phone:'',plan:'free',role:'user',isActive:true,isBlocked:false,blockReason:'',acceptedTermsAt:null,acceptedPrivacyAt:null,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),lastLoginAt:serverTimestamp(),lastSeenAt:serverTimestamp(),loginCount:1,documentsCount:0,pdfGeneratedCount:0,freeLimitNotifiedAt:null,metadata:{firstUserAgent:lastUserAgent,lastUserAgent,firstUrl:lastUrl,lastUrl}});
+      return;
+    }
+    const old=snap.data()||{};
+    await setDoc(ref,{lastLoginAt:serverTimestamp(),lastSeenAt:serverTimestamp(),updatedAt:serverTimestamp(),metadata:{...(old.metadata||{}),lastUserAgent,lastUrl}},{merge:true});
   }
   async getUserAccount(){const s=await getDoc(this.userRef());return s.exists()?{id:s.id,...s.data()}:null;}
   period(){return new Date().toISOString().slice(0,7).replace('-','');}
