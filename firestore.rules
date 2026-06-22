@@ -59,8 +59,21 @@ service cloud.firestore {
     match /systemEvents/{eventId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && validSeverity() && request.resource.data.uid == request.auth.uid && request.resource.data.source in ['frontend','cloud_function','public_page','chatbot'] && validLogText(); allow update, delete: if isSuperAdmin(); }
     match /systemErrors/{errorId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && validSeverity() && validLogText(); allow update, delete: if isSuperAdmin(); }
     match /auditLogs/{logId} { allow read: if isSuperAdmin(); allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && validLogText(); allow update, delete: if isSuperAdmin(); }
-    match /adminSettings/{settingId} { allow read: if isSuperAdmin() || (request.auth != null && settingId in ['company','contact','chatbot','terms','theme','plans']); allow write: if isSuperAdmin(); }
+    match /adminSettings/{settingId} { allow read: if isSuperAdmin() || (request.auth != null && settingId in ['global','company','contact','chatbot','terms','theme','plans']); allow write: if isSuperAdmin(); }
     match /paymentWebhooks/{webhookId} { allow read: if isSuperAdmin(); allow write: if isSuperAdmin(); }
-    match /telegramQueue/{messageId} { allow read, update, delete: if isSuperAdmin(); allow create: if isSuperAdmin() || (request.auth != null && request.resource.data.status == 'pending' && request.resource.data.keys().hasOnly(['id','uid','type','title','message','metadata','status','createdAt']) && request.resource.data.message is string && request.resource.data.message.size() <= 1000); }
+    match /telegramQueue/{messageId} {
+      allow read, update, delete: if isSuperAdmin();
+      allow create: if request.auth != null
+        && request.resource.data.status == 'pending'
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['id','uid','type','title','message','severity','metadata','status','createdAt'])
+        && request.resource.data.type is string
+        && request.resource.data.type.size() <= 80
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 200
+        && request.resource.data.message is string
+        && request.resource.data.message.size() <= 1000
+        && request.resource.data.severity in ['info','success','warning','error','critical'];
+    }
   }
 }

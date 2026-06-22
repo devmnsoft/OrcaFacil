@@ -29,7 +29,7 @@ async function notifyTelegram(message) {
   const token = env('TELEGRAM_BOT_TOKEN');
   if (!token) throw new Error('TELEGRAM_BOT_TOKEN não configurado.');
   const settings = await getSettings();
-  const chatId = message.payload?.telegramChatId || settings.telegramChatId || env('TELEGRAM_DEFAULT_CHAT_ID') || '7535235489';
+  const chatId = message.metadata?.telegramChatId || message.payload?.telegramChatId || settings.telegramChatId || env('TELEGRAM_DEFAULT_CHAT_ID') || '7535235489';
   if (!chatId) throw new Error('Chat ID do Telegram não configurado.');
   const text = `${message.title || 'OrçaFácil'}\n\n${message.message || ''}`.slice(0, 3900);
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }) });
