@@ -87,10 +87,16 @@ async function handler(req, res) {
 const server = http.createServer(handler);
 server.listen(PORT, HOST, () => {
   console.log('========================================');
-  console.log('OrçaFácil iniciado com sucesso');
-  console.log('Ambiente: local');
-  console.log(`Pasta pública: ./${PUBLIC_DIR}`);
-  console.log(`URL local: http://localhost:${PORT}`);
+  if (process.argv.includes('--dist')) {
+    console.log('OrçaFácil rodando em modo DIST/IIS preview');
+    console.log(`URL: http://localhost:${PORT}`);
+    console.log('Pasta pública: ./dist');
+  } else {
+    console.log('OrçaFácil iniciado com sucesso');
+    console.log('Ambiente: local');
+    console.log(`Pasta pública: ./${PUBLIC_DIR}`);
+    console.log(`URL local: http://localhost:${PORT}`);
+  }
   console.log(`Healthcheck: http://localhost:${PORT}/health`);
   console.log(`Diagnóstico: http://localhost:${PORT}/diagnostico.html`);
   console.log('========================================');

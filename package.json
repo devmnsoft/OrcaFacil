@@ -28,7 +28,9 @@
     "validate": "npm run check && npm run check:js && npm run build:prod && npm run security:check",
     "release:patch": "node scripts/release.mjs patch",
     "release:minor": "node scripts/release.mjs minor",
-    "release:major": "node scripts/release.mjs major"
+    "release:major": "node scripts/release.mjs major",
+    "publish:iis": "node scripts/publish-iis.mjs",
+    "build:iis": "node scripts/publish-iis.mjs"
   },
   "engines": {
     "node": ">=18"
