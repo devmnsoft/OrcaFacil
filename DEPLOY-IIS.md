@@ -38,6 +38,8 @@ Arquivos principais gerados:
 - `dist/web.rewrite.config` (opcional, somente com URL Rewrite instalado)
 - `dist/version.json`
 - `dist/LEIA-ME-PUBLICACAO.txt`
+- `dist/instalacao.html`
+- `dist/diagnostico.html`
 - `dist/css/app.css`
 - `dist/js/app.js`
 
@@ -100,6 +102,8 @@ http://localhost:8095
 
 Valide:
 
+- `/instalacao.html` mostra o assistente e o checklist pós-publicação.
+- `/diagnostico.html` mostra protocolo, domínio, Firebase, App Check, `version.json` e localStorage.
 - Tela inicial carrega sem erro de MIME type.
 - Login Firebase funciona.
 - Modo demonstração funciona.
@@ -126,3 +130,24 @@ Valide:
 ## Segurança da publicação
 
 O publicador bloqueia arquivos sensíveis e valida que `dist` não contenha `.env`, `functions/.env`, `node_modules`, `scripts`, `tests`, `.git` ou termos como `private_key`, `serviceAccount`, `TELEGRAM_BOT_TOKEN`, `MERCADO_PAGO_ACCESS_TOKEN` e `OPENAI_API_KEY`.
+
+
+## Checklist pós-publicação
+
+Depois de copiar a `dist/` para o IIS, abra `https://SEU_DOMINIO/instalacao.html` e confirme:
+
+- O site está em HTTP/HTTPS, nunca em `file://`.
+- O domínio final aparece em **Firebase Authentication > Settings > Authorized domains**.
+- `https://SEU_DOMINIO/diagnostico.html` não mostra erros críticos.
+- Login Firebase, logout e recuperação de sessão funcionam.
+- Modo demonstração salva dados no `localStorage`.
+- Orçamento, recibo, PDF e histórico foram testados.
+- `https://SEU_DOMINIO/version.json` abre no navegador.
+- Console do navegador não mostra erro de MIME type, import ES Module ou Firebase Auth domain.
+
+## Erros comuns
+
+- **`file://`**: rode `npm start`, `npm run serve:dist` ou publique em servidor HTTP/HTTPS.
+- **Login bloqueado por domínio**: cadastre o domínio exato no Firebase Authorized domains.
+- **JS/MJS baixando ou com MIME inválido**: confirme o `web.config` gerado e o recurso Conteúdo Estático no IIS.
+- **Rotas internas retornando 404**: use `web.rewrite.config` como `web.config` somente se o módulo IIS URL Rewrite estiver instalado.
