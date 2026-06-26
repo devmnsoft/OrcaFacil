@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Instalação — OrçaFácil</title>
+  <meta name="description" content="Assistente de instalação, publicação e checklist pós-publicação do OrçaFácil.">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="./css/app.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <main class="container py-5">
+    <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-4">
+      <div>
+        <span class="badge text-bg-primary mb-2"><i class="bi bi-rocket-takeoff"></i> MNSOFT Deploy</span>
+        <h1 class="fw-bold mb-1">Instalação e publicação do OrçaFácil</h1>
+        <p class="text-secondary mb-0">Valide o ambiente, confira Firebase, gere orientações e siga o checklist pós-publicação.</p>
+      </div>
+      <div class="d-flex align-items-start gap-2">
+        <a class="btn btn-outline-secondary" href="./diagnostico.html"><i class="bi bi-activity"></i> Diagnóstico</a>
+        <a class="btn btn-primary" href="./index.html"><i class="bi bi-house"></i> Sistema</a>
+      </div>
+    </div>
+
+    <div id="fileAlert" class="alert alert-warning d-none"></div>
+
+    <div class="row g-4">
+      <section class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body p-4">
+            <h2 class="h4 fw-bold">1. Ambiente detectado</h2>
+            <div id="environmentSummary" class="vstack gap-2 mt-3"></div>
+            <hr>
+            <h3 class="h5 fw-bold">Domínio atual</h3>
+            <p class="mb-2"><code id="currentDomain"></code></p>
+            <div id="domainStatus" class="alert mb-0"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body p-4">
+            <h2 class="h4 fw-bold">2. Configuração Firebase</h2>
+            <p class="text-secondary">Estes dados vêm de <code>public/js/firebase-config.js</code>. Chaves públicas do Firebase Web SDK podem ir ao cliente, mas segredos de backend nunca devem estar em <code>public</code> ou <code>dist</code>.</p>
+            <div id="firebaseSummary" class="row g-3"></div>
+            <div class="alert alert-info mt-3 mb-0">
+              <strong>Authorized domains:</strong> cadastre o domínio final no Firebase Console em Authentication &gt; Settings &gt; Authorized domains antes de testar login em produção.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-4">
+            <h2 class="h4 fw-bold">3. Escolha o destino de publicação</h2>
+            <div class="row g-3">
+              <div class="col-md-4"><button class="btn btn-outline-primary w-100 h-100 p-3 deploy-target" data-target="node"><i class="bi bi-pc-display"></i><br><strong>Local Node</strong><br><small>Porta 8095</small></button></div>
+              <div class="col-md-4"><button class="btn btn-outline-primary w-100 h-100 p-3 deploy-target" data-target="iis"><i class="bi bi-windows"></i><br><strong>IIS</strong><br><small>dist + web.config</small></button></div>
+              <div class="col-md-4"><button class="btn btn-outline-primary w-100 h-100 p-3 deploy-target" data-target="firebase"><i class="bi bi-cloud-upload"></i><br><strong>Firebase Hosting</strong><br><small>dist + firebase.json</small></button></div>
+            </div>
+            <pre id="deployCommands" class="bg-dark text-white rounded-4 p-3 mt-3 mb-0"><code>Selecione uma opção acima.</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body p-4">
+            <h2 class="h4 fw-bold">4. Checklist pós-publicação</h2>
+            <div id="postChecklist" class="vstack gap-2"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body p-4">
+            <h2 class="h4 fw-bold">5. Próximos testes</h2>
+            <ol class="mb-0">
+              <li>Abra <a href="./diagnostico.html">diagnostico.html</a> no domínio final.</li>
+              <li>Teste login Firebase e logout.</li>
+              <li>Teste modo demonstração com localStorage.</li>
+              <li>Crie um orçamento e um recibo.</li>
+              <li>Gere PDF no desktop e no celular.</li>
+              <li>Abra o histórico e atualize a página.</li>
+              <li>Confira o console do navegador sem erros críticos.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="./js/instalacao.js"></script>
+</body>
+</html>

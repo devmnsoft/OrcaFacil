@@ -32,7 +32,7 @@ async function processJs() {
     const rel = path.relative(srcDir, file).replace(/\\/g, '/');
     let code = minifyJs(await fs.readFile(file, 'utf8'));
     code = code.replace(/__IS_PRODUCTION_BUILD__/g, prod ? 'true' : 'false');
-    if (prod && ['app.js', 'public-approval.js', 'diagnostico.js'].includes(rel)) {
+    if (prod && ['app.js', 'public-approval.js', 'diagnostico.js', 'instalacao.js'].includes(rel)) {
       const name = rel.replace(/\.js$/, `.${hash(code)}.js`);
       renamed.set(`./js/${rel}`, `./js/${name}`);
       await ensure(path.dirname(path.join(dist, 'js', name)));

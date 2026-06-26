@@ -22,7 +22,19 @@ if %NODE_MAJOR% LSS 18 (
   exit /b 1
 )
 
-echo 2. Verificando npm...
+echo 2. Verificando arquivos do projeto...
+if not exist package.json (
+  echo ERRO: execute este publicador na raiz do projeto OrcaFacil.
+  pause
+  exit /b 1
+)
+if not exist scripts\publish-iis.mjs (
+  echo ERRO: scripts\publish-iis.mjs nao encontrado.
+  pause
+  exit /b 1
+)
+
+echo 3. Verificando npm...
 where npm >nul 2>nul
 if errorlevel 1 (
   echo ERRO: npm nao encontrado. Reinstale o Node.js 18 ou superior incluindo npm.
@@ -30,7 +42,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo 3. Instalando dependencias, se necessario...
+echo 4. Instalando dependencias, se necessario...
 if not exist node_modules (
   call npm install
   if errorlevel 1 (
@@ -42,10 +54,10 @@ if not exist node_modules (
   echo node_modules encontrado. Pulando npm install.
 )
 
-echo 4. Limpando pasta dist...
+echo 5. Limpando pasta dist...
 if exist dist rmdir /s /q dist
 
-echo 5. Gerando build de publicacao...
+echo 6. Gerando build de publicacao...
 call npm run publish:iis
 if errorlevel 1 (
   echo ERRO: build/publicacao falhou.
@@ -53,9 +65,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo 6. Copiando arquivos para dist...
-echo 7. Gerando web.config...
-echo 8. Validando publicacao...
+echo 7. Validando arquivos obrigatorios...
 if not exist dist (
   echo ERRO: pasta dist nao foi criada.
   pause
@@ -66,8 +76,23 @@ if not exist dist\web.config (
   pause
   exit /b 1
 )
+if not exist dist\instalacao.html (
+  echo ERRO: dist\instalacao.html nao foi criado.
+  pause
+  exit /b 1
+)
+if not exist dist\diagnostico.html (
+  echo ERRO: dist\diagnostico.html nao foi criado.
+  pause
+  exit /b 1
+)
+if not exist dist\version.json (
+  echo ERRO: dist\version.json nao foi criado.
+  pause
+  exit /b 1
+)
 
-echo 9. Gerando pacote ZIP, se disponivel...
+echo 8. Gerando pacote ZIP, se disponivel...
 where powershell >nul 2>nul
 if errorlevel 1 (
   echo PowerShell nao encontrado. Pasta dist gerada com sucesso. Compacte manualmente se desejar.
@@ -81,10 +106,11 @@ if errorlevel 1 (
   )
 )
 
-echo 10. Publicacao finalizada.
+echo 9. Publicacao finalizada.
 echo.
 echo Publicacao finalizada com sucesso.
 echo Copie o conteudo da pasta dist para o IIS.
+echo Depois acesse /instalacao.html e /diagnostico.html no dominio publicado.
 start "" explorer "%cd%\dist"
 pause
 endlocal

@@ -8,7 +8,7 @@ const distDir = path.join(root, 'dist');
 const publishDir = path.join(root, 'publish');
 const pkg = JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8'));
 
-const optionalRootFiles = ['aprovar.html', 'diagnostico.html', 'termos.html', 'privacidade.html'];
+const optionalRootFiles = ['aprovar.html', 'diagnostico.html', 'instalacao.html', 'termos.html', 'privacidade.html', 'pagamento-sucesso.html', 'pagamento-pendente.html', 'pagamento-falha.html'];
 const copyDirs = ['css', 'js', 'assets', 'vendor'];
 const forbiddenDistEntries = ['.env', path.join('functions', '.env'), 'node_modules', 'scripts', 'tests', '.git'];
 const sensitiveTerms = [
@@ -196,6 +196,8 @@ Importante:
 - Node.js é usado apenas para gerar esta pasta; o IIS não precisa de Node depois da publicação
 - Adicione o domínio usado no Firebase Authentication > Authorized domains
 - Se usar domínio próprio, configure HTTPS
+- Acesse /instalacao.html para o assistente de instalação e checklist pós-publicação
+- Acesse /diagnostico.html para diagnóstico técnico sem login
 - O arquivo web.rewrite.config é opcional e só deve substituir web.config se o IIS tiver URL Rewrite instalado.
 `;
 }
@@ -215,7 +217,7 @@ async function writeGeneratedFiles() {
 }
 
 async function validateDist() {
-  const required = ['index.html', 'web.config', 'version.json', path.join('css', 'app.css'), path.join('js', 'app.js')];
+  const required = ['index.html', 'diagnostico.html', 'instalacao.html', 'web.config', 'version.json', path.join('css', 'app.css'), path.join('js', 'app.js'), path.join('js', 'diagnostico.js'), path.join('js', 'instalacao.js')];
   const missing = [];
   for (const rel of required) if (!await exists(path.join(distDir, rel))) missing.push(rel);
   if (missing.length) throw new Error(`Arquivos obrigatórios ausentes em dist: ${missing.join(', ')}`);
