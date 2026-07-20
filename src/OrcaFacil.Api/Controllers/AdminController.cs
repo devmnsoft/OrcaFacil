@@ -1,0 +1,3 @@
+using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Mvc;
+namespace OrcaFacil.Api.Controllers; [ApiController,Authorize(Policy="SuperAdmin"),Route("api/admin")]
+public class AdminController:ControllerBase{ [HttpGet("dashboard")] public IActionResult Dashboard()=>Ok(new{users=0,documents=0,errors=0}); [HttpGet("users")] public IActionResult Users()=>Ok(); [HttpGet("logs")] public IActionResult Logs()=>Ok(); [HttpGet("errors")] public IActionResult Errors()=>Ok(); [HttpPost("errors/{id:guid}/resolve")] public IActionResult Resolve(Guid id)=>Ok(); [HttpGet("audit")] public IActionResult Audit()=>Ok(); [HttpPut("settings/{key}")] public IActionResult Settings(string key,object body)=>Ok(); }

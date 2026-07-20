@@ -1,0 +1,3 @@
+using Microsoft.AspNetCore.Mvc; using OrcaFacil.Application.UseCases;
+namespace OrcaFacil.Api.Controllers; [ApiController,Route("api/public-quotes")]
+public class PublicQuotesController(DocumentService docs):ControllerBase{ [HttpPost("{token}/approve")] public Task<OrcaFacil.Shared.Result> Approve(string token,ApprovePublicQuoteCommand c,CancellationToken ct)=>docs.ApproveAsync(c with { Token=token, UserAgent=Request.Headers.UserAgent.ToString()},ct); [HttpPost("{token}/reject")] public IActionResult Reject(string token)=>Accepted(); [HttpGet("{token}/pdf")] public IActionResult Pdf(string token)=>File(Array.Empty<byte>(),"application/pdf"); }
