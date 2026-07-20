@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: orcafacil-postgres
+    environment:
+      POSTGRES_DB: orcafacil
+      POSTGRES_USER: orcafacil_user
+      POSTGRES_PASSWORD: ${ORCAFACIL_DB_PASSWORD:?configure no .env}
+    ports: ["5432:5432"]
+    volumes:
+      - orcafacil_pgdata:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    profiles: ["tools"]
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-change-me}
+    ports: ["5050:80"]
+volumes: { orcafacil_pgdata: {} }

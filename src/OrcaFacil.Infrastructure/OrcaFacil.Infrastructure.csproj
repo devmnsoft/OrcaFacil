@@ -1,0 +1,1 @@
+<Project Sdk="Microsoft.NET.Sdk"><ItemGroup><ProjectReference Include="..\OrcaFacil.Application\OrcaFacil.Application.csproj"/><PackageReference Include="QuestPDF" Version="2025.7.1"/><PackageReference Include="Serilog.AspNetCore" Version="9.0.0"/></ItemGroup></Project>

@@ -1,0 +1,1 @@
+:root{--navy:#1E3A5F;--blue:#2D7DD2;--green:#1F9D6B;--bg:#F4F6F9;--text:#1C2430}body{background:var(--bg);color:var(--text)}.navbar{background:linear-gradient(90deg,var(--navy),var(--blue))}.btn-primary{background:var(--blue);border-color:var(--blue)}
