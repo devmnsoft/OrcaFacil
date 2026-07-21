@@ -1,0 +1,5 @@
+@model dynamic
+<article class="of-explainer-card">
+  <div class="of-explainer-icon"><i class="bi @(Model?.Icon ?? "bi-info-circle")" aria-hidden="true"></i></div>
+  <div><h3>@(Model?.Title ?? "Para que serve esta tela?")</h3><p>@(Model?.Text ?? "Esta área ajuda você a concluir uma etapa importante do OrçaFácil.")</p></div>
+</article>

@@ -1,0 +1,8 @@
+@model dynamic
+@{ var title = Model?.Title ?? "Nenhum conteúdo ainda."; var text = Model?.Text ?? "Quando houver informações, elas aparecerão aqui."; var icon = Model?.Icon ?? "bi-stars"; var actionText = Model?.ActionText as string; var actionPage = Model?.ActionPage as string; }
+<div class="of-empty" role="status" aria-live="polite">
+  <div class="of-empty-icon"><i class="bi @icon" aria-hidden="true"></i></div>
+  <h2 class="h4 mt-3">@title</h2>
+  <p>@text</p>
+  @if (!string.IsNullOrWhiteSpace(actionText) && !string.IsNullOrWhiteSpace(actionPage)) { <a class="btn btn-primary mt-2" asp-page="@actionPage">@actionText</a> }
+</div>

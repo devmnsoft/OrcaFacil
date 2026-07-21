@@ -1,0 +1,7 @@
+@model dynamic
+<article class="of-step-card @(Model?.IsActive == true ? "is-active" : "") @(Model?.IsDone == true ? "is-done" : "")">
+  <span>@(Model?.Number ?? "1")</span>
+  <h3>@(Model?.Title ?? "Passo")</h3>
+  <p>@(Model?.Text ?? "Siga este passo para avançar.")</p>
+  @if (!string.IsNullOrWhiteSpace(Model?.ActionText as string) && !string.IsNullOrWhiteSpace(Model?.ActionPage as string)) { <a class="btn btn-sm btn-primary mt-3" asp-page="@(Model?.ActionPage)">@(Model?.ActionText)</a> }
+</article>

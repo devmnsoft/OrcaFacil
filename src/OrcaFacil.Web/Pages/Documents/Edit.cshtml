@@ -1,3 +1,4 @@
 @page "{id:guid}"
 @model OrcaFacil.Web.Pages.Documents.EditModel
-@{ViewData["Title"]="Editar documento";}<h1>Editar documento @Model.Number</h1><partial name="_DocumentForm" model="Model.Input" />
+@{ViewData["Title"]="Editar documento";}
+<header class="of-page-header"><div><p class="of-eyebrow">Ajuste rápido</p><h1>Editar documento</h1><p>Atualize cliente, itens, valores e observações antes de gerar o PDF novamente.</p></div></header><partial name="_DocumentForm" model="Model.Input" />
