@@ -1,0 +1,17 @@
+@page
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{ ViewData["Title"] = "Perfil do emitente"; }
+<section class="container py-4">
+  <h1>Perfil do emitente</h1>
+  <form method="post" class="row g-3">
+    @Html.AntiForgeryToken()
+    <div class="col-md-8"><label class="form-label">Nome/Razão Social</label><input name="businessName" class="form-control" required maxlength="180" /></div>
+    <div class="col-md-4"><label class="form-label">CPF/CNPJ</label><input name="documentNumber" class="form-control" maxlength="32" /></div>
+    <div class="col-md-4"><label class="form-label">Telefone</label><input name="phone" class="form-control" /></div>
+    <div class="col-md-4"><label class="form-label">E-mail</label><input name="email" type="email" class="form-control" /></div>
+    <div class="col-md-4"><label class="form-label">Cidade</label><input name="city" class="form-control" /></div>
+    <div class="col-12"><label class="form-label">Endereço</label><input name="address" class="form-control" /></div>
+    <div class="col-12"><label class="form-label">Chave Pix</label><input name="pixKey" class="form-control" /></div>
+    <div class="col-12"><button class="btn btn-primary btn-lg">Salvar perfil</button></div>
+  </form>
+</section>

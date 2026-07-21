@@ -4,6 +4,7 @@ namespace OrcaFacil.Application.Plans;
 
 public class PlanLimitService
 {
-    public bool CanCreateDocument(PlanType plan, int monthlyCount, int freeLimit = 5) => plan == PlanType.Pro || monthlyCount < freeLimit;
+    public bool CanCreateDocument(PlanType plan, int monthlyCount, int freeLimit = 20) => plan == PlanType.Pro || monthlyCount < freeLimit;
+    public bool CanGeneratePdf(PlanType plan, int monthlyCount, int freeLimit = 20) => plan == PlanType.Pro || monthlyCount < freeLimit;
     public bool PdfHasWatermark(PlanType plan) => plan == PlanType.Free;
 }

@@ -2,6 +2,7 @@ using OrcaFacil.Application.Plans;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
 using OrcaFacil.Domain.ValueObjects;
+using OrcaFacil.Infrastructure.Pdf;
 using Xunit;
 
 namespace OrcaFacil.UnitTests;
@@ -38,6 +39,13 @@ public class DomainTests
         document.IssueNumber("ORC-1");
         var receipt = document.ConvertToReceipt("REC-1");
         Assert.Equal(DocumentType.Receipt, receipt.Type);
+    }
+
+    [Fact]
+    public void Number_To_Words_Returns_Currency_Text()
+    {
+        var service = new NumberToWordsPtBrService();
+        Assert.Equal("um real e dois centavos", service.ToCurrencyWords(1.02m));
     }
 
     [Fact]
