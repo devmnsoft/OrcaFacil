@@ -9,3 +9,15 @@
 - [ ] Mobile sem overflow horizontal.
 - [ ] SVGs textuais carregando sem binários.
 - [ ] Ícones Bootstrap Icons visíveis.
+
+## Checklist visual desta etapa
+
+- [ ] Cadastro tem contraste adequado.
+- [ ] Senha inicia oculta.
+- [ ] Olhinho mostra/oculta senha.
+- [ ] Confirmar senha igual ao campo senha.
+- [ ] Nenhum texto branco em fundo claro.
+- [ ] Erro de banco mostra mensagem amigável.
+- [ ] Stack trace não aparece para usuário.
+- [ ] SVGs estão no contexto de orçamento/recibo/PDF.
+- [ ] Mobile não quebra.

@@ -11,6 +11,7 @@
   window.removeDocumentItem=btn=>{const row=btn.closest('.item');if(document.querySelectorAll('.item').length>1)row?.remove();calculateDocumentTotals()};
   window.copyToClipboard=async text=>{await navigator.clipboard.writeText(text||location.href);showToast('Link copiado.');};
   window.formatCurrencyInput=el=>{el.value=el.value.replace(/[^\d,.-]/g,'')};
+  window.initPasswordToggles=()=>document.querySelectorAll('[data-password-toggle]').forEach((button)=>{button.addEventListener('click',()=>{const field=button.closest('.of-password-field');const input=field?.querySelector('input');const icon=button.querySelector('i');if(!input)return;const isPassword=input.type==='password';input.type=isPassword?'text':'password';button.setAttribute('aria-label',isPassword?'Ocultar senha':'Mostrar senha');if(icon){icon.classList.toggle('bi-eye',!isPassword);icon.classList.toggle('bi-eye-slash',isPassword);}})});
   window.initTooltips=()=>document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el=>bootstrap.Tooltip.getOrCreateInstance(el));
   window.toggleFaqItem=btn=>{const answer=btn?.nextElementSibling;if(!answer)return;const open=answer.hasAttribute('hidden');answer.toggleAttribute('hidden',!open);btn.setAttribute('aria-expanded',String(open));};
   window.formatPhoneInput=el=>{el.value=el.value.replace(/\D/g,'').replace(/(\d{2})(\d{5})(\d{0,4}).*/,'($1) $2-$3')};
@@ -18,5 +19,5 @@
   document.addEventListener('submit',e=>{const btn=e.target.querySelector('[data-loading],button[type="submit"]');if(btn) setButtonLoading(btn)});
   document.addEventListener('click',e=>{const c=e.target.closest('[data-confirm]');if(c&&!confirmAction(c.dataset.confirm))e.preventDefault();const copy=e.target.closest('[data-copy]');if(copy){e.preventDefault();copyToClipboard(copy.dataset.copy)}});
   document.addEventListener('input',e=>{if(e.target.matches('.qty,.price,.discount,[data-document-discount]'))calculateDocumentTotals();if(e.target.matches('[data-phone]'))formatPhoneInput(e.target);if(e.target.matches('[data-cpf-cnpj]'))formatCpfCnpjInput(e.target);if(e.target.matches('[data-currency]'))formatCurrencyInput(e.target)});
-  initSidebar();initTooltips();document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{const t=document.querySelector(a.getAttribute('href'));if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth'})}}));calculateDocumentTotals();initToasts();
+  initSidebar();initTooltips();document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{const t=document.querySelector(a.getAttribute('href'));if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth'})}}));calculateDocumentTotals();initPasswordToggles();initToasts();
 })();
