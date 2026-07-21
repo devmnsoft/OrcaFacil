@@ -6,7 +6,7 @@ namespace OrcaFacil.Infrastructure.Pdf;
 
 public class ReceiptPdfTemplate : DocumentPdfTemplate
 {
-    public ReceiptPdfTemplate(Document document, IssuerProfile? issuer, PlanType plan) : base(document, issuer, plan) { }
+    public ReceiptPdfTemplate(Domain.Entities.Document document, IssuerProfile? issuer, PlanType plan) : base(document, issuer, plan) { }
 
     protected override string Title => "Recibo";
 

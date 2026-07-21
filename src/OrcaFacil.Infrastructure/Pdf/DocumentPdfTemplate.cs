@@ -2,7 +2,7 @@ using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
+using Document = OrcaFacil.Domain.Entities.Document;
 
 namespace OrcaFacil.Infrastructure.Pdf;
 

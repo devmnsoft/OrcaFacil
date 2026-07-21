@@ -6,7 +6,7 @@ namespace OrcaFacil.Infrastructure.Pdf;
 
 public class BudgetPdfTemplate : DocumentPdfTemplate
 {
-    public BudgetPdfTemplate(Document document, IssuerProfile? issuer, PlanType plan) : base(document, issuer, plan) { }
+    public BudgetPdfTemplate(Domain.Entities.Document document, IssuerProfile? issuer, PlanType plan) : base(document, issuer, plan) { }
 
     protected override string Title => "Orçamento";
 
