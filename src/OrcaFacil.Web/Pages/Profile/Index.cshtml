@@ -1,17 +1,4 @@
 @page
-@attribute [Microsoft.AspNetCore.Authorization.Authorize]
-@{ ViewData["Title"] = "Perfil do emitente"; }
-<section class="container py-4">
-  <h1>Perfil do emitente</h1>
-  <form method="post" class="row g-3">
-    @Html.AntiForgeryToken()
-    <div class="col-md-8"><label class="form-label">Nome/Razão Social</label><input name="businessName" class="form-control" required maxlength="180" /></div>
-    <div class="col-md-4"><label class="form-label">CPF/CNPJ</label><input name="documentNumber" class="form-control" maxlength="32" /></div>
-    <div class="col-md-4"><label class="form-label">Telefone</label><input name="phone" class="form-control" /></div>
-    <div class="col-md-4"><label class="form-label">E-mail</label><input name="email" type="email" class="form-control" /></div>
-    <div class="col-md-4"><label class="form-label">Cidade</label><input name="city" class="form-control" /></div>
-    <div class="col-12"><label class="form-label">Endereço</label><input name="address" class="form-control" /></div>
-    <div class="col-12"><label class="form-label">Chave Pix</label><input name="pixKey" class="form-control" /></div>
-    <div class="col-12"><button class="btn btn-primary btn-lg">Salvar perfil</button></div>
-  </form>
-</section>
+@model OrcaFacil.Web.Pages.Profile.IndexModel
+@{ViewData["Title"]="Emitente";}
+<h1>Perfil do Emitente</h1><form method="post" class="card p-4">@Html.AntiForgeryToken()<div asp-validation-summary="ModelOnly" class="text-danger"></div><label>Nome/Razão Social</label><input asp-for="Input.BusinessName" class="form-control"/><label>CPF/CNPJ</label><input asp-for="Input.DocumentNumber" class="form-control"/><label>Telefone</label><input asp-for="Input.Phone" class="form-control"/><label>E-mail</label><input asp-for="Input.Email" class="form-control"/><label>Endereço</label><input asp-for="Input.Address" class="form-control"/><label>Cidade</label><input asp-for="Input.City" class="form-control"/><label>Pix</label><input asp-for="Input.PixKey" class="form-control"/><button class="btn btn-primary mt-3">Salvar</button></form>

@@ -73,3 +73,40 @@ Use `GET /api/documents/{id}/pdf` autenticado. Usuários Free recebem a marca �
 ### Publicação IIS
 
 Publique com `dotnet publish src/OrcaFacil.Web -c Release -o ./publish`, instale o Hosting Bundle do ASP.NET Core no servidor, configure o App Pool sem código gerenciado e aponte o site para a pasta publicada.
+
+## MVP ASP.NET Core/PostgreSQL
+
+### Rodar local
+
+```bash
+dotnet restore OrcaFacil.sln
+dotnet build OrcaFacil.sln
+dotnet test OrcaFacil.sln
+dotnet run --project src/OrcaFacil.Web
+```
+
+### Banco e migrations
+
+```bash
+dotnet ef database update --project src/OrcaFacil.Persistence --startup-project src/OrcaFacil.Web
+```
+
+A migration inicial cria tabelas nos schemas `identity`, `core`, `billing`, `admin`, `logs` e `public_access`.
+
+### SuperAdmin
+
+Configure as chaves esperadas pelo `SuperAdminSeeder` em `appsettings`/variáveis de ambiente e inicie o Web para criar o usuário administrativo.
+
+### Telas principais
+
+- `/Auth/Register` e `/Auth/Login` para cadastro/login.
+- `/Dashboard` para métricas.
+- `/Profile` para emitente.
+- `/Documents` para histórico.
+- `/Documents/CreateBudget` e `/Documents/CreateReceipt` para novos documentos.
+- `/p/{token}` para aprovação pública.
+- `/Admin/Dashboard` para Admin Geral.
+
+### PDF e IIS
+
+Baixe PDFs autenticados por `/Documents/Pdf/{id}`. Para IIS, execute `publish-iis.bat` e siga `docs/DEPLOY-IIS-ASPNET.md`.

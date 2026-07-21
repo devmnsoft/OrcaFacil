@@ -1,4 +1,6 @@
 @page
-@attribute [Microsoft.AspNetCore.Authorization.Authorize]
-@{ ViewData["Title"] = "Dashboard"; }
-<section class="container py-4"><h1>Dashboard</h1><div class="row g-3"><div class="col-md-3"><div class="card p-3">Documentos</div></div><div class="col-md-3"><div class="card p-3">Orçamentos</div></div><div class="col-md-3"><div class="card p-3">Recibos</div></div><div class="col-md-3"><div class="card p-3">Plano atual</div></div></div></section>
+@model OrcaFacil.Web.Pages.Dashboard.IndexModel
+@{ViewData["Title"]="Dashboard"; var d=Model.Dashboard;}
+<h1>Dashboard</h1><div class="row g-3"><div class="col-md-3"><div class="card-metric">Documentos <strong>@d?.TotalDocuments</strong></div></div><div class="col-md-3"><div class="card-metric">Orçamentos <strong>@d?.TotalBudgets</strong></div></div><div class="col-md-3"><div class="card-metric">Recibos <strong>@d?.TotalReceipts</strong></div></div><div class="col-md-3"><div class="card-metric">Plano <strong>@d?.Plan</strong></div></div></div>
+<div class="row g-3 mt-1"><div class="col-md-6"><div class="card-metric">Total orçado <strong>@((d?.BudgetTotal ?? 0).ToString("C"))</strong></div></div><div class="col-md-6"><div class="card-metric">Total recebido <strong>@((d?.ReceiptTotal ?? 0).ToString("C"))</strong></div></div></div>
+<h2 class="h4 mt-4">Últimos documentos</h2><partial name="_DocumentTable" model="d?.LatestDocuments" />

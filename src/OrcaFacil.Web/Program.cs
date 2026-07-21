@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Auth;
 using OrcaFacil.Application.Documents;
@@ -34,11 +35,12 @@ builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IPdfService, QuestPdfDocumentService>();
 builder.Services.AddScoped<INumberToWordsService, NumberToWordsPtBrService>();
 builder.Services.AddHealthChecks();
-builder.Services.AddAuthentication("OrcaCookie").AddCookie("OrcaCookie", options =>
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Strict;
-    options.LoginPath = "/login";
+    options.LoginPath = "/Auth/Login";
+    options.AccessDeniedPath = "/Auth/Login";
 });
 builder.Services.AddAuthorization(options => options.AddPolicy("SuperAdmin", policy => policy.RequireRole("SuperAdmin")));
 builder.Services.AddRateLimiter(options => options.AddFixedWindowLimiter("public", limiter =>
@@ -73,4 +75,13 @@ app.MapHealthChecks("/health");
 app.MapGet("/health/version", () => new { app = "OrcaFacil", version = "1.0.0", environment = app.Environment.EnvironmentName, date = DateTime.UtcNow });
 app.MapControllers();
 app.MapRazorPages();
+app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (Guid id, OrcaFacil.Application.Abstractions.ICurrentUserService currentUser, OrcaFacil.Application.Abstractions.IPdfService pdf, OrcaFacil.Persistence.OrcaFacilDbContext db, CancellationToken ct) =>
+{
+    var document = await db.Documents.Include(d => d.Items).SingleOrDefaultAsync(d => d.Id == id && d.UserId == currentUser.UserId && !d.IsDeleted, ct);
+    if (document is null) return Results.NotFound();
+    var issuer = await db.IssuerProfiles.SingleOrDefaultAsync(x => x.UserId == currentUser.UserId, ct);
+    var plan = Enum.TryParse<OrcaFacil.Domain.Enums.PlanType>(currentUser.Plan, out var parsedPlan) ? parsedPlan : OrcaFacil.Domain.Enums.PlanType.Free;
+    var bytes = await pdf.GenerateDocumentPdfAsync(document, issuer, plan, ct);
+    return Results.File(bytes, "application/pdf", $"{document.Number}.pdf");
+}).RequireAuthorization();
 app.Run();

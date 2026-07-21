@@ -1,4 +1,4 @@
 @page
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy = "SuperAdmin")]
-@{ ViewData["Title"] = "Admin Dashboard"; }
-<section class="container py-4"><h1>Admin Dashboard</h1><p>Painel administrativo básico do SuperAdmin.</p></section>
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy="SuperAdmin")]
+@model OrcaFacil.Web.Areas.Admin.Pages.DashboardModel
+@{ViewData["Title"]="Admin Geral";}<h1>Admin Geral</h1><div class="row g-3"><div class="col-md-3"><div class="card-metric">Usuários <strong>@Model.TotalUsers</strong></div></div><div class="col-md-3"><div class="card-metric">Documentos <strong>@Model.TotalDocuments</strong></div></div><div class="col-md-3"><div class="card-metric">Free <strong>@Model.FreeUsers</strong></div></div><div class="col-md-3"><div class="card-metric">Pro <strong>@Model.ProUsers</strong></div></div></div>

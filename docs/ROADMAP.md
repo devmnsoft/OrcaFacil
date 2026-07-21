@@ -1,3 +1,13 @@
 # Roadmap
 
-Implementado no MVP: auth, perfil, documentos, PDFs, histórico, dashboard, Free/Pro manual e Admin básico. Futuro: Mercado Pago, nota fiscal, WhatsApp oficial, IA paga e BI avançado.
+## Concluído no MVP navegável
+
+- Login, cadastro e logout Web com cookie.
+- Dashboard, perfil do emitente, criação de orçamento/recibo, histórico, detalhes, edição, duplicação, exclusão lógica e PDF.
+- Aprovação pública por `/p/{token}`.
+- Admin Geral básico.
+- Script de publicação IIS.
+
+## Pendências pós-MVP
+
+- Mercado Pago, nota fiscal, WhatsApp oficial, BI avançado, assinatura ICP-Brasil e recursos de IA paga.
