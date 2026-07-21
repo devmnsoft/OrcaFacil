@@ -10,9 +10,11 @@ public class QuestPdfDocumentService : IPdfService
     public Task<byte[]> GenerateDocumentPdfAsync(Document document, IssuerProfile? issuer, PlanType plan, CancellationToken ct = default)
     {
         QuestPDF.Settings.License = LicenseType.Community;
-        var template = document.Type == DocumentType.Receipt
-            ? new ReceiptPdfTemplate(document, issuer, plan)
-            : new BudgetPdfTemplate(document, issuer, plan);
+        DocumentPdfTemplate template;
+        if (document.Type == DocumentType.Receipt)
+            template = new ReceiptPdfTemplate(document, issuer, plan);
+        else
+            template = new BudgetPdfTemplate(document, issuer, plan);
         return Task.FromResult(template.Generate());
     }
 }
