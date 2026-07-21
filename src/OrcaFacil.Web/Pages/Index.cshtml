@@ -1,5 +1,34 @@
 @page
-@{ Layout="/Pages/Shared/_PublicLayout.cshtml"; ViewData["Title"]="Orçamentos e recibos profissionais"; }
-<section class="of-hero"><div class="container"><div class="row align-items-center g-4"><div class="col-lg-7"><p class="of-eyebrow text-white-50">SaaS para prestadores de serviço</p><h1>Orçamentos e recibos profissionais em PDF, em segundos.</h1><p class="lead text-white-50">Crie documentos bonitos, numerados e prontos para enviar ao cliente, sem instalar nada.</p><div class="d-flex flex-column flex-sm-row gap-3 mt-4"><a class="btn btn-success btn-lg" asp-page="/Auth/Register">Começar grátis</a><a class="btn btn-outline-light btn-lg" asp-page="/Auth/Login">Entrar</a><a class="btn btn-light btn-lg" href="#como-funciona">Ver como funciona</a></div></div><div class="col-lg-5"><div class="of-public-card p-4"><span class="of-badge">PDF premium</span><h2 class="h3 mt-3">Documento #000123</h2><p class="text-muted">Cliente: Maria Souza</p><div class="d-flex justify-content-between border-top pt-3"><strong>Total</strong><strong class="text-success">R$ 1.290,00</strong></div></div></div></div></div></section>
-<section id="como-funciona" class="of-section bg-white text-dark"><div class="container"><h2 class="fw-black">Como funciona</h2><div class="row g-3 mt-3">@foreach(var x in new[]{"Preencha os dados","Gere o PDF","Envie para o cliente"}){<div class="col-md-4"><div class="of-feature"><h3 class="h5">@x</h3><p>Fluxo guiado, responsivo e pronto para celular.</p></div></div>}</div></div></section>
-<section class="of-section"><div class="container"><div class="of-public-card p-4 p-lg-5"><h2>Para quem é</h2><p>Eletricistas, pintores, pedreiros, diaristas, técnicos, designers, fotógrafos, manicures e prestadores de serviço em geral.</p><div class="row g-3 mt-3"><div class="col-md-6"><h3 class="h5">Benefícios</h3><ul><li>Passa mais confiança</li><li>Economiza tempo e organiza histórico</li><li>Funciona no celular</li><li>Recibo com valor por extenso</li><li>Aprovação pública de orçamento quando habilitada</li></ul></div><div class="col-md-6"><h3 class="h5">Planos</h3><div class="row g-3"><div class="col-sm-6"><div class="of-feature"><strong>Free</strong><h4>R$ 0</h4><p>PDF com marca OrçaFácil e limite mensal configurável.</p></div></div><div class="col-sm-6"><div class="of-feature border border-primary"><strong>Pro</strong><h4>R$ 19,90/mês</h4><p>PDF sem marca, documentos ilimitados e histórico completo.</p></div></div></div></div></div><div class="text-center mt-4"><a class="btn btn-success btn-lg" asp-page="/Auth/Register">Comece grátis e gere seu primeiro orçamento agora.</a></div></div></div></section>
+@{ Layout="/Pages/Shared/_PublicLayout.cshtml"; ViewData["Title"]="Orçamentos, recibos e PDFs profissionais"; }
+<section class="of-hero">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-7">
+        <p class="of-eyebrow text-white-50">SaaS freemium para MEIs, autônomos e pequenos prestadores</p>
+        <h1>Orçamentos e recibos profissionais para vender com mais confiança.</h1>
+        <p class="lead text-white-75">Crie documentos, gere PDFs premium, envie links públicos de aprovação e mantenha seu histórico organizado em poucos minutos.</p>
+        <div class="d-flex flex-column flex-sm-row gap-3 mt-4"><a class="btn btn-success btn-lg" asp-page="/Auth/Register">Começar grátis</a><a class="btn btn-outline-light btn-lg" href="#como-funciona">Ver jornada</a><a class="btn btn-light btn-lg" asp-page="/Precos">Conhecer o Pro</a></div>
+        <div class="of-trust-row mt-4"><span>✓ Sem instalação</span><span>✓ PDF com aparência comercial</span><span>✓ Feito para celular</span></div>
+      </div>
+      <div class="col-lg-5">
+        <div class="of-document-preview" aria-label="Prévia de orçamento profissional">
+          <div class="d-flex justify-content-between align-items-start"><div><span class="of-badge">Orçamento #000123</span><h2 class="h4 mt-3 mb-1">Instalação elétrica residencial</h2><p class="text-muted mb-0">Cliente: Maria Souza</p></div><strong class="text-success">Aprovável por link</strong></div>
+          <div class="of-preview-lines"><span></span><span></span><span></span></div>
+          <div class="d-flex justify-content-between border-top pt-3"><strong>Total</strong><strong class="text-success fs-4">R$ 1.290,00</strong></div>
+          <div class="of-preview-actions"><span>Gerar PDF</span><span>Enviar ao cliente</span><span>Converter em recibo</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="como-funciona" class="of-section bg-white text-dark">
+  <div class="container"><div class="text-center mx-auto of-section-heading"><p class="of-eyebrow">Do cadastro ao cliente aprovado</p><h2>Uma jornada simples, guiada e comercial</h2><p>O usuário entende o próximo passo sem esforço: cadastrar emitente, criar orçamento, gerar PDF, enviar e acompanhar.</p></div>
+    <div class="row g-4 mt-2">
+      @foreach (var step in new[]{("1","Cadastre seu emitente","Informe dados da sua empresa ou serviço para aparecerem nos PDFs."),("2","Crie o orçamento","Adicione cliente, itens, valores, validade e condições comerciais."),("3","Gere o PDF","Baixe um documento claro, numerado e pronto para WhatsApp ou e-mail."),("4","Envie o link público","Permita que o cliente aprove ou recuse quando o recurso estiver habilitado."),("5","Converta em recibo","Transforme serviço aprovado em recibo com valor por extenso."),("6","Assine o Pro","Remova marca, amplie limites e profissionalize a operação.")}){<div class="col-md-6 col-xl-4"><div class="of-step-card"><span>@step.Item1</span><h3>@step.Item2</h3><p>@step.Item3</p></div></div>}
+    </div>
+  </div>
+</section>
+<section id="recursos" class="of-section">
+  <div class="container"><div class="row g-4 align-items-stretch"><div class="col-lg-5"><div class="of-public-card p-4 p-lg-5 h-100"><p class="of-eyebrow">Para quem presta serviço</p><h2>Feito para eletricistas, pintores, técnicos, designers, fotógrafos, diaristas e MEIs.</h2><p class="text-muted">Menos planilha, menos retrabalho e mais clareza para fechar serviços.</p><a class="btn btn-primary" asp-page="/Auth/Register">Criar meu primeiro orçamento</a></div></div><div class="col-lg-7"><div class="row g-3 h-100">@foreach(var item in new[]{"Histórico de documentos","Recibos com valor por extenso","PDFs profissionais","Dashboard de uso","Aprovação pública","Suporte MNSOFT"}){<div class="col-sm-6"><div class="of-feature"><h3 class="h5">@item</h3><p>Interface limpa, responsiva e preparada para operação diária.</p></div></div>}</div></div></div></div>
+</section>
+<section class="of-section bg-white text-dark"><div class="container"><div class="of-cta-band"><div><p class="of-eyebrow">Pronto para começar?</p><h2>Gere seu primeiro orçamento profissional hoje.</h2><p>Plano Free para iniciar e Pro para crescer com documentos ilimitados e uma experiência mais profissional.</p></div><div class="d-grid gap-2"><a class="btn btn-success btn-lg" asp-page="/Auth/Register">Começar grátis</a><a class="btn btn-outline-primary btn-lg" asp-page="/Support/Index">Falar com a MNSOFT</a></div></div></div></section>
