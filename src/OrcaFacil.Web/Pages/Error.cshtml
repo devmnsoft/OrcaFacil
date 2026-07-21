@@ -1,0 +1,18 @@
+@page
+@model OrcaFacil.Web.Pages.ErrorModel
+@{ Layout = "/Pages/Shared/_PublicLayout.cshtml"; ViewData["Title"] = "Erro"; }
+<section class="of-section of-section-light">
+  <div class="container">
+    <div class="of-card mx-auto" style="max-width:760px">
+      <p class="of-eyebrow">Atendimento MNSOFT</p>
+      <h1>Algo não saiu como esperado.</h1>
+      <p>Não foi possível concluir a operação agora. Tente novamente ou fale com a MNSOFT.</p>
+      <p class="of-muted">Código de atendimento: <strong>@Model.CorrelationId</strong></p>
+      <div class="d-flex gap-2 flex-wrap"><a class="btn btn-primary" asp-page="/Index">Voltar para início</a><a class="btn btn-outline-primary" asp-page="/Support/Index">Falar com a MNSOFT</a></div>
+      @if (Model.ShowTechnicalDetails)
+      {
+        <div class="accordion of-accordion mt-4" id="errorDetails"><div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#technicalDetails">Detalhes técnicos de desenvolvimento</button></h2><div id="technicalDetails" class="accordion-collapse collapse" data-bs-parent="#errorDetails"><div class="accordion-body"><code>@Model.TechnicalDetails</code></div></div></div></div>
+      }
+    </div>
+  </div>
+</section>

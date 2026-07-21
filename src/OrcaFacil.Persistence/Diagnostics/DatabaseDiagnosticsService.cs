@@ -20,6 +20,12 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
 
     public DatabaseDiagnosticsService(IConfiguration configuration) => _configuration = configuration;
 
+    public async Task<bool> CanConnectForUserActionAsync(CancellationToken ct = default)
+    {
+        var result = await CheckAsync(ct);
+        return result.CanConnect;
+    }
+
     public async Task<DatabaseDiagnosticsDto> CheckAsync(CancellationToken ct = default)
     {
         var connectionString = _configuration.GetConnectionString("DefaultConnection");
@@ -77,7 +83,7 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
     {
         if (HasSqlState(ex, "28P01"))
         {
-            return "Senha inválida para o usuário do PostgreSQL. Verifique a ConnectionString.";
+            return "Falha de autenticação no PostgreSQL para o usuário orcafacil_user. Verifique a senha configurada em ConnectionStrings:DefaultConnection ou na variável ConnectionStrings__DefaultConnection. (28P01)";
         }
 
         return ex.Message.Replace("Password=", "Password=******", StringComparison.OrdinalIgnoreCase);

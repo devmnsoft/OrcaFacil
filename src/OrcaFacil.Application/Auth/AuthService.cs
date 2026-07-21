@@ -28,10 +28,22 @@ public class AuthService
     {
         try
         {
-            var email = new Email(command.Email).Value;
+            if (string.IsNullOrWhiteSpace(command.Name)) return Result<UserSummaryDto>.Fail("Informe seu nome ou empresa.");
+            if (string.IsNullOrWhiteSpace(command.Email)) return Result<UserSummaryDto>.Fail("Informe um e-mail válido.");
+            if (string.IsNullOrWhiteSpace(command.Password) || command.Password.Length < 6) return Result<UserSummaryDto>.Fail("A senha precisa ter pelo menos 6 caracteres.");
+            string email;
+            try
+            {
+                email = new Email(command.Email).Value;
+            }
+            catch (ArgumentException)
+            {
+                return Result<UserSummaryDto>.Fail("Informe um e-mail válido.");
+            }
+
             if (!command.AcceptTerms || !command.AcceptPrivacy)
             {
-                return Result<UserSummaryDto>.Fail("Termos e privacidade são obrigatórios.");
+                return Result<UserSummaryDto>.Fail(!command.AcceptTerms ? "Aceite os termos para continuar." : "Aceite a política de privacidade para continuar.");
             }
 
             if (_users.Query().Any(user => user.Email == email))

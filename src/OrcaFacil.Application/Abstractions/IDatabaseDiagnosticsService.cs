@@ -3,6 +3,7 @@ namespace OrcaFacil.Application.Abstractions;
 public interface IDatabaseDiagnosticsService
 {
     Task<DatabaseDiagnosticsDto> CheckAsync(CancellationToken ct = default);
+    Task<bool> CanConnectForUserActionAsync(CancellationToken ct = default);
 }
 
 public sealed record DatabaseDiagnosticsDto(

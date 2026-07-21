@@ -152,3 +152,13 @@ psql "Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Passwo
 ```bash
 psql "Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456" -f script_completop.sql
 ```
+
+## Conexão local e erro 28P01
+
+Connection string esperada em desenvolvimento:
+
+```text
+Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456
+```
+
+Para criar ou corrigir o usuário local, execute `database/corrigir_usuario_local.sql` como `postgres`/superuser. O erro PostgreSQL `28P01` significa falha de autenticação: usuário ou senha incorretos na connection string ou variável de ambiente.

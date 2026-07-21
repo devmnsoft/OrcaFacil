@@ -34,8 +34,15 @@ public class LoginModel : PageModel
         catch (Exception ex) when (ex.IsPostgresInvalidPassword())
         {
             _logger.LogError(ex, "POSTGRES_AUTH_FAILED_LOGIN SqlState 28P01 for {Email}", Input.Email);
-            ModelState.AddModelError(string.Empty, "Não foi possível conectar ao banco de dados. Verifique a senha do usuário orcafacil_user nas configurações do sistema.");
-            TempData.Error("Não foi possível entrar agora. A conexão com o banco de dados precisa ser verificada.");
+            ModelState.AddModelError(string.Empty, "Não foi possível concluir seu acesso agora. Tente novamente em instantes ou fale com a MNSOFT.");
+            TempData.Error("Não foi possível concluir seu acesso agora. Tente novamente em instantes ou fale com a MNSOFT.");
+            return Page();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "LOGIN_UNEXPECTED_ERROR CorrelationId {CorrelationId} Operation {Operation}", HttpContext.TraceIdentifier, "Login");
+            ModelState.AddModelError(string.Empty, "Não foi possível concluir seu acesso agora. Tente novamente em instantes ou fale com a MNSOFT.");
+            TempData.Error("Não foi possível concluir seu acesso agora. Tente novamente em instantes ou fale com a MNSOFT.");
             return Page();
         }
     }

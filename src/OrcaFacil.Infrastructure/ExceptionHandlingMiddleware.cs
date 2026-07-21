@@ -72,7 +72,7 @@ public class ExceptionHandlingMiddleware
         if (HasSqlState(ex, "28P01"))
         {
             return _environment.IsDevelopment()
-                ? "Falha de autenticação no PostgreSQL (28P01). Verifique usuário/senha da ConnectionString DefaultConnection."
+                ? "Falha de autenticação no PostgreSQL para o usuário orcafacil_user. Verifique a senha configurada em ConnectionStrings:DefaultConnection ou na variável ConnectionStrings__DefaultConnection."
                 : "Não foi possível concluir a operação. Tente novamente em instantes ou fale com o suporte MNSOFT.";
         }
 
