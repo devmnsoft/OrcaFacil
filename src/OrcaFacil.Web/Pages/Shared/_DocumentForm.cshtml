@@ -1,2 +1,138 @@
 @model OrcaFacil.Web.Pages.Documents.DocumentForm
-<form method="post">@Html.AntiForgeryToken()<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div><div class="row g-4"><div class="col-lg-8"><section class="of-card"><div class="of-form-step"><div class="of-form-step-icon"><i class="bi bi-person"></i></div><div><p class="of-eyebrow">Passo 1</p><h2 class="h4">Dados do cliente</h2><p class="text-muted mb-0">Comece por quem vai receber o orçamento ou recibo. Os campos opcionais ajudam na organização e no envio.</p></div></div><label asp-for="ClientName" class="form-label">Nome do cliente</label><input asp-for="ClientName" class="form-control" placeholder="Ex.: Maria Souza"/><span asp-validation-for="ClientName" class="text-danger"></span><div class="row"><div class="col-md-6"><label class="form-label" for="ClientDocument">CPF/CNPJ</label><input id="ClientDocument" class="form-control" data-cpf-cnpj placeholder="Opcional"/></div><div class="col-md-6"><label class="form-label" for="ClientPhone">Telefone</label><input id="ClientPhone" class="form-control" data-phone placeholder="(00) 00000-0000"/></div><div class="col-md-6"><label class="form-label" for="ClientEmail">E-mail</label><input id="ClientEmail" class="form-control" type="email" placeholder="cliente@email.com"/></div><div class="col-md-6"><label class="form-label" for="ClientCity">Cidade</label><input id="ClientCity" class="form-control" placeholder="Cidade/UF"/></div></div></section><section class="of-card mt-4"><div class="of-form-step"><div class="of-form-step-icon"><i class="bi bi-list-check"></i></div><div><p class="of-eyebrow">Passo 2</p><h2 class="h4">Serviços, produtos e valores</h2><p class="text-muted mb-0">Descreva cada item como o cliente deve entender. O total é calculado automaticamente.</p></div></div><div id="items">@for(var i=0;i<Model.Items.Count;i++){<div class="row g-2 mt-2 item align-items-end"><div class="col-md-5"><label class="form-label">Descrição</label><input name="Input.Items[@i].Description" value="@Model.Items[i].Description" class="form-control" placeholder="Serviço ou produto"/></div><div class="col-6 col-md-2"><label class="form-label">Qtd.</label><input name="Input.Items[@i].Quantity" value="@Model.Items[i].Quantity" class="form-control qty" type="number" step="0.01" min="0"/></div><div class="col-6 col-md-2"><label class="form-label">Valor</label><input name="Input.Items[@i].UnitPrice" value="@Model.Items[i].UnitPrice" class="form-control price" type="number" step="0.01" min="0" data-currency/></div><div class="col-6 col-md-2"><label class="form-label">Desconto</label><input name="Input.Items[@i].Discount" value="@Model.Items[i].Discount" class="form-control discount" type="number" step="0.01" min="0"/></div><div class="col-6 col-md-1 text-end"><small>Total</small><strong class="d-block" data-item-total>R$ 0,00</strong><button type="button" class="btn btn-link text-danger p-0" onclick="removeDocumentItem(this)" aria-label="Remover item">Remover</button></div></div>}</div><button type="button" class="btn btn-outline-primary mt-3" onclick="addDocumentItem()"><i class="bi bi-plus-lg"></i> Adicionar item</button></section><section class="of-card mt-4"><div class="of-form-step"><div class="of-form-step-icon"><i class="bi bi-shield-check"></i></div><div><p class="of-eyebrow">Passo 3</p><h2 class="h4">Condições do documento</h2><p class="text-muted mb-0">Informe prazo, forma de pagamento e detalhes que evitam dúvidas depois.</p></div></div><label class="form-label" asp-for="Notes">Observações</label><textarea asp-for="Notes" class="form-control" rows="4" placeholder="Prazo, forma de pagamento, validade ou condições comerciais."></textarea><p class="form-text">A validade ajuda o cliente a saber até quando o orçamento vale.</p></section></div><aside class="col-lg-4"><div class="of-card position-sticky of-summary-sticky"><p class="of-eyebrow">Revisão final</p><h2 class="h4">Resumo financeiro</h2><p class="text-muted">Confira o total antes de salvar ou gerar PDF.</p><div class="d-flex justify-content-between"><span>Subtotal</span><strong data-subtotal>R$ 0,00</strong></div><label class="form-label" asp-for="Discount">Desconto geral</label><input asp-for="Discount" data-document-discount class="form-control" type="number" step="0.01" min="0"/><hr/><div class="of-live-total d-flex justify-content-between fs-4"><span>Total</span><strong class="text-success" data-total>R$ 0,00</strong></div><div class="d-grid gap-2 mt-4"><button class="btn btn-primary" data-loading><i class="bi bi-save me-2"></i>Salvar documento</button><button class="btn btn-success" name="generatePdf" value="true" data-loading><i class="bi bi-filetype-pdf me-2"></i>Salvar e gerar PDF</button><a class="btn btn-outline-secondary" asp-page="/Documents/Index">Cancelar</a></div></div></aside></div></form>
+
+<form method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <section class="of-card">
+                <div class="of-form-step">
+                    <div class="of-form-step-icon" aria-hidden="true"><i class="bi bi-person-check"></i></div>
+                    <div>
+                        <p class="of-eyebrow">Passo 1 · cliente</p>
+                        <h2 class="h4">Quem vai receber este documento?</h2>
+                        <p class="mb-0">Informe o nome do cliente primeiro. Contatos opcionais ajudam você a localizar e enviar o PDF depois.</p>
+                    </div>
+                </div>
+
+                <label asp-for="ClientName" class="form-label">Nome do cliente</label>
+                <input asp-for="ClientName" class="form-control" placeholder="Ex.: Maria Souza ou Empresa ABC" autocomplete="name" />
+                <span asp-validation-for="ClientName" class="text-danger"></span>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label" for="ClientDocument">CPF/CNPJ <span class="fw-normal text-muted">(opcional)</span></label>
+                        <input id="ClientDocument" class="form-control" data-cpf-cnpj placeholder="000.000.000-00" inputmode="numeric" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="ClientPhone">Telefone <span class="fw-normal text-muted">(opcional)</span></label>
+                        <input id="ClientPhone" class="form-control" data-phone placeholder="(00) 00000-0000" autocomplete="tel" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="ClientEmail">E-mail <span class="fw-normal text-muted">(opcional)</span></label>
+                        <input id="ClientEmail" class="form-control" type="email" placeholder="cliente@email.com" autocomplete="email" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="ClientCity">Cidade/UF <span class="fw-normal text-muted">(opcional)</span></label>
+                        <input id="ClientCity" class="form-control" placeholder="Ex.: Recife/PE" autocomplete="address-level2" />
+                    </div>
+                </div>
+            </section>
+
+            <section class="of-card mt-4">
+                <div class="of-form-step">
+                    <div class="of-form-step-icon" aria-hidden="true"><i class="bi bi-list-check"></i></div>
+                    <div>
+                        <p class="of-eyebrow">Passo 2 · itens</p>
+                        <h2 class="h4">O que será cobrado?</h2>
+                        <p class="mb-0">Descreva serviços ou produtos em linguagem simples. Quantidade, valor e desconto atualizam o total automaticamente.</p>
+                    </div>
+                </div>
+
+                <div id="items" class="d-grid gap-3">
+                    @for (var i = 0; i < Model.Items.Count; i++)
+                    {
+                        <div class="row g-2 item of-item-row align-items-end">
+                            <div class="col-md-5">
+                                <label class="form-label">Descrição</label>
+                                <input name="Input.Items[@i].Description" value="@Model.Items[i].Description" class="form-control" placeholder="Ex.: Instalação elétrica residencial" />
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <label class="form-label">Qtd.</label>
+                                <input name="Input.Items[@i].Quantity" value="@Model.Items[i].Quantity" class="form-control qty" type="number" step="0.01" min="0" inputmode="decimal" />
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <label class="form-label">Valor unit.</label>
+                                <input name="Input.Items[@i].UnitPrice" value="@Model.Items[i].UnitPrice" class="form-control price" type="number" step="0.01" min="0" data-currency inputmode="decimal" />
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <label class="form-label">Desconto</label>
+                                <input name="Input.Items[@i].Discount" value="@Model.Items[i].Discount" class="form-control discount" type="number" step="0.01" min="0" inputmode="decimal" />
+                            </div>
+                            <div class="col-6 col-md-1 text-md-end">
+                                <small class="text-muted">Total</small>
+                                <strong class="d-block" data-item-total>R$ 0,00</strong>
+                                <button type="button" class="btn btn-link text-danger p-0" onclick="removeDocumentItem(this)" aria-label="Remover item">
+                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <button type="button" class="btn btn-outline-primary mt-3" onclick="addDocumentItem()">
+                    <i class="bi bi-plus-lg" aria-hidden="true"></i> Adicionar outro item
+                </button>
+            </section>
+
+            <section class="of-card mt-4">
+                <div class="of-form-step">
+                    <div class="of-form-step-icon" aria-hidden="true"><i class="bi bi-shield-check"></i></div>
+                    <div>
+                        <p class="of-eyebrow">Passo 3 · condições</p>
+                        <h2 class="h4">Evite dúvidas depois</h2>
+                        <p class="mb-0">Use observações para prazo, forma de pagamento, validade, garantia ou instruções de entrega.</p>
+                    </div>
+                </div>
+
+                <label class="form-label" asp-for="Notes">Observações para o cliente</label>
+                <textarea asp-for="Notes" class="form-control" rows="4" placeholder="Ex.: Orçamento válido por 7 dias. Pagamento via Pix ou cartão."></textarea>
+                <p class="form-text">Texto claro reduz retrabalho e melhora a confiança do cliente.</p>
+            </section>
+        </div>
+
+        <aside class="col-lg-4">
+            <div class="of-card position-sticky of-summary-sticky">
+                <p class="of-eyebrow">Revisão final</p>
+                <h2 class="h4">Resumo financeiro</h2>
+                <p>Confira valores antes de salvar. Você pode voltar ao histórico para gerar PDF, editar ou duplicar.</p>
+
+                <div class="d-flex justify-content-between">
+                    <span>Subtotal dos itens</span>
+                    <strong data-subtotal>R$ 0,00</strong>
+                </div>
+
+                <label class="form-label" asp-for="Discount">Desconto geral</label>
+                <input asp-for="Discount" data-document-discount class="form-control" type="number" step="0.01" min="0" inputmode="decimal" />
+
+                <hr />
+                <div class="of-live-total d-flex justify-content-between fs-4">
+                    <span>Total</span>
+                    <strong class="text-success" data-total>R$ 0,00</strong>
+                </div>
+
+                <div class="of-security-note mt-3">
+                    <i class="bi bi-lightbulb" aria-hidden="true"></i>
+                    <span>Revise cliente, itens e observações antes de enviar ao cliente.</span>
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button class="btn btn-primary" data-loading><i class="bi bi-save me-2" aria-hidden="true"></i>Salvar documento</button>
+                    <button class="btn btn-success" name="generatePdf" value="true" data-loading><i class="bi bi-filetype-pdf me-2" aria-hidden="true"></i>Salvar e gerar PDF</button>
+                    <a class="btn btn-outline-secondary" asp-page="/Documents/Index">Cancelar</a>
+                </div>
+            </div>
+        </aside>
+    </div>
+</form>
