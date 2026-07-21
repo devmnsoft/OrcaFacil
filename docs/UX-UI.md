@@ -1,20 +1,40 @@
-# UX/UI OrçaFácil
+# UX/UI do OrçaFácil
 
-## Paleta
-A identidade usa azul-marinho `#1E3A5F`, azul-vivo `#2D7DD2`, verde sucesso `#1F9D6B`, amarelo alerta `#F5A524`, vermelho perigo `#D9534F`, fundo `#F4F6F9`, superfícies brancas, bordas suaves e raio padrão de 18px.
+## Identidade visual
+O OrçaFácil usa uma identidade premium, simples e confiável para autônomos, MEIs e pequenos prestadores de serviço. A paleta combina azul-marinho, azul-vivo, fundos suaves, cards brancos, bordas arredondadas e sombras leves.
+
+## Marca MNSOFT
+A assinatura institucional é **OrçaFácil — um produto MNSOFT**. A logo deve ficar em `src/OrcaFacil.Web/wwwroot/img/mnsoft-logo.png`. Quando a imagem não existir, as telas usam fallback textual “MNSOFT” e não quebram o layout.
+
+## Tom de voz
+Use linguagem simples: “seus dados”, “seu cliente”, “gerar PDF”, “enviar ao cliente” e “histórico”. Evite termos técnicos como endpoint, schema, metadados ou payload nas telas para usuários finais.
+
+## Jornada do primeiro uso
+1. Usuário entende a landing.
+2. Clica em Começar grátis.
+3. Cria conta.
+4. Entra no onboarding.
+5. Cadastra os dados do emitente.
+6. Cria o primeiro orçamento.
+7. Gera PDF pelo histórico ou detalhes.
+8. Conhece o Pro para remover a marca do PDF.
 
 ## Componentes
-- Sidebar desktop e offcanvas mobile.
-- Cards de métrica, cards de documento, empty states, badges de status, toasts e botões com loading.
-- Formulários em seções: cliente, itens, observações e resumo financeiro.
-
-## Layouts
-- Layout autenticado com menu lateral, usuário, plano e saída.
-- Layout público com gradiente comercial para landing, login, cadastro e aprovação pública.
-- Admin Geral mantém a mesma identidade, com foco em operação e diagnóstico.
-
-## Botões e status
-Ação primária usa azul-marinho; sucesso usa verde; ações secundárias usam outline; destrutivas usam vermelho. Status não dependem apenas de cor: sempre exibem texto em badges.
+- Page header: título, microtexto e ação principal.
+- Metric card: número grande, rótulo e contexto.
+- Empty state: ícone, título claro, texto curto e CTA.
+- Explainer card: explica a finalidade da tela.
+- Step card: mostra progresso e próximos passos.
+- Plan badge e status badge: indicar Free/Pro e status sem depender só de cor.
 
 ## Responsividade e acessibilidade
-Tabelas ganham scroll e cards mobile; botões ficam grandes; foco visível; labels explícitos; contraste reforçado; textos de ajuda reduzem ambiguidade.
+O menu lateral vira offcanvas no celular; cards e botões ganham espaçamento; tabelas têm alternativa em cards ou scroll. Inputs precisam de labels, foco visível, contraste adequado e mensagens claras.
+
+## Padrões de botões
+- Primário: ação principal da tela.
+- Sucesso: criação, aprovação ou ativação comercial.
+- Outline: ações secundárias.
+- Danger: exclusões ou recusas, sempre com confirmação.
+
+## Status
+Use badges com texto explícito: Rascunho, Emitido, Aprovado, Recusado, Cancelado, Free e Pro. Não dependa apenas da cor.

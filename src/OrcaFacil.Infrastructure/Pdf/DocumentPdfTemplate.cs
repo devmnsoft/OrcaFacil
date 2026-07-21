@@ -35,8 +35,9 @@ public abstract class DocumentPdfTemplate
             {
                 row.RelativeItem().Column(col =>
                 {
-                    col.Item().Text("OrçaFácil").FontColor(Colors.White).Bold().FontSize(20);
-                    col.Item().Text($"{Title} {Document.Number}").FontColor("#E9F3FF").FontSize(11);
+                    col.Item().Text("OrçaFácil").FontColor(Colors.White).Bold().FontSize(22);
+                    col.Item().Text("Orçamentos e recibos profissionais — um produto MNSOFT").FontColor("#E9F3FF").FontSize(9);
+                    col.Item().Text($"{Title} {Document.Number}").FontColor("#E9F3FF").FontSize(12);
                 });
                 row.ConstantItem(150).AlignRight().Text(Document.IssueDate.ToString("dd/MM/yyyy")).FontColor(Colors.White).SemiBold();
             });
@@ -64,21 +65,21 @@ public abstract class DocumentPdfTemplate
                 column.Item().Table(table =>
                 {
                     table.ColumnsDefinition(c => { c.RelativeColumn(4); c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn(); });
-                    table.Header(h => { h.Cell().Text("Descrição").Bold(); h.Cell().AlignRight().Text("Qtd.").Bold(); h.Cell().AlignRight().Text("Unitário").Bold(); h.Cell().AlignRight().Text("Total").Bold(); });
+                    table.Header(h => { h.Cell().Background("#EAF1F8").Padding(6).Text("Descrição").FontColor(Primary).Bold(); h.Cell().Background("#EAF1F8").Padding(6).AlignRight().Text("Qtd.").FontColor(Primary).Bold(); h.Cell().Background("#EAF1F8").Padding(6).AlignRight().Text("Unitário").FontColor(Primary).Bold(); h.Cell().Background("#EAF1F8").Padding(6).AlignRight().Text("Total").FontColor(Primary).Bold(); });
                     foreach (var item in Document.Items)
                     {
-                        table.Cell().PaddingVertical(4).Text(item.Description);
-                        table.Cell().PaddingVertical(4).AlignRight().Text(item.Quantity.ToString("N2"));
-                        table.Cell().PaddingVertical(4).AlignRight().Text(item.UnitPrice.ToString("C"));
-                        table.Cell().PaddingVertical(4).AlignRight().Text(item.CalculateTotal().ToString("C"));
+                        table.Cell().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).Text(item.Description);
+                        table.Cell().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).AlignRight().Text(item.Quantity.ToString("N2"));
+                        table.Cell().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).AlignRight().Text(item.UnitPrice.ToString("C"));
+                        table.Cell().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).AlignRight().Text(item.CalculateTotal().ToString("C"));
                     }
                 });
                 column.Item().AlignRight().Background("#E9F7F1").Padding(12).Text($"Total: {Document.Total:C}").FontColor(Success).Bold().FontSize(18);
                 if (!string.IsNullOrWhiteSpace(Document.Notes)) column.Item().Text(Document.Notes);
                 AddSpecificContent(column);
-                if (Plan == PlanType.Free) column.Item().AlignCenter().Text("Gerado com OrçaFácil — MNSOFT").FontColor(Colors.Grey.Medium).FontSize(9);
+                if (Plan == PlanType.Free) column.Item().AlignCenter().Text("Gerado com OrçaFácil — um produto MNSOFT").FontColor(Colors.Grey.Medium).FontSize(9);
             });
-            page.Footer().AlignCenter().Text("MNSOFT • OrçaFácil • comercial@mnsoft.com.br").FontColor(Primary);
+            page.Footer().AlignCenter().Text("MNSOFT • CNPJ 18.160.057/0001-13 • comercial@mnsoft.com.br").FontColor(Primary);
         });
     }).GeneratePdf();
 
