@@ -1,2 +1,2 @@
-@model dynamic
-<a class="btn @(Model?.CssClass ?? "btn-primary")" asp-page="@(Model?.Page ?? "/Index")">@(Model?.Text ?? "Continuar")</a>
+@model OrcaFacil.Web.ViewModels.Components.ActionButtonViewModel
+<a class="btn @Model.CssClass" asp-page="@Model.Page">@Model.Text</a>

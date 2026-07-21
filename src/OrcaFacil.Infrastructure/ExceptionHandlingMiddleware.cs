@@ -26,17 +26,36 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "SYSTEM_ERROR");
+            var correlationId = context.Response.Headers[CorrelationIdMiddleware.HeaderName].ToString();
+            if (string.IsNullOrWhiteSpace(correlationId))
+            {
+                correlationId = context.TraceIdentifier;
+            }
+
+            _logger.LogError(ex, "Unhandled application error. CorrelationId: {CorrelationId}; Path: {Path}", correlationId, context.Request.Path);
+
+            if (context.Response.HasStarted)
+            {
+                throw;
+            }
+
+            context.Response.Clear();
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            context.Response.ContentType = "application/problem+json";
+
             var problem = new ProblemDetails
             {
                 Status = StatusCodes.Status500InternalServerError,
-                Title = "Erro inesperado",
-                Detail = _environment.IsDevelopment() ? ex.ToString() : "Não foi possível concluir a operação. Tente novamente mais tarde.",
+                Title = _environment.IsDevelopment() ? "Erro inesperado" : "Não foi possível concluir a operação",
+                Detail = _environment.IsDevelopment()
+                    ? ex.ToString()
+                    : "Tivemos uma falha temporária ao processar sua solicitação. Tente novamente em instantes ou informe o código de correlação ao suporte.",
                 Instance = context.Request.Path,
             };
-            problem.Extensions["correlationId"] = context.Response.Headers[CorrelationIdMiddleware.HeaderName].ToString();
+
+            problem.Extensions["correlationId"] = correlationId;
             problem.Extensions["traceId"] = context.TraceIdentifier;
-            context.Response.StatusCode = problem.Status.Value;
+
             await context.Response.WriteAsJsonAsync(problem);
         }
     }
