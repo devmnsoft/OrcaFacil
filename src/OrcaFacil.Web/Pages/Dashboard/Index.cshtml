@@ -1,9 +1,104 @@
 @page
 @model OrcaFacil.Web.Pages.Dashboard.IndexModel
-@{ ViewData["Title"]="Dashboard"; var d=Model.Dashboard; var hasDocs=(d?.TotalDocuments ?? 0)>0; var isFree=string.Equals(d?.Plan,"Free",StringComparison.OrdinalIgnoreCase); }
-<header class="of-page-header"><div><p class="of-eyebrow">Visão geral</p><h1>Dashboard</h1><p>Comece criando um orçamento para enviar ao seu cliente e acompanhe tudo em um só lugar.</p></div><a class="btn btn-outline-primary" asp-page="/Onboarding/Index">Ver primeiros passos</a></header>
-<section class="of-next-step mb-4"><div class="row g-3 align-items-center"><div class="col-lg"><p class="of-eyebrow">Seu próximo passo</p>@if(!Model.HasIssuerProfile){<h2>Cadastre seus dados para que eles apareçam no PDF.</h2><p>Esses dados aparecem no cabeçalho dos seus orçamentos e recibos.</p>}else if(!hasDocs){<h2>Crie seu primeiro orçamento.</h2><p>Informe o cliente, os serviços e os valores para gerar seu primeiro PDF.</p>}else{<h2>Gere o PDF e envie ao cliente.</h2><p>Use o histórico para baixar, editar ou reenviar documentos.</p>}@if(isFree){<p class="mb-0"><strong>Quer remover a marca OrçaFácil dos PDFs?</strong> Conheça o plano Pro.</p>}</div><div class="col-lg-auto d-grid gap-2">@if(!Model.HasIssuerProfile){<a class="btn btn-primary" asp-page="/Profile/Index">Cadastrar emitente</a>}else if(!hasDocs){<a class="btn btn-primary" asp-page="/Documents/CreateBudget">Criar orçamento</a>}else{<a class="btn btn-primary" asp-page="/Documents/Index">Ver histórico</a>}@if(isFree){<a class="btn btn-outline-primary" asp-page="/Subscription/Index">Conhecer plano Pro</a>}</div></div></section>
-<div class="row g-3"><div class="col-sm-6 col-xl-3"><div class="of-metric"><span>Documentos</span><strong>@d?.TotalDocuments</strong><small>Histórico completo</small></div></div><div class="col-sm-6 col-xl-3"><div class="of-metric"><span>Orçamentos</span><strong>@d?.TotalBudgets</strong><small>Propostas emitidas</small></div></div><div class="col-sm-6 col-xl-3"><div class="of-metric"><span>Recibos</span><strong>@d?.TotalReceipts</strong><small>Recebimentos registrados</small></div></div><div class="col-sm-6 col-xl-3"><div class="of-metric"><span>Plano atual</span><strong>@d?.Plan</strong><small>@d?.PdfsThisMonth PDFs no mês</small></div></div><div class="col-md-4"><div class="of-metric"><span>Valor em orçamentos</span><strong>@((d?.BudgetTotal ?? 0).ToString("C"))</strong><small>Potencial enviado</small></div></div><div class="col-md-4"><div class="of-metric"><span>Valor em recibos</span><strong>@((d?.ReceiptTotal ?? 0).ToString("C"))</strong><small>Receita documentada</small></div></div><div class="col-md-4"><div class="of-metric"><span>PDFs do mês</span><strong>@d?.PdfsThisMonth</strong><small>Uso deste mês</small></div></div></div>
-<section class="of-card mt-4"><h2 class="h4">Ações rápidas</h2><div class="row g-2 mt-2"><div class="col-md"><a class="btn btn-primary w-100" asp-page="/Documents/CreateBudget">Novo orçamento</a></div><div class="col-md"><a class="btn btn-success w-100" asp-page="/Documents/CreateReceipt">Novo recibo</a></div><div class="col-md"><a class="btn btn-outline-primary w-100" asp-page="/Documents/Index">Ver histórico</a></div><div class="col-md"><a class="btn btn-outline-primary w-100" asp-page="/Profile/Index">Cadastrar emitente</a></div><div class="col-md"><a class="btn btn-outline-primary w-100" asp-page="/Subscription/Index">Ativar Pro</a></div></div></section>
-<section class="of-card mt-4"><h2 class="h4">Ajuda rápida</h2><div class="row g-3"><div class="col-md-4"><partial name="Partials/_ExplainerCard" model='new ExplainerCardViewModel { Title="Como criar orçamento?", Text="Clique em Novo orçamento e informe cliente, serviços e valores.", Icon="bi-file-earmark-plus" }' /></div><div class="col-md-4"><partial name="Partials/_ExplainerCard" model='new ExplainerCardViewModel { Title="Como gerar recibo?", Text="Use Novo recibo quando quiser registrar um pagamento recebido.", Icon="bi-receipt" }' /></div><div class="col-md-4"><partial name="Partials/_ExplainerCard" model='new ExplainerCardViewModel { Title="Como enviar PDF?", Text="Abra o histórico, gere o PDF e envie ao cliente pelo canal que preferir.", Icon="bi-send" }' /></div></div></section>
-<section class="mt-4"><h2 class="h4">Últimos documentos</h2>@if((d?.LatestDocuments?.Count ?? 0)==0){<partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Nenhum documento ainda.", Text="Crie seu primeiro orçamento e deixe seu atendimento mais profissional.", ActionText="Criar primeiro orçamento", ActionPage="/Documents/CreateBudget", Icon="bi-file-earmark-plus" }' />}else{<partial name="_DocumentTable" model="d?.LatestDocuments" />}</section>
+@{
+    ViewData["Title"] = "Dashboard";
+    var d = Model.Dashboard;
+    var hasDocs = (d?.TotalDocuments ?? 0) > 0;
+    var isFree = string.Equals(d?.Plan, "Free", StringComparison.OrdinalIgnoreCase);
+}
+
+<header class="of-page-header">
+    <div>
+        <p class="of-eyebrow">Central de trabalho</p>
+        <h1>Olá, pronto para vender com mais clareza?</h1>
+        <p class="mb-0">Veja o que precisa de atenção agora e crie documentos profissionais em poucos cliques.</p>
+    </div>
+    <a class="btn btn-outline-primary" asp-page="/Onboarding/Index"><i class="bi bi-compass me-2"></i>Ver guia rápido</a>
+</header>
+
+<section class="of-next-step mb-4">
+    <div class="row g-3 align-items-center">
+        <div class="col-lg">
+            <p class="of-eyebrow">Seu próximo passo recomendado</p>
+            @if (!Model.HasIssuerProfile)
+            {
+                <h2>Cadastre o emitente antes do primeiro PDF.</h2>
+                <p>Nome, documento e contatos entram automaticamente no cabeçalho dos orçamentos e recibos.</p>
+            }
+            else if (!hasDocs)
+            {
+                <h2>Crie seu primeiro orçamento guiado.</h2>
+                <p>Comece pelo cliente, adicione serviços e revise o total antes de gerar o PDF.</p>
+            }
+            else
+            {
+                <h2>Acompanhe, gere PDF e responda clientes pelo histórico.</h2>
+                <p>Use os últimos documentos para editar valores, baixar PDFs ou enviar novas propostas.</p>
+            }
+            @if (isFree)
+            {
+                <p class="mb-0"><strong>Quer um PDF ainda mais profissional?</strong> O plano Pro remove a marca OrçaFácil e reforça sua marca.</p>
+            }
+        </div>
+        <div class="col-lg-auto d-grid gap-2">
+            @if (!Model.HasIssuerProfile)
+            {
+                <a class="btn btn-primary" asp-page="/Profile/Index"><i class="bi bi-person-badge me-2"></i>Cadastrar emitente</a>
+            }
+            else if (!hasDocs)
+            {
+                <a class="btn btn-primary" asp-page="/Documents/CreateBudget"><i class="bi bi-file-earmark-plus me-2"></i>Criar orçamento</a>
+            }
+            else
+            {
+                <a class="btn btn-primary" asp-page="/Documents/Index"><i class="bi bi-folder2-open me-2"></i>Ver histórico</a>
+            }
+            @if (isFree)
+            {
+                <a class="btn btn-outline-primary" asp-page="/Subscription/Index"><i class="bi bi-stars me-2"></i>Conhecer plano Pro</a>
+            }
+        </div>
+    </div>
+</section>
+
+<div class="row g-3">
+    <div class="col-sm-6 col-xl-3"><div class="of-metric"><span>Documentos</span><strong>@d?.TotalDocuments</strong><small>Histórico completo</small></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="of-metric"><span>Orçamentos</span><strong>@d?.TotalBudgets</strong><small>Propostas emitidas</small></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="of-metric"><span>Recibos</span><strong>@d?.TotalReceipts</strong><small>Recebimentos registrados</small></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="of-metric"><span>Plano atual</span><strong>@d?.Plan</strong><small>@d?.PdfsThisMonth PDFs no mês</small></div></div>
+    <div class="col-md-4"><div class="of-metric"><span>Valor em orçamentos</span><strong>@((d?.BudgetTotal ?? 0).ToString("C"))</strong><small>Potencial enviado</small></div></div>
+    <div class="col-md-4"><div class="of-metric"><span>Valor em recibos</span><strong>@((d?.ReceiptTotal ?? 0).ToString("C"))</strong><small>Receita documentada</small></div></div>
+    <div class="col-md-4"><div class="of-metric"><span>PDFs do mês</span><strong>@d?.PdfsThisMonth</strong><small>Uso deste mês</small></div></div>
+</div>
+
+<section class="of-card mt-4">
+    <p class="of-eyebrow">Atalhos com contexto</p>
+    <h2 class="h4">O que você quer fazer agora?</h2>
+    <div class="of-action-grid mt-3">
+        <a class="of-action-tile" asp-page="/Documents/CreateBudget"><i class="bi bi-file-earmark-plus"></i><span><strong>Novo orçamento</strong><small>Enviar proposta ao cliente</small></span></a>
+        <a class="of-action-tile" asp-page="/Documents/CreateReceipt"><i class="bi bi-receipt"></i><span><strong>Novo recibo</strong><small>Comprovar pagamento recebido</small></span></a>
+        <a class="of-action-tile" asp-page="/Documents/Index"><i class="bi bi-search"></i><span><strong>Ver histórico</strong><small>Baixar, editar ou consultar</small></span></a>
+        <a class="of-action-tile" asp-page="/Profile/Index"><i class="bi bi-building-check"></i><span><strong>Dados do emitente</strong><small>Informações que vão ao PDF</small></span></a>
+    </div>
+</section>
+
+<section class="of-card mt-4">
+    <h2 class="h4">Ajuda rápida</h2>
+    <div class="row g-3">
+        <div class="col-md-4"><partial name="Partials/_ExplainerCard" model='new ExplainerCardViewModel { Title="Como criar orçamento?", Text="Clique em Novo orçamento e informe cliente, serviços e valores.", Icon="bi-file-earmark-plus" }' /></div>
+        <div class="col-md-4"><partial name="Partials/_ExplainerCard" model='new ExplainerCardViewModel { Title="Como gerar recibo?", Text="Use Novo recibo quando quiser registrar um pagamento recebido.", Icon="bi-receipt" }' /></div>
+        <div class="col-md-4"><partial name="Partials/_ExplainerCard" model='new ExplainerCardViewModel { Title="Como enviar PDF?", Text="Abra o histórico, gere o PDF e envie ao cliente pelo canal que preferir.", Icon="bi-send" }' /></div>
+    </div>
+</section>
+
+<section class="mt-4">
+    <h2 class="h4">Últimos documentos</h2>
+    @if ((d?.LatestDocuments?.Count ?? 0) == 0)
+    {
+        <partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Nenhum documento ainda.", Text="Crie seu primeiro orçamento e deixe seu atendimento mais profissional.", ActionText="Criar primeiro orçamento", ActionPage="/Documents/CreateBudget", Icon="bi-file-earmark-plus" }' />
+    }
+    else
+    {
+        <partial name="_DocumentTable" model="d?.LatestDocuments" />
+    }
+</section>
