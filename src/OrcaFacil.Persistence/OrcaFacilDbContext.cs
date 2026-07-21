@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Domain.Entities;
 
@@ -25,5 +26,30 @@ public class OrcaFacilDbContext : DbContext
     {
         modelBuilder.HasDefaultSchema("orcafacil");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(OrcaFacilDbContext).Assembly);
+        ApplySnakeCaseColumnNames(modelBuilder);
+    }
+
+    private static void ApplySnakeCaseColumnNames(ModelBuilder modelBuilder)
+    {
+        foreach (var entity in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entity.GetProperties())
+            {
+                property.SetColumnName(ToSnakeCase(property.Name));
+            }
+        }
+    }
+
+    private static string ToSnakeCase(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return value;
+        var builder = new StringBuilder(value.Length + 8);
+        for (var i = 0; i < value.Length; i++)
+        {
+            var c = value[i];
+            if (char.IsUpper(c) && i > 0) builder.Append('_');
+            builder.Append(char.ToLowerInvariant(c));
+        }
+        return builder.ToString();
     }
 }

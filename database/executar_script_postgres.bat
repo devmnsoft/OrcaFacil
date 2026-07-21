@@ -1,5 +1,10 @@
 @echo off
-setlocal
-cd /d %~dp0
-psql -h localhost -p 5432 -U orcafacil_user -d orcafacil -f script_completop.sql
-endlocal
+set PGHOST=localhost
+set PGPORT=5432
+set PGDATABASE=orcafacil
+set PGUSER=orcafacil_user
+
+echo Executando database\script_completop.sql...
+psql -h %PGHOST% -p %PGPORT% -U %PGUSER% -d %PGDATABASE% -f "%~dp0script_completop.sql"
+
+pause

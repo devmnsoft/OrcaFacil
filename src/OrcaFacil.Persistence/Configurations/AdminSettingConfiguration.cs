@@ -10,6 +10,7 @@ public class AdminSettingConfiguration : IEntityTypeConfiguration<AdminSetting>
     {
         builder.ToTable("admin_settings", "orcafacil");
         builder.ConfigureBase();
+        builder.Property(x => x.ValueJson).HasColumnType("jsonb");
         builder.HasIndex(x => x.Key).IsUnique();
     }
 }

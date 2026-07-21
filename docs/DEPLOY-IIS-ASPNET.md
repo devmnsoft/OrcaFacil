@@ -32,3 +32,13 @@ psql -h <host-postgres> -p 5432 -U orcafacil_user -d orcafacil -f database/scrip
 6. Valide `https://seu-site/health`; o health check verifica conexão real com PostgreSQL e existência das tabelas base.
 
 Não use a senha de desenvolvimento em produção. O arquivo `src/OrcaFacil.Web/appsettings.Production.json` deve permanecer sem segredo real, priorizando `ConnectionStrings__DefaultConnection`.
+
+## PostgreSQL no IIS
+
+Em produção no IIS, configure a connection string por variável de ambiente do Application Pool:
+
+```text
+ConnectionStrings__DefaultConnection=Host=SEU_HOST;Port=5432;Database=orcafacil;Username=SEU_USUARIO;Password=SUA_SENHA
+```
+
+Antes de publicar, execute `database/script_completop.sql` no PostgreSQL local/remoto. Após subir o site, valide `/health/db` e acesse `/Admin/Settings/Database` com usuário SuperAdmin para confirmar schema `orcafacil` e tabelas obrigatórias.

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Domain.Enums;
 using OrcaFacil.Persistence;
-using OrcaFacil.Web.Diagnostics;
+using OrcaFacil.Application.Abstractions;
 
 namespace OrcaFacil.Web.Areas.Admin.Pages;
 
@@ -11,13 +11,13 @@ namespace OrcaFacil.Web.Areas.Admin.Pages;
 public class DashboardModel : PageModel
 {
     private readonly OrcaFacilDbContext _db;
-    private readonly DatabaseDiagnosticsService _diagnostics;
+    private readonly IDatabaseDiagnosticsService _diagnostics;
     public int TotalUsers { get; private set; }
     public int TotalDocuments { get; private set; }
     public int FreeUsers { get; private set; }
     public int ProUsers { get; private set; }
-    public DatabaseDiagnosticsResult? Database { get; private set; }
-    public DashboardModel(OrcaFacilDbContext db, DatabaseDiagnosticsService diagnostics) { _db = db; _diagnostics = diagnostics; }
+    public DatabaseDiagnosticsDto? Database { get; private set; }
+    public DashboardModel(OrcaFacilDbContext db, IDatabaseDiagnosticsService diagnostics) { _db = db; _diagnostics = diagnostics; }
     public async Task OnGetAsync(CancellationToken ct)
     {
         TotalUsers = await _db.Users.CountAsync(ct);

@@ -93,3 +93,16 @@ select to_regclass('orcafacil.users'), to_regclass('orcafacil.documents'), to_re
 ```
 
 A aplicação expõe `/health/db`, `/diagnostico` e `/Admin/Settings/Database` para validar conexão, schema e tabelas principais.
+
+## Consolidação PostgreSQL 2026-07
+
+O banco da aplicação está consolidado no schema único `orcafacil`, com as tabelas `users`, `issuer_profiles`, `documents`, `document_items`, `public_quotes`, `user_usage`, `subscriptions`, `payments`, `admin_settings`, `notifications`, `audit_logs`, `system_logs` e `system_errors`.
+
+O script completo fica em `database/script_completop.sql` e é idempotente para ambientes locais, Docker e IIS com PostgreSQL local/remoto. Em Docker, o script montado em `/docker-entrypoint-initdb.d/01-script-completo.sql` roda automaticamente apenas na primeira criação do volume do PostgreSQL.
+
+Validação rápida:
+
+```bash
+psql -h localhost -p 5432 -U orcafacil_user -d orcafacil -f database/script_completop.sql
+curl http://localhost:5000/health/db
+```

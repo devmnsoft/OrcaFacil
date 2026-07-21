@@ -10,5 +10,6 @@ public class SystemLogConfiguration : IEntityTypeConfiguration<SystemLog>
     {
         builder.ToTable("system_logs", "orcafacil");
         builder.ConfigureBase();
+        builder.Property(x => x.MetadataJson).HasColumnType("jsonb");
     }
 }
