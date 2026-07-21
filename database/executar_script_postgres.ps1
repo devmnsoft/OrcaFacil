@@ -1,13 +1,10 @@
 param(
     [string]$HostName = "localhost",
+    [Alias("Host")][string]$Server,
     [int]$Port = 5432,
     [string]$Database = "orcafacil",
-    [string]$User = "orcafacil_user",
-    [string]$PsqlPath = "psql",
-    [string]$ScriptFile = "$PSScriptRoot/script_completop.sql"
+    [string]$User = "orcafacil_user"
 )
-
-Write-Host "Executando script completo do OrçaFácil em $HostName`:$Port/$Database com usuário $User."
-Write-Host "A senha será solicitada pelo psql quando necessário."
-& $PsqlPath -h $HostName -p $Port -U $User -d $Database -f $ScriptFile
-exit $LASTEXITCODE
+if ($Server) { $HostName = $Server }
+$scriptPath = Join-Path $PSScriptRoot "script_completop.sql"
+psql -h $HostName -p $Port -U $User -d $Database -f $scriptPath

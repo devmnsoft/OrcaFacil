@@ -31,7 +31,7 @@ public class DocumentQueries : IDocumentQueries
                        client_name as ClientName,
                        total as Total,
                        created_at as CreatedAt
-                  from core.documents
+                  from orcafacil.documents
                  where user_id = @userId and is_deleted = false
                  order by created_at desc
                 """;

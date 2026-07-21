@@ -8,7 +8,7 @@ public class AdminSettingConfiguration : IEntityTypeConfiguration<AdminSetting>
 {
     public void Configure(EntityTypeBuilder<AdminSetting> builder)
     {
-        builder.ToTable("admin_settings", "admin");
+        builder.ToTable("admin_settings", "orcafacil");
         builder.ConfigureBase();
         builder.HasIndex(x => x.Key).IsUnique();
     }

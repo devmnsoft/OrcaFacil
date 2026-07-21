@@ -8,7 +8,7 @@ public class UserAccountConfiguration : IEntityTypeConfiguration<UserAccount>
 {
     public void Configure(EntityTypeBuilder<UserAccount> builder)
     {
-        builder.ToTable("users", "identity");
+        builder.ToTable("users", "orcafacil");
         builder.ConfigureBase();
         builder.Property(x => x.Name).HasColumnName("name").HasMaxLength(180).IsRequired();
         builder.Property(x => x.Email).HasColumnName("email").HasMaxLength(254).IsRequired();

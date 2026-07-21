@@ -8,7 +8,7 @@ public class SystemLogConfiguration : IEntityTypeConfiguration<SystemLog>
 {
     public void Configure(EntityTypeBuilder<SystemLog> builder)
     {
-        builder.ToTable("system_logs", "logs");
+        builder.ToTable("system_logs", "orcafacil");
         builder.ConfigureBase();
     }
 }

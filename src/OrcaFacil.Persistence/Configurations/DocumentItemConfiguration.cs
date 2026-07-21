@@ -8,7 +8,7 @@ public class DocumentItemConfiguration : IEntityTypeConfiguration<DocumentItem>
 {
     public void Configure(EntityTypeBuilder<DocumentItem> builder)
     {
-        builder.ToTable("document_items", "core");
+        builder.ToTable("document_items", "orcafacil");
         builder.ConfigureBase();
         builder.Property(x => x.DocumentId).HasColumnName("document_id");
         builder.Property(x => x.Description).HasColumnName("description").HasMaxLength(500).IsRequired();

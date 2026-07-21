@@ -8,7 +8,7 @@ public class PublicQuoteConfiguration : IEntityTypeConfiguration<PublicQuote>
 {
     public void Configure(EntityTypeBuilder<PublicQuote> builder)
     {
-        builder.ToTable("public_quotes", "public_access");
+        builder.ToTable("public_quotes", "orcafacil");
         builder.ConfigureBase();
         builder.Property(x => x.Token).HasColumnName("token").HasMaxLength(128).IsRequired();
         builder.Property(x => x.OwnerUserId).HasColumnName("owner_user_id");

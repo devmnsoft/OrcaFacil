@@ -1,0 +1,14 @@
+@page
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy="SuperAdmin")]
+@model OrcaFacil.Web.Areas.Admin.Pages.Settings.DatabaseModel
+@{ ViewData["Title"] = "Banco de Dados"; var r = Model.Result; }
+<h1>Banco de Dados</h1>
+<div class="card p-3">
+  <p><strong>Connection string:</strong> @r?.MaskedConnectionString</p>
+  <p><strong>Schema esperado:</strong> @OrcaFacil.Web.Diagnostics.DatabaseDiagnosticsService.ExpectedSchema</p>
+  <p><strong>Status:</strong> @(r?.Connected == true ? "Conectado" : "Falha")</p>
+  <p><strong>Tabelas encontradas:</strong> @r?.TableCount</p>
+  <p><strong>Health PostgreSQL:</strong> @(r?.SchemaFound == true && r.RequiredTables.Values.All(x => x) ? "OK" : "Pendente")</p>
+  <p><strong>Versão do app:</strong> @r?.AppVersion</p>
+  @if (!string.IsNullOrWhiteSpace(r?.LastError)) { <p class="text-danger"><strong>Último erro:</strong> @r.LastError</p> }
+</div>

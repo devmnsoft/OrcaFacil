@@ -8,7 +8,7 @@ public class UserUsageConfiguration : IEntityTypeConfiguration<UserUsage>
 {
     public void Configure(EntityTypeBuilder<UserUsage> builder)
     {
-        builder.ToTable("user_usage", "core");
+        builder.ToTable("user_usage", "orcafacil");
         builder.ConfigureBase();
         builder.HasIndex(x => new { x.UserId, x.Period }).IsUnique();
     }
