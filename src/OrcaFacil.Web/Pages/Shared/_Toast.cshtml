@@ -1,0 +1,2 @@
+@if (TempData["Success"] is string success) { <div class="toast-container position-fixed top-0 end-0 p-3"><div class="toast show of-toast" role="status"><div class="toast-body">✅ @success</div></div></div> }
+@if (TempData["Error"] is string error) { <div class="toast-container position-fixed top-0 end-0 p-3"><div class="toast show of-toast danger" role="alert"><div class="toast-body">⚠️ @error</div></div></div> }

@@ -1,3 +1,3 @@
 @page
 @model OrcaFacil.Web.Pages.Documents.CreateReceiptModel
-@{ViewData["Title"]="Novo recibo";}<h1>Novo recibo</h1><partial name="_DocumentForm" model="Model.Input" />
+@{ViewData["Title"]="Novo recibo";}<header class="of-page-header"><div><p class="of-eyebrow">Comprovante</p><h1>Novo recibo</h1><p>Registre dados de quem pagou, serviço/descrição, valor recebido e observações do recibo.</p></div></header><div class="alert alert-warning">O recibo gerado pelo OrçaFácil não substitui nota fiscal.</div><partial name="_DocumentForm" model="Model.Input" />

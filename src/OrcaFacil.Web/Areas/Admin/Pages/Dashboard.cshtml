@@ -2,11 +2,4 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy="SuperAdmin")]
 @model OrcaFacil.Web.Areas.Admin.Pages.DashboardModel
 @{ ViewData["Title"] = "Admin Geral"; var db = Model.Database; var ok = db?.CanConnect == true && db.SchemaExists && db.MissingTables.Count == 0; }
-<h1>Admin Geral</h1>
-<div class="row g-3">
-  <div class="col-md-3"><div class="card-metric">Usuários <strong>@Model.TotalUsers</strong></div></div>
-  <div class="col-md-3"><div class="card-metric">Documentos <strong>@Model.TotalDocuments</strong></div></div>
-  <div class="col-md-3"><div class="card-metric">Free <strong>@Model.FreeUsers</strong></div></div>
-  <div class="col-md-3"><div class="card-metric">Pro <strong>@Model.ProUsers</strong></div></div>
-  <div class="col-md-4"><div class="card-metric">Banco de Dados <strong>@(ok ? "Conectado" : "Atenção")</strong><br />Schema orcafacil: @(db?.SchemaExists == true ? "encontrado" : "não encontrado")<br />Tabelas principais: @(db?.MissingTables.Count == 0 ? "OK" : "pendente")<br />Últimas falhas: @(db?.Error ?? "nenhuma")<br /><a href="/Admin/Settings/Database">Detalhes</a></div></div>
-</div>
+<header class="of-page-header"><div><p class="of-eyebrow">Admin Geral</p><h1>Dashboard Admin</h1><p>Operação, usuários, documentos, erros críticos e saúde do banco.</p></div></header><div class="row g-3"><div class="col-md-3"><div class="of-metric"><span>Total usuários</span><strong>@Model.TotalUsers</strong><small>Base geral</small></div></div><div class="col-md-3"><div class="of-metric"><span>Usuários Free</span><strong>@Model.FreeUsers</strong><small>Plano inicial</small></div></div><div class="col-md-3"><div class="of-metric"><span>Usuários Pro</span><strong>@Model.ProUsers</strong><small>Receita recorrente</small></div></div><div class="col-md-3"><div class="of-metric"><span>Documentos</span><strong>@Model.TotalDocuments</strong><small>Emitidos no SaaS</small></div></div></div><section class="of-card mt-4"><h2 class="h4">Banco de Dados</h2><p>Status conexão: <strong>@(ok ? "Conectado" : "Atenção")</strong></p><p>Schema orcafacil: @(db?.SchemaExists == true ? "encontrado" : "não encontrado")</p><p>Tabelas ausentes: @(db?.MissingTables.Count == 0 ? "nenhuma" : string.Join(", ", db?.MissingTables ?? []))</p><a class="btn btn-outline-primary" href="/health/db">Abrir /health/db</a> <a class="btn btn-primary" href="/Admin/Settings/Database">Detalhes do banco</a></section>

@@ -9,3 +9,7 @@ Schemas esperados no PostgreSQL: `identity`, `core`, `billing`, `admin`, `logs` 
 A persistência usa EF Core com `HasDefaultSchema("orcafacil")` e conversão global de propriedades para colunas em `snake_case`, alinhando o modelo ao script `database/script_completop.sql`. Consultas Dapper usam nomes qualificados (`orcafacil.documents`, `orcafacil.users`, `orcafacil.user_usage`) e parâmetros.
 
 O contrato `IDatabaseDiagnosticsService` fica na camada Application e a implementação PostgreSQL em Persistence. O Web expõe `/health/db`, a página pública `/diagnostico` e a página SuperAdmin `/Admin/Settings/Database` sem revelar senha ou connection string completa.
+
+## Camada de apresentação premium
+
+A evolução visual mantém Clean Architecture e DDD: Razor Pages consome Application Services/Queries existentes, JavaScript fica restrito a UX não sensível, e o PDF QuestPDF usa a mesma identidade visual sem alterar regras de domínio ou o schema PostgreSQL `orcafacil`.
