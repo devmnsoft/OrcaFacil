@@ -1,4 +1,5 @@
 param(
+    [Alias("Host")]
     [string]$HostName = "localhost",
     [int]$Port = 5432,
     [string]$Database = "orcafacil",
