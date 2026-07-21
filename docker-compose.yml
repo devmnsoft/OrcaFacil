@@ -9,6 +9,8 @@ services:
     ports: ["5432:5432"]
     volumes:
       - orcafacil_pgdata:/var/lib/postgresql/data
+      # O initdb executa este script somente quando o volume PostgreSQL é novo.
+      # Para volumes existentes, recrie o volume ou rode database/script_completop.sql manualmente.
       - ./database/script_completop.sql:/docker-entrypoint-initdb.d/01-script-completo.sql:ro
   pgadmin:
     image: dpage/pgadmin4:latest

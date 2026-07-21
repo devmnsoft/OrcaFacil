@@ -1,10 +1,10 @@
 param(
     [string]$HostName = "localhost",
-    [Alias("Host")][string]$Server,
     [int]$Port = 5432,
     [string]$Database = "orcafacil",
-    [string]$User = "orcafacil_user"
+    [string]$User = "orcafacil_user",
+    [string]$ScriptPath = "$PSScriptRoot/script_completop.sql"
 )
-if ($Server) { $HostName = $Server }
-$scriptPath = Join-Path $PSScriptRoot "script_completop.sql"
-psql -h $HostName -p $Port -U $User -d $Database -f $scriptPath
+
+Write-Host "Executando $ScriptPath em ${HostName}:$Port/$Database..."
+psql -h $HostName -p $Port -U $User -d $Database -f $ScriptPath

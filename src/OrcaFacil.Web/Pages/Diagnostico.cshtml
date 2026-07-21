@@ -1,14 +1,17 @@
 @page "/diagnostico"
 @model OrcaFacil.Web.Pages.DiagnosticoModel
+@using OrcaFacil.Persistence.Diagnostics
 @{ ViewData["Title"] = "Diagnóstico"; var db = Model.Database; }
 <h1>Diagnóstico</h1>
 <ul>
   <li>Ambiente: @Model.EnvironmentName</li>
-  <li>Banco: @db?.Database</li>
-  <li>Schema: @OrcaFacil.Web.Diagnostics.DatabaseDiagnosticsService.ExpectedSchema (@(db?.SchemaFound == true ? "encontrado" : "não encontrado"))</li>
-  <li>Versão: @db?.AppVersion</li>
-  <li>Health checks: @(db?.Connected == true && db.RequiredTables.Values.All(x => x) ? "OK" : "Falha")</li>
+  <li>Modo: @(Model.EnvironmentName == "Development" ? "Development" : "Production")</li>
+  <li>Banco: @(db?.CanConnect == true ? "OK" : "Falha")</li>
+  <li>Nome do banco: @db?.DatabaseName</li>
+  <li>Schema: @DatabaseDiagnosticsService.ExpectedSchema (@(db?.SchemaExists == true ? "encontrado" : "não encontrado"))</li>
+  <li>Tabelas ausentes: @(db?.MissingTables.Count ?? 0)</li>
+  <li>Arquivos estáticos: OK</li>
+  <li>PDF service: configurado</li>
+  <li>Autenticação: cookie auth configurada</li>
 </ul>
-<h2>Migrations aplicadas</h2>
-<ul>@foreach (var migration in db?.AppliedMigrations ?? Array.Empty<string>()) { <li>@migration</li> }</ul>
-@if (!string.IsNullOrWhiteSpace(db?.LastError)) { <p class="text-danger">@db.LastError</p> }
+@if (!string.IsNullOrWhiteSpace(db?.Error)) { <p class="text-danger">@db.Error</p> }

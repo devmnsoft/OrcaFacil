@@ -10,5 +10,6 @@ public class SystemErrorConfiguration : IEntityTypeConfiguration<SystemError>
     {
         builder.ToTable("system_errors", "orcafacil");
         builder.ConfigureBase();
+        builder.Property(x => x.ContextJson).HasColumnType("jsonb");
     }
 }

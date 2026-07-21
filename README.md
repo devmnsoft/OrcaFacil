@@ -217,3 +217,45 @@ docker compose up -d postgres
 ```
 
 O container inicializa bancos novos usando `database/script_completop.sql`.
+
+## PostgreSQL padronizado (schema único `orcafacil`)
+
+O MVP ASP.NET Core usa PostgreSQL com todas as tabelas da aplicação no schema único `orcafacil`. Não crie nem utilize os schemas antigos `identity`, `core`, `billing`, `admin`, `logs` ou `public_access`.
+
+### Rodar sem Docker
+
+1. Instale PostgreSQL localmente.
+2. Crie o banco `orcafacil` e o usuário `orcafacil_user`.
+3. Configure `src/OrcaFacil.Web/appsettings.Development.json` ou a variável `ConnectionStrings__DefaultConnection`.
+4. Execute o SQL idempotente:
+
+```bash
+psql -h localhost -p 5432 -U orcafacil_user -d orcafacil -f database/script_completop.sql
+```
+
+### Rodar com Docker
+
+O `docker-compose.yml` monta `./database/script_completop.sql` em `/docker-entrypoint-initdb.d/01-script-completo.sql`. O entrypoint oficial do PostgreSQL executa scripts dessa pasta somente quando o volume de dados é novo; se o volume já existir, recrie o volume ou execute o script manualmente com `psql`.
+
+```bash
+docker compose up -d
+```
+
+### Migrations e diagnóstico
+
+Para validar o app:
+
+```bash
+dotnet restore OrcaFacil.sln
+dotnet build OrcaFacil.sln
+dotnet test OrcaFacil.sln
+dotnet ef database update --project src/OrcaFacil.Persistence --startup-project src/OrcaFacil.Web
+```
+
+Endpoints úteis:
+
+- `/health`
+- `/health/db`
+- `/health/version`
+
+Administradores SuperAdmin podem acessar **Admin > Settings > Database** em `/Admin/Settings/Database` para ver conexão, schema, tabelas encontradas/ausentes e instruções de execução do SQL sem exposição de senha.

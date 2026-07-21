@@ -1,15 +1,16 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using OrcaFacil.Web.Diagnostics;
+using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Persistence.Diagnostics;
 
 namespace OrcaFacil.Web.Pages;
 
 public class DiagnosticoModel : PageModel
 {
     private readonly IWebHostEnvironment _environment;
-    private readonly DatabaseDiagnosticsService _diagnostics;
-    public DatabaseDiagnosticsResult? Database { get; private set; }
+    private readonly IDatabaseDiagnosticsService _diagnostics;
+    public DatabaseDiagnosticsDto? Database { get; private set; }
     public string EnvironmentName => _environment.EnvironmentName;
-    public DiagnosticoModel(IWebHostEnvironment environment, DatabaseDiagnosticsService diagnostics)
+    public DiagnosticoModel(IWebHostEnvironment environment, IDatabaseDiagnosticsService diagnostics)
     {
         _environment = environment;
         _diagnostics = diagnostics;

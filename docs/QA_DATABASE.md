@@ -1,34 +1,40 @@
-# QA do Banco de Dados — OrçaFácil
+# QA Database - OrçaFácil PostgreSQL
 
-Use este checklist antes de avançar para funcionalidades maiores.
+Checklist de homologação do banco padronizado no schema único `orcafacil`.
 
-## Infraestrutura
+- [ ] PostgreSQL instalado
+- [ ] Banco `orcafacil` criado
+- [ ] Usuário `orcafacil_user` criado
+- [ ] `database/script_completop.sql` executou sem erro
+- [ ] Schema `orcafacil` existe
+- [ ] Tabelas principais existem:
+  - [ ] `orcafacil.users`
+  - [ ] `orcafacil.issuer_profiles`
+  - [ ] `orcafacil.documents`
+  - [ ] `orcafacil.document_items`
+  - [ ] `orcafacil.public_quotes`
+  - [ ] `orcafacil.user_usage`
+  - [ ] `orcafacil.subscriptions`
+  - [ ] `orcafacil.payments`
+  - [ ] `orcafacil.admin_settings`
+  - [ ] `orcafacil.notifications`
+  - [ ] `orcafacil.audit_logs`
+  - [ ] `orcafacil.system_logs`
+  - [ ] `orcafacil.system_errors`
+- [ ] Seeds `admin_settings` existem
+- [ ] App conecta no banco
+- [ ] `/health/db` retorna OK
+- [ ] Admin > Banco mostra OK
+- [ ] Cria usuário
+- [ ] Cria perfil
+- [ ] Cria orçamento
+- [ ] Cria recibo
+- [ ] Gera PDF
 
-- [ ] PostgreSQL 15+ ou 17 instalado/localizado.
-- [ ] Database `orcafacil` criada.
-- [ ] Usuário `orcafacil_user` criado com senha segura.
-- [ ] Permissões concedidas ao usuário na database.
-- [ ] `database/script_completop.sql` executado sem erro.
+## Execução manual
 
-## Estrutura
+```bash
+psql -h localhost -p 5432 -U orcafacil_user -d orcafacil -f database/script_completop.sql
+```
 
-- [ ] Schemas criados: `identity`, `core`, `billing`, `admin`, `logs`, `public_access`.
-- [ ] Tabelas criadas conforme `docs/DATABASE.md`.
-- [ ] Constraints únicas e checks validados.
-- [ ] Índices obrigatórios existentes.
-- [ ] Seeds de `orcafacil.admin_settings` criados.
-
-## Aplicação
-
-- [ ] `ConnectionStrings:DefaultConnection` configurada em appsettings/user-secrets/ambiente.
-- [ ] `dotnet restore OrcaFacil.sln` executa sem erro.
-- [ ] `dotnet build OrcaFacil.sln` executa sem erro.
-- [ ] `dotnet test OrcaFacil.sln` executa sem erro.
-- [ ] `/health` retorna saudável para PostgreSQL.
-- [ ] Dashboard abre.
-- [ ] Cria usuário.
-- [ ] Cria perfil do emitente.
-- [ ] Cria orçamento.
-- [ ] Cria recibo.
-- [ ] Gera PDF.
-- [ ] Logs/auditoria gravam registros.
+O script é idempotente e seguro para reexecução: usa `CREATE SCHEMA IF NOT EXISTS`, `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS` e `INSERT ... ON CONFLICT`.

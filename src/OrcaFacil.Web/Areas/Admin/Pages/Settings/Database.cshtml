@@ -1,14 +1,25 @@
 @page
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy="SuperAdmin")]
 @model OrcaFacil.Web.Areas.Admin.Pages.Settings.DatabaseModel
-@{ ViewData["Title"] = "Banco de Dados"; var r = Model.Result; }
+@using OrcaFacil.Persistence.Diagnostics
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{ ViewData["Title"] = "Banco de Dados"; var r = Model.Result; var ok = r?.CanConnect == true && r.SchemaExists && r.MissingTables.Count == 0; }
 <h1>Banco de Dados</h1>
-<div class="card p-3">
-  <p><strong>Connection string:</strong> @r?.MaskedConnectionString</p>
-  <p><strong>Schema esperado:</strong> @OrcaFacil.Web.Diagnostics.DatabaseDiagnosticsService.ExpectedSchema</p>
-  <p><strong>Status:</strong> @(r?.Connected == true ? "Conectado" : "Falha")</p>
-  <p><strong>Tabelas encontradas:</strong> @r?.TableCount</p>
-  <p><strong>Health PostgreSQL:</strong> @(r?.SchemaFound == true && r.RequiredTables.Values.All(x => x) ? "OK" : "Pendente")</p>
-  <p><strong>Versão do app:</strong> @r?.AppVersion</p>
-  @if (!string.IsNullOrWhiteSpace(r?.LastError)) { <p class="text-danger"><strong>Último erro:</strong> @r.LastError</p> }
+<div class="alert @(ok ? "alert-success" : "alert-danger")">@(ok ? "Banco conectado e schema validado." : "Banco com pendências de configuração.")</div>
+<div class="card p-3 mb-3">
+  <p><strong>Connection string:</strong> @DatabaseDiagnosticsService.MaskConnectionString(Configuration.GetConnectionString("DefaultConnection"))</p>
+  <p><strong>Banco:</strong> @r?.DatabaseName</p>
+  <p><strong>Schema esperado:</strong> @DatabaseDiagnosticsService.ExpectedSchema</p>
+  <p><strong>Status:</strong> @(r?.CanConnect == true ? "Conectado" : "Falha")</p>
+  <p><strong>PostgreSQL:</strong> @r?.PostgreSqlVersion</p>
+  <p><strong>Health:</strong> <a href="/health/db" target="_blank">/health/db</a></p>
+  @if (!string.IsNullOrWhiteSpace(r?.Error)) { <p class="text-danger"><strong>Erro:</strong> @r.Error</p> }
+</div>
+<div class="row g-3">
+  <div class="col-md-6"><div class="card p-3"><h2 class="h5">Tabelas encontradas</h2><ul>@foreach (var table in r?.ExistingTables ?? Array.Empty<string>()) { <li>@table</li> }</ul></div></div>
+  <div class="col-md-6"><div class="card p-3"><h2 class="h5">Tabelas ausentes</h2><ul>@foreach (var table in r?.MissingTables ?? Array.Empty<string>()) { <li class="text-danger">@table</li> }</ul></div></div>
+</div>
+<div class="card p-3 mt-3">
+  <h2 class="h5">Execução manual</h2>
+  <p>Execute <code>psql -h localhost -p 5432 -U orcafacil_user -d orcafacil -f database/script_completop.sql</code>. O script é idempotente e usa somente o schema <code>orcafacil</code>.</p>
 </div>

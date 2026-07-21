@@ -1,12 +1,12 @@
 @page
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy="SuperAdmin")]
 @model OrcaFacil.Web.Areas.Admin.Pages.DashboardModel
-@{ ViewData["Title"] = "Admin Geral"; var db = Model.Database; var ok = db?.Connected == true && db.SchemaFound && db.RequiredTables.Values.All(x => x); }
+@{ ViewData["Title"] = "Admin Geral"; var db = Model.Database; var ok = db?.CanConnect == true && db.SchemaExists && db.MissingTables.Count == 0; }
 <h1>Admin Geral</h1>
 <div class="row g-3">
   <div class="col-md-3"><div class="card-metric">Usuários <strong>@Model.TotalUsers</strong></div></div>
   <div class="col-md-3"><div class="card-metric">Documentos <strong>@Model.TotalDocuments</strong></div></div>
   <div class="col-md-3"><div class="card-metric">Free <strong>@Model.FreeUsers</strong></div></div>
   <div class="col-md-3"><div class="card-metric">Pro <strong>@Model.ProUsers</strong></div></div>
-  <div class="col-md-4"><div class="card-metric">Banco de Dados <strong>@(ok ? "Conectado" : "Atenção")</strong><br />Schema orcafacil: @(db?.SchemaFound == true ? "encontrado" : "não encontrado")<br />Tabelas principais: @(db?.RequiredTables.Values.All(x => x) == true ? "OK" : "pendente")<br />Último erro: @(db?.LastError ?? "nenhum")</div></div>
+  <div class="col-md-4"><div class="card-metric">Banco de Dados <strong>@(ok ? "Conectado" : "Atenção")</strong><br />Schema orcafacil: @(db?.SchemaExists == true ? "encontrado" : "não encontrado")<br />Tabelas principais: @(db?.MissingTables.Count == 0 ? "OK" : "pendente")<br />Últimas falhas: @(db?.Error ?? "nenhuma")<br /><a href="/Admin/Settings/Database">Detalhes</a></div></div>
 </div>
