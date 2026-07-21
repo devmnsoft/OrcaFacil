@@ -1,1 +1,23 @@
-<Project Sdk="Microsoft.NET.Sdk"><ItemGroup><ProjectReference Include="..\..\src\OrcaFacil.Domain\OrcaFacil.Domain.csproj"/><ProjectReference Include="..\..\src\OrcaFacil.Application\OrcaFacil.Application.csproj"/><PackageReference Include="xunit" Version="2.9.3"/><PackageReference Include="xunit.runner.visualstudio" Version="3.1.1"/></ItemGroup></Project>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OrcaFacil.Domain\OrcaFacil.Domain.csproj" />
+    <ProjectReference Include="..\..\src\OrcaFacil.Application\OrcaFacil.Application.csproj" />
+    <ProjectReference Include="..\..\src\OrcaFacil.Infrastructure\OrcaFacil.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\OrcaFacil.Persistence\OrcaFacil.Persistence.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.1" />
+  </ItemGroup>
+
+</Project>

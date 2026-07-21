@@ -1,1 +1,23 @@
-<Project Sdk="Microsoft.NET.Sdk"><ItemGroup><ProjectReference Include="..\OrcaFacil.Domain\OrcaFacil.Domain.csproj"/><ProjectReference Include="..\OrcaFacil.Application\OrcaFacil.Application.csproj"/><PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0-preview.6.25358.103"/><PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0-preview.6"/><PackageReference Include="Dapper" Version="2.1.66"/><PackageReference Include="BCrypt.Net-Next" Version="4.0.3"/></ItemGroup></Project>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OrcaFacil.Domain\OrcaFacil.Domain.csproj" />
+    <ProjectReference Include="..\OrcaFacil.Application\OrcaFacil.Application.csproj" />
+    <ProjectReference Include="..\OrcaFacil.Shared\OrcaFacil.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0-preview.6.25358.103" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0-preview.6" />
+  </ItemGroup>
+
+</Project>

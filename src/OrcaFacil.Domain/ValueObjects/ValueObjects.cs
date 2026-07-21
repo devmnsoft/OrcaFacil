@@ -1,9 +1,0 @@
-using System.Security.Cryptography; using System.Text.RegularExpressions;
-namespace OrcaFacil.Domain.ValueObjects;
-public sealed record Email { public string Value { get; } public Email(string value){ if(string.IsNullOrWhiteSpace(value)||!Regex.IsMatch(value,@"^[^@\s]+@[^@\s]+\.[^@\s]+$")) throw new ArgumentException("E-mail inválido."); Value=value.Trim().ToLowerInvariant(); } public override string ToString()=>Value; }
-public sealed record Money { public decimal Value { get; } public Money(decimal value, bool allowNegative=false){ if(!allowNegative && value<0) throw new ArgumentOutOfRangeException(nameof(value),"Valor monetário não pode ser negativo."); Value=Math.Round(value,2); } public static Money operator +(Money a, Money b)=>new(a.Value+b.Value); public static Money operator -(Money a, Money b)=>new(a.Value-b.Value, true); }
-public sealed record CpfCnpj { public string Value { get; } public CpfCnpj(string value){ var d=Regex.Replace(value??"","\D",""); if(d.Length is not (11 or 14)) throw new ArgumentException("CPF/CNPJ deve ter 11 ou 14 dígitos."); Value=d; } }
-public sealed record PhoneNumber { public string Value { get; } public PhoneNumber(string value){ var d=Regex.Replace(value??"","\D",""); if(d.Length<10||d.Length>13) throw new ArgumentException("Telefone inválido."); Value=d; } }
-public sealed record DocumentNumber(string Value);
-public sealed record PublicToken { public string Value { get; } public PublicToken(string? value=null){ Value=string.IsNullOrWhiteSpace(value)?Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).Replace("+","-").Replace("/","_").TrimEnd('='):value; if(Value.Length<32) throw new ArgumentException("Token público inseguro."); } }
-public sealed record DateRange(DateTime StartsAt, DateTime EndsAt){ public DateRange():this(DateTime.UtcNow,DateTime.UtcNow){} public bool Contains(DateTime d)=>d>=StartsAt&&d<=EndsAt; }
