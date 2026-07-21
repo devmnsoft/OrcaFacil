@@ -1,5 +1,6 @@
 (function(){
   const money=v=>(Number(v||0)).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  window.initSidebar=()=>document.querySelectorAll('[data-sidebar-toggle]').forEach(btn=>btn.addEventListener('click',()=>document.body.classList.toggle('of-sidebar-collapsed')));
   window.toggleSidebar=()=>document.body.classList.toggle('of-sidebar-collapsed');
   window.initToasts=()=>document.querySelectorAll('.toast').forEach(t=>bootstrap.Toast.getOrCreateInstance(t).show());
   window.showToast=(message,type='success')=>{const host=document.querySelector('[data-toast-host]')||document.body;const el=document.createElement('div');el.className=`toast of-toast ${type} show`;el.role='status';el.innerHTML=`<div class="toast-body">${message}</div>`;host.appendChild(el);setTimeout(()=>el.remove(),3600)};
@@ -10,10 +11,12 @@
   window.removeDocumentItem=btn=>{const row=btn.closest('.item');if(document.querySelectorAll('.item').length>1)row?.remove();calculateDocumentTotals()};
   window.copyToClipboard=async text=>{await navigator.clipboard.writeText(text||location.href);showToast('Link copiado.');};
   window.formatCurrencyInput=el=>{el.value=el.value.replace(/[^\d,.-]/g,'')};
+  window.initTooltips=()=>document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el=>bootstrap.Tooltip.getOrCreateInstance(el));
+  window.toggleFaqItem=btn=>{const answer=btn?.nextElementSibling;if(!answer)return;const open=answer.hasAttribute('hidden');answer.toggleAttribute('hidden',!open);btn.setAttribute('aria-expanded',String(open));};
   window.formatPhoneInput=el=>{el.value=el.value.replace(/\D/g,'').replace(/(\d{2})(\d{5})(\d{0,4}).*/,'($1) $2-$3')};
   window.formatCpfCnpjInput=el=>{const d=el.value.replace(/\D/g,'').slice(0,14);el.value=d.length>11?d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/,'$1.$2.$3/$4-$5'):d.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4')};
   document.addEventListener('submit',e=>{const btn=e.target.querySelector('[data-loading],button[type="submit"]');if(btn) setButtonLoading(btn)});
   document.addEventListener('click',e=>{const c=e.target.closest('[data-confirm]');if(c&&!confirmAction(c.dataset.confirm))e.preventDefault();const copy=e.target.closest('[data-copy]');if(copy){e.preventDefault();copyToClipboard(copy.dataset.copy)}});
   document.addEventListener('input',e=>{if(e.target.matches('.qty,.price,.discount,[data-document-discount]'))calculateDocumentTotals();if(e.target.matches('[data-phone]'))formatPhoneInput(e.target);if(e.target.matches('[data-cpf-cnpj]'))formatCpfCnpjInput(e.target);if(e.target.matches('[data-currency]'))formatCurrencyInput(e.target)});
-  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el=>new bootstrap.Tooltip(el));document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{const t=document.querySelector(a.getAttribute('href'));if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth'})}}));calculateDocumentTotals();initToasts();
+  initSidebar();initTooltips();document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{const t=document.querySelector(a.getAttribute('href'));if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth'})}}));calculateDocumentTotals();initToasts();
 })();

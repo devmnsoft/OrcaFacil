@@ -1,0 +1,7 @@
+@model dynamic
+<article class="of-feature">
+  <i class="bi @(Model?.Icon ?? "bi-check-circle") fs-3 text-primary" aria-hidden="true"></i>
+  <h3 class="h5 mt-3">@(Model?.Title ?? "Recurso")</h3>
+  <p>@(Model?.Text ?? "Informação útil para usar o OrçaFácil com mais segurança.")</p>
+  @if (!string.IsNullOrWhiteSpace(Model?.ActionText as string) && !string.IsNullOrWhiteSpace(Model?.ActionPage as string)) { <a class="stretched-link" asp-page="@(Model?.ActionPage)">@(Model?.ActionText)</a> }
+</article>

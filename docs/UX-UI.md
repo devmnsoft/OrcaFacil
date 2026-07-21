@@ -38,3 +38,7 @@ O menu lateral vira offcanvas no celular; cards e botões ganham espaçamento; t
 
 ## Status
 Use badges com texto explícito: Rascunho, Emitido, Aprovado, Recusado, Cancelado, Free e Pro. Não dependa apenas da cor.
+
+## Atualização premium sem binários
+
+A experiência agora prioriza jornada comercial clara: landing autoexplicativa, página Como Funciona, onboarding com progresso, dashboard com próximo passo, suporte com manuais e fallback da marca MNSOFT sem imagem quebrada.

@@ -1,0 +1,16 @@
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
+@{
+    var logoPath = System.IO.Path.Combine(Env.WebRootPath, "img", "branding", "mnsoft-logo.png");
+    var hasLogo = System.IO.File.Exists(logoPath);
+}
+@if (hasLogo)
+{
+    <img src="/img/branding/mnsoft-logo.png" alt="MNSOFT Consultorias e soluções em TI" class="mnsoft-logo" />
+}
+else
+{
+    <div class="mnsoft-logo-fallback" aria-label="MNSOFT Consultorias e soluções em TI">
+        <strong><span>MN</span>SOFT</strong>
+        <small>Consultorias e soluções em TI.</small>
+    </div>
+}
