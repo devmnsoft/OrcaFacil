@@ -61,7 +61,7 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
         }
         catch (Exception ex)
         {
-            return new(false, false, [], RequiredTables, databaseName, null, SanitizeError(ex.Message));
+            return new(false, false, [], RequiredTables, databaseName, null, SanitizeError(ex));
         }
     }
 
@@ -73,6 +73,23 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
         return builder.ConnectionString;
     }
 
-    private static string SanitizeError(string message) =>
-        message.Replace("Password=", "Password=******", StringComparison.OrdinalIgnoreCase);
+    private static string SanitizeError(Exception ex)
+    {
+        if (HasSqlState(ex, "28P01"))
+        {
+            return "Senha inválida para o usuário do PostgreSQL. Verifique a ConnectionString.";
+        }
+
+        return ex.Message.Replace("Password=", "Password=******", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool HasSqlState(Exception ex, string sqlState)
+    {
+        for (var current = ex; current is not null; current = current.InnerException!)
+        {
+            var value = current.GetType().GetProperty("SqlState")?.GetValue(current)?.ToString();
+            if (string.Equals(value, sqlState, StringComparison.OrdinalIgnoreCase)) return true;
+        }
+        return false;
+    }
 }

@@ -47,9 +47,7 @@ public class ExceptionHandlingMiddleware
             {
                 Status = StatusCodes.Status500InternalServerError,
                 Title = _environment.IsDevelopment() ? "Erro inesperado" : "Não foi possível concluir a operação",
-                Detail = _environment.IsDevelopment()
-                    ? ex.ToString()
-                    : "Tivemos uma falha temporária ao processar sua solicitação. Tente novamente em instantes ou informe o código de correlação ao suporte.",
+                Detail = BuildDetail(ex),
                 Instance = context.Request.Path,
             };
 
@@ -58,5 +56,29 @@ public class ExceptionHandlingMiddleware
 
             await context.Response.WriteAsJsonAsync(problem);
         }
+    }
+
+    private string BuildDetail(Exception ex)
+    {
+        if (HasSqlState(ex, "28P01"))
+        {
+            return _environment.IsDevelopment()
+                ? "Falha de autenticação no PostgreSQL (28P01). Verifique usuário/senha da ConnectionString DefaultConnection."
+                : "Não foi possível concluir a operação. Tente novamente em instantes ou fale com o suporte MNSOFT.";
+        }
+
+        return _environment.IsDevelopment()
+            ? $"{ex.GetType().Name}: {ex.Message}"
+            : "Não foi possível concluir a operação. Tente novamente em instantes ou fale com o suporte MNSOFT.";
+    }
+
+    private static bool HasSqlState(Exception ex, string sqlState)
+    {
+        for (var current = ex; current is not null; current = current.InnerException!)
+        {
+            var value = current.GetType().GetProperty("SqlState")?.GetValue(current)?.ToString();
+            if (string.Equals(value, sqlState, StringComparison.OrdinalIgnoreCase)) return true;
+        }
+        return false;
     }
 }

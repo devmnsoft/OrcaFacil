@@ -24,11 +24,11 @@
   </aside>
   <div class="of-mobilebar d-lg-none"><button class="btn btn-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#ofMobileMenu" aria-label="Abrir menu">☰</button><a class="of-brand text-decoration-none" asp-page="/Dashboard/Index"><span class="of-brand-mark">OF</span><span>OrçaFácil</span></a></div>
   <div class="offcanvas offcanvas-start" tabindex="-1" id="ofMobileMenu"><div class="offcanvas-header"><h5>OrçaFácil</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar"></button></div><div class="offcanvas-body"><nav class="of-menu mobile"><a asp-page="/Dashboard/Index">Dashboard</a><a asp-page="/Documents/CreateBudget">Novo orçamento</a><a asp-page="/Documents/CreateReceipt">Novo recibo</a><a asp-page="/Documents/Index">Histórico</a><a asp-page="/Profile/Index">Emitente</a><a asp-page="/Subscription/Index">Minha assinatura</a><a asp-page="/Support/Index">Ajuda</a></nav></div></div>
-  <main class="of-main"><partial name="_Toast" /><div class="container-fluid py-4">@RenderBody()</div></main>
+  <main class="of-main"><partial name="Partials/_ToastHost" /><div class="container-fluid py-4">@RenderBody()</div></main>
 }
 else
 {
-  <main><partial name="_Toast" />@RenderBody()</main>
+  <main><partial name="Partials/_ToastHost" />@RenderBody()</main>
 }
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/app.js" asp-append-version="true"></script>

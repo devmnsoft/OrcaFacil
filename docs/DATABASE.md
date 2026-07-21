@@ -106,3 +106,49 @@ Validação rápida:
 psql -h localhost -p 5432 -U orcafacil_user -d orcafacil -f database/script_completop.sql
 curl http://localhost:5000/health/db
 ```
+
+## Configuração local recomendada para cadastro e login
+
+Use a variável `ConnectionStrings__DefaultConnection` ou o arquivo `src/OrcaFacil.Web/appsettings.Development.json` com:
+
+```text
+Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456
+```
+
+### Criar usuário e banco do zero
+
+Execute como usuário administrador do PostgreSQL:
+
+```sql
+CREATE USER orcafacil_user WITH PASSWORD '123456';
+CREATE DATABASE orcafacil OWNER orcafacil_user;
+GRANT ALL PRIVILEGES ON DATABASE orcafacil TO orcafacil_user;
+```
+
+Depois de executar o `script_completop.sql` e criar o schema `orcafacil`, garanta as permissões:
+
+```sql
+GRANT USAGE ON SCHEMA orcafacil TO orcafacil_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA orcafacil TO orcafacil_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA orcafacil TO orcafacil_user;
+```
+
+### Alterar senha quando ocorrer 28P01
+
+O erro PostgreSQL `28P01` significa falha de autenticação por senha. Corrija alinhando a senha do banco com a `ConnectionString`:
+
+```sql
+ALTER USER orcafacil_user WITH PASSWORD '123456';
+```
+
+### Testar conexão
+
+```bash
+psql "Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456" -c "select current_user, current_database();"
+```
+
+### Executar script_completop.sql
+
+```bash
+psql "Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456" -f script_completop.sql
+```
