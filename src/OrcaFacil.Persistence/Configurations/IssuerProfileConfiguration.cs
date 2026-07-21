@@ -8,7 +8,7 @@ public class IssuerProfileConfiguration : IEntityTypeConfiguration<IssuerProfile
 {
     public void Configure(EntityTypeBuilder<IssuerProfile> builder)
     {
-        builder.ToTable("issuer_profiles", "core");
+        builder.ToTable("issuer_profiles", "orcafacil");
         builder.ConfigureBase();
         builder.Property(x => x.UserId).HasColumnName("user_id");
         builder.Property(x => x.BusinessName).HasColumnName("business_name").HasMaxLength(180).IsRequired();

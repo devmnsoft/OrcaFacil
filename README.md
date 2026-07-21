@@ -91,7 +91,7 @@ dotnet run --project src/OrcaFacil.Web
 dotnet ef database update --project src/OrcaFacil.Persistence --startup-project src/OrcaFacil.Web
 ```
 
-A migration inicial cria tabelas nos schemas `identity`, `core`, `billing`, `admin`, `logs` e `public_access`.
+A migration inicial e o script completo criam tabelas no schema único `orcafacil`.
 
 ### SuperAdmin
 
@@ -167,3 +167,53 @@ docker compose up -d postgres
 ```
 
 Se o volume `orcafacil_pgdata` já existir, o PostgreSQL não reexecuta scripts de `/docker-entrypoint-initdb.d`; execute o script manualmente ou recrie o volume em desenvolvimento.
+
+## Banco de Dados PostgreSQL
+
+Todas as tabelas do OrçaFácil ficam no schema PostgreSQL `orcafacil`.
+
+Exemplos:
+
+- `orcafacil.users`
+- `orcafacil.documents`
+- `orcafacil.document_items`
+- `orcafacil.public_quotes`
+
+O script completo e idempotente do banco está em `database/script_completop.sql` e é o mesmo usado pelo Docker Compose.
+
+## Rodar sem Docker
+
+1. Instale o PostgreSQL.
+2. Crie o banco `orcafacil`.
+3. Crie o usuário `orcafacil_user`.
+4. Execute:
+
+   ```bash
+   psql -h localhost -p 5432 -U orcafacil_user -d orcafacil -f database/script_completop.sql
+   ```
+
+5. Configure a connection string em `src/OrcaFacil.Web/appsettings.Development.json`, user-secrets ou na variável de ambiente `ConnectionStrings__DefaultConnection`:
+
+   ```json
+   {
+     "ConnectionStrings": {
+       "DefaultConnection": "Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456"
+     }
+   }
+   ```
+
+6. Rode a aplicação:
+
+   ```bash
+   dotnet run --project src/OrcaFacil.Web
+   ```
+
+## Rodar com Docker
+
+Configure `ORCAFACIL_DB_PASSWORD` em `.env` e execute:
+
+```bash
+docker compose up -d postgres
+```
+
+O container inicializa bancos novos usando `database/script_completop.sql`.

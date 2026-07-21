@@ -8,7 +8,7 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 {
     public void Configure(EntityTypeBuilder<AuditLog> builder)
     {
-        builder.ToTable("audit_logs", "logs");
+        builder.ToTable("audit_logs", "orcafacil");
         builder.ConfigureBase();
         builder.HasIndex(x => x.CreatedAt);
     }

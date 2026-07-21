@@ -8,7 +8,7 @@ public class SystemErrorConfiguration : IEntityTypeConfiguration<SystemError>
 {
     public void Configure(EntityTypeBuilder<SystemError> builder)
     {
-        builder.ToTable("system_errors", "logs");
+        builder.ToTable("system_errors", "orcafacil");
         builder.ConfigureBase();
     }
 }

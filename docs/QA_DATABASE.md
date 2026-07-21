@@ -16,7 +16,7 @@ Use este checklist antes de avançar para funcionalidades maiores.
 - [ ] Tabelas criadas conforme `docs/DATABASE.md`.
 - [ ] Constraints únicas e checks validados.
 - [ ] Índices obrigatórios existentes.
-- [ ] Seeds de `admin.admin_settings` criados.
+- [ ] Seeds de `orcafacil.admin_settings` criados.
 
 ## Aplicação
 

@@ -8,7 +8,7 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 {
     public void Configure(EntityTypeBuilder<Payment> builder)
     {
-        builder.ToTable("payments", "billing");
+        builder.ToTable("payments", "orcafacil");
         builder.ConfigureBase();
         builder.Property(x => x.Status).HasConversion<string>();
         builder.Property(x => x.Plan).HasConversion<string>();

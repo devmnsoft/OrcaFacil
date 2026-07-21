@@ -22,14 +22,14 @@ public class DashboardQueries : IDashboardQueries
                    coalesce(sum(total) filter (where type = 'Budget'), 0) as BudgetTotal,
                    coalesce(sum(total) filter (where type = 'Receipt'), 0) as ReceiptTotal,
                    count(*) filter (where date_trunc('month', created_at) = date_trunc('month', now()))::int as DocumentsThisMonth
-              from core.documents
+              from orcafacil.documents
              where user_id = @userId and is_deleted = false
             """, new { userId }, cancellationToken: ct));
-        var plan = await connection.ExecuteScalarAsync<string>(new CommandDefinition("select plan::text from identity.users where id = @userId", new { userId }, cancellationToken: ct)) ?? "Free";
-        var pdfs = await connection.ExecuteScalarAsync<int>(new CommandDefinition("select coalesce(pdf_generated, 0) from core.user_usage where user_id = @userId and period = to_char(now(), 'YYYY-MM')", new { userId }, cancellationToken: ct));
+        var plan = await connection.ExecuteScalarAsync<string>(new CommandDefinition("select plan::text from orcafacil.users where id = @userId", new { userId }, cancellationToken: ct)) ?? "Free";
+        var pdfs = await connection.ExecuteScalarAsync<int>(new CommandDefinition("select coalesce(pdf_generated, 0) from orcafacil.user_usage where user_id = @userId and period = to_char(now(), 'YYYY-MM')", new { userId }, cancellationToken: ct));
         var latest = (await connection.QueryAsync<DocumentSummaryDto>(new CommandDefinition("""
             select id as Id, type::text as Type, number as Number, status as Status, client_name as ClientName, total as Total, created_at as CreatedAt
-              from core.documents
+              from orcafacil.documents
              where user_id = @userId and is_deleted = false
              order by created_at desc
              limit 5

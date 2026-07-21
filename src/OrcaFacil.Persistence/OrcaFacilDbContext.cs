@@ -23,7 +23,7 @@ public class OrcaFacilDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasDefaultSchema("core");
+        modelBuilder.HasDefaultSchema("orcafacil");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(OrcaFacilDbContext).Assembly);
     }
 }

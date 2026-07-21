@@ -12,6 +12,7 @@ using OrcaFacil.Persistence;
 using OrcaFacil.Persistence.Queries;
 using OrcaFacil.Persistence.Repositories;
 using OrcaFacil.Web.Health;
+using OrcaFacil.Web.Diagnostics;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,6 +42,7 @@ builder.Services.AddScoped<UserUsageService>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IPdfService, QuestPdfDocumentService>();
 builder.Services.AddScoped<INumberToWordsService, NumberToWordsPtBrService>();
+builder.Services.AddSingleton<DatabaseDiagnosticsService>();
 builder.Services.AddHealthChecks().AddCheck<PostgresHealthCheck>("postgresql");
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
 {
@@ -79,6 +81,12 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHealthChecks("/health");
+app.MapGet("/health/db", async (DatabaseDiagnosticsService diagnostics, CancellationToken ct) =>
+{
+    var result = await diagnostics.CheckAsync(ct);
+    var healthy = result.Connected && result.SchemaFound && result.RequiredTables.Values.All(found => found);
+    return healthy ? Results.Ok(result) : Results.Json(result, statusCode: StatusCodes.Status503ServiceUnavailable);
+});
 app.MapGet("/health/version", () => new { app = "OrcaFacil", version = "1.0.0", environment = app.Environment.EnvironmentName, date = DateTime.UtcNow });
 app.MapControllers();
 app.MapRazorPages();
