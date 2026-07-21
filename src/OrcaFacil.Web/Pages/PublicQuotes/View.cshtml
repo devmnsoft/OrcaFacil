@@ -1,0 +1,3 @@
+@page "/p/{token}"
+@model OrcaFacil.Web.Pages.PublicQuotes.ViewModel
+@{ViewData["Title"]="Orçamento público";}<h1>Orçamento @Model.Document?.Number</h1><div class="card p-4"><h2>@Model.Document?.ClientName</h2><p>Total: <strong>@Model.Document?.Total.ToString("C")</strong></p></div><form method="post" asp-page-handler="Approve" class="card p-4 mt-3">@Html.AntiForgeryToken()<label>Nome para aprovação</label><input asp-for="Input.Name" class="form-control"/><label>E-mail</label><input asp-for="Input.Email" class="form-control"/><label>Observação</label><textarea asp-for="Input.Note" class="form-control"></textarea><button class="btn btn-success mt-3">Aprovar orçamento</button></form>

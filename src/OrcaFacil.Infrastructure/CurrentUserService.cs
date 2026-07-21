@@ -10,12 +10,20 @@ public class CurrentUserService : ICurrentUserService
 
     public CurrentUserService(IHttpContextAccessor httpContextAccessor) => _httpContextAccessor = httpContextAccessor;
 
-    public Guid UserId => TryGetUserId() ?? throw new UnauthorizedAccessException("Usuário autenticado sem claim de identificador válida.");
+    private ClaimsPrincipal? User => _httpContextAccessor.HttpContext?.User;
+
+    public Guid UserId => TryGetUserId() ?? throw new UnauthorizedAccessException("Usuário não autenticado ou claim 'sub' inválida.");
+
+    public string? Email => User?.FindFirstValue(ClaimTypes.Email) ?? User?.FindFirstValue("email");
+    public string? Name => User?.FindFirstValue(ClaimTypes.Name) ?? User?.FindFirstValue("name");
+    public string? Role => User?.FindFirstValue(ClaimTypes.Role) ?? User?.FindFirstValue("role");
+    public string? Plan => User?.FindFirstValue("plan");
+    public bool IsAuthenticated => User?.Identity?.IsAuthenticated == true;
+    public bool IsSuperAdmin => string.Equals(Role, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
 
     public Guid? TryGetUserId()
     {
-        var value = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? _httpContextAccessor.HttpContext?.User.FindFirstValue("sub");
+        var value = User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? User?.FindFirstValue("sub");
         return Guid.TryParse(value, out var userId) ? userId : null;
     }
 }

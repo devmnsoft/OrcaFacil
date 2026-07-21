@@ -1,3 +1,3 @@
 # Segurança
 
-A autenticação usa Cookie Authentication HttpOnly/SameSite, claims `sub`, `name`, `email`, `role` e `plan`, políticas de autorização e middleware global de erros com correlation id.
+O Web usa autenticação por cookie HttpOnly, autorização por páginas protegidas, política `SuperAdmin`, antiforgery nos formulários, HSTS fora de desenvolvimento, HTTPS redirection, middleware global de exceções e auditoria para ações de autenticação, perfil, documentos e aprovação pública.
