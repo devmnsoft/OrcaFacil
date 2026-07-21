@@ -1,4 +1,33 @@
 @page
 @model OrcaFacil.Web.Pages.Auth.RegisterModel
 @{ Layout="/Pages/Shared/_PublicLayout.cshtml"; ViewData["Title"]="Criar conta"; }
-<section class="of-hero"><div class="container"><div class="of-public-card p-4 p-lg-5"><div class="of-auth-grid"><div><p class="of-eyebrow">Plano Free</p><h1 class="h2 text-dark">Crie sua conta grátis.</h1><p class="text-muted">Conta criada com sucesso? O próximo passo será configurar seus dados para aparecerem no PDF.</p><ul class="text-muted"><li>Orçamentos e recibos em PDF</li><li>Histórico organizado</li><li>Upgrade Pro quando quiser</li></ul><p class="mt-3"><partial name="Partials/_MnsoftBrand" /></p></div><div><form method="post" class="of-card shadow-none">@Html.AntiForgeryToken()<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div><p class="form-text">Se o e-mail já estiver cadastrado, entre ou fale com a MNSOFT.</p><label asp-for="Input.Name" class="form-label">Nome ou empresa</label><input asp-for="Input.Name" class="form-control" autocomplete="organization"/><span asp-validation-for="Input.Name" class="text-danger"></span><label asp-for="Input.Email" class="form-label">E-mail</label><input asp-for="Input.Email" class="form-control" autocomplete="email"/><span asp-validation-for="Input.Email" class="text-danger"></span><label asp-for="Input.Password" class="form-label">Senha</label><input asp-for="Input.Password" class="form-control" autocomplete="new-password"/><span asp-validation-for="Input.Password" class="text-danger"></span><label class="form-label" for="ConfirmPassword">Confirmar senha</label><input id="ConfirmPassword" name="ConfirmPassword" type="password" class="form-control" minlength="6" required autocomplete="new-password" /><div class="form-check mt-3"><input asp-for="Input.AcceptTerms" class="form-check-input" type="checkbox" required id="terms"><label class="form-check-label" for="terms">Aceito os termos.</label></div><div class="form-check mt-2"><input asp-for="Input.AcceptPrivacy" class="form-check-input" type="checkbox" required id="privacy"><label class="form-check-label" for="privacy">Aceito a <a asp-page="/Privacidade">política de privacidade</a>.</label></div><button class="btn btn-success w-100 mt-4" data-loading>Criar conta grátis</button><a class="btn btn-link w-100 mt-2" asp-page="/Support/Index">Falar com a MNSOFT</a></form></div></div></div></div></section>
+<section class="of-public-auth">
+  <div class="container">
+    <div class="of-auth-shell">
+      <aside class="of-auth-aside">
+        <p class="of-eyebrow of-on-dark-muted">OrçaFácil · um produto MNSOFT</p>
+        <h1 class="display-5 fw-black of-on-dark">Crie sua conta grátis.</h1>
+        <p class="lead of-on-dark-muted">Gere orçamentos e recibos profissionais em PDF, organize seu histórico e envie documentos mais confiáveis para seus clientes.</p>
+        <div class="of-illustration-card my-4"><img class="of-illustration" src="~/img/illustrations/register-hero.svg" alt="Documento com botão PDF, aprovação e cliente" /></div>
+        <ul class="of-benefit-list">
+          <li><i class="bi bi-file-earmark-text"></i> Orçamentos profissionais em PDF</li><li><i class="bi bi-receipt"></i> Recibos com aparência organizada</li><li><i class="bi bi-clock-history"></i> Histórico salvo</li><li><i class="bi bi-phone"></i> Funciona no celular</li><li><i class="bi bi-gift"></i> Comece grátis</li><li><i class="bi bi-chat-dots"></i> Suporte MNSOFT</li>
+        </ul>
+      </aside>
+      <div class="of-auth-panel">
+        <form method="post" class="of-card shadow-none" novalidate>@Html.AntiForgeryToken()
+          <p class="of-eyebrow">Cadastro</p><h2 class="h1 fw-bold">Começar grátis</h2><p class="of-muted">Preencha seus dados para criar sua conta.</p>
+          <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+          <label asp-for="Input.Name" class="form-label"><i class="bi bi-person me-1"></i> Nome ou empresa</label><div class="of-input-icon"><i class="bi bi-person"></i><input asp-for="Input.Name" class="form-control" autocomplete="organization" placeholder="Ex.: Marcelo Serviços" /></div><span asp-validation-for="Input.Name" class="text-danger"></span>
+          <label asp-for="Input.Email" class="form-label"><i class="bi bi-envelope me-1"></i> E-mail</label><div class="of-input-icon"><i class="bi bi-envelope"></i><input asp-for="Input.Email" class="form-control" autocomplete="email" placeholder="seuemail@exemplo.com" /></div><span asp-validation-for="Input.Email" class="text-danger"></span>
+          <label asp-for="Input.Password" class="form-label"><i class="bi bi-lock me-1"></i> Senha</label><div class="of-input-icon"><i class="bi bi-lock"></i><input asp-for="Input.Password" class="form-control" autocomplete="new-password" placeholder="Mínimo de 6 caracteres" /></div><span asp-validation-for="Input.Password" class="text-danger"></span>
+          <label class="form-label" for="ConfirmPassword"><i class="bi bi-lock-fill me-1"></i> Confirmar senha</label><div class="of-input-icon"><i class="bi bi-lock-fill"></i><input id="ConfirmPassword" name="ConfirmPassword" type="password" class="form-control" minlength="6" required autocomplete="new-password" placeholder="Repita sua senha" /></div>
+          <div class="form-check mt-3"><input asp-for="Input.AcceptTerms" class="form-check-input" type="checkbox" required id="terms"><label class="form-check-label" for="terms"><i class="bi bi-shield-check me-1"></i>Aceito os termos.</label></div>
+          <div class="form-check mt-2"><input asp-for="Input.AcceptPrivacy" class="form-check-input" type="checkbox" required id="privacy"><label class="form-check-label" for="privacy"><i class="bi bi-shield-check me-1"></i>Aceito a <a asp-page="/Privacidade">política de privacidade</a>.</label></div>
+          <div class="of-security-note mt-3"><i class="bi bi-lock"></i><span>Seus dados ficam protegidos e são usados apenas para gerar e organizar seus documentos.</span></div>
+          <button class="btn btn-success btn-lg w-100 mt-4" data-loading>Criar conta grátis <i class="bi bi-arrow-right-circle ms-1"></i></button>
+          <div class="d-grid d-sm-flex gap-2 mt-2"><a class="btn btn-outline-primary flex-fill" asp-page="/Auth/Login">Já tenho conta</a><a class="btn btn-link flex-fill" asp-page="/Support/Index"><i class="bi bi-chat-dots"></i> Falar com a MNSOFT</a></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>

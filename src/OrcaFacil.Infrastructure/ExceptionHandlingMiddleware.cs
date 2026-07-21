@@ -41,6 +41,15 @@ public class ExceptionHandlingMiddleware
 
             context.Response.Clear();
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            var acceptsHtml = context.Request.Headers.Accept.ToString().Contains("text/html", StringComparison.OrdinalIgnoreCase);
+            if (acceptsHtml)
+            {
+                context.Response.ContentType = "text/html; charset=utf-8";
+                var safeMessage = BuildDetail(ex);
+                await context.Response.WriteAsync($"<main style='font-family:Arial,sans-serif;max-width:720px;margin:48px auto;padding:24px;color:#1C2430'><h1>Não foi possível concluir a operação.</h1><p>{safeMessage}</p><p>Informe este código ao suporte: <strong>{correlationId}</strong></p></main>");
+                return;
+            }
+
             context.Response.ContentType = "application/problem+json";
 
             var problem = new ProblemDetails
