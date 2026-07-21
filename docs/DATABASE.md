@@ -92,7 +92,7 @@ select table_schema, table_name from information_schema.tables where table_schem
 select to_regclass('orcafacil.users'), to_regclass('orcafacil.documents'), to_regclass('orcafacil.system_errors');
 ```
 
-A aplicação expõe `/health/db`, `/diagnostico` e `/Admin/Settings/Database` para validar conexão, schema e tabelas principais.
+A aplicação expõe `/health/db`, `/diagnostico` protegido por SuperAdmin e `/Admin/Settings/Database` para validar conexão, schema e tabelas principais.
 
 ## Consolidação PostgreSQL 2026-07
 

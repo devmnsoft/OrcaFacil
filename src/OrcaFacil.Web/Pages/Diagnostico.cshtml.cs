@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Persistence.Diagnostics;
 
 namespace OrcaFacil.Web.Pages;
 
+[Authorize(Policy = "SuperAdmin")]
 public class DiagnosticoModel : PageModel
 {
     private readonly IWebHostEnvironment _environment;
