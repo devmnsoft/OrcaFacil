@@ -110,3 +110,60 @@ Configure as chaves esperadas pelo `SuperAdminSeeder` em `appsettings`/variávei
 ### PDF e IIS
 
 Baixe PDFs autenticados por `/Documents/Pdf/{id}`. Para IIS, execute `publish-iis.bat` e siga `docs/DEPLOY-IIS-ASPNET.md`.
+
+## Rodar sem Docker
+
+O OrçaFácil não depende exclusivamente do Docker nem exclusivamente de migrations. Use PostgreSQL local, remoto Windows/Linux ou Docker.
+
+1. Instale PostgreSQL 15+ ou 17.
+2. Crie a database e o usuário:
+
+```sql
+CREATE DATABASE orcafacil;
+CREATE USER orcafacil_user WITH PASSWORD '123456';
+GRANT ALL PRIVILEGES ON DATABASE orcafacil TO orcafacil_user;
+```
+
+3. Execute o script completo:
+
+```bash
+psql -h localhost -p 5432 -U orcafacil_user -d orcafacil -f database/script_completop.sql
+```
+
+4. Configure `ConnectionStrings:DefaultConnection` em `src/OrcaFacil.Web/appsettings.Development.json`, user-secrets ou variável de ambiente:
+
+```bash
+ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456"
+```
+
+5. Restaure, compile e execute:
+
+```bash
+dotnet restore OrcaFacil.sln
+dotnet build OrcaFacil.sln
+dotnet run --project src/OrcaFacil.Web
+```
+
+### Banco: migrations ou script manual
+
+Opção A — migrations:
+
+```bash
+dotnet ef database update --project src/OrcaFacil.Persistence --startup-project src/OrcaFacil.Web
+```
+
+Opção B — script SQL manual:
+
+```bash
+psql -h localhost -U orcafacil_user -d orcafacil -f database/script_completop.sql
+```
+
+### Docker com script completo
+
+O `docker-compose.yml` usa `database/script_completop.sql` como script principal de inicialização do PostgreSQL. Para banco limpo com Docker:
+
+```bash
+docker compose up -d postgres
+```
+
+Se o volume `orcafacil_pgdata` já existir, o PostgreSQL não reexecuta scripts de `/docker-entrypoint-initdb.d`; execute o script manualmente ou recrie o volume em desenvolvimento.

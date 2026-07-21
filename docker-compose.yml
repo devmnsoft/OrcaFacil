@@ -9,8 +9,7 @@ services:
     ports: ["5432:5432"]
     volumes:
       - orcafacil_pgdata:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+      - ./database/script_completop.sql:/docker-entrypoint-initdb.d/01-script-completo.sql:ro
   pgadmin:
     image: dpage/pgadmin4:latest
     profiles: ["tools"]
