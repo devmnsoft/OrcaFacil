@@ -11,13 +11,19 @@ using OrcaFacil.Infrastructure.Pdf;
 using OrcaFacil.Persistence;
 using OrcaFacil.Persistence.Queries;
 using OrcaFacil.Persistence.Repositories;
+using OrcaFacil.Web.Health;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(context.Configuration).Enrich.FromLogContext().WriteTo.Console());
 
-builder.Services.AddDbContext<OrcaFacilDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(defaultConnection))
+{
+    Log.Logger.Error("ConnectionStrings:DefaultConnection ausente. Configure appsettings, user-secrets ou a variável ConnectionStrings__DefaultConnection.");
+}
+builder.Services.AddDbContext<OrcaFacilDbContext>(options => options.UseNpgsql(defaultConnection));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -35,7 +41,7 @@ builder.Services.AddScoped<UserUsageService>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IPdfService, QuestPdfDocumentService>();
 builder.Services.AddScoped<INumberToWordsService, NumberToWordsPtBrService>();
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks().AddCheck<PostgresHealthCheck>("postgresql");
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
 {
     options.Cookie.HttpOnly = true;
