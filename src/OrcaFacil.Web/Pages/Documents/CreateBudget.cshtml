@@ -1,4 +1,4 @@
 @page
 @model OrcaFacil.Web.Pages.Documents.CreateBudgetModel
 @{ViewData["Title"]="Novo orçamento";}
-<header class="of-page-header"><div><p class="of-eyebrow">Documento comercial</p><h1>Novo orçamento</h1><p>Use esta tela para informar o cliente, os serviços e os valores do orçamento.</p></div></header><partial name="Partials/_ExplainerCard" model='new { Title="Criar primeiro orçamento em 3 passos", Text="Preencha os dados do cliente, adicione os serviços e confira o total antes de gerar o PDF.", Icon="bi-magic" }' /><div class="mt-4"><partial name="_DocumentForm" model="Model.Input" /></div>
+<header class="of-page-header"><div><p class="of-eyebrow">Documento comercial</p><h1>Novo orçamento</h1><p>Use esta tela para informar o cliente, os serviços e os valores do orçamento.</p></div></header><partial name="Partials/_ExplainerCard" model='new ExplainerCardViewModel { Title="Criar primeiro orçamento em 3 passos", Text="Preencha os dados do cliente, adicione os serviços e confira o total antes de gerar o PDF.", Icon="bi-magic" }' /><div class="mt-4"><partial name="_DocumentForm" model="Model.Input" /></div>

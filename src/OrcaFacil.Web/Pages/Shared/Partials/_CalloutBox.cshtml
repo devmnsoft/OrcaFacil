@@ -1,6 +1,2 @@
-@model dynamic
-<section class="of-callout-box">
-  <p class="of-eyebrow">@(Model?.Eyebrow ?? "Dica")</p>
-  <h2 class="h4">@(Model?.Title ?? "Próximo passo")</h2>
-  <p>@(Model?.Text ?? "Use os atalhos para concluir sua jornada.")</p>
-</section>
+@model OrcaFacil.Web.ViewModels.Components.CalloutBoxViewModel
+<div class="of-callout-box"><p class="of-eyebrow">@Model.Eyebrow</p><h2 class="h4">@Model.Title</h2><p>@Model.Text</p></div>

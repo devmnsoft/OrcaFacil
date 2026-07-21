@@ -1,7 +1,19 @@
-@model dynamic
-<article class="of-step-card @(Model?.IsActive == true ? "is-active" : "") @(Model?.IsDone == true ? "is-done" : "")">
-  <span>@(Model?.Number ?? "1")</span>
-  <h3>@(Model?.Title ?? "Passo")</h3>
-  <p>@(Model?.Text ?? "Siga este passo para avançar.")</p>
-  @if (!string.IsNullOrWhiteSpace(Model?.ActionText as string) && !string.IsNullOrWhiteSpace(Model?.ActionPage as string)) { <a class="btn btn-sm btn-primary mt-3" asp-page="@(Model?.ActionPage)">@(Model?.ActionText)</a> }
+@model OrcaFacil.Web.ViewModels.Components.StepCardViewModel
+<article class="of-step-card @(Model.IsActive ? "is-active" : "") @(Model.IsDone ? "is-done" : "")">
+    <div class="of-step-number">
+        @if (!string.IsNullOrWhiteSpace(Model.Icon))
+        {
+            <i class="bi @Model.Icon" aria-hidden="true"></i>
+        }
+        else
+        {
+            <span>@Model.Number</span>
+        }
+    </div>
+    <h3>@Model.Title</h3>
+    <p>@Model.Text</p>
+    @if (!string.IsNullOrWhiteSpace(Model.ActionText) && !string.IsNullOrWhiteSpace(Model.ActionPage))
+    {
+        <a class="btn btn-sm btn-primary mt-3" asp-page="@Model.ActionPage">@Model.ActionText</a>
+    }
 </article>

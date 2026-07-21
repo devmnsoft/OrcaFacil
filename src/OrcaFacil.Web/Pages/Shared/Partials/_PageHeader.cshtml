@@ -1,8 +1,2 @@
-@model dynamic
-<header class="of-page-header">
-  <div>
-    <p class="of-eyebrow">@(Model?.Eyebrow ?? "OrçaFácil")</p>
-    <h1>@(Model?.Title ?? ViewData["Title"])</h1>
-    <p>@(Model?.Text ?? "Organize seus documentos profissionais em poucos passos.")</p>
-  </div>
-</header>
+@model OrcaFacil.Web.ViewModels.Components.PageHeaderViewModel
+<header class="of-page-header"><div><p class="of-eyebrow">@Model.Eyebrow</p><h1>@Model.Title</h1><p>@Model.Text</p></div></header>
