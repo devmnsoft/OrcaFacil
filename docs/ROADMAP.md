@@ -11,3 +11,8 @@
 ## Pendências pós-MVP
 
 - Mercado Pago, nota fiscal, WhatsApp oficial, BI avançado, assinatura ICP-Brasil e recursos de IA paga.
+
+## UX/UI premium MVP
+
+- Design system, layouts público/autenticado e componentes reutilizáveis implementados.
+- Próximos passos: persistir filtros avançados, completar recusa pública com auditoria dedicada, evoluir upload de logo e ativação Pro automatizada.

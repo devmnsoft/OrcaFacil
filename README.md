@@ -259,3 +259,9 @@ Endpoints úteis:
 - `/health/version`
 
 Administradores SuperAdmin podem acessar **Admin > Settings > Database** em `/Admin/Settings/Database` para ver conexão, schema, tabelas encontradas/ausentes e instruções de execução do SQL sem exposição de senha.
+
+## Evolução UX/UI premium
+
+O OrçaFácil possui um design system em `src/OrcaFacil.Web/wwwroot/css/app.css`, layout autenticado com sidebar/offcanvas, layout público comercial, landing page SaaS, telas modernas de login/cadastro, dashboard com métricas reais, histórico responsivo, formulários guiados para orçamento/recibo, perfil do emitente, assinatura, suporte, aprovação pública e Admin Geral com visual profissional.
+
+Para validar a experiência visual, consulte `docs/UX-UI.md` e execute o checklist em `docs/QA_UI.md`.
