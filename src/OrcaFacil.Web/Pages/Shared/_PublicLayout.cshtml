@@ -1,1 +1,43 @@
-<!doctype html><html lang="pt-br"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>@ViewData["Title"] - OrçaFácil</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/><link rel="stylesheet" href="~/css/app.css" asp-append-version="true"/></head><body class="of-public"><nav class="navbar navbar-expand-lg"><div class="container"><a class="of-brand text-decoration-none" asp-page="/Index"><span class="of-brand-mark">OF</span><span>OrçaFácil</span></a><div class="ms-auto d-flex gap-2"><a class="btn btn-outline-light" asp-page="/Auth/Login">Entrar</a><a class="btn btn-success" asp-page="/Auth/Register">Começar grátis</a></div></div></nav><main>@RenderBody()</main><script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script><script src="~/js/app.js" asp-append-version="true"></script>@await RenderSectionAsync("Scripts", false)</body></html>
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>@ViewData["Title"] - OrçaFácil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+</head>
+<body class="of-public">
+  <nav class="navbar navbar-expand-lg of-public-nav" aria-label="Navegação institucional">
+    <div class="container">
+      <a class="of-brand text-decoration-none" asp-page="/Index" aria-label="OrçaFácil, um produto MNSOFT">
+        <span class="of-brand-mark">OF</span><span><strong>OrçaFácil</strong><small>Um produto MNSOFT</small></span>
+      </a>
+      <button class="navbar-toggler bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#publicMenu" aria-controls="publicMenu" aria-expanded="false" aria-label="Abrir menu"><span class="navbar-toggler-icon"></span></button>
+      <div class="collapse navbar-collapse" id="publicMenu">
+        <div class="navbar-nav ms-auto align-items-lg-center gap-lg-2 mt-3 mt-lg-0">
+          <a class="nav-link" href="/#como-funciona">Como funciona</a>
+          <a class="nav-link" href="/#recursos">Recursos</a>
+          <a class="nav-link" asp-page="/Precos">Preços</a>
+          <a class="nav-link" asp-page="/Support/Index">Fale com a MNSOFT</a>
+          <a class="btn btn-outline-light" asp-page="/Auth/Login">Entrar</a>
+          <a class="btn btn-success" asp-page="/Auth/Register">Começar grátis</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <main><partial name="_Toast" />@RenderBody()</main>
+  <footer class="of-public-footer">
+    <div class="container d-flex flex-column flex-lg-row justify-content-between gap-3">
+      <div class="d-flex align-items-center gap-3"><img src="~/img/mnsoft-logo.png" asp-append-version="true" alt="MNSOFT" class="of-mnsoft-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';" /><span class="of-logo-fallback">MNSOFT</span><span>OrçaFácil — Um produto MNSOFT</span></div>
+      <div><strong>MNSOFT</strong> · CNPJ: 18.160.057/0001-13 · <a href="mailto:comercial@mnsoft.com.br">comercial@mnsoft.com.br</a></div>
+    </div>
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="~/js/app.js" asp-append-version="true"></script>
+  @await RenderSectionAsync("Scripts", false)
+</body>
+</html>
