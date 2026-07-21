@@ -1,41 +1,51 @@
 # OrçaFácil
 
-SaaS freemium da **MNSOFT** (CNPJ 18.160.057/0001-13) para autônomos, MEIs e pequenos prestadores criarem orçamentos, recibos, PDFs backend, histórico e links públicos de aprovação.
+Reescrita estrutural do OrçaFácil em ASP.NET Core 10, PostgreSQL, Clean Architecture e DDD.
 
-## Stack
-ASP.NET Core 10, C# preview, PostgreSQL, EF Core, Dapper, Clean Architecture, DDD, CQRS simples, FluentValidation, Serilog, QuestPDF, Razor Pages/MVC, Bootstrap 5 e Health Checks.
+## Projetos
 
-## Arquitetura
-- `src/OrcaFacil.Domain`: entidades, enums, value objects e regras.
-- `src/OrcaFacil.Application`: comandos, queries, DTOs, casos de uso e limites de plano.
-- `src/OrcaFacil.Persistence`: DbContext, mapeamentos EF, repositórios e Dapper.
-- `src/OrcaFacil.Infrastructure`: PDF, hash de senha, middlewares e integrações futuras.
-- `src/OrcaFacil.Api`: endpoints REST.
-- `src/OrcaFacil.Web`: Razor Pages Bootstrap 5.
+- `src/OrcaFacil.Domain`: entidades, enums, value objects e regras de domínio.
+- `src/OrcaFacil.Shared`: resultados e constantes compartilhadas.
+- `src/OrcaFacil.Application`: abstrações, DTOs, comandos, validadores e casos de uso.
+- `src/OrcaFacil.Persistence`: EF Core, Dapper, repositórios, auditoria e mapeamentos.
+- `src/OrcaFacil.Infrastructure`: middleware, usuário corrente, senha e PDF QuestPDF.
+- `src/OrcaFacil.Api`: API REST.
+- `src/OrcaFacil.Web`: app web Razor.
+- `tests/OrcaFacil.UnitTests`: testes unitários.
 
-## Docker
-```bash
-cp .env.example .env
-docker compose up -d postgres
-```
+## Como rodar localmente
 
-## Local
 ```bash
 dotnet restore OrcaFacil.sln
-dotnet ef database update --project src/OrcaFacil.Persistence --startup-project src/OrcaFacil.Web
+dotnet build OrcaFacil.sln
 dotnet run --project src/OrcaFacil.Web
 ```
 
-## SuperAdmin
-Defina `ORCAFACIL_ADMIN_EMAIL` e `ORCAFACIL_ADMIN_PASSWORD`. Sem essas variáveis nenhum admin inicial é criado.
+## Docker
+
+Copie `.env.example` para `.env`, preencha os segredos e execute:
+
+```bash
+docker compose up -d
+```
+
+## Migrations
+
+```bash
+dotnet ef migrations add InitialCreate --project src/OrcaFacil.Persistence --startup-project src/OrcaFacil.Web
+dotnet ef database update --project src/OrcaFacil.Persistence --startup-project src/OrcaFacil.Web
+```
 
 ## Testes
+
 ```bash
 dotnet test OrcaFacil.sln
 ```
 
-## IIS
-Consulte `docs/DEPLOY-IIS-ASPNET.md` ou execute `publish-iis.bat`.
+## Publicação IIS
 
-## Roadmap
-Mercado Pago real, nota fiscal, WhatsApp API oficial, assinatura digital ICP-Brasil, BI e IA backend segura estão preparados para evolução futura, mas não implementados nesta primeira reescrita.
+Execute `publish-iis.bat`. O script deve restaurar, compilar, testar e publicar o projeto web.
+
+## Status atual
+
+A base foi reorganizada para separar entidades, enums, value objects, abstrações, DTOs, comandos, validadores, middleware e PDF. O ambiente desta revisão não possui `dotnet` instalado; portanto, restore/build/test precisam ser confirmados em máquina com SDK .NET 10.

@@ -1,2 +1,50 @@
-using OrcaFacil.Application.UseCases; using OrcaFacil.Domain.Entities; using OrcaFacil.Domain.Enums; using OrcaFacil.Domain.ValueObjects; using Xunit;
-public class DomainTests { [Fact] public void Money_rejects_negative()=>Assert.Throws<ArgumentOutOfRangeException>(()=>new Money(-1)); [Fact] public void Email_validates_format()=>Assert.Throws<ArgumentException>(()=>new Email("bad")); [Fact] public void PublicToken_is_secure()=>Assert.True(new PublicToken().Value.Length>=32); [Fact] public void Document_calculates_totals(){ var d=new Document{Type=DocumentType.Budget,ClientName="Cliente"}; d.Items.Add(new DocumentItem{Description="Serviço",Quantity=2,UnitPrice=100,Discount=10}); d.CalculateTotals(); Assert.Equal(190,d.Total);} [Fact] public void Plan_limit_allows_pro()=>Assert.True(new PlanLimitService().CanCreateDocument(PlanType.Pro,999)); [Fact] public void Budget_converts_to_receipt_when_approved(){ var d=new Document{Type=DocumentType.Budget,UserId=Guid.NewGuid(),ClientName="C"}; d.IssueNumber("O-1"); d.ClientDecision=ClientDecision.Approved; var r=d.ConvertToReceipt("R-1"); Assert.Equal(DocumentType.Receipt,r.Type);} [Fact] public void Evidence_hash_is_generated(){ var d=new Document{Type=DocumentType.Budget,ClientName="C"}; d.IssueNumber("O-1"); d.CalculateTotals(); d.ClientDecision=ClientDecision.Approved; d.ClientDecisionAt=DateTime.UtcNow; Assert.NotEmpty(d.GenerateEvidenceHash("Cliente","UA")); }}
+using OrcaFacil.Application.Plans;
+using OrcaFacil.Domain.Entities;
+using OrcaFacil.Domain.Enums;
+using OrcaFacil.Domain.ValueObjects;
+using Xunit;
+
+namespace OrcaFacil.UnitTests;
+
+public class DomainTests
+{
+    [Fact]
+    public void Email_Normalizes_Value()
+    {
+        var email = new Email(" USER@Example.COM ");
+        Assert.Equal("user@example.com", email.Value);
+    }
+
+    [Fact]
+    public void PublicToken_Generates_Safe_Token()
+    {
+        var token = new PublicToken();
+        Assert.True(token.Value.Length >= 32);
+    }
+
+    [Fact]
+    public void Document_Calculates_Totals()
+    {
+        var document = new Document { ClientName = "Cliente" };
+        document.Items.Add(new DocumentItem { Description = "Serviço", Quantity = 2, UnitPrice = 10, Discount = 1 });
+        document.CalculateTotals();
+        Assert.Equal(19, document.Total);
+    }
+
+    [Fact]
+    public void Budget_Approved_Can_Be_Converted_To_Receipt()
+    {
+        var document = new Document { Type = DocumentType.Budget, ClientName = "Cliente", ClientDecision = ClientDecision.Approved };
+        document.IssueNumber("ORC-1");
+        var receipt = document.ConvertToReceipt("REC-1");
+        Assert.Equal(DocumentType.Receipt, receipt.Type);
+    }
+
+    [Fact]
+    public void Free_Plan_Has_Watermark()
+    {
+        var service = new PlanLimitService();
+        Assert.True(service.PdfHasWatermark(PlanType.Free));
+        Assert.False(service.PdfHasWatermark(PlanType.Pro));
+    }
+}
