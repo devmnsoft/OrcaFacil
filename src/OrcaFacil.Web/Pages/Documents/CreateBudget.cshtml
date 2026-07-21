@@ -1,0 +1,4 @@
+@page
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{ ViewData["Title"] = "Novo orçamento"; }
+<section class="container py-4"><h1>Novo orçamento</h1><form method="post">@Html.AntiForgeryToken()<input class="form-control mb-3" name="clientName" placeholder="Cliente" required /><button class="btn btn-success btn-lg">Criar orçamento</button></form></section>

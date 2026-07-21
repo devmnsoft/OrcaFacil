@@ -32,6 +32,8 @@ public class Document : Entity
     public string? OriginBudgetNumber { get; set; }
     public Guid? ConvertedReceiptId { get; set; }
     public string? ConvertedReceiptNumber { get; set; }
+    public DateTime? DeletedAt { get; private set; }
+    public Guid? DeletedBy { get; private set; }
     public List<DocumentItem> Items { get; set; } = [];
 
     public void IssueNumber(string number)
@@ -74,6 +76,14 @@ public class Document : Entity
         ConvertedReceiptNumber = receipt.Number;
         Status = BudgetStatus.Converted.ToString();
         return receipt;
+    }
+
+    public void Delete(Guid deletedBy)
+    {
+        MarkAsDeleted();
+        DeletedAt = DateTime.UtcNow;
+        DeletedBy = deletedBy;
+        Touch();
     }
 
     public string GenerateEvidenceHash(string actor, string userAgent)

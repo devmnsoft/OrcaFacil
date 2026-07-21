@@ -39,7 +39,7 @@ public abstract class DocumentPdfTemplate
                 AddSpecificContent(column);
                 if (Plan == PlanType.Free)
                 {
-                    column.Item().Text("Gerado no plano Free do OrçaFácil").FontColor(Colors.Grey.Medium);
+                    column.Item().Text("Gerado com OrçaFácil — MNSOFT").FontColor(Colors.Grey.Medium);
                 }
             });
             page.Footer().AlignCenter().Text("MNSOFT - comercial@mnsoft.com.br");

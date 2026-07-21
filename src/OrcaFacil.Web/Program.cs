@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Auth;
 using OrcaFacil.Application.Documents;
+using OrcaFacil.Application.Plans;
+using OrcaFacil.Application.Profile;
 using OrcaFacil.Infrastructure;
 using OrcaFacil.Infrastructure.Pdf;
 using OrcaFacil.Persistence;
@@ -18,13 +20,19 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IDocumentQueries, DocumentQueries>();
+builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<ILoggerService, LoggerService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<DocumentService>();
+builder.Services.AddScoped<IDocumentNumberService, DocumentNumberService>();
+builder.Services.AddScoped<ProfileService>();
+builder.Services.AddScoped<PlanLimitService>();
+builder.Services.AddScoped<UserUsageService>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IPdfService, QuestPdfDocumentService>();
+builder.Services.AddScoped<INumberToWordsService, NumberToWordsPtBrService>();
 builder.Services.AddHealthChecks();
 builder.Services.AddAuthentication("OrcaCookie").AddCookie("OrcaCookie", options =>
 {
@@ -49,6 +57,8 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
 }
+
+await SuperAdminSeeder.SeedAsync(app.Services);
 
 app.UseHttpsRedirection();
 app.UseMiddleware<CorrelationIdMiddleware>();

@@ -32,7 +32,7 @@ public class DocumentQueries : IDocumentQueries
                        total as Total,
                        created_at as CreatedAt
                   from core.documents
-                 where user_id = @userId
+                 where user_id = @userId and is_deleted = false
                  order by created_at desc
                 """;
             return (await connection.QueryAsync<DocumentSummaryDto>(new CommandDefinition(sql, new { userId }, cancellationToken: ct))).AsList();

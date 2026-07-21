@@ -13,14 +13,16 @@ public class DocumentService
     private readonly IRepository<PublicQuote> _quotes;
     private readonly IUnitOfWork _uow;
     private readonly IAuditService _audit;
+    private readonly IDocumentNumberService _numberService;
     private readonly ILogger<DocumentService> _logger;
 
-    public DocumentService(IRepository<Document> documents, IRepository<PublicQuote> quotes, IUnitOfWork uow, IAuditService audit, ILogger<DocumentService> logger)
+    public DocumentService(IRepository<Document> documents, IRepository<PublicQuote> quotes, IUnitOfWork uow, IAuditService audit, IDocumentNumberService numberService, ILogger<DocumentService> logger)
     {
         _documents = documents;
         _quotes = quotes;
         _uow = uow;
         _audit = audit;
+        _numberService = numberService;
         _logger = logger;
     }
 
@@ -29,7 +31,7 @@ public class DocumentService
         try
         {
             var document = new Document { UserId = command.UserId, Type = command.Type, ClientName = command.ClientName.Trim(), Discount = command.Discount, Notes = command.Notes };
-            document.IssueNumber(command.Number);
+            document.IssueNumber(string.IsNullOrWhiteSpace(command.Number) ? await _numberService.NextAsync(command.UserId, command.Type, ct) : command.Number);
             document.Items = command.Items.Select(item => new DocumentItem { Description = item.Description, Quantity = item.Quantity, UnitPrice = item.UnitPrice, Discount = item.Discount }).ToList();
             document.CalculateTotals();
             await _documents.AddAsync(document, ct);
@@ -43,6 +45,61 @@ public class DocumentService
             _logger.LogError(ex, "Erro ao criar documento para {UserId}", command.UserId);
             throw;
         }
+    }
+
+
+    public Task<Result<Guid>> CreateBudgetAsync(CreateDocumentCommand command, CancellationToken ct = default)
+        => CreateAsync(command with { Type = DocumentType.Budget }, ct);
+
+    public Task<Result<Guid>> CreateReceiptAsync(CreateDocumentCommand command, CancellationToken ct = default)
+        => CreateAsync(command with { Type = DocumentType.Receipt }, ct);
+
+    public async Task<Result> UpdateAsync(UpdateDocumentCommand command, CancellationToken ct = default)
+    {
+        try
+        {
+            var document = await _documents.GetAsync(command.DocumentId, ct);
+            if (document is null || document.UserId != command.UserId || document.IsDeleted) return Result.Fail("Documento não encontrado.");
+            document.ClientName = command.ClientName.Trim();
+            document.Discount = command.Discount;
+            document.Notes = command.Notes;
+            document.Items = command.Items.Select(item => new DocumentItem { Description = item.Description, Quantity = item.Quantity, UnitPrice = item.UnitPrice, Discount = item.Discount }).ToList();
+            document.CalculateTotals();
+            document.Touch();
+            await _audit.RegisterAsync(command.UserId, "DOCUMENT_UPDATED", nameof(Document), document.Id.ToString(), null, document, null, ct);
+            await _uow.SaveChangesAsync(ct);
+            _logger.LogInformation("DOCUMENT_UPDATED {DocumentId}", document.Id);
+            return Result.Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao atualizar documento {DocumentId}", command.DocumentId);
+            throw;
+        }
+    }
+
+    public async Task<Result<Guid>> DuplicateAsync(DuplicateDocumentCommand command, CancellationToken ct = default)
+    {
+        var original = await _documents.GetAsync(command.DocumentId, ct);
+        if (original is null || original.UserId != command.UserId || original.IsDeleted) return Result<Guid>.Fail("Documento não encontrado.");
+        var copy = new Document { UserId = original.UserId, Type = original.Type, Status = "Draft", ClientName = original.ClientName, ClientDocument = original.ClientDocument, ClientPhone = original.ClientPhone, ClientEmail = original.ClientEmail, ClientCity = original.ClientCity, IssueDate = DateTime.UtcNow, Notes = original.Notes, Discount = original.Discount };
+        copy.IssueNumber(await _numberService.NextAsync(command.UserId, original.Type, ct));
+        copy.Items = original.Items.Select(item => new DocumentItem { Description = item.Description, Quantity = item.Quantity, UnitPrice = item.UnitPrice, Discount = item.Discount }).ToList();
+        copy.CalculateTotals();
+        await _documents.AddAsync(copy, ct);
+        await _audit.RegisterAsync(command.UserId, "DOCUMENT_DUPLICATED", nameof(Document), copy.Id.ToString(), null, copy, new { original.Id }, ct);
+        await _uow.SaveChangesAsync(ct);
+        return Result<Guid>.Ok(copy.Id);
+    }
+
+    public async Task<Result> DeleteAsync(DeleteDocumentCommand command, CancellationToken ct = default)
+    {
+        var document = await _documents.GetAsync(command.DocumentId, ct);
+        if (document is null || document.UserId != command.UserId || document.IsDeleted) return Result.Fail("Documento não encontrado.");
+        document.Delete(command.UserId);
+        await _audit.RegisterAsync(command.UserId, "DOCUMENT_DELETED", nameof(Document), document.Id.ToString(), null, new { document.DeletedAt }, null, ct);
+        await _uow.SaveChangesAsync(ct);
+        return Result.Ok();
     }
 
     public async Task<Result<string>> GeneratePublicLinkAsync(Guid userId, Guid documentId, CancellationToken ct = default)

@@ -35,6 +35,8 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.Property(x => x.OriginBudgetNumber).HasColumnName("origin_budget_number").HasMaxLength(40);
         builder.Property(x => x.ConvertedReceiptId).HasColumnName("converted_receipt_id");
         builder.Property(x => x.ConvertedReceiptNumber).HasColumnName("converted_receipt_number").HasMaxLength(40);
+        builder.Property(x => x.DeletedAt).HasColumnName("deleted_at");
+        builder.Property(x => x.DeletedBy).HasColumnName("deleted_by");
         builder.HasMany(x => x.Items).WithOne().HasForeignKey(x => x.DocumentId).OnDelete(DeleteBehavior.Cascade);
         builder.HasIndex(x => new { x.UserId, x.Type, x.Number }).IsUnique();
         builder.HasIndex(x => x.CreatedAt);
