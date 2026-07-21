@@ -1,0 +1,5 @@
+@model dynamic
+<div class="of-faq-item">
+  <button type="button" class="of-faq-question" onclick="toggleFaqItem(this)" aria-expanded="false">@(Model?.Question ?? "Dúvida")</button>
+  <div class="of-faq-answer" hidden>@(Model?.Answer ?? "Resposta objetiva sobre o OrçaFácil.")</div>
+</div>

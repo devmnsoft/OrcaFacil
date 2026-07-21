@@ -1,0 +1,5 @@
+@model dynamic
+<a class="of-help-shortcut" asp-page="@(Model?.Page ?? "/Support/Index")">
+  <i class="bi @(Model?.Icon ?? "bi-life-preserver")" aria-hidden="true"></i>
+  <span><strong>@(Model?.Title ?? "Ajuda")</strong><small>@(Model?.Text ?? "Abrir manual")</small></span>
+</a>

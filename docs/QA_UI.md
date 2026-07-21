@@ -38,3 +38,9 @@
 - [ ] Foco visível aparece nos elementos interativos.
 - [ ] Textos têm contraste adequado.
 - [ ] Ícones têm texto ou aria-label quando necessário.
+
+## Checklist visual desta etapa
+
+- Validar que `/img/branding/mnsoft-logo.png` ausente exibe fallback textual MNSOFT.
+- Validar landing, Como Funciona, Onboarding, Dashboard, Histórico e Suporte em mobile.
+- Validar que os SVGs em `wwwroot/img/illustrations` são texto puro e não contêm base64.
