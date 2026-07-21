@@ -1,3 +1,5 @@
+using Xunit;
+
 namespace OrcaFacil.UnitTests;
 
 public class QuerySchemaTests
