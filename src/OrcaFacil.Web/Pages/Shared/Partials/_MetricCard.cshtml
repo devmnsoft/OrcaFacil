@@ -1,0 +1,6 @@
+@model dynamic
+<div class="of-metric">
+  <span>@(Model?.Label ?? "Indicador")</span>
+  <strong>@(Model?.Value ?? "0")</strong>
+  <small>@(Model?.Hint ?? "")</small>
+</div>
