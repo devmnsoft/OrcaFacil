@@ -6,3 +6,15 @@
 @media(max-width:991.98px){.of-auth-grid{display:flex;flex-direction:column-reverse}.of-summary-sticky{position:static!important}.of-progress-steps{display:grid}.of-progress-steps span{width:100%}}
 .mnsoft-logo-fallback{display:inline-grid;gap:.1rem;line-height:1;color:inherit}.mnsoft-logo-fallback strong{font-size:1.25rem;letter-spacing:.08em}.mnsoft-logo-fallback strong span{color:var(--of-accent)}.mnsoft-logo-fallback small{font-size:.78rem;color:currentColor;opacity:.76}.of-public-footer .mnsoft-logo-fallback,.of-mnsoft-footer .mnsoft-logo-fallback{color:#fff}.of-callout-box{padding:1.5rem;border-radius:var(--of-radius-lg);background:linear-gradient(135deg,var(--of-primary),var(--of-accent));color:#fff;box-shadow:var(--of-shadow-md)}.of-callout-box .of-eyebrow{color:rgba(255,255,255,.8)}.of-faq-item{border:1px solid var(--of-border);border-radius:var(--of-radius-md);background:#fff;margin-bottom:.75rem;overflow:hidden}.of-faq-question{width:100%;border:0;background:#fff;color:var(--of-primary);font-weight:900;text-align:left;padding:1rem}.of-faq-answer{padding:0 1rem 1rem;color:var(--of-muted)}.of-help-shortcut{display:flex;gap:1rem;align-items:center;padding:1rem;border:1px solid var(--of-border);border-radius:var(--of-radius-md);background:#fff;color:var(--of-text);text-decoration:none;box-shadow:var(--of-shadow-sm);height:100%}.of-help-shortcut i{font-size:1.5rem;color:var(--of-accent)}.of-help-shortcut small{display:block;color:var(--of-muted)}.of-illustration{max-width:100%;height:auto}.of-contact-card .mnsoft-logo-fallback{color:var(--of-primary);margin-bottom:1rem}
 .of-step-number{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:var(--of-accent-soft);color:var(--of-accent);font-weight:900}.of-step-number span{width:auto;height:auto;background:transparent;color:inherit}.of-step-number i{font-size:1.15rem}.of-step-card.is-done .of-step-number{background:#eaf8f2;color:var(--of-success)}.form-control::placeholder{color:#64748b;opacity:1}.btn-outline-primary:hover{background:var(--of-accent);border-color:var(--of-accent);color:#fff}.of-card a:not(.btn),.of-feature a:not(.btn){font-weight:800}.bg-light{background-color:var(--of-bg)!important}
+
+/* WCAG contrast hardening */
+.of-card,.card,.of-form-card,.of-price-card,.of-step-card,.of-feature,.of-cta-band{color:var(--of-text)}
+.of-card p,.card p,.of-form-card p,.of-price-card p,.of-step-card p,.of-feature p,.of-cta-band p{color:var(--of-muted)}
+.of-hero,.of-public-dark,.of-sidebar,.of-footer{color:#fff}
+.of-hero p,.of-public-dark p,.of-sidebar p,.of-footer p{color:rgba(255,255,255,.86)}
+.of-cta-band.light,.of-cta-band{background:linear-gradient(135deg,#EAF1F8,#FFFFFF);color:var(--of-text)}
+.of-cta-band.light p,.of-cta-band p{color:var(--of-muted)}
+.form-control,.form-select{color:var(--of-text);background:#fff;border:1px solid var(--of-border)}
+.form-check-label{color:var(--of-text)}
+.of-toast-success .toast-header{color:var(--of-success)}.of-toast-warning .toast-header{color:#9a6400}.of-toast-danger .toast-header{color:var(--of-danger)}.of-toast-info .toast-header{color:var(--of-accent)}
+html,body{overflow-x:hidden}

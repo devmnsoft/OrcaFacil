@@ -38,3 +38,10 @@ psql -h localhost -p 5432 -U orcafacil_user -d orcafacil -f database/script_comp
 ```
 
 O script é idempotente e seguro para reexecução: usa `CREATE SCHEMA IF NOT EXISTS`, `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS` e `INSERT ... ON CONFLICT`.
+
+## Checklist rápido para erro 28P01
+
+1. Confirme a variável `ConnectionStrings__DefaultConnection`.
+2. Teste com `psql "Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456"`.
+3. Se falhar, rode `ALTER USER orcafacil_user WITH PASSWORD '123456';` como administrador.
+4. Acesse `/health/db` e `/Admin/Settings/Database` para validar o status sem expor stack trace.
