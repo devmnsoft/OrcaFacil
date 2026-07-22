@@ -23,7 +23,7 @@ public static class TempDataNotificationExtensions
     public static IReadOnlyList<ToastViewModel> ReadToasts(this ITempDataDictionary tempData)
     {
         if (tempData[Key] is not string json || string.IsNullOrWhiteSpace(json)) return Array.Empty<ToastViewModel>();
-        try { return JsonSerializer.Deserialize<List<ToastViewModel>>(json) ?? Array.Empty<ToastViewModel>(); }
+        try { return JsonSerializer.Deserialize<ToastViewModel[]>(json) ?? Array.Empty<ToastViewModel>(); }
         catch { return Array.Empty<ToastViewModel>(); }
     }
 }
