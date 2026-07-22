@@ -1,4 +1,23 @@
 @page
 @model OrcaFacil.Web.Pages.Documents.CreateBudgetModel
 @{ViewData["Title"]="Novo orçamento";}
-<header class="of-page-header"><div><p class="of-eyebrow">Documento comercial</p><h1>Novo orçamento</h1><p>Use esta tela para informar o cliente, os serviços e os valores do orçamento.</p></div></header><partial name="Partials/_ExplainerCard" model='new ExplainerCardViewModel { Title="Criar primeiro orçamento em 3 passos", Text="Preencha os dados do cliente, adicione os serviços e confira o total antes de gerar o PDF.", Icon="bi-magic" }' /><div class="mt-4"><partial name="_DocumentForm" model="Model.Input" /></div>
+<header class="of-page-header"><div><p class="of-eyebrow">Documento comercial</p><h1>Novo orçamento guiado</h1><p>Escolha um modelo pronto por profissão ou preencha manualmente. O OrçaFácil conduz cliente, itens, condições e revisão final.</p></div></header>
+<section class="of-card of-guided-budget mb-4" aria-labelledby="modelos-prontos-title">
+    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
+        <div>
+            <p class="of-eyebrow">Modelos prontos por profissão</p>
+            <h2 id="modelos-prontos-title" class="h4">Comece sem tela em branco</h2>
+            <p class="mb-0">Selecione um modelo para preencher itens e observações automaticamente. Depois ajuste valores, quantidades e texto para o seu cliente.</p>
+        </div>
+        <span class="of-badge status-emitido"><i class="bi bi-magic"></i> Orçamento guiado</span>
+    </div>
+    <div class="row g-3 mt-2" data-budget-templates>
+        <div class="col-md-6 col-xl-4"><button class="of-template-card" type="button" data-template="eletricista"><i class="bi bi-lightning-charge"></i><strong>Eletricista</strong><span>Instalação, revisão e materiais.</span></button></div>
+        <div class="col-md-6 col-xl-4"><button class="of-template-card" type="button" data-template="pintor"><i class="bi bi-brush"></i><strong>Pintor</strong><span>Preparação, pintura e acabamento.</span></button></div>
+        <div class="col-md-6 col-xl-4"><button class="of-template-card" type="button" data-template="pedreiro"><i class="bi bi-bricks"></i><strong>Pedreiro</strong><span>Mão de obra, reparos e acabamento.</span></button></div>
+        <div class="col-md-6 col-xl-4"><button class="of-template-card" type="button" data-template="diarista"><i class="bi bi-stars"></i><strong>Diarista</strong><span>Limpeza comum, pesada ou pós-obra.</span></button></div>
+        <div class="col-md-6 col-xl-4"><button class="of-template-card" type="button" data-template="tecnico"><i class="bi bi-tools"></i><strong>Técnico</strong><span>Visita, diagnóstico e manutenção.</span></button></div>
+        <div class="col-md-6 col-xl-4"><button class="of-template-card" type="button" data-template="designer"><i class="bi bi-palette"></i><strong>Designer</strong><span>Criação, revisão e entrega digital.</span></button></div>
+    </div>
+</section>
+<div class="mt-4"><partial name="_DocumentForm" model="Model.Input" /></div>
