@@ -1,11 +1,76 @@
 @page
-@{ Layout="/Pages/Shared/_PublicLayout.cshtml"; ViewData["Title"]="Início"; var jobs = new[]{"Eletricistas","Pintores","Pedreiros","Diaristas","Técnicos","Designers","Fotógrafos","Manicures","Prestadores de serviço em geral"}; }
-<section class="of-hero"><div class="container"><div class="row g-5 align-items-center"><div class="col-lg-7 text-white"><span class="of-badge bg-white text-primary mb-3">Um produto MNSOFT</span><h1>Crie orçamentos e recibos profissionais em PDF, em poucos minutos.</h1><p class="lead text-white-75 mt-3">O OrçaFácil ajuda autônomos, MEIs e prestadores de serviço a criarem documentos bonitos, numerados e prontos para enviar ao cliente.</p><div class="d-flex gap-2 flex-wrap mt-4"><a class="btn btn-success btn-lg" asp-page="/Auth/Register">Começar grátis</a><a class="btn btn-light btn-lg" href="#como-funciona">Ver como funciona</a><a class="btn btn-outline-light btn-lg" asp-page="/Auth/Login">Entrar</a></div><div class="of-trust-row mt-4"><span>PDF profissional</span><span>Histórico organizado</span><span>Funciona no celular</span></div></div><div class="col-lg-5"><img class="of-illustration mb-3" src="/img/illustrations/landing-orcamento-pdf.svg" alt="Ilustração de documento PDF profissional" /><div class="of-mock-budget"><div class="d-flex justify-content-between"><strong>Orçamento Nº 000123</strong><span class="of-badge status-emitido">PDF pronto</span></div><p class="text-muted mb-3">Cliente: Maria Souza</p><div class="of-mock-row"><span>Instalação elétrica residencial</span><strong>R$ 850,00</strong></div><div class="of-mock-row"><span>Materiais e acabamento</span><strong>R$ 240,00</strong></div><div class="of-total-pill"><span>Total</span><strong>R$ 1.090,00</strong></div><button class="btn btn-primary w-100 mt-3" type="button">PDF pronto</button></div></div></div></div></section>
-<section class="of-section of-section-light"><div class="container"><div class="of-section-heading mb-4"><p class="of-eyebrow">O que é o OrçaFácil</p><h2>Sistema simples para orçamento e recibo.</h2><p>O OrçaFácil é um sistema simples para criar orçamentos e recibos profissionais em PDF. Ele ajuda autônomos, MEIs e prestadores de serviço a deixarem o atendimento mais organizado e confiável.</p></div><div class="of-section-heading mb-4"><p class="of-eyebrow">Benefícios</p><h2>Com o OrçaFácil você consegue:</h2></div><div class="row g-3">@foreach(var f in new[]{("bi-file-earmark-plus","Criar orçamento"),("bi-receipt","Criar recibo"),("bi-filetype-pdf","Gerar PDF profissional"),("bi-clock-history","Salvar histórico"),("bi-patch-check","Usar sua marca"),("bi-send","Enviar ao cliente")}){<div class="col-md-4 col-lg-2"><div class="of-feature"><i class="bi @f.Item1 fs-3 text-primary"></i><h3 class="h6 mt-3">@f.Item2</h3><p>Em poucos cliques.</p></div></div>}</div></div></section>
-<section class="of-section of-section-light"><div class="container"><div class="row g-4 align-items-center"><div class="col-lg-6"><p class="of-eyebrow">Problema resolvido</p><h2>Chega de orçamento improvisado.</h2><p>Muitos prestadores ainda passam orçamento por mensagem, papel, caderno ou arquivo improvisado. Isso pode parecer pouco profissional e dificultar o controle do que foi enviado. O OrçaFácil organiza esse processo em poucos cliques.</p></div><div class="col-lg-6"><div class="of-card"><partial name="Partials/_ExplainerCard" model='new ExplainerCardViewModel { Title="Mais confiança no atendimento", Text="Seu cliente recebe um documento claro, com número, itens, valores e total em destaque.", Icon="bi-shield-check" }' /></div></div></div></div></section>
-<section id="como-funciona" class="of-section of-section-light"><div class="container"><div class="of-section-heading mb-4"><p class="of-eyebrow">Como funciona na prática</p><h2>Três passos para enviar um PDF profissional.</h2><p>Você cadastra seus dados, informa o cliente e os serviços, confere o total e gera um PDF pronto para enviar.</p></div><div class="row g-4"><div class="col-md-4"><partial name="Partials/_StepCard" model='new StepCardViewModel { Number="1", Title="Cadastre seus dados", Text="Essas informações aparecem no cabeçalho dos PDFs." }' /></div><div class="col-md-4"><partial name="Partials/_StepCard" model='new StepCardViewModel { Number="2", Title="Informe o cliente e os itens", Text="Descreva os serviços, quantidades, valores e validade." }' /></div><div class="col-md-4"><partial name="Partials/_StepCard" model='new StepCardViewModel { Number="3", Title="Gere o PDF e envie", Text="Baixe o documento e compartilhe com seu cliente." }' /></div></div><a class="btn btn-outline-primary mt-4" asp-page="/ComoFunciona">Abrir guia completo</a></div></section>
-<section class="of-section"><div class="container"><div class="of-section-heading mb-4"><p class="of-eyebrow">Para quem é</p><h2>Feito para pequenos prestadores de serviço.</h2></div><div class="row g-3">@foreach(var job in jobs){<div class="col-6 col-md-4 col-lg-3"><div class="of-feature text-center"><i class="bi bi-person-workspace fs-3 text-primary"></i><h3 class="h6 mt-2">@job</h3></div></div>}</div></div></section>
+@{
+    Layout = "/Pages/Shared/_PublicLayout.cshtml";
+    ViewData["Title"] = "Início";
+    var jobs = new[]
+    {
+        ("bi-lightning-charge", "Eletricistas"),
+        ("bi-brush", "Pintores"),
+        ("bi-bricks", "Pedreiros"),
+        ("bi-stars", "Diaristas"),
+        ("bi-tools", "Técnicos"),
+        ("bi-palette", "Designers"),
+        ("bi-camera", "Fotógrafos"),
+        ("bi-flower1", "Manicures"),
+        ("bi-briefcase", "Prestadores em geral")
+    };
+}
 
-<section class="of-section"><div class="container"><div class="row g-4 align-items-center"><div class="col-lg-5"><p class="of-eyebrow">Exemplo visual</p><h2>Exemplo do que seu cliente recebe</h2><p>Um documento numerado, com cliente, itens, total e ação de PDF em destaque.</p></div><div class="col-lg-7"><div class="of-example-document"><div class="d-flex justify-content-between"><strong>Orçamento Nº 000124</strong><span class="of-badge"><i class="bi bi-file-earmark-pdf"></i> PDF</span></div><p>Cliente: Ana Cliente</p><div class="of-mock-row"><span>Serviço principal</span><strong>R$ 700,00</strong></div><div class="of-mock-row"><span>Materiais</span><strong>R$ 190,00</strong></div><div class="of-total-pill"><span>Total</span><strong>R$ 890,00</strong></div><button class="btn btn-primary mt-3" type="button"><i class="bi bi-file-earmark-pdf"></i> Baixar PDF</button></div></div></div></div></section>
-<section class="of-section of-section-light"><div class="container"><div class="of-section-heading mb-4"><p class="of-eyebrow">Perguntas rápidas</p><h2>Dúvidas comuns antes de começar</h2></div><div class="row g-3"><div class="col-md-4"><div class="of-feature"><i class="bi bi-gift fs-3 text-primary"></i><h3 class="h5">Posso começar grátis?</h3><p>Sim. O plano Free permite testar a jornada e gerar documentos.</p></div></div><div class="col-md-4"><div class="of-feature"><i class="bi bi-phone fs-3 text-primary"></i><h3 class="h5">Funciona no celular?</h3><p>Sim. O fluxo foi pensado para telas pequenas e desktop.</p></div></div><div class="col-md-4"><div class="of-feature"><i class="bi bi-headset fs-3 text-primary"></i><h3 class="h5">Como falo com suporte?</h3><p>Use a página de suporte para e-mail, WhatsApp e manuais.</p></div></div></div></div></section>
+<section class="of-hero">
+    <div class="container">
+        <div class="row g-5 align-items-center">
+            <div class="col-lg-7 text-white">
+                <span class="of-badge bg-white text-primary mb-3">Um produto MNSOFT</span>
+                <h1>Orçamentos e recibos profissionais sem complicar sua rotina.</h1>
+                <p class="lead text-white-75 mt-3">O OrçaFácil guia autônomos, MEIs e pequenos prestadores para criar PDFs claros, numerados e prontos para enviar ao cliente em poucos minutos.</p>
+                <div class="d-flex gap-2 flex-wrap mt-4">
+                    <a class="btn btn-success btn-lg" asp-page="/Auth/Register">Começar grátis</a>
+                    <a class="btn btn-light btn-lg" href="#como-funciona">Ver como funciona</a>
+                    <a class="btn btn-outline-light btn-lg" asp-page="/Auth/Login">Entrar</a>
+                </div>
+                <div class="of-trust-row mt-4"><span>PDF profissional</span><span>Histórico organizado</span><span>Funciona no celular</span></div>
+            </div>
+            <div class="col-lg-5">
+                <img class="of-illustration mb-3" src="/img/illustrations/landing-orcamento-pdf.svg" alt="Ilustração de orçamento profissional em PDF" />
+                <div class="of-mock-budget of-premium-card">
+                    <div class="d-flex justify-content-between"><strong>Orçamento Nº 000123</strong><span class="of-badge status-emitido">PDF pronto</span></div>
+                    <p class="text-muted mb-3">Cliente: Maria Souza</p>
+                    <div class="of-mock-row"><span>Instalação elétrica residencial</span><strong>R$ 850,00</strong></div>
+                    <div class="of-mock-row"><span>Materiais e acabamento</span><strong>R$ 240,00</strong></div>
+                    <div class="of-total-pill"><span>Total</span><strong>R$ 1.090,00</strong></div>
+                    <button class="btn btn-primary w-100 mt-3" type="button">PDF pronto para enviar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="recursos" class="of-section of-section-light">
+    <div class="container">
+        <div class="of-section-heading mb-4">
+            <p class="of-eyebrow">Recursos</p>
+            <h2>O que você consegue fazer?</h2>
+            <p>Centralize a criação, revisão, envio e acompanhamento dos seus documentos comerciais em uma experiência simples para usuário comum.</p>
+        </div>
+        <div class="row g-3">
+            @foreach (var f in new[] { ("bi-file-earmark-plus", "Criar orçamento", "Monte propostas com cliente, itens, condições e total automático."), ("bi-receipt", "Criar recibo", "Emita comprovantes quando o pagamento já foi recebido."), ("bi-filetype-pdf", "Gerar PDF", "Baixe documentos com aparência profissional e numeração organizada."), ("bi-clock-history", "Organizar histórico", "Encontre, edite, duplique e gere novamente quando precisar."), ("bi-link-45deg", "Aprovação pública", "Compartilhe um link para o cliente aprovar o orçamento."), ("bi-patch-check", "Plano Pro sem marca", "Evolua para PDFs sem marca OrçaFácil e visual mais premium.") })
+            {
+                <div class="col-md-6 col-lg-4"><div class="of-feature of-feature-premium"><i class="bi @f.Item1 fs-3 text-primary"></i><h3 class="h5 mt-3">@f.Item2</h3><p>@f.Item3</p></div></div>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="of-section of-section-light">
+    <div class="container"><div class="row g-4 align-items-center"><div class="col-lg-6"><p class="of-eyebrow">Problema resolvido</p><h2>Chega de orçamento improvisado.</h2><p>Mensagens soltas, papel e planilhas improvisadas passam menos confiança e dificultam o controle. O OrçaFácil transforma seu atendimento em uma jornada guiada, com campos claros e revisão final antes do envio.</p></div><div class="col-lg-6"><div class="of-card of-premium-card"><partial name="Partials/_ExplainerCard" model='new ExplainerCardViewModel { Title="Mais confiança no atendimento", Text="Seu cliente recebe um documento claro, com número, itens, valores, total em destaque e visual consistente.", Icon="bi-shield-check" }' /></div></div></div></div>
+</section>
+
+<section id="como-funciona" class="of-section of-section-dark">
+    <div class="container"><div class="of-section-heading mb-4"><p class="of-eyebrow of-on-dark-muted">Orçamento guiado</p><h2>O sistema conduz você em cada etapa.</h2><p>Escolha um modelo por profissão, ajuste os itens, confira o total e salve o PDF. Menos tela em branco, mais velocidade para vender.</p></div><div class="row g-4"><div class="col-md-4"><partial name="Partials/_StepCard" model='new StepCardViewModel { Number="1", Title="Escolha um modelo", Text="Comece com exemplos para elétrica, pintura, obra, diária ou serviço técnico." }' /></div><div class="col-md-4"><partial name="Partials/_StepCard" model='new StepCardViewModel { Number="2", Title="Revise cliente e itens", Text="Preencha o essencial e deixe o total ser calculado automaticamente." }' /></div><div class="col-md-4"><partial name="Partials/_StepCard" model='new StepCardViewModel { Number="3", Title="Gere e envie", Text="Salve, gere PDF e acompanhe pelo histórico." }' /></div></div><a class="btn btn-light mt-4" asp-page="/ComoFunciona">Abrir guia completo</a></div>
+</section>
+
+<section class="of-section of-section-light"><div class="container"><div class="of-section-heading mb-4"><p class="of-eyebrow">Para quem é</p><h2>Feito para pequenos prestadores de serviço.</h2><p>Ícones, textos e modelos foram pensados para profissões comuns que precisam vender melhor sem dominar ferramentas complexas.</p></div><div class="row g-3">@foreach (var job in jobs) { <div class="col-6 col-md-4 col-lg-3"><div class="of-feature text-center"><i class="bi @job.Item1 fs-3 text-primary"></i><h3 class="h6 mt-2">@job.Item2</h3></div></div> }</div></div></section>
+
+<section class="of-section of-section-light"><div class="container"><div class="row g-4 align-items-center"><div class="col-lg-5"><p class="of-eyebrow">Exemplo visual</p><h2>Exemplo do que seu cliente recebe</h2><p>Um documento numerado, com cliente, itens, total, status e ação de PDF em destaque.</p></div><div class="col-lg-7"><div class="of-example-document of-premium-card"><div class="d-flex justify-content-between"><strong>Orçamento Nº 000124</strong><span class="of-badge"><i class="bi bi-file-earmark-pdf"></i> PDF</span></div><p>Cliente: Ana Cliente</p><div class="of-mock-row"><span>Serviço principal</span><strong>R$ 700,00</strong></div><div class="of-mock-row"><span>Materiais</span><strong>R$ 190,00</strong></div><div class="of-total-pill"><span>Total</span><strong>R$ 890,00</strong></div><button class="btn btn-primary mt-3" type="button"><i class="bi bi-file-earmark-pdf"></i> Baixar PDF</button></div></div></div></div></section>
+
 <section class="of-section of-section-light"><div class="container"><div class="of-section-heading mb-4"><p class="of-eyebrow">Planos simples</p><h2>Comece grátis. Evolua quando quiser.</h2></div><div class="row g-4"><div class="col-md-6"><div class="of-price-card"><span class="of-badge">Free</span><h3>Comece grátis</h3><ul><li>PDF com marca OrçaFácil</li><li>Ideal para testar</li><li>Use de imediato</li></ul><a class="btn btn-outline-primary" asp-page="/Auth/Register">Criar conta grátis</a></div></div><div class="col-md-6"><div class="of-price-card pro"><span class="of-badge status-pro">Pro</span><h3>Mais profissional</h3><ul><li>PDF sem marca</li><li>Histórico completo</li><li>Suporte MNSOFT</li></ul><a class="btn btn-primary" asp-page="/Subscription/Index">Conhecer Pro</a></div></div></div><div class="of-cta-band mt-5"><div><h2>Comece grátis e gere seu primeiro orçamento agora.</h2><p>Leve poucos minutos para deixar seu atendimento mais profissional.</p></div><a class="btn btn-success" asp-page="/Auth/Register">Começar grátis</a></div></div></section>
