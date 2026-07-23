@@ -1,0 +1,4 @@
+@page "{id?}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy="SuperAdmin")]
+@{ViewData["Title"]="Detalhes do pagamento";}
+<header class="of-page-header"><div><p class="of-eyebrow">Financeiro</p><h1>Detalhes do pagamento</h1><p>Dados do provedor, Pix, boleto, eventos, assinatura e auditoria sem expor tokens.</p></div></header><section class="of-card"><button class="btn btn-success">Marcar aprovado manualmente</button> <button class="btn btn-warning">Marcar vencido</button> <button class="btn btn-danger">Suspender benefícios</button> <button class="btn btn-primary">Liberar benefícios</button></section>

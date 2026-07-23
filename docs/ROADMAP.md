@@ -16,3 +16,10 @@
 
 - Design system, layouts público/autenticado e componentes reutilizáveis implementados.
 - Próximos passos: persistir filtros avançados, completar recusa pública com auditoria dedicada, evoluir upload de logo e ativação Pro automatizada.
+
+## Monetização SaaS
+
+- Finalizar chamadas reais Mercado Pago com SDK/API oficial.
+- Implementar worker recorrente de inadimplência.
+- Completar auditoria detalhada das ações administrativas.
+- Evoluir dashboard com séries históricas em CSS/HTML sem dependências externas.

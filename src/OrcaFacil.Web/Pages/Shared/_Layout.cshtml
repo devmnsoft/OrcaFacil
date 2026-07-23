@@ -18,7 +18,21 @@
     <a class="of-brand" asp-page="/Dashboard/Index"><span class="of-brand-mark">OF</span><span>OrçaFácil</span></a>
     <nav class="of-menu">
       <a asp-page="/Dashboard/Index">Dashboard</a><a asp-page="/Documents/CreateBudget">Novo orçamento</a><a asp-page="/Documents/CreateReceipt">Novo recibo</a><a asp-page="/Documents/Index">Histórico</a><a asp-page="/Profile/Index">Emitente</a><a asp-page="/Subscription/Index">Minha assinatura</a><a asp-page="/Support/Index">Ajuda</a>
-      @if (User.IsInRole("SuperAdmin")) { <a asp-area="Admin" asp-page="/Dashboard">Admin Geral</a> }
+      @if (User.IsInRole("SuperAdmin")) {
+        <div class="of-admin-menu-title">Admin</div>
+        <a asp-area="Admin" asp-page="/Dashboard"><i class="bi bi-speedometer2"></i> Dashboard Admin</a>
+        <a asp-area="Admin" asp-page="/Users/Index"><i class="bi bi-people"></i> Usuários</a>
+        <a asp-area="Admin" asp-page="/Clients/Index"><i class="bi bi-person-lines-fill"></i> Clientes dos usuários</a>
+        <a asp-area="Admin" asp-page="/Plans/Index"><i class="bi bi-stars"></i> Planos</a>
+        <a asp-area="Admin" asp-page="/Payments/Index"><i class="bi bi-cash-coin"></i> Pagamentos</a>
+        <a asp-area="Admin" asp-page="/Payments/Index"><i class="bi bi-exclamation-octagon"></i> Inadimplentes</a>
+        <a asp-area="Admin" asp-page="/Payments/Index"><i class="bi bi-credit-card"></i> Mercado Pago</a>
+        <a asp-area="Admin" asp-page="/Logs"><i class="bi bi-broadcast"></i> Webhooks</a>
+        <a asp-area="Admin" asp-page="/Logs"><i class="bi bi-activity"></i> Logs</a>
+        <a asp-area="Admin" asp-page="/Errors"><i class="bi bi-bug"></i> Erros</a>
+        <a asp-area="Admin" asp-page="/Settings/Database"><i class="bi bi-database-check"></i> Banco de Dados</a>
+        <a asp-area="Admin" asp-page="/Settings"><i class="bi bi-gear"></i> Configurações</a>
+      }
     </nav>
     <div class="of-sidebar-footer"><span class="of-plan-badge">Free</span><small>@User.Identity?.Name</small><form method="post" asp-page="/Auth/Logout">@Html.AntiForgeryToken()<button class="btn btn-outline-light w-100">Sair</button></form></div>
   </aside>

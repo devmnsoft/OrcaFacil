@@ -1,29 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using OrcaFacil.Domain.Enums;
-using OrcaFacil.Persistence;
-using OrcaFacil.Application.Abstractions;
-
+using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Mvc; using Microsoft.AspNetCore.Mvc.RazorPages; using OrcaFacil.Application.Billing; using OrcaFacil.Application.DTOs; using OrcaFacil.Persistence.Queries;
 namespace OrcaFacil.Web.Areas.Admin.Pages;
-
-[Authorize(Policy = "SuperAdmin")]
-public class DashboardModel : PageModel
-{
-    private readonly OrcaFacilDbContext _db;
-    private readonly IDatabaseDiagnosticsService _diagnostics;
-    public int TotalUsers { get; private set; }
-    public int TotalDocuments { get; private set; }
-    public int FreeUsers { get; private set; }
-    public int ProUsers { get; private set; }
-    public DatabaseDiagnosticsDto? Database { get; private set; }
-    public DashboardModel(OrcaFacilDbContext db, IDatabaseDiagnosticsService diagnostics) { _db = db; _diagnostics = diagnostics; }
-    public async Task OnGetAsync(CancellationToken ct)
-    {
-        TotalUsers = await _db.Users.CountAsync(ct);
-        TotalDocuments = await _db.Documents.CountAsync(ct);
-        FreeUsers = await _db.Users.CountAsync(u => u.Plan == PlanType.Free, ct);
-        ProUsers = await _db.Users.CountAsync(u => u.Plan == PlanType.Pro, ct);
-        Database = await _diagnostics.CheckAsync(ct);
-    }
-}
+[Authorize(Policy="SuperAdmin")] public class DashboardModel:PageModel{private readonly SuperAdminDashboardQueries _queries; private readonly BillingStatusService _billing; public SuperAdminDashboardDto Data{get;private set;}=new(); public DashboardModel(SuperAdminDashboardQueries queries,BillingStatusService billing){_queries=queries;_billing=billing;} public async Task OnGetAsync(CancellationToken ct)=>Data=await _queries.GetAsync(ct); public async Task<IActionResult> OnPostRecalculateBillingAsync(CancellationToken ct){await _billing.SyncOverdueSubscriptionsAsync(ct); TempData["Success"]="Inadimplência recalculada."; return RedirectToPage();}}
