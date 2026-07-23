@@ -1,3 +1,56 @@
 @page
+@model OrcaFacil.Web.Pages.Notifications.IndexModel
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
-@{ViewData["Title"]="Notificações";}<h1>Notificações</h1><p>Notificações de orçamento aprovado, recusado e eventos críticos aparecerão aqui.</p>
+@{
+    ViewData["Title"] = "Notificações";
+}
+
+<header class="of-page-header">
+    <div>
+        <p class="of-eyebrow">Central de atividade</p>
+        <h1><i class="bi bi-bell me-2"></i>Notificações</h1>
+        <p>Acompanhe avisos de conta, cobrança, documentos, suporte, sistema e plano.</p>
+    </div>
+    @if (Model.UnreadCount > 0)
+    {
+        <form method="post" asp-page-handler="MarkAllAsRead">
+            @Html.AntiForgeryToken()
+            <button class="btn btn-outline-primary"><i class="bi bi-check2-all me-2"></i>Marcar todas como lidas</button>
+        </form>
+    }
+</header>
+
+<section class="of-card">
+    @if (!Model.Items.Any())
+    {
+        <div class="of-empty"><div class="of-empty-icon">🔔</div><h2 class="h5">Nenhuma notificação ainda</h2><p>Quando houver avisos importantes, eles aparecerão aqui.</p></div>
+    }
+    else
+    {
+        <div class="list-group list-group-flush">
+            @foreach (var item in Model.Items)
+            {
+                var badge = item.Type switch { "Success" => "text-bg-success", "Warning" => "text-bg-warning", "Danger" => "text-bg-danger", _ => "text-bg-info" };
+                <article class="list-group-item px-0 d-flex gap-3 align-items-start @(item.IsRead ? "opacity-75" : "")">
+                    <span class="badge @badge">@item.Type</span>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between gap-3"><h2 class="h6 mb-1">@item.Title</h2><small>@item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small></div>
+                        <p class="mb-2">@item.Message</p>
+                        <span class="badge text-bg-light border">@item.Category</span>
+                        @if (!string.IsNullOrWhiteSpace(item.ActionUrl))
+                        {
+                            <a class="btn btn-sm btn-link" href="@item.ActionUrl">@(item.ActionText ?? "Abrir")</a>
+                        }
+                    </div>
+                    @if (!item.IsRead)
+                    {
+                        <form method="post" asp-page-handler="MarkAsRead" asp-route-id="@item.Id">
+                            @Html.AntiForgeryToken()
+                            <button class="btn btn-sm btn-outline-secondary">Marcar como lida</button>
+                        </form>
+                    }
+                </article>
+            }
+        </div>
+    }
+</section>

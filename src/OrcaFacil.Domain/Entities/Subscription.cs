@@ -17,4 +17,10 @@ public class Subscription : Entity
     public DateTime? LastPaymentAt { get; set; }
     public string? ExternalCustomerId { get; set; }
     public string? ExternalSubscriptionId { get; set; }
+    public DateTime? TrialStartedAt { get; set; }
+    public DateTime? TrialEndsAt { get; set; }
+    public bool TrialUsed { get; set; }
+    public TrialStatus TrialStatus { get; set; } = TrialStatus.NotStarted;
+
+    public bool HasActiveTrial(DateTime utcNow) => TrialStatus == TrialStatus.Active && TrialEndsAt > utcNow;
 }
