@@ -10,6 +10,12 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
     {
         builder.ToTable("notifications", "orcafacil");
         builder.ConfigureBase();
-        builder.HasIndex(x => x.UserId);
+        builder.Property(x => x.Title).HasMaxLength(160).IsRequired();
+        builder.Property(x => x.Message).HasMaxLength(800).IsRequired();
+        builder.Property(x => x.Type).HasConversion<string>().HasMaxLength(20).IsRequired();
+        builder.Property(x => x.Category).HasConversion<string>().HasMaxLength(30).IsRequired();
+        builder.Property(x => x.ActionUrl).HasMaxLength(400);
+        builder.Property(x => x.ActionText).HasMaxLength(80);
+        builder.HasIndex(x => new { x.UserId, x.IsRead, x.IsDeleted });
     }
 }

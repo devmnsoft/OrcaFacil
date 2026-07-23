@@ -15,8 +15,9 @@ public class DocumentService
     private readonly IAuditService _audit;
     private readonly IDocumentNumberService _numberService;
     private readonly ILogger<DocumentService> _logger;
+    private readonly INotificationService _notifications;
 
-    public DocumentService(IRepository<Document> documents, IRepository<PublicQuote> quotes, IUnitOfWork uow, IAuditService audit, IDocumentNumberService numberService, ILogger<DocumentService> logger)
+    public DocumentService(IRepository<Document> documents, IRepository<PublicQuote> quotes, IUnitOfWork uow, IAuditService audit, IDocumentNumberService numberService, ILogger<DocumentService> logger, INotificationService notifications)
     {
         _documents = documents;
         _quotes = quotes;
@@ -24,6 +25,7 @@ public class DocumentService
         _audit = audit;
         _numberService = numberService;
         _logger = logger;
+        _notifications = notifications;
     }
 
     public async Task<Result<Guid>> CreateAsync(CreateDocumentCommand command, CancellationToken ct = default)
@@ -37,6 +39,12 @@ public class DocumentService
             await _documents.AddAsync(document, ct);
             await _audit.RegisterAsync(command.UserId, "DOCUMENT_CREATED", nameof(Document), document.Id.ToString(), null, document, null, ct);
             await _uow.SaveChangesAsync(ct);
+            var title = document.Type == DocumentType.Budget ? "Orçamento salvo" : "Recibo salvo";
+            await _notifications.CreateForUserAsync(command.UserId, title, "Seu orçamento foi salvo. Agora você pode gerar o PDF.", NotificationType.Success, NotificationCategory.Document, $"/Documents/Details?id={document.Id}", "Ver documento", ct);
+            if (_documents.Query().Count(x => x.UserId == command.UserId && !x.IsDeleted) == 1)
+            {
+                await _notifications.CreateForUserAsync(command.UserId, "Primeiro orçamento criado", "Parabéns pelo primeiro documento no OrçaFácil. Gere o PDF e envie ao cliente.", NotificationType.Info, NotificationCategory.Document, $"/Documents/Details?id={document.Id}", "Abrir", ct);
+            }
             _logger.LogInformation("DOCUMENT_CREATED {DocumentId}", document.Id);
             return Result<Guid>.Ok(document.Id);
         }
