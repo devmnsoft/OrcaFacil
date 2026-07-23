@@ -1,0 +1,19 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using OrcaFacil.Domain.Entities;
+
+namespace OrcaFacil.Persistence.Configurations;
+
+public class BillingCustomerProfileConfiguration : IEntityTypeConfiguration<BillingCustomerProfile>
+{
+    public void Configure(EntityTypeBuilder<BillingCustomerProfile> builder)
+    {
+        builder.ToTable("billing_customer_profiles", "orcafacil");
+        builder.ConfigureBase();
+        builder.Property(x => x.PersonType).HasConversion<string>().HasMaxLength(30).IsRequired();
+        builder.Property(x => x.DocumentType).HasConversion<string>().HasMaxLength(10);
+        builder.Property(x => x.DocumentNumber).HasMaxLength(20);
+        builder.Property(x => x.Name).HasMaxLength(180).IsRequired();
+        builder.HasIndex(x => x.UserId).IsUnique();
+    }
+}

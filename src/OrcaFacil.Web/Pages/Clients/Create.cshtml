@@ -1,0 +1,18 @@
+@page "{id?}"
+@using OrcaFacil.Domain.Enums
+@model OrcaFacil.Web.Pages.Clients.CreateModel
+@{ ViewData["Title"] = "Cliente"; var input = Model.Input; }
+<header class="of-page-header"><div><p class="of-eyebrow">Clientes</p><h1>Cadastro PF/PJ</h1><p>Use Pessoa Física para clientes com CPF e Pessoa Jurídica para empresas com CNPJ.</p></div></header>
+<form method="post" class="of-card" id="clientForm">
+  <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+  <div class="row g-3">
+    <div class="col-md-4"><label class="form-label">Tipo de cliente</label><select asp-for="Input.PersonType" class="form-select" id="personType"><option value="Individual">Pessoa Física</option><option value="Company">Pessoa Jurídica</option></select></div>
+    <div class="col-md-4"><label class="form-label" id="documentLabel">CPF</label><input asp-for="Input.DocumentNumber" class="form-control" id="documentNumber" placeholder="000.000.000-00"/><span asp-validation-for="Input.DocumentNumber" class="text-danger"></span></div>
+    <div class="col-md-4"><label class="form-label" id="nameLabel">Nome completo</label><input asp-for="Input.Name" class="form-control" required maxlength="180" /></div>
+    <div class="col-md-6 company-only"><label class="form-label">Razão social</label><input asp-for="Input.LegalName" class="form-control" maxlength="180" /></div>
+    <div class="col-md-6 company-only"><label class="form-label">Nome fantasia</label><input asp-for="Input.TradeName" class="form-control" maxlength="180" /></div>
+    <div class="col-md-4"><label class="form-label">E-mail</label><input asp-for="Input.Email" class="form-control" /></div><div class="col-md-4"><label class="form-label">Telefone</label><input asp-for="Input.Phone" class="form-control" /></div><div class="col-md-4"><label class="form-label">Cidade</label><input asp-for="Input.City" class="form-control" /></div>
+    <div class="col-md-8"><label class="form-label">Endereço</label><input asp-for="Input.Address" class="form-control" /></div><div class="col-md-4"><label class="form-label">Observações</label><input asp-for="Input.Notes" class="form-control" /></div>
+  </div><div class="mt-4"><button class="btn btn-primary">Salvar cliente</button><a class="btn btn-outline-secondary" asp-page="/Clients/Index">Cancelar</a></div>
+</form>
+@section Scripts{<script>function digits(v){return (v||'').replace(/\D/g,'')}function maskCpf(v){v=digits(v).slice(0,11);return v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')}function maskCnpj(v){v=digits(v).slice(0,14);return v.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2')}function sync(){const company=personType.value==='Company';documentLabel.textContent=company?'CNPJ':'CPF';nameLabel.textContent=company?'Razão social':'Nome completo';documentNumber.placeholder=company?'00.000.000/0000-00':'000.000.000-00';document.querySelectorAll('.company-only').forEach(e=>e.style.display=company?'block':'none');documentNumber.value=company?maskCnpj(documentNumber.value):maskCpf(documentNumber.value)}personType.addEventListener('change',sync);documentNumber.addEventListener('input',sync);clientForm.addEventListener('submit',e=>{const l=digits(documentNumber.value).length;if(l&&personType.value==='Individual'&&l!==11){e.preventDefault();alert('CPF inválido. Informe 11 números.')}if(l&&personType.value==='Company'&&l!==14){e.preventDefault();alert('CNPJ inválido. Informe 14 números.')}});sync();</script>}
