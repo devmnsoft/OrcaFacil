@@ -21,6 +21,8 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<AdminSetting> AdminSettings => Set<AdminSetting>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<BudgetTemplate> BudgetTemplates => Set<BudgetTemplate>();
+    public DbSet<BudgetTemplateItem> BudgetTemplateItems => Set<BudgetTemplateItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

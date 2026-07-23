@@ -11,6 +11,8 @@
         </div>
         <span class="of-badge status-emitido"><i class="bi bi-magic"></i> Orçamento guiado</span>
     </div>
+    <div class="row g-3 mt-2"><div class="col-md-6 col-xl-4"><a class="of-template-card" href="/Documents/CreateBudget"><i class="bi bi-file-earmark-text"></i><strong>Orçamento em branco</strong><span>Preencha tudo manualmente.</span></a></div><div class="col-md-6 col-xl-4"><a class="of-template-card" href="/Templates"><i class="bi bi-magic"></i><strong>Usar modelo por profissão</strong><span>Veja todos os modelos salvos.</span></a></div><div class="col-md-6 col-xl-4"><span class="of-template-card"><i class="bi bi-tools"></i><strong>Usar serviço salvo</strong><span>Use seu catálogo quando disponível.</span></span></div></div>
+    @if (Model.LoadedTemplateId is not null) { <div class="alert alert-info mt-3"><i class="bi bi-magic me-2"></i>Você está usando o modelo <strong>@Model.LoadedTemplateTitle</strong>. Você pode alterar os itens, quantidades e valores antes de salvar.</div> }
     <div class="row g-3 mt-2" data-budget-templates>
         <div class="col-md-6 col-xl-4"><button class="of-template-card" type="button" data-template="eletricista"><i class="bi bi-lightning-charge"></i><strong>Eletricista</strong><span>Instalação, revisão e materiais.</span></button></div>
         <div class="col-md-6 col-xl-4"><button class="of-template-card" type="button" data-template="pintor"><i class="bi bi-brush"></i><strong>Pintor</strong><span>Preparação, pintura e acabamento.</span></button></div>

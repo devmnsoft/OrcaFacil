@@ -1,0 +1,4 @@
+@page
+@{ ViewData["Title"] = "Serviços"; }
+<header class="of-page-header"><div><p class="of-eyebrow">Catálogo</p><h1>Serviços salvos</h1><p>Use modelos por profissão agora e prepare seu catálogo de serviços salvos para acelerar orçamentos recorrentes.</p></div><a class="btn btn-primary" asp-page="/Templates/Index"><i class="bi bi-magic me-2"></i>Ver modelos</a></header>
+<section class="of-card"><partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Catálogo de serviços em evolução.", Text="Os modelos já ajudam com sugestões prontas. Em breve você poderá salvar seus próprios serviços recorrentes.", ActionText="Usar modelo", ActionPage="/Templates/Index", Icon="bi-tools" }' /></section>

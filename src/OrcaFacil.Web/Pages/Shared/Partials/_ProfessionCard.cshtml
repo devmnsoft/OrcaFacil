@@ -1,0 +1,13 @@
+@model OrcaFacil.Web.ViewModels.Components.ProfessionCardViewModel
+<article class="of-profession-card of-feature text-center h-100">
+    @if (!string.IsNullOrWhiteSpace(Model.SvgName))
+    {
+        <img src="/img/illustrations/@Model.SvgName" alt="Ilustração de @Model.Title" class="of-profession-svg" />
+    }
+    else
+    {
+        <i class="bi @Model.Icon fs-2 text-primary" aria-hidden="true"></i>
+    }
+    <h3 class="h6 mt-2">@Model.Title</h3>
+    <p class="mb-0">@Model.Description</p>
+</article>

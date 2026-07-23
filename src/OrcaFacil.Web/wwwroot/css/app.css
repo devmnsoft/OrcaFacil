@@ -438,3 +438,14 @@ html { scroll-behavior: smooth; scroll-padding-top: 96px; }
   .of-public-footer .container,
   .of-cta-band { align-items: flex-start !important; }
 }
+.of-public-footer { padding: 3rem 0 1.25rem; }
+.of-public-footer h2 { color: #fff; }
+.of-public-footer p { color: rgba(255,255,255,.88); max-width: 36rem; }
+.of-public-footer .row { min-width: 0; }
+.of-footer-bottom { border-top: 1px solid rgba(255,255,255,.14); color: rgba(255,255,255,.78); margin-top: 2rem; padding-top: 1rem; }
+.of-profession-svg { height: 82px; margin: 0 auto .75rem; max-width: 120px; width: 100%; }
+.of-template-card { text-decoration: none; }
+.of-template-card strong { color: var(--of-heading); }
+.of-template-card .bi { pointer-events: none; }
+.of-section-light h5, .of-section-light h6 { color: #101828 !important; }
+.of-section-dark h5, .of-section-dark h6 { color: #fff !important; }

@@ -1,0 +1,4 @@
+@page
+@{ ViewData["Title"] = "Clientes"; }
+<header class="of-page-header"><div><p class="of-eyebrow">Clientes</p><h1>Clientes salvos</h1><p>Em breve você poderá salvar clientes para reutilizar nos orçamentos. Por enquanto, informe o cliente durante a criação do documento.</p></div><a class="btn btn-primary" asp-page="/Documents/CreateBudget"><i class="bi bi-file-earmark-text me-2"></i>Novo orçamento</a></header>
+<section class="of-card"><partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Cadastro de clientes em evolução.", Text="O orçamento guiado já permite preencher o cliente na hora. A lista de clientes será conectada ao fluxo em uma próxima etapa.", ActionText="Criar orçamento", ActionPage="/Documents/CreateBudget", Icon="bi-people" }' /></section>
