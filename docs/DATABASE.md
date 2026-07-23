@@ -162,3 +162,7 @@ Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123
 ```
 
 Para criar ou corrigir o usuário local, execute `database/corrigir_usuario_local.sql` como `postgres`/superuser. O erro PostgreSQL `28P01` significa falha de autenticação: usuário ou senha incorretos na connection string ou variável de ambiente.
+
+## SaaS Admin/Billing
+
+Novas tabelas no schema `orcafacil`: `clients`, `billing_customer_profiles`, `plan_features`, `payment_events`, `mercadopago_webhook_events`. Pagamentos foram expandidos com Pix, boleto, idempotência, referência externa, vencimento e payload textual.

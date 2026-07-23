@@ -1,0 +1,5 @@
+@page
+@model OrcaFacil.Web.Pages.Clients.IndexModel
+@{ViewData["Title"]="Clientes";}
+<header class="of-page-header"><div><p class="of-eyebrow">Clientes</p><h1>Clientes cadastrados</h1><p>PF/PJ com documentos mascarados e dados comerciais.</p></div><a class="btn btn-primary" asp-page="/Clients/Create">Novo cliente</a></header>
+<div class="of-card table-responsive"><table class="table align-middle"><thead><tr><th>Cliente</th><th>Tipo</th><th>CPF/CNPJ</th><th>Cidade</th><th></th></tr></thead><tbody>@foreach(var c in Model.Clients){<tr><td><strong>@c.Name</strong><br/><small>@c.TradeName</small></td><td>@(c.PersonType==OrcaFacil.Domain.Enums.PersonType.Company?"Pessoa Jurídica":"Pessoa Física")</td><td>@OrcaFacil.Web.Pages.Clients.IndexModel.Mask(c)</td><td>@c.City</td><td><a asp-page="/Clients/Details" asp-route-id="@c.Id">Detalhes</a> · <a asp-page="/Clients/Edit" asp-route-id="@c.Id">Editar</a></td></tr>}</tbody></table></div>

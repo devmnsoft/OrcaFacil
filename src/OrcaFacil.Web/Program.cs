@@ -5,6 +5,9 @@ using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Auth;
 using OrcaFacil.Application.Documents;
 using OrcaFacil.Application.Plans;
+using OrcaFacil.Application.Payments;
+using OrcaFacil.Application.Billing;
+using OrcaFacil.Infrastructure.Payments;
 using OrcaFacil.Application.Profile;
 using OrcaFacil.Infrastructure;
 using OrcaFacil.Infrastructure.Pdf;
@@ -30,6 +33,7 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IDocumentQueries, DocumentQueries>();
 builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
+builder.Services.AddScoped<SuperAdminDashboardQueries>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<ILoggerService, LoggerService>();
@@ -38,6 +42,11 @@ builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<IDocumentNumberService, DocumentNumberService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<PlanLimitService>();
+builder.Services.AddScoped<PlanEntitlementService>();
+builder.Services.AddScoped<BillingStatusService>();
+builder.Services.Configure<MercadoPagoOptions>(builder.Configuration.GetSection("MercadoPago"));
+builder.Services.Configure<BillingOptions>(builder.Configuration.GetSection("Billing"));
+builder.Services.AddScoped<IPaymentGateway, MercadoPagoPaymentGateway>();
 builder.Services.AddScoped<UserUsageService>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IPdfService, QuestPdfDocumentService>();
@@ -97,6 +106,19 @@ app.MapGet("/health/db", async (IDatabaseDiagnosticsService diagnostics, Cancell
     };
     return healthy ? Results.Ok(payload) : Results.Json(payload, statusCode: StatusCodes.Status503ServiceUnavailable);
 });
+app.MapPost("/api/webhooks/mercadopago", async (HttpRequest request, OrcaFacil.Application.Abstractions.IPaymentGateway gateway, OrcaFacil.Persistence.OrcaFacilDbContext db, CancellationToken ct) =>
+{
+    using var reader = new StreamReader(request.Body);
+    var body = await reader.ReadToEndAsync(ct);
+    var headers = request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString());
+    var result = await gateway.HandleWebhookAsync(body, headers, ct);
+    if (!await db.MercadoPagoWebhookEvents.AnyAsync(x => x.EventKey == result.EventKey, ct))
+    {
+        db.MercadoPagoWebhookEvents.Add(new OrcaFacil.Domain.Entities.MercadoPagoWebhookEvent { EventKey = result.EventKey, ExternalPaymentId = result.ExternalPaymentId, RawJson = body, Processed = true, CorrelationId = OrcaFacil.Web.HttpContextTrace.Current(request.HttpContext) });
+        await db.SaveChangesAsync(ct);
+    }
+    return Results.Ok(new { received = true, result.EventKey });
+}).AllowAnonymous();
 app.MapGet("/health/version", () => new { app = "OrcaFacil", version = "1.0.0", environment = app.Environment.EnvironmentName, date = DateTime.UtcNow });
 app.MapControllers();
 app.MapRazorPages();

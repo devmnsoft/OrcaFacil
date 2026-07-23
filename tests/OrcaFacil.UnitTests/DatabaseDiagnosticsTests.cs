@@ -11,8 +11,9 @@ public class DatabaseDiagnosticsTests
     {
         var expected = new[]
         {
-            "users", "issuer_profiles", "documents", "document_items", "public_quotes",
-            "user_usage", "subscriptions", "payments", "admin_settings", "notifications",
+                    "users", "issuer_profiles", "documents", "document_items", "public_quotes",
+            "user_usage", "subscriptions", "payments", "payment_events", "mercadopago_webhook_events",
+            "billing_customer_profiles", "clients", "plan_features", "admin_settings", "notifications",
             "audit_logs", "system_logs", "system_errors"
         };
 

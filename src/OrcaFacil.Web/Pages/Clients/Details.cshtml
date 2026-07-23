@@ -1,0 +1,5 @@
+@page "{id:guid}"
+@model OrcaFacil.Web.Pages.Clients.DetailsModel
+@{ViewData["Title"]="Detalhes do cliente"; var c=Model.Client!;}
+<header class="of-page-header"><div><p class="of-eyebrow">Cliente</p><h1>@c.Name</h1><p>@(c.PersonType==OrcaFacil.Domain.Enums.PersonType.Company?"Pessoa Jurídica":"Pessoa Física") • @Model.MaskedDocument</p></div><a class="btn btn-outline-primary" asp-page="/Clients/Edit" asp-route-id="@c.Id">Editar</a></header>
+<div class="of-card"><dl class="row"><dt class="col-sm-3">Razão social</dt><dd class="col-sm-9">@c.LegalName</dd><dt class="col-sm-3">Nome fantasia</dt><dd class="col-sm-9">@c.TradeName</dd><dt class="col-sm-3">E-mail</dt><dd class="col-sm-9">@c.Email</dd><dt class="col-sm-3">Telefone</dt><dd class="col-sm-9">@c.Phone</dd><dt class="col-sm-3">Cidade</dt><dd class="col-sm-9">@c.City</dd><dt class="col-sm-3">Endereço</dt><dd class="col-sm-9">@c.Address</dd><dt class="col-sm-3">Observações</dt><dd class="col-sm-9">@c.Notes</dd></dl></div>
