@@ -3,6 +3,7 @@ using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.DTOs;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.ValueObjects;
+using OrcaFacil.Domain.Enums;
 using OrcaFacil.Shared;
 
 namespace OrcaFacil.Application.Auth;
@@ -14,14 +15,16 @@ public class AuthService
     private readonly IUnitOfWork _uow;
     private readonly IAuditService _audit;
     private readonly ILogger<AuthService> _logger;
+    private readonly INotificationService _notifications;
 
-    public AuthService(IRepository<UserAccount> users, IPasswordHasher hasher, IUnitOfWork uow, IAuditService audit, ILogger<AuthService> logger)
+    public AuthService(IRepository<UserAccount> users, IPasswordHasher hasher, IUnitOfWork uow, IAuditService audit, ILogger<AuthService> logger, INotificationService notifications)
     {
         _users = users;
         _hasher = hasher;
         _uow = uow;
         _audit = audit;
         _logger = logger;
+        _notifications = notifications;
     }
 
     public async Task<Result<UserSummaryDto>> RegisterAsync(RegisterUserCommand command, CancellationToken ct = default)
@@ -63,6 +66,8 @@ public class AuthService
             await _users.AddAsync(user, ct);
             await _audit.RegisterAsync(user.Id, "USER_REGISTERED", nameof(UserAccount), user.Id.ToString(), null, new { user.Id, user.Email }, null, ct);
             await _uow.SaveChangesAsync(ct);
+            await _notifications.CreateForUserAsync(user.Id, "Conta criada", "Sua conta foi criada com sucesso. Complete seu perfil para emitir documentos mais profissionais.", NotificationType.Success, NotificationCategory.Account, "/Profile", "Completar perfil", ct);
+            await _notifications.CreateForUserAsync(user.Id, "Perfil incompleto", "Inclua seus dados de emitente para que orçamentos, recibos e PDFs saiam completos.", NotificationType.Warning, NotificationCategory.Account, "/Profile", "Completar agora", ct);
             _logger.LogInformation("USER_REGISTERED {UserId}", user.Id);
             return Result<UserSummaryDto>.Ok(ToSummary(user));
         }

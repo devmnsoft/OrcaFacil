@@ -12,5 +12,6 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
         builder.ConfigureBase();
         builder.Property(x => x.Status).HasConversion<string>();
         builder.Property(x => x.Plan).HasConversion<string>();
+        builder.Property(x => x.TrialStatus).HasConversion<string>().HasMaxLength(30);
     }
 }
