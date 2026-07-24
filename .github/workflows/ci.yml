@@ -1,24 +1,82 @@
 name: CI
+
 on:
   pull_request:
   push:
     branches: [main]
+
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Block new binary files
+        shell: bash
+        run: |
+          base_ref="${{ github.event.pull_request.base.sha || 'HEAD~1' }}"
+          forbidden='\.(png|jpg|jpeg|webp|gif|ico|pdf|zip|docx|xlsx)$'
+          added=$(git diff --name-only --diff-filter=A "$base_ref" HEAD | grep -E -i "$forbidden" || true)
+          if [ -n "$added" ]; then
+            echo "New binary files are not allowed:"
+            echo "$added"
+            exit 1
+          fi
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
-      - run: npm run check
-      - run: npm run check:js
-      - run: npm run build:prod
-      - run: npm run security:check
-      - run: test -f dist/index.html && test -f dist/version.json
+
+      - name: Restore .NET
+        run: dotnet restore OrcaFacil.sln
+
+      - name: Build .NET
+        run: dotnet build OrcaFacil.sln --no-restore
+
+      - name: Test .NET
+        run: dotnet test OrcaFacil.sln --no-build --verbosity normal
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Check JavaScript syntax
+        run: npm run check
+
+      - name: Check JavaScript modules
+        run: npm run check:js
+
+      - name: Check UI contrast regressions
+        run: node scripts/check-ui-contrast.mjs
+
+      - name: Build static public assets
+        run: npm run build:prod
+
+      - name: Security check
+        run: npm run security:check
+
+      - name: Validate Razor files are present
+        shell: bash
+        run: |
+          test -f src/OrcaFacil.Web/Pages/Shared/_Layout.cshtml
+          test -f src/OrcaFacil.Web/Pages/Auth/Login.cshtml
+          test -f src/OrcaFacil.Web/Pages/Auth/Register.cshtml
+
+      - name: Validate SQL script
+        shell: bash
+        run: |
+          test -f database/script_completop.sql
+          grep -qi 'schema.*orcafacil\|create schema.*orcafacil' database/script_completop.sql
+
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: orcafacil-dist
           path: dist
+          if-no-files-found: ignore
