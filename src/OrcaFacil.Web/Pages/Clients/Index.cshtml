@@ -1,4 +1,94 @@
 @page
-@{ ViewData["Title"] = "Clientes"; }
-<header class="of-page-header"><div><p class="of-eyebrow">Clientes</p><h1>Clientes salvos</h1><p>Em breve você poderá salvar clientes para reutilizar nos orçamentos. Por enquanto, informe o cliente durante a criação do documento.</p></div><a class="btn btn-primary" asp-page="/Documents/CreateBudget"><i class="bi bi-file-earmark-text me-2"></i>Novo orçamento</a></header>
-<section class="of-card"><partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Cadastro de clientes em evolução.", Text="O orçamento guiado já permite preencher o cliente na hora. A lista de clientes será conectada ao fluxo em uma próxima etapa.", ActionText="Criar orçamento", ActionPage="/Documents/CreateBudget", Icon="bi-people" }' /></section>
+@model OrcaFacil.Web.Pages.Clients.IndexModel
+@using OrcaFacil.Domain.Enums
+@{
+    ViewData["Title"] = "Clientes";
+}
+
+<header class="of-page-header">
+    <div>
+        <p class="of-eyebrow">Clientes</p>
+        <h1>Clientes salvos</h1>
+        <p>Gerencie clientes para reutilizar dados em orçamentos e recibos.</p>
+    </div>
+    <a class="btn btn-primary" asp-page="/Clients/Create"><i class="bi bi-person-plus me-2"></i>Novo cliente</a>
+</header>
+
+<section class="of-card mb-3">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label" asp-for="Search">Nome</label>
+            <input class="form-control" asp-for="Search" placeholder="Buscar por nome" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" asp-for="Document">CPF/CNPJ</label>
+            <input class="form-control" asp-for="Document" placeholder="Somente números" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" asp-for="PersonType">Tipo</label>
+            <select class="form-select" asp-for="PersonType" asp-items="Html.GetEnumSelectList<PersonType>()">
+                <option value="">Todos</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" asp-for="City">Cidade</label>
+            <input class="form-control" asp-for="City" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" asp-for="Sort">Ordenação</label>
+            <select class="form-select" asp-for="Sort">
+                <option value="name">Nome A-Z</option>
+                <option value="name_desc">Nome Z-A</option>
+                <option value="city">Cidade</option>
+                <option value="created_desc">Mais recentes</option>
+            </select>
+        </div>
+        <div class="col-md-1 d-grid">
+            <button class="btn btn-outline-primary" type="submit">Filtrar</button>
+        </div>
+    </form>
+</section>
+
+<section class="of-card">
+@if (Model.Clients.Count == 0)
+{
+    <partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Nenhum cliente encontrado.", Text="Cadastre seu primeiro cliente ou ajuste os filtros de busca.", ActionText="Novo cliente", ActionPage="/Clients/Create", Icon="bi-people" }' />
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr><th>Nome</th><th>Tipo</th><th>CPF/CNPJ</th><th>Cidade</th><th>Contato</th><th class="text-end">Ações</th></tr>
+            </thead>
+            <tbody>
+            @foreach (var client in Model.Clients)
+            {
+                <tr>
+                    <td><strong>@client.Name</strong><br /><small class="text-muted">@client.TradeName</small></td>
+                    <td>@(client.PersonType == PersonType.Company ? "PJ" : "PF")</td>
+                    <td>@IndexModel.Mask(client)</td>
+                    <td>@client.City</td>
+                    <td><small>@client.Email<br />@client.Phone</small></td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary" asp-page="/Clients/Details" asp-route-id="@client.Id">Detalhar</a>
+                        <a class="btn btn-sm btn-outline-primary" asp-page="/Clients/Edit" asp-route-id="@client.Id">Editar</a>
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@client.Id" class="d-inline" onsubmit="return confirm('Excluir este cliente?');">
+                            <button class="btn btn-sm btn-outline-danger" type="submit">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    <nav aria-label="Paginação de clientes">
+        <ul class="pagination justify-content-end">
+            @for (var page = 1; page <= Model.TotalPages; page++)
+            {
+                <li class="page-item @(page == Model.PageNumber ? "active" : null)"><a class="page-link" asp-route-pageIndex="@page" asp-route-search="@Model.Search" asp-route-document="@Model.Document" asp-route-personType="@Model.PersonType" asp-route-city="@Model.City" asp-route-sort="@Model.Sort">@page</a></li>
+            }
+        </ul>
+    </nav>
+}
+</section>
