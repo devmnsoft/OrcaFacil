@@ -7,7 +7,7 @@ public class BillingCustomerProfile : Entity
 {
     public Guid UserId { get; set; }
     public PersonType PersonType { get; set; } = PersonType.Individual;
-    public DocumentType? DocumentType { get; set; } = Enums.DocumentType.CPF;
+    public BrazilianDocumentType? DocumentType { get; set; } = BrazilianDocumentType.CPF;
     public string? DocumentNumber { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? TradeName { get; set; }
