@@ -10,58 +10,117 @@ using OrcaFacil.Persistence;
 namespace OrcaFacil.Web.Pages.Clients;
 
 [Authorize]
-public class IndexModel : PageModel
+public sealed class IndexModel : PageModel
 {
-    private const int DefaultPageSize = 10;
-    private readonly OrcaFacilDbContext _db;
+    private readonly IAuditService _audit;
     private readonly ICurrentUserService _current;
+    private readonly OrcaFacilDbContext _db;
 
-    public IndexModel(OrcaFacilDbContext db, ICurrentUserService current)
+    public IndexModel(OrcaFacilDbContext db, ICurrentUserService current, IAuditService audit)
     {
         _db = db;
         _current = current;
+        _audit = audit;
     }
 
-    public List<Client> Clients { get; private set; } = [];
-    public int PageNumber { get; private set; }
-    public int TotalPages { get; private set; }
-    public int TotalClients { get; private set; }
+    [BindProperty(SupportsGet = true)]
+    public string? Search { get; set; }
 
-    [BindProperty(SupportsGet = true)] public string? Search { get; set; }
-    [BindProperty(SupportsGet = true)] public string? Document { get; set; }
-    [BindProperty(SupportsGet = true)] public PersonType? PersonType { get; set; }
-    [BindProperty(SupportsGet = true)] public string? City { get; set; }
-    [BindProperty(SupportsGet = true)] public string Sort { get; set; } = "name";
-    [BindProperty(SupportsGet = true)] public int PageIndex { get; set; } = 1;
+    [BindProperty(SupportsGet = true)]
+    public string? Document { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public PersonType? PersonType { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? City { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string Sort { get; set; } = "name";
+
+    [BindProperty(SupportsGet = true)]
+    public int PageNumber { get; set; } = 1;
+
+    public int PageSize { get; } = 10;
+
+    public IReadOnlyList<ClientListItemDto> Clients { get; private set; } = Array.Empty<ClientListItemDto>();
+
+    public int TotalItems { get; private set; }
+
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalItems / (double)PageSize));
+
+    public bool HasFilters =>
+        !string.IsNullOrWhiteSpace(Search) ||
+        !string.IsNullOrWhiteSpace(Document) ||
+        PersonType.HasValue ||
+        !string.IsNullOrWhiteSpace(City);
 
     public async Task OnGetAsync(CancellationToken ct)
     {
-        var query = BuildQuery();
-        TotalClients = await query.CountAsync(ct);
-        TotalPages = Math.Max(1, (int)Math.Ceiling(TotalClients / (double)DefaultPageSize));
-        PageNumber = Math.Clamp(PageIndex, 1, TotalPages);
+        var query = BuildQuery(asNoTracking: true);
+        TotalItems = await query.CountAsync(ct);
+        PageNumber = Math.Clamp(PageNumber <= 0 ? 1 : PageNumber, 1, TotalPages);
+
         Clients = await ApplySorting(query)
-            .Skip((PageNumber - 1) * DefaultPageSize)
-            .Take(DefaultPageSize)
+            .Skip((PageNumber - 1) * PageSize)
+            .Take(PageSize)
+            .Select(client => new ClientListItemDto(
+                client.Id,
+                client.PersonType,
+                client.DocumentType,
+                client.DocumentNumber,
+                client.Name,
+                client.TradeName,
+                client.Email,
+                client.Phone,
+                client.City,
+                client.CreatedAt,
+                client.UpdatedAt))
             .ToListAsync(ct);
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(Guid id, CancellationToken ct)
     {
         var client = await _db.Clients.SingleOrDefaultAsync(x => x.Id == id && x.UserId == _current.UserId && !x.IsDeleted, ct);
-        if (client is null) return NotFound();
+        if (client is null)
+        {
+            TempData["Error"] = "Cliente não encontrado ou indisponível para este usuário.";
+            return RedirectToPage("/Clients/Index", CurrentRouteValues());
+        }
+
+        var auditBefore = new { client.Id, client.Name, client.PersonType, client.City };
         client.MarkAsDeleted();
+        await _audit.RegisterAsync(_current.UserId, "client.deleted", nameof(Client), client.Id.ToString(), auditBefore, new { client.IsDeleted }, null, ct);
         await _db.SaveChangesAsync(ct);
-        TempData["Success"] = "Cliente excluído com sucesso.";
-        return RedirectToPage();
+
+        TempData["Success"] = "Cliente removido da sua lista.";
+        return RedirectToPage("/Clients/Index", CurrentRouteValues());
     }
 
-    public static string Mask(Client client) => BrazilianDocument.Mask(client.DocumentType, client.DocumentNumber);
+    public object CurrentRouteValues() => new { Search, Document, PersonType, City, Sort, PageNumber };
 
-    private IQueryable<Client> BuildQuery()
+    public static string Mask(BrazilianDocumentType? documentType, string? documentNumber) =>
+        BrazilianDocument.Mask(documentType, documentNumber);
+
+    public static string GetClientTag(ClientListItemDto client)
     {
-        var query = _db.Clients.AsNoTracking().Where(x => x.UserId == _current.UserId && !x.IsDeleted);
-        if (!string.IsNullOrWhiteSpace(Search)) query = query.Where(x => EF.Functions.ILike(x.Name, $"%{Search.Trim()}%") || (x.TradeName != null && EF.Functions.ILike(x.TradeName, $"%{Search.Trim()}%")));
+        if (client.UpdatedAt.HasValue && client.UpdatedAt.Value < DateTime.UtcNow.AddDays(-180)) return "Inativo";
+        if (client.CreatedAt >= DateTime.UtcNow.AddDays(-30)) return "Novo";
+        if (!string.IsNullOrWhiteSpace(client.City)) return "Recorrente";
+        return "Prioridade";
+    }
+
+    private IQueryable<Client> BuildQuery(bool asNoTracking)
+    {
+        var query = _db.Clients.Where(x => x.UserId == _current.UserId && !x.IsDeleted);
+        if (asNoTracking) query = query.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(Search))
+        {
+            var search = $"%{Search.Trim()}%";
+            query = query.Where(x => EF.Functions.ILike(x.Name, search) || (x.TradeName != null && EF.Functions.ILike(x.TradeName, search)));
+        }
+
         var normalizedDocument = BrazilianDocument.Normalize(Document);
         if (!string.IsNullOrWhiteSpace(normalizedDocument)) query = query.Where(x => x.DocumentNumber != null && x.DocumentNumber.Contains(normalizedDocument));
         if (PersonType.HasValue) query = query.Where(x => x.PersonType == PersonType.Value);
@@ -76,4 +135,22 @@ public class IndexModel : PageModel
         "name_desc" => query.OrderByDescending(x => x.Name),
         _ => query.OrderBy(x => x.Name)
     };
+}
+
+public sealed record ClientListItemDto(
+    Guid Id,
+    PersonType PersonType,
+    BrazilianDocumentType? DocumentType,
+    string? DocumentNumber,
+    string Name,
+    string? TradeName,
+    string? Email,
+    string? Phone,
+    string? City,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt)
+{
+    public string MaskedDocument => IndexModel.Mask(DocumentType, DocumentNumber);
+    public string PersonTypeLabel => PersonType == PersonType.Company ? "PJ" : "PF";
+    public string PersonTypeName => PersonType == PersonType.Company ? "Pessoa Jurídica" : "Pessoa Física";
 }

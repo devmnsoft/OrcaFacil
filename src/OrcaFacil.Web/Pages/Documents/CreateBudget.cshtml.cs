@@ -29,8 +29,17 @@ public class CreateBudgetModel : PageModel
     public Guid? LoadedTemplateId { get; private set; }
     public string? LoadedTemplateTitle { get; private set; }
 
-    public async Task OnGetAsync(Guid? templateId, CancellationToken ct)
+    public async Task OnGetAsync(Guid? templateId, Guid? clientId, CancellationToken ct)
     {
+        if (clientId.HasValue)
+        {
+            var client = await _db.Clients.AsNoTracking().SingleOrDefaultAsync(x => x.Id == clientId && x.UserId == _current.UserId && !x.IsDeleted, ct);
+            if (client is not null)
+            {
+                Input.ClientName = client.Name;
+            }
+        }
+
         if (templateId is null) return;
         var template = await _db.BudgetTemplates.Include(x => x.Items).SingleOrDefaultAsync(x => x.Id == templateId && x.IsActive && !x.IsDeleted && (x.IsSystemTemplate || x.UserId == _current.UserId), ct);
         if (template is null)

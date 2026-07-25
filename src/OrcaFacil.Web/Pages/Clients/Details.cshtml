@@ -1,5 +1,36 @@
 @page "{id:guid}"
 @model OrcaFacil.Web.Pages.Clients.DetailsModel
-@{ViewData["Title"]="Detalhes do cliente"; var c=Model.Client!;}
-<header class="of-page-header"><div><p class="of-eyebrow">Cliente</p><h1>@c.Name</h1><p>@(c.PersonType==OrcaFacil.Domain.Enums.PersonType.Company?"Pessoa Jurídica":"Pessoa Física") • @Model.MaskedDocument</p></div><a class="btn btn-outline-primary" asp-page="/Clients/Edit" asp-route-id="@c.Id">Editar</a></header>
-<div class="of-card"><dl class="row"><dt class="col-sm-3">Razão social</dt><dd class="col-sm-9">@c.LegalName</dd><dt class="col-sm-3">Nome fantasia</dt><dd class="col-sm-9">@c.TradeName</dd><dt class="col-sm-3">E-mail</dt><dd class="col-sm-9">@c.Email</dd><dt class="col-sm-3">Telefone</dt><dd class="col-sm-9">@c.Phone</dd><dt class="col-sm-3">Cidade</dt><dd class="col-sm-9">@c.City</dd><dt class="col-sm-3">Endereço</dt><dd class="col-sm-9">@c.Address</dd><dt class="col-sm-3">Observações</dt><dd class="col-sm-9">@c.Notes</dd></dl></div>
+@using OrcaFacil.Domain.Enums
+@{
+    ViewData["Title"] = "Detalhes do cliente";
+    var c = Model.Client!;
+}
+<header class="of-page-header">
+    <div>
+        <p class="of-eyebrow"><i class="bi bi-people me-2"></i>Cliente 360°</p>
+        <h1>@c.Name</h1>
+        <p>@(c.PersonType == PersonType.Company ? "Pessoa Jurídica" : "Pessoa Física") • @Model.MaskedDocument</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-primary" asp-page="/Documents/CreateBudget" asp-route-clientId="@c.Id"><i class="bi bi-file-earmark-plus me-2"></i>Criar orçamento para este cliente</a>
+        <a class="btn btn-success" asp-page="/Documents/CreateReceipt" asp-route-clientId="@c.Id"><i class="bi bi-receipt me-2"></i>Criar recibo para este cliente</a>
+        <a class="btn btn-outline-primary" asp-page="/Clients/Edit" asp-route-id="@c.Id"><i class="bi bi-pencil me-2"></i>Editar</a>
+    </div>
+</header>
+
+<section class="row g-3 mb-3">
+    <div class="col-md-3"><div class="of-card h-100"><span class="text-muted">Orçamentos</span><strong class="d-block h4">@Model.Budgets.Count</strong><small>@Model.TotalBudgetAmount.ToString("C") no total</small></div></div>
+    <div class="col-md-3"><div class="of-card h-100"><span class="text-muted">Aprovado</span><strong class="d-block h4">@Model.TotalApprovedAmount.ToString("C")</strong><small>Valor total aprovado</small></div></div>
+    <div class="col-md-3"><div class="of-card h-100"><span class="text-muted">Recibos</span><strong class="d-block h4">@Model.Receipts.Count</strong><small>Documentos emitidos</small></div></div>
+    <div class="col-md-3"><div class="of-card h-100"><span class="text-muted">Último contato</span><strong class="d-block h5">@Model.LastContactAt?.ToString("dd/MM/yyyy")</strong><small>@(Model.LastDocument?.Number ?? "Sem documentos")</small></div></div>
+</section>
+
+<section class="of-card mb-3">
+    <div class="d-flex flex-wrap gap-2 mb-3"><span class="badge text-bg-primary">@(c.CreatedAt >= DateTime.UtcNow.AddDays(-30) ? "Novo" : "Recorrente")</span><span class="badge text-bg-warning text-dark">Prioridade</span>@if (c.UpdatedAt.HasValue && c.UpdatedAt.Value < DateTime.UtcNow.AddDays(-180)){<span class="badge text-bg-secondary">Inativo</span>}</div>
+    <dl class="row mb-0"><dt class="col-sm-3">Razão social</dt><dd class="col-sm-9">@c.LegalName</dd><dt class="col-sm-3">Nome fantasia</dt><dd class="col-sm-9">@c.TradeName</dd><dt class="col-sm-3">E-mail</dt><dd class="col-sm-9">@c.Email</dd><dt class="col-sm-3">Telefone</dt><dd class="col-sm-9">@c.Phone</dd><dt class="col-sm-3">Cidade</dt><dd class="col-sm-9">@c.City</dd><dt class="col-sm-3">Endereço</dt><dd class="col-sm-9">@c.Address</dd><dt class="col-sm-3">Histórico de interações</dt><dd class="col-sm-9">@c.Notes</dd></dl>
+</section>
+
+<div class="row g-3">
+    <section class="col-lg-6"><div class="of-card h-100"><h2 class="h5">Orçamentos do cliente</h2><partial name="_ClientDocumentList" model="Model.Budgets" /></div></section>
+    <section class="col-lg-6"><div class="of-card h-100"><h2 class="h5">Recibos do cliente</h2><partial name="_ClientDocumentList" model="Model.Receipts" /></div></section>
+</div>
