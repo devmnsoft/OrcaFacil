@@ -3,25 +3,40 @@
 @using OrcaFacil.Domain.Enums
 @{
     ViewData["Title"] = "Clientes";
+    var hasPrevious = Model.PageNumber > 1;
+    var hasNext = Model.PageNumber < Model.TotalPages;
+}
+
+@if (TempData["Success"] is string successMessage)
+{
+    <div class="alert alert-success d-flex align-items-center" role="status"><i class="bi bi-check-circle me-2"></i>@successMessage</div>
+}
+@if (TempData["Error"] is string errorMessage)
+{
+    <div class="alert alert-danger d-flex align-items-center" role="alert"><i class="bi bi-exclamation-triangle me-2"></i>@errorMessage</div>
 }
 
 <header class="of-page-header">
     <div>
-        <p class="of-eyebrow">Clientes</p>
-        <h1>Clientes salvos</h1>
-        <p>Gerencie clientes para reutilizar dados em orçamentos e recibos.</p>
+        <p class="of-eyebrow"><i class="bi bi-people me-2"></i>Clientes</p>
+        <h1>Clientes</h1>
+        <p>Consulte, filtre e mantenha os dados de clientes para preencher orçamentos e recibos mais rapidamente.</p>
     </div>
     <a class="btn btn-primary" asp-page="/Clients/Create"><i class="bi bi-person-plus me-2"></i>Novo cliente</a>
 </header>
 
-<section class="of-card mb-3">
+<section class="of-card mb-3" aria-labelledby="clientFiltersTitle">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 id="clientFiltersTitle" class="h5 mb-0"><i class="bi bi-search me-2"></i>Filtros</h2>
+        <span class="text-muted">@Model.TotalItems cliente(s) encontrado(s)</span>
+    </div>
     <form method="get" class="row g-3 align-items-end">
         <div class="col-md-3">
             <label class="form-label" asp-for="Search">Nome</label>
             <input class="form-control" asp-for="Search" placeholder="Buscar por nome" />
         </div>
         <div class="col-md-2">
-            <label class="form-label" asp-for="Document">CPF/CNPJ</label>
+            <label class="form-label" asp-for="Document">CPF ou CNPJ</label>
             <input class="form-control" asp-for="Document" placeholder="Somente números" />
         </div>
         <div class="col-md-2">
@@ -32,7 +47,7 @@
         </div>
         <div class="col-md-2">
             <label class="form-label" asp-for="City">Cidade</label>
-            <input class="form-control" asp-for="City" />
+            <input class="form-control" asp-for="City" placeholder="Filtrar por cidade" />
         </div>
         <div class="col-md-2">
             <label class="form-label" asp-for="Sort">Ordenação</label>
@@ -43,8 +58,11 @@
                 <option value="created_desc">Mais recentes</option>
             </select>
         </div>
-        <div class="col-md-1 d-grid">
-            <button class="btn btn-outline-primary" type="submit">Filtrar</button>
+        <div class="col-md-1 d-grid gap-2">
+            <button class="btn btn-outline-primary" type="submit"><i class="bi bi-search me-1"></i>Filtrar</button>
+        </div>
+        <div class="col-12">
+            <a class="btn btn-link px-0" asp-page="/Clients/Index"><i class="bi bi-x-circle me-1"></i>Limpar filtros</a>
         </div>
     </form>
 </section>
@@ -52,43 +70,87 @@
 <section class="of-card">
 @if (Model.Clients.Count == 0)
 {
-    <partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Nenhum cliente encontrado.", Text="Cadastre seu primeiro cliente ou ajuste os filtros de busca.", ActionText="Novo cliente", ActionPage="/Clients/Create", Icon="bi-people" }' />
+    <div class="text-center py-5">
+        <i class="bi bi-people display-4 text-primary" aria-hidden="true"></i>
+        @if (Model.HasFilters)
+        {
+            <h2 class="h4 mt-3">Nenhum cliente encontrado.</h2>
+            <p class="text-muted">Altere os filtros ou limpe a busca para ver outros clientes.</p>
+            <a class="btn btn-outline-primary" asp-page="/Clients/Index"><i class="bi bi-x-circle me-2"></i>Limpar filtros</a>
+        }
+        else
+        {
+            <h2 class="h4 mt-3">Você ainda não cadastrou clientes.</h2>
+            <p class="text-muted">Cadastre clientes para preencher seus orçamentos e recibos mais rapidamente.</p>
+            <a class="btn btn-primary" asp-page="/Clients/Create"><i class="bi bi-person-plus me-2"></i>Cadastrar primeiro cliente</a>
+        }
+    </div>
 }
 else
 {
-    <div class="table-responsive">
+    <div class="table-responsive d-none d-lg-block">
         <table class="table align-middle">
-            <thead>
-                <tr><th>Nome</th><th>Tipo</th><th>CPF/CNPJ</th><th>Cidade</th><th>Contato</th><th class="text-end">Ações</th></tr>
-            </thead>
+            <thead><tr><th>Nome</th><th>Tipo</th><th>CPF/CNPJ</th><th>Cidade</th><th>Contato</th><th>Tag</th><th class="text-end">Ações</th></tr></thead>
             <tbody>
             @foreach (var client in Model.Clients)
             {
                 <tr>
                     <td><strong>@client.Name</strong><br /><small class="text-muted">@client.TradeName</small></td>
-                    <td>@(client.PersonType == PersonType.Company ? "PJ" : "PF")</td>
-                    <td>@IndexModel.Mask(client)</td>
+                    <td><span class="badge text-bg-light border"><i class="bi @(client.PersonType == PersonType.Company ? "bi-building" : "bi-person") me-1"></i>@client.PersonTypeLabel</span></td>
+                    <td>@client.MaskedDocument</td>
                     <td>@client.City</td>
                     <td><small>@client.Email<br />@client.Phone</small></td>
-                    <td class="text-end">
-                        <a class="btn btn-sm btn-outline-secondary" asp-page="/Clients/Details" asp-route-id="@client.Id">Detalhar</a>
-                        <a class="btn btn-sm btn-outline-primary" asp-page="/Clients/Edit" asp-route-id="@client.Id">Editar</a>
-                        <form method="post" asp-page-handler="Delete" asp-route-id="@client.Id" class="d-inline" onsubmit="return confirm('Excluir este cliente?');">
-                            <button class="btn btn-sm btn-outline-danger" type="submit">Excluir</button>
-                        </form>
-                    </td>
+                    <td><span class="badge text-bg-primary">@OrcaFacil.Web.Pages.Clients.IndexModel.GetClientTag(client)</span></td>
+                    <td class="text-end"><partial name="_ClientActions" model="client" /></td>
                 </tr>
             }
             </tbody>
         </table>
     </div>
-    <nav aria-label="Paginação de clientes">
+
+    <div class="d-grid gap-3 d-lg-none">
+        @foreach (var client in Model.Clients)
+        {
+            <article class="border rounded-3 p-3">
+                <div class="d-flex justify-content-between gap-2"><h2 class="h5 mb-1">@client.Name</h2><span class="badge text-bg-primary align-self-start">@OrcaFacil.Web.Pages.Clients.IndexModel.GetClientTag(client)</span></div>
+                <p class="mb-1 text-muted">@client.PersonTypeName • @client.MaskedDocument</p>
+                <p class="mb-3"><i class="bi bi-geo-alt me-1"></i>@(client.City ?? "Cidade não informada")</p>
+                <partial name="_ClientActions" model="client" />
+            </article>
+        }
+    </div>
+
+    <nav class="mt-4" aria-label="Paginação de clientes">
         <ul class="pagination justify-content-end">
+            <li class="page-item @(!hasPrevious ? "disabled" : null)">
+                <a class="page-link" asp-page="/Clients/Index" asp-route-pageNumber="@(Model.PageNumber - 1)" asp-route-search="@Model.Search" asp-route-document="@Model.Document" asp-route-personType="@Model.PersonType" asp-route-city="@Model.City" asp-route-sort="@Model.Sort" aria-disabled="@(!hasPrevious)">Anterior</a>
+            </li>
             @for (var page = 1; page <= Model.TotalPages; page++)
             {
-                <li class="page-item @(page == Model.PageNumber ? "active" : null)"><a class="page-link" asp-route-pageIndex="@page" asp-route-search="@Model.Search" asp-route-document="@Model.Document" asp-route-personType="@Model.PersonType" asp-route-city="@Model.City" asp-route-sort="@Model.Sort">@page</a></li>
+                <li class="page-item @(page == Model.PageNumber ? "active" : null)"><a class="page-link" asp-page="/Clients/Index" asp-route-pageNumber="@page" asp-route-search="@Model.Search" asp-route-document="@Model.Document" asp-route-personType="@Model.PersonType" asp-route-city="@Model.City" asp-route-sort="@Model.Sort">@page</a></li>
             }
+            <li class="page-item @(!hasNext ? "disabled" : null)">
+                <a class="page-link" asp-page="/Clients/Index" asp-route-pageNumber="@(Model.PageNumber + 1)" asp-route-search="@Model.Search" asp-route-document="@Model.Document" asp-route-personType="@Model.PersonType" asp-route-city="@Model.City" asp-route-sort="@Model.Sort" aria-disabled="@(!hasNext)">Próxima</a>
+            </li>
         </ul>
     </nav>
 }
 </section>
+
+<div class="modal fade" id="deleteClientModal" tabindex="-1" aria-labelledby="deleteClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5" id="deleteClientModalLabel">Deseja remover este cliente?</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div><div class="modal-body">O cliente será removido da sua lista, mas documentos antigos continuarão preservados.</div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-danger" id="confirmDeleteClient"><i class="bi bi-trash me-2"></i>Remover cliente</button></div></div></div>
+</div>
+
+@section Scripts {
+<script>
+    let pendingDeleteForm = null;
+    document.querySelectorAll('[data-delete-client]').forEach((form) => {
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            pendingDeleteForm = form;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteClientModal')).show();
+        });
+    });
+    document.getElementById('confirmDeleteClient')?.addEventListener('click', () => pendingDeleteForm?.submit());
+</script>
+}

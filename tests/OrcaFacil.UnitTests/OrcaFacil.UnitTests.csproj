@@ -12,6 +12,7 @@
     <ProjectReference Include="..\..\src\OrcaFacil.Application\OrcaFacil.Application.csproj" />
     <ProjectReference Include="..\..\src\OrcaFacil.Infrastructure\OrcaFacil.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\OrcaFacil.Persistence\OrcaFacil.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\OrcaFacil.Web\OrcaFacil.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>
