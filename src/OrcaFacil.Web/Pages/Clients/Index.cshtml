@@ -125,9 +125,9 @@ else
             <li class="page-item @(!hasPrevious ? "disabled" : null)">
                 <a class="page-link" asp-page="/Clients/Index" asp-route-pageNumber="@(Model.PageNumber - 1)" asp-route-search="@Model.Search" asp-route-document="@Model.Document" asp-route-personType="@Model.PersonType" asp-route-city="@Model.City" asp-route-sort="@Model.Sort" aria-disabled="@(!hasPrevious)">Anterior</a>
             </li>
-            @for (var page = 1; page <= Model.TotalPages; page++)
+            @for (var pageNumber = 1; pageNumber <= Model.TotalPages; pageNumber++)
             {
-                <li class="page-item @(page == Model.PageNumber ? "active" : null)"><a class="page-link" asp-page="/Clients/Index" asp-route-pageNumber="@page" asp-route-search="@Model.Search" asp-route-document="@Model.Document" asp-route-personType="@Model.PersonType" asp-route-city="@Model.City" asp-route-sort="@Model.Sort">@page</a></li>
+                <li class="page-item @(pageNumber == Model.PageNumber ? "active" : null)"><a class="page-link" asp-page="/Clients/Index" asp-route-pageNumber="@pageNumber" asp-route-search="@Model.Search" asp-route-document="@Model.Document" asp-route-personType="@Model.PersonType" asp-route-city="@Model.City" asp-route-sort="@Model.Sort">@pageNumber</a></li>
             }
             <li class="page-item @(!hasNext ? "disabled" : null)">
                 <a class="page-link" asp-page="/Clients/Index" asp-route-pageNumber="@(Model.PageNumber + 1)" asp-route-search="@Model.Search" asp-route-document="@Model.Document" asp-route-personType="@Model.PersonType" asp-route-city="@Model.City" asp-route-sort="@Model.Sort" aria-disabled="@(!hasNext)">Próxima</a>
