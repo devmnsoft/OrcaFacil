@@ -7,7 +7,7 @@ public class Client : Entity
 {
     public Guid UserId { get; set; }
     public PersonType PersonType { get; set; } = PersonType.Individual;
-    public DocumentType? DocumentType { get; set; } = Enums.DocumentType.CPF;
+    public BrazilianDocumentType? DocumentType { get; set; } = Enums.BrazilianDocumentType.CPF;
     public string? DocumentNumber { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? TradeName { get; set; }
@@ -20,11 +20,11 @@ public class Client : Entity
 
     public void NormalizeAndValidate()
     {
-        DocumentType = PersonType == PersonType.Company ? Enums.DocumentType.CNPJ : Enums.DocumentType.CPF;
+        DocumentType = PersonType == PersonType.Company ? Enums.BrazilianDocumentType.CNPJ : Enums.BrazilianDocumentType.CPF;
         DocumentNumber = BrazilianDocument.Normalize(DocumentNumber);
-        if (!BrazilianDocument.HasBasicValidLength(DocumentType, DocumentNumber))
+        if (!BrazilianDocument.HasValidCheckDigits(DocumentType, DocumentNumber))
         {
-            throw new InvalidOperationException(DocumentType == Enums.DocumentType.CNPJ ? "CNPJ inválido. Informe 14 números." : "CPF inválido. Informe 11 números.");
+            throw new InvalidOperationException(DocumentType == Enums.BrazilianDocumentType.CNPJ ? "CNPJ inválido. Informe um CNPJ válido." : "CPF inválido. Informe um CPF válido.");
         }
         Touch();
     }
