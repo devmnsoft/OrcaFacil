@@ -15,6 +15,8 @@ public class AuthService
     private readonly IRepository<AccountMember> _members;
     private readonly IRepository<BillingCustomerProfile> _billingProfiles;
     private readonly IRepository<Subscription> _subscriptions;
+    private readonly IRepository<Plan> _plans;
+    private readonly IRepository<PlanVersion> _planVersions;
     private readonly IRepository<IssuerProfile> _issuerProfiles;
     private readonly IRepository<Notification> _notificationRepository;
     private readonly IPasswordHasher _hasher;
@@ -24,7 +26,8 @@ public class AuthService
 
     public AuthService(IRepository<UserAccount> users, IRepository<BusinessAccount> accounts,
         IRepository<AccountMember> members, IRepository<BillingCustomerProfile> billingProfiles,
-        IRepository<Subscription> subscriptions, IRepository<IssuerProfile> issuerProfiles,
+        IRepository<Subscription> subscriptions, IRepository<Plan> plans, IRepository<PlanVersion> planVersions,
+        IRepository<IssuerProfile> issuerProfiles,
         IRepository<Notification> notificationRepository, IPasswordHasher hasher, IUnitOfWork uow,
         IAuditService audit, ILogger<AuthService> logger)
     {
@@ -33,6 +36,8 @@ public class AuthService
         _members = members;
         _billingProfiles = billingProfiles;
         _subscriptions = subscriptions;
+        _plans = plans;
+        _planVersions = planVersions;
         _issuerProfiles = issuerProfiles;
         _notificationRepository = notificationRepository;
         _hasher = hasher;
@@ -76,13 +81,25 @@ public class AuthService
             if (_accounts.Query().Any(account => account.DocumentNumber == document && !account.IsDeleted))
                 return Result<UserSummaryDto>.Fail("Já existe uma conta vinculada a este CPF/CNPJ. Entre com seu e-mail ou use a recuperação de acesso.");
 
+            var now = DateTime.UtcNow;
+            var freePlan = _plans.Query().SingleOrDefault(x => x.Code == "FREE" && x.IsActive && !x.IsDeleted);
+            var freeVersion = freePlan is null ? null : _planVersions.Query()
+                .Where(x => x.PlanId == freePlan.Id && x.Status == PlanVersionStatus.Published && !x.IsDeleted &&
+                            x.ValidFrom <= now && (x.ValidUntil == null || x.ValidUntil > now))
+                .OrderByDescending(x => x.VersionNumber).FirstOrDefault();
+            if (freeVersion is null)
+            {
+                _logger.LogCritical("ACCOUNT_REGISTRATION_BLOCKED_FREE_PLAN_CONFIGURATION_MISSING");
+                return Result<UserSummaryDto>.Fail("Não foi possível preparar seu plano grátis agora. Tente novamente em instantes.");
+            }
+
             var user = new UserAccount
             {
                 Name = command.Name.Trim(),
                 Email = email,
                 PasswordHash = _hasher.Hash(command.Password),
-                AcceptedTermsAt = DateTime.UtcNow,
-                AcceptedPrivacyAt = DateTime.UtcNow,
+                AcceptedTermsAt = now,
+                AcceptedPrivacyAt = now,
             };
 
             var accountName = command.AccountType == PersonType.Company
@@ -107,7 +124,13 @@ public class AuthService
                 Complement = command.Complement?.Trim(), District = command.District?.Trim(),
                 City = command.City.Trim(), State = command.State.Trim().ToUpperInvariant()
             };
-            var subscription = new Subscription { AccountId = account.Id, UserId = user.Id, Plan = PlanType.Free, Status = SubscriptionStatus.Free, Provider = "None", PriceAtActivation = 0m, Amount = 0m, StartedAt = DateTime.UtcNow };
+            var subscription = new Subscription
+            {
+                AccountId = account.Id, UserId = user.Id, Plan = PlanType.Free,
+                SelectedPlanVersionId = freeVersion.Id, EffectivePlanVersionId = freeVersion.Id,
+                Status = SubscriptionStatus.Free, Provider = "None", PriceAtActivation = 0m,
+                Amount = 0m, StartedAt = now
+            };
             var issuer = new IssuerProfile { UserId = user.Id, BusinessName = account.DisplayName, DocumentNumber = document, Phone = command.Phone.Trim(), Email = email, City = command.City.Trim(), Address = BuildAddress(command) };
             var notification = new Notification { AccountId = account.Id, UserId = user.Id, Title = "Conta criada", Message = "Conta criada. Vamos preparar seu espaço.", Type = NotificationType.Success, Category = NotificationCategory.Account, ActionUrl = "/Onboarding", ActionText = "Continuar" };
 
