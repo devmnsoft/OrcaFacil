@@ -20,6 +20,7 @@ using OrcaFacil.Persistence.Repositories;
 using OrcaFacil.Web.Health;
 using OrcaFacil.Persistence.Diagnostics;
 using OrcaFacil.Persistence.Plans;
+using OrcaFacil.Web.Services;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -39,6 +40,7 @@ builder.Services.AddScoped<IDocumentQueries, DocumentQueries>();
 builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
 builder.Services.AddScoped<SuperAdminDashboardQueries>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<ICurrentAccountService, CurrentAccountService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<ILoggerService, LoggerService>();
 builder.Services.AddScoped<AuthService>();
