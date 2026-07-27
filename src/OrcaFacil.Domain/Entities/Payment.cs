@@ -8,6 +8,7 @@ public class Payment : Entity
     public Guid? AccountId { get; set; }
     public Guid UserId { get; set; }
     public Guid? SubscriptionId { get; set; }
+    public Guid? BillingInvoiceId { get; set; }
     public string Provider { get; set; } = "Manual";
     public PaymentStatus Status { get; set; }
     public PlanType Plan { get; set; }

@@ -481,6 +481,17 @@ INSERT INTO orcafacil.plans (code,display_name,short_description,is_free,is_reco
 INSERT INTO orcafacil.roles(code,display_name,is_platform_role) VALUES ('SuperAdministrator','SuperAdministrador',true),('PlatformSupport','Suporte da plataforma',true),('PlatformFinance','Financeiro da plataforma',true),('PlatformAuditor','Auditoria da plataforma',true),('Owner','Titular',false),('Administrator','Administrador',false),('Collaborator','Colaborador',false),('Viewer','Leitor',false) ON CONFLICT(code) DO NOTHING;
 INSERT INTO orcafacil.permissions(code,display_name,is_platform_permission) SELECT code,code,false FROM unnest(ARRAY['account.view','account.edit','members.view','members.manage','clients.view','clients.create','clients.edit','clients.delete','documents.view','documents.create','documents.edit','documents.delete','pdf.generate','billing.view','billing.manage','reports.view','exports.create']) code ON CONFLICT(code) DO NOTHING;
 
+-- Isolamento e sessões revogáveis (transição aditiva; UserId continua como autoria)
+ALTER TABLE orcafacil.documents ADD COLUMN IF NOT EXISTS client_id uuid REFERENCES orcafacil.clients(id) ON DELETE SET NULL;
+ALTER TABLE orcafacil.user_usage ADD COLUMN IF NOT EXISTS account_id uuid REFERENCES orcafacil.business_accounts(id);
+ALTER TABLE orcafacil.public_quotes ADD COLUMN IF NOT EXISTS account_id uuid REFERENCES orcafacil.business_accounts(id);
+ALTER TABLE orcafacil.payments ADD COLUMN IF NOT EXISTS billing_invoice_id uuid REFERENCES orcafacil.billing_invoices(id);
+ALTER TABLE orcafacil.users ADD COLUMN IF NOT EXISTS session_version integer NOT NULL DEFAULT 1;
+CREATE INDEX IF NOT EXISTS ix_documents_account_client ON orcafacil.documents(account_id,client_id);
+CREATE INDEX IF NOT EXISTS ix_user_usage_account_period ON orcafacil.user_usage(account_id,period);
+CREATE INDEX IF NOT EXISTS ix_public_quotes_account_created ON orcafacil.public_quotes(account_id,created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_payments_idempotency_key ON orcafacil.payments(idempotency_key) WHERE idempotency_key IS NOT NULL;
+
 INSERT INTO orcafacil.plan_versions(id,plan_id,version_number,monthly_price,annual_price,currency,valid_from,status,published_at)
 SELECT md5(p.code || ':v1')::uuid,p.id,1,v.monthly,v.annual,'BRL',now(),'Published',now() FROM orcafacil.plans p JOIN (VALUES ('FREE',0::numeric,0::numeric),('PROFESSIONAL',24.90,249),('BUSINESS',49.90,499)) v(code,monthly,annual) ON v.code=p.code ON CONFLICT(plan_id,version_number) DO NOTHING;
 INSERT INTO orcafacil.features(id,code,display_name,description,value_type,category)

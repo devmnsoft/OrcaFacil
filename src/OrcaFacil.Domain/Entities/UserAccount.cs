@@ -18,4 +18,11 @@ public class UserAccount : Entity
     public DateTime? AcceptedPrivacyAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
     public DateTime? LastSeenAt { get; set; }
+    public int SessionVersion { get; private set; } = 1;
+
+    public void RevokeSessions()
+    {
+        checked { SessionVersion++; }
+        Touch();
+    }
 }

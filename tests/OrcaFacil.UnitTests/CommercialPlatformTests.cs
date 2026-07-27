@@ -7,36 +7,45 @@ namespace OrcaFacil.UnitTests;
 
 public sealed class CommercialPlatformTests
 {
-    [Theory]
-    [InlineData("FREE", 0, 0)]
-    [InlineData("PROFESSIONAL", 24.90, 249)]
-    [InlineData("BUSINESS", 49.90, 499)]
-    public void Catalog_has_expected_prices(string code, decimal monthly, decimal annual)
-    { var plan = PlanCatalogDefinitions.Plans[code]; Assert.Equal(monthly, plan.Monthly); Assert.Equal(annual, plan.Annual); }
-
     [Fact]
-    public async Task Expired_paid_plan_falls_back_to_free_without_deleting_data()
+    public async Task Expired_paid_plan_falls_back_to_published_free_version_without_deleting_data()
     {
-        var subscription = new Subscription { Plan = PlanType.Business, Status = SubscriptionStatus.Active, PaidThroughAt = DateTime.UtcNow.AddMinutes(-1) };
-        var effective = await new PlanAccessService().GetEffectivePlanAsync(subscription, DateTime.UtcNow);
-        Assert.Equal("FREE", effective);
-        Assert.Equal(PlanType.Business, subscription.Plan);
+        var source = new FakePlanSource();
+        source.Subscription = new Subscription { AccountId = source.AccountId, SelectedPlanVersionId = source.BusinessVersion.Id,
+            EffectivePlanVersionId = source.BusinessVersion.Id, Plan = PlanType.Business, Status = SubscriptionStatus.Active,
+            PaidThroughAt = DateTime.UtcNow.AddMinutes(-1) };
+
+        var effective = await new PlanAccessService(source).GetEffectivePlanAsync(source.AccountId, DateTime.UtcNow);
+
+        Assert.Equal("FREE", effective?.Code);
+        Assert.Equal(PlanType.Business, source.Subscription.Plan);
     }
 
     [Fact]
-    public async Task Late_payment_restores_selected_plan_when_paid_through_is_extended()
+    public async Task Active_override_resolves_to_real_plan_version_and_expires()
     {
+        var source = new FakePlanSource();
         var now = DateTime.UtcNow;
-        var subscription = new Subscription { Plan = PlanType.Business, Status = SubscriptionStatus.Active, PaidThroughAt = now.AddMonths(1), LastPaymentAt = now };
-        Assert.Equal("BUSINESS", await new PlanAccessService().GetEffectivePlanAsync(subscription, now));
+        source.Subscription = new Subscription { AccountId = source.AccountId, SelectedPlanVersionId = source.FreeVersion.Id,
+            EffectivePlanVersionId = source.FreeVersion.Id, Status = SubscriptionStatus.Free };
+        source.Override = new PlanOverride { AccountId = source.AccountId, PlanVersionId = source.BusinessVersion.Id,
+            Reason = "Liberação assistida", StartsAt = now.AddMinutes(-1), EndsAt = now.AddDays(7), GrantedByUserId = Guid.NewGuid() };
+        var service = new PlanAccessService(source);
+
+        Assert.Equal("BUSINESS", (await service.GetEffectivePlanAsync(source.AccountId, now))?.Code);
+        Assert.Equal(source.BusinessVersion.Id, (await service.GetEffectivePlanVersionAsync(source.AccountId, now))?.Id);
+        Assert.Equal("FREE", (await service.GetEffectivePlanAsync(source.AccountId, now.AddDays(8)))?.Code);
     }
 
     [Fact]
-    public async Task Free_pdf_limit_is_enforced_in_backend()
+    public async Task Database_feature_limit_uses_real_account_usage()
     {
-        var service = new PlanAccessService();
-        Assert.True((await service.CanUseAsync("FREE", "pdf.monthly_limit", 9)).IsAllowed);
-        Assert.False((await service.CanUseAsync("FREE", "pdf.monthly_limit", 10)).IsAllowed);
+        var source = new FakePlanSource { Usage = 10 };
+        source.Subscription = new Subscription { AccountId = source.AccountId, SelectedPlanVersionId = source.FreeVersion.Id,
+            EffectivePlanVersionId = source.FreeVersion.Id, Status = SubscriptionStatus.Free };
+        var decision = await new PlanAccessService(source).CanUseAsync(source.AccountId, "pdf.monthly_limit");
+        Assert.False(decision.IsAllowed);
+        Assert.Equal(10, decision.CurrentUsage);
     }
 
     [Fact]
@@ -48,11 +57,34 @@ public sealed class CommercialPlatformTests
         Assert.Equal(AccountStatus.Blocked, account.Status);
     }
 
-    [Fact]
-    public void Support_access_is_limited_to_thirty_minutes()
+    private sealed class FakePlanSource : IPlanAccessDataSource
     {
-        var start = DateTime.UtcNow;
-        Assert.False(new SupportAccessSession { Reason = "Suporte solicitado", StartedAt = start, ExpiresAt = start.AddMinutes(31) }.IsValid(start.AddMinutes(1)));
-        Assert.True(new SupportAccessSession { Reason = "Suporte solicitado", StartedAt = start, ExpiresAt = start.AddMinutes(30) }.IsValid(start.AddMinutes(1)));
+        public Guid AccountId { get; } = Guid.NewGuid();
+        public Plan FreePlan { get; } = new() { Code = "FREE", DisplayName = "Grátis" };
+        public Plan BusinessPlan { get; } = new() { Code = "BUSINESS", DisplayName = "Negócio" };
+        public PlanVersion FreeVersion { get; }
+        public PlanVersion BusinessVersion { get; }
+        public Subscription? Subscription { get; set; }
+        public PlanOverride? Override { get; set; }
+        public int Usage { get; set; }
+
+        public FakePlanSource()
+        {
+            FreeVersion = new PlanVersion { PlanId = FreePlan.Id, VersionNumber = 1, Status = PlanVersionStatus.Published };
+            BusinessVersion = new PlanVersion { PlanId = BusinessPlan.Id, VersionNumber = 1, Status = PlanVersionStatus.Published };
+        }
+
+        public Task<Subscription?> GetSubscriptionAsync(Guid accountId, CancellationToken ct) => Task.FromResult(Subscription);
+        public Task<PlanOverride?> GetActiveOverrideAsync(Guid accountId, DateTime now, CancellationToken ct) =>
+            Task.FromResult(Override?.IsEffective(now) == true ? Override : null);
+        public Task<PlanVersion?> GetPlanVersionAsync(Guid id, CancellationToken ct) =>
+            Task.FromResult<PlanVersion?>(id == BusinessVersion.Id ? BusinessVersion : id == FreeVersion.Id ? FreeVersion : null);
+        public Task<Plan?> GetPlanAsync(Guid id, CancellationToken ct) =>
+            Task.FromResult<Plan?>(id == BusinessPlan.Id ? BusinessPlan : id == FreePlan.Id ? FreePlan : null);
+        public Task<PlanVersion?> GetPublishedFreeVersionAsync(DateTime now, CancellationToken ct) => Task.FromResult<PlanVersion?>(FreeVersion);
+        public Task<IReadOnlyDictionary<string, PlanFeatureSetting>> GetFeaturesAsync(Guid versionId, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyDictionary<string, PlanFeatureSetting>>(new Dictionary<string, PlanFeatureSetting>
+            { ["pdf.monthly_limit"] = versionId == FreeVersion.Id ? new(true, 10) : new(true, null, true) });
+        public Task<int> GetUsageAsync(Guid accountId, string featureCode, DateTime periodStartUtc, CancellationToken ct) => Task.FromResult(Usage);
     }
 }

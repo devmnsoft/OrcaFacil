@@ -23,6 +23,7 @@ public class UserAccountConfiguration : IEntityTypeConfiguration<UserAccount>
         builder.Property(x => x.AcceptedPrivacyAt).HasColumnName("accepted_privacy_at");
         builder.Property(x => x.LastLoginAt).HasColumnName("last_login_at");
         builder.Property(x => x.LastSeenAt).HasColumnName("last_seen_at");
+        builder.Property(x => x.SessionVersion).HasColumnName("session_version").HasDefaultValue(1);
         builder.HasIndex(x => x.Email).IsUnique();
     }
 }

@@ -4,6 +4,7 @@ namespace OrcaFacil.Domain.Entities;
 
 public class UserUsage : Entity
 {
+    public Guid? AccountId { get; set; }
     public Guid UserId { get; set; }
     public string Period { get; set; } = string.Empty;
     public int DocumentsCreated { get; set; }

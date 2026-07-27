@@ -6,6 +6,7 @@ namespace OrcaFacil.Domain.Entities;
 
 public class PublicQuote : Entity
 {
+    public Guid? AccountId { get; set; }
     public string Token { get; set; } = new PublicToken().Value;
     public Guid OwnerUserId { get; set; }
     public Guid DocumentId { get; set; }
