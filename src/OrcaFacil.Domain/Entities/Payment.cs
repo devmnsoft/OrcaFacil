@@ -5,6 +5,7 @@ namespace OrcaFacil.Domain.Entities;
 
 public class Payment : Entity
 {
+    public Guid? AccountId { get; set; }
     public Guid UserId { get; set; }
     public Guid? SubscriptionId { get; set; }
     public string Provider { get; set; } = "Manual";

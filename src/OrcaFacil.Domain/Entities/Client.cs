@@ -5,6 +5,7 @@ namespace OrcaFacil.Domain.Entities;
 
 public class Client : Entity
 {
+    public Guid? AccountId { get; set; }
     public Guid UserId { get; set; }
     public PersonType PersonType { get; set; } = PersonType.Individual;
     public BrazilianDocumentType? DocumentType { get; set; } = BrazilianDocumentType.CPF;

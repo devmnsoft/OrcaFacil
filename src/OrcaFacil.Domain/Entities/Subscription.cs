@@ -5,6 +5,15 @@ namespace OrcaFacil.Domain.Entities;
 
 public class Subscription : Entity
 {
+    public Guid? AccountId { get; set; }
+    public Guid? SelectedPlanVersionId { get; set; }
+    public Guid? EffectivePlanVersionId { get; set; }
+    public decimal PriceAtActivation { get; set; }
+    public DateTime? PaidThroughAt { get; set; }
+    public DateTime? NextDueAt { get; set; }
+    public DateTime? PastDueSince { get; set; }
+    public DateTime? SuspendedAt { get; set; }
+    public DateTime? ManualReleaseUntil { get; set; }
     public Guid UserId { get; set; }
     public string Provider { get; set; } = "Manual";
     public SubscriptionStatus Status { get; set; }

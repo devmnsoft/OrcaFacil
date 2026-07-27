@@ -28,6 +28,20 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<MercadoPagoWebhookEvent> MercadoPagoWebhookEvents => Set<MercadoPagoWebhookEvent>();
     public DbSet<BudgetTemplate> BudgetTemplates => Set<BudgetTemplate>();
     public DbSet<BudgetTemplateItem> BudgetTemplateItems => Set<BudgetTemplateItem>();
+    public DbSet<BusinessAccount> BusinessAccounts => Set<BusinessAccount>();
+    public DbSet<AccountMember> AccountMembers => Set<AccountMember>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<Plan> Plans => Set<Plan>();
+    public DbSet<PlanVersion> PlanVersions => Set<PlanVersion>();
+    public DbSet<Feature> Features => Set<Feature>();
+    public DbSet<PlanFeatureValue> PlanFeatureValues => Set<PlanFeatureValue>();
+    public DbSet<SubscriptionEvent> SubscriptionEvents => Set<SubscriptionEvent>();
+    public DbSet<PlanOverride> PlanOverrides => Set<PlanOverride>();
+    public DbSet<BillingInvoice> BillingInvoices => Set<BillingInvoice>();
+    public DbSet<SupportAccessSession> SupportAccessSessions => Set<SupportAccessSession>();
+    public DbSet<ActivityEvent> ActivityEvents => Set<ActivityEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
