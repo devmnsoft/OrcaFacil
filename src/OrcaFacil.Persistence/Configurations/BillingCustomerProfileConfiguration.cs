@@ -15,5 +15,7 @@ public class BillingCustomerProfileConfiguration : IEntityTypeConfiguration<Bill
         builder.Property(x => x.DocumentNumber).HasMaxLength(20);
         builder.Property(x => x.Name).HasMaxLength(180).IsRequired();
         builder.HasIndex(x => x.UserId).IsUnique();
+        builder.HasIndex(x => x.AccountId).IsUnique();
+        builder.HasIndex(x => x.DocumentNumber).IsUnique();
     }
 }

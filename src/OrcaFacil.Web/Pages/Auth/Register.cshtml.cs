@@ -2,103 +2,93 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Auth;
+using OrcaFacil.Domain.Enums;
 using OrcaFacil.Web.Extensions;
 
 namespace OrcaFacil.Web.Pages.Auth;
 
 [AllowAnonymous]
-public class RegisterModel : PageModel
+public sealed class RegisterModel(AuthService authService, ILogger<RegisterModel> logger) : PageModel
 {
-    private readonly AuthService _authService;
-    private readonly IDatabaseDiagnosticsService _databaseDiagnostics;
-    private readonly ILogger<RegisterModel> _logger;
-
-    public RegisterModel(AuthService authService, IDatabaseDiagnosticsService databaseDiagnostics, ILogger<RegisterModel> logger)
-    {
-        _authService = authService;
-        _databaseDiagnostics = databaseDiagnostics;
-        _logger = logger;
-    }
-
     [BindProperty] public InputModel Input { get; set; } = new();
 
-    public record InputModel
+    public sealed class InputModel
     {
-        [Required(ErrorMessage = "Informe seu nome ou empresa.")]
-        public string Name { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Informe um e-mail válido."), EmailAddress(ErrorMessage = "Informe um e-mail válido.")]
-        public string Email { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "A senha precisa ter pelo menos 6 caracteres."), MinLength(6, ErrorMessage = "A senha precisa ter pelo menos 6 caracteres.")]
-        public string Password { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "As senhas não conferem."), Compare(nameof(Password), ErrorMessage = "As senhas não conferem.")]
-        public string ConfirmPassword { get; set; } = string.Empty;
-
-        [Range(typeof(bool), "true", "true", ErrorMessage = "Aceite os termos para continuar.")]
-        public bool AcceptTerms { get; set; }
-
-        [Range(typeof(bool), "true", "true", ErrorMessage = "Aceite a política de privacidade para continuar.")]
-        public bool AcceptPrivacy { get; set; }
+        [Required(ErrorMessage = "Escolha como você vai usar o OrçaFácil.")]
+        public PersonType? AccountType { get; set; }
+        [Required(ErrorMessage = "Informe seu CPF ou CNPJ.")] public string DocumentNumber { get; set; } = string.Empty;
+        [MaxLength(180)] public string Name { get; set; } = string.Empty;
+        public string? ProfessionalName { get; set; }
+        public string? LegalName { get; set; }
+        public string? TradeName { get; set; }
+        public string? ResponsibleName { get; set; }
+        [Required(ErrorMessage = "Informe seu telefone ou WhatsApp.")] public string Phone { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Informe um e-mail válido."), EmailAddress(ErrorMessage = "Informe um e-mail válido.")] public string Email { get; set; } = string.Empty;
+        public string? PostalCode { get; set; }
+        public string? Street { get; set; }
+        public string? StreetNumber { get; set; }
+        public string? Complement { get; set; }
+        public string? District { get; set; }
+        [Required(ErrorMessage = "Informe sua cidade.")] public string City { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Informe seu estado."), StringLength(2, MinimumLength = 2)] public string State { get; set; } = string.Empty;
+        [Required, MinLength(8, ErrorMessage = "A senha precisa ter pelo menos 8 caracteres.")] public string Password { get; set; } = string.Empty;
+        [Required, Compare(nameof(Password), ErrorMessage = "As senhas não conferem.")] public string ConfirmPassword { get; set; } = string.Empty;
+        [Range(typeof(bool), "true", "true", ErrorMessage = "Aceite os termos para continuar.")] public bool AcceptTerms { get; set; }
+        [Range(typeof(bool), "true", "true", ErrorMessage = "Aceite a política de privacidade para continuar.")] public bool AcceptPrivacy { get; set; }
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-        {
-            TempData.Warning("Revise os campos destacados para concluir seu cadastro.");
-            return Page();
-        }
+        ApplyConditionalValidation();
+        if (!ModelState.IsValid) return InvalidPage();
 
-        var correlationId = HttpContext.TraceIdentifier;
-        DatabaseDiagnosticsDto diagnostics;
+        var registrationName = Input.AccountType == PersonType.Company ? Input.ResponsibleName! : Input.Name;
+        var command = new RegisterUserCommand(Input.AccountType!.Value, Input.DocumentNumber, registrationName,
+            Input.ProfessionalName, Input.LegalName, Input.TradeName, Input.ResponsibleName, Input.Phone,
+            Input.Email, Input.PostalCode, Input.Street, Input.StreetNumber, Input.Complement, Input.District,
+            Input.City, Input.State, Input.Password, Input.AcceptTerms, Input.AcceptPrivacy);
         try
         {
-            diagnostics = await _databaseDiagnostics.CheckAsync(ct);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "DATABASE_DIAGNOSTIC_FAILED_REGISTER CorrelationId {CorrelationId} Operation {Operation}", correlationId, "Register");
-            diagnostics = new(false, false, [], [], null, null, ex.Message);
-        }
-
-        if (!diagnostics.CanConnect)
-        {
-            _logger.LogError("DATABASE_UNAVAILABLE_REGISTER CorrelationId {CorrelationId} Operation {Operation} Error {Error}", correlationId, "Register", diagnostics.Error);
-            ModelState.AddModelError(string.Empty, "Não foi possível concluir seu cadastro agora. Tente novamente em instantes ou fale com a MNSOFT.");
-            TempData.Error("Não foi possível concluir seu cadastro agora. Tente novamente em instantes ou fale com a MNSOFT.");
-            return Page();
-        }
-
-        try
-        {
-            var result = await _authService.RegisterAsync(new RegisterUserCommand(Input.Name, Input.Email, Input.Password, Input.AcceptTerms, Input.AcceptPrivacy), ct);
+            var result = await authService.RegisterAsync(command, ct);
             if (!result.Succeeded)
             {
-                ModelState.AddModelError(string.Empty, result.Error ?? "Cadastro inválido.");
-                TempData.Error(result.Error ?? "Não foi possível concluir o cadastro.");
-                return Page();
+                ModelState.AddModelError(string.Empty, result.Error ?? "Não foi possível concluir o cadastro.");
+                return InvalidPage();
             }
-
-            TempData.Success("Conta criada com sucesso. Agora vamos configurar seus dados.");
-            return RedirectToPage("/Auth/Login");
-        }
-        catch (Exception ex) when (ex.IsPostgresInvalidPassword())
-        {
-            _logger.LogError(ex, "POSTGRES_AUTH_FAILED_REGISTER SqlState {SqlState} DbUser {DbUser} CorrelationId {CorrelationId} Operation {Operation}", DatabaseExceptionExtensions.InvalidPasswordSqlState, "orcafacil_user", correlationId, "Register");
-            ModelState.AddModelError(string.Empty, "Não foi possível concluir seu cadastro agora. Tente novamente em instantes ou fale com a MNSOFT.");
-            TempData.Error("Não foi possível concluir seu cadastro agora. Tente novamente em instantes ou fale com a MNSOFT.");
-            return Page();
+            TempData.Success("Conta criada. Vamos preparar seu espaço.");
+            return RedirectToPage("/Onboarding/Index");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "REGISTER_UNEXPECTED_ERROR CorrelationId {CorrelationId} Operation {Operation}", correlationId, "Register");
-            ModelState.AddModelError(string.Empty, "Não foi possível concluir seu cadastro agora. Tente novamente em instantes ou fale com a MNSOFT.");
-            TempData.Error("Não foi possível concluir seu cadastro agora. Tente novamente em instantes ou fale com a MNSOFT.");
-            return Page();
+            var correlationId = HttpContext.TraceIdentifier;
+            logger.LogError(ex, "REGISTER_FAILED CorrelationId {CorrelationId}", correlationId);
+            ModelState.AddModelError(string.Empty, $"Não foi possível concluir seu cadastro agora. Tente novamente em alguns instantes. Se o problema continuar, informe o código {correlationId} ao suporte.");
+            return InvalidPage();
         }
+    }
+
+    private void ApplyConditionalValidation()
+    {
+        if (Input.AccountType != PersonType.Company)
+        {
+            Require(Input.Name, "Input.Name", "Informe seu nome completo.");
+            return;
+        }
+        Require(Input.LegalName, "Input.LegalName", "Informe a razão social.");
+        Require(Input.ResponsibleName, "Input.ResponsibleName", "Informe o nome do responsável.");
+        Require(Input.PostalCode, "Input.PostalCode", "Informe o CEP.");
+        Require(Input.Street, "Input.Street", "Informe a rua.");
+        Require(Input.StreetNumber, "Input.StreetNumber", "Informe o número.");
+        Require(Input.District, "Input.District", "Informe o bairro.");
+    }
+
+    private void Require(string? value, string key, string message) { if (string.IsNullOrWhiteSpace(value)) ModelState.AddModelError(key, message); }
+    private PageResult InvalidPage()
+    {
+        ModelState.Remove("Input.Password"); ModelState.Remove("Input.ConfirmPassword");
+        Input.Password = string.Empty; Input.ConfirmPassword = string.Empty;
+        TempData.Warning("Revise os campos destacados para concluir seu cadastro.");
+        return Page();
     }
 }

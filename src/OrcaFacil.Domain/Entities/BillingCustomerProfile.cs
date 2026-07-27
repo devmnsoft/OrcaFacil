@@ -5,6 +5,7 @@ namespace OrcaFacil.Domain.Entities;
 
 public class BillingCustomerProfile : Entity
 {
+    public Guid AccountId { get; set; }
     public Guid UserId { get; set; }
     public PersonType PersonType { get; set; } = PersonType.Individual;
     public BrazilianDocumentType? DocumentType { get; set; } = BrazilianDocumentType.CPF;
@@ -15,6 +16,12 @@ public class BillingCustomerProfile : Entity
     public string? Email { get; set; }
     public string? Phone { get; set; }
     public string? City { get; set; }
+    public string? State { get; set; }
+    public string? PostalCode { get; set; }
+    public string? Street { get; set; }
+    public string? StreetNumber { get; set; }
+    public string? Complement { get; set; }
+    public string? District { get; set; }
     public string? Address { get; set; }
     public string? MercadoPagoCustomerId { get; set; }
 }
