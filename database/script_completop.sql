@@ -441,6 +441,16 @@ ON CONFLICT (id) DO UPDATE SET description = EXCLUDED.description, quantity = EX
 
 -- 18. Contas, permissões e catálogo comercial (evolução aditiva e idempotente)
 CREATE TABLE IF NOT EXISTS orcafacil.business_accounts (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), display_name varchar(180) NOT NULL, legal_name varchar(180), trade_name varchar(180), person_type varchar(30) NOT NULL DEFAULT 'Individual', document_type varchar(20), document_number varchar(20), email varchar(254) NOT NULL, phone varchar(40), status varchar(30) NOT NULL DEFAULT 'Active', current_plan_code varchar(40) NOT NULL DEFAULT 'FREE', created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, activated_at timestamptz, deactivated_at timestamptz, blocked_at timestamptz, block_reason varchar(500), is_deleted boolean NOT NULL DEFAULT false);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_business_accounts_document_number ON orcafacil.business_accounts(document_number) WHERE is_deleted = false;
+ALTER TABLE orcafacil.billing_customer_profiles ADD COLUMN IF NOT EXISTS account_id uuid REFERENCES orcafacil.business_accounts(id);
+ALTER TABLE orcafacil.billing_customer_profiles ADD COLUMN IF NOT EXISTS state varchar(2);
+ALTER TABLE orcafacil.billing_customer_profiles ADD COLUMN IF NOT EXISTS postal_code varchar(8);
+ALTER TABLE orcafacil.billing_customer_profiles ADD COLUMN IF NOT EXISTS street varchar(180);
+ALTER TABLE orcafacil.billing_customer_profiles ADD COLUMN IF NOT EXISTS street_number varchar(30);
+ALTER TABLE orcafacil.billing_customer_profiles ADD COLUMN IF NOT EXISTS complement varchar(120);
+ALTER TABLE orcafacil.billing_customer_profiles ADD COLUMN IF NOT EXISTS district varchar(120);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_profiles_account_id ON orcafacil.billing_customer_profiles(account_id) WHERE account_id IS NOT NULL AND is_deleted = false;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_profiles_document_number ON orcafacil.billing_customer_profiles(document_number) WHERE document_number IS NOT NULL AND is_deleted = false;
 CREATE TABLE IF NOT EXISTS orcafacil.roles (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), code varchar(80) NOT NULL UNIQUE, display_name varchar(120) NOT NULL, is_platform_role boolean NOT NULL DEFAULT false, is_system boolean NOT NULL DEFAULT true, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
 CREATE TABLE IF NOT EXISTS orcafacil.permissions (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), code varchar(120) NOT NULL UNIQUE, display_name varchar(180) NOT NULL, is_platform_permission boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
 CREATE TABLE IF NOT EXISTS orcafacil.role_permissions (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), role_id uuid NOT NULL REFERENCES orcafacil.roles(id), permission_id uuid NOT NULL REFERENCES orcafacil.permissions(id), created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false, UNIQUE(role_id, permission_id));
