@@ -7,6 +7,7 @@ namespace OrcaFacil.Domain.Entities;
 
 public class Document : Entity
 {
+    public Guid? AccountId { get; set; }
     public Guid UserId { get; set; }
     public DocumentType Type { get; set; }
     public string Number { get; private set; } = string.Empty;

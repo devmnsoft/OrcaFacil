@@ -4,6 +4,7 @@ namespace OrcaFacil.Domain.Entities;
 
 public class AuditLog : Entity
 {
+    public Guid? AccountId { get; set; }
     public Guid? UserId { get; set; }
     public string Action { get; set; } = string.Empty;
     public string EntityType { get; set; } = string.Empty;

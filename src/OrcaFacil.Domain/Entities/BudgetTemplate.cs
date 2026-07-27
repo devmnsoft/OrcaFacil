@@ -4,6 +4,7 @@ namespace OrcaFacil.Domain.Entities;
 
 public class BudgetTemplate : Entity
 {
+    public Guid? AccountId { get; set; }
     public Guid? UserId { get; set; }
     public string Profession { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;

@@ -44,6 +44,7 @@ builder.Services.AddScoped<IDocumentNumberService, DocumentNumberService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<PlanLimitService>();
 builder.Services.AddScoped<PlanEntitlementService>();
+builder.Services.AddScoped<IPlanAccessService, PlanAccessService>();
 builder.Services.AddScoped<TrialProService>();
 builder.Services.Configure<PlanOptions>(builder.Configuration.GetSection("Plans"));
 builder.Services.AddScoped<BillingStatusService>();
@@ -65,7 +66,16 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     options.LoginPath = "/Auth/Login";
     options.AccessDeniedPath = "/Auth/Login";
 });
-builder.Services.AddAuthorization(options => options.AddPolicy("SuperAdmin", policy => policy.RequireRole("SuperAdmin")));
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("SuperAdmin", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin"));
+    options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole("SuperAdministrator"));
+    options.AddPolicy("PlatformSupportOrHigher", policy => policy.RequireRole("SuperAdministrator", "PlatformSupport"));
+    options.AddPolicy("PlatformFinanceOrHigher", policy => policy.RequireRole("SuperAdministrator", "PlatformFinance"));
+    options.AddPolicy("PlatformAuditRead", policy => policy.RequireRole("SuperAdministrator", "PlatformSupport", "PlatformFinance", "PlatformAuditor"));
+    options.AddPolicy("PlatformPlanManagement", policy => policy.RequireRole("SuperAdministrator"));
+    options.AddPolicy("PlatformPaymentManagement", policy => policy.RequireRole("SuperAdministrator", "PlatformFinance"));
+});
 builder.Services.AddRateLimiter(options => options.AddFixedWindowLimiter("public", limiter =>
 {
     limiter.PermitLimit = 20;
