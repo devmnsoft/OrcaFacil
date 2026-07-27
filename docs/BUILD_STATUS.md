@@ -1,6 +1,6 @@
 # Build Status — auditoria RC
 
-Data: 2026-07-23.
+Data da última execução: 2026-07-27 (UTC).
 
 ## Baseline obrigatório
 
@@ -34,6 +34,22 @@ Data: 2026-07-23.
 - Erros: os comandos .NET falharam por `dotnet: command not found`, não por erro compilado do código.
 - Projetos compilados: nenhum neste ambiente.
 - Projetos não compilados: todos os projetos .NET listados acima.
+
+## Correções realizadas nesta etapa
+
+- O acesso aos benefícios deixou de consultar `PlanCatalogDefinitions` em execução e passou a usar uma fonte EF baseada em `PlanVersion`, `Feature`, `PlanFeatureValue`, `Subscription` e `PlanOverride`.
+- `GetUsageAsync` passou a medir dados por `AccountId` para clientes, documentos, PDFs, membros, aprovações públicas e modelos. Serviços são medidos pelos eventos reais de ativação existentes até a consolidação da entidade de catálogo de serviços.
+- Overrides agora resolvem a `PlanVersion` e o `Plan` reais; a expiração volta à assinatura ou ao Grátis sem apagar dados.
+- Foram adicionados vínculo `Document.ClientId`, referência de fatura no pagamento e colunas aditivas de isolamento para utilização e links públicos.
+- Cookies passaram a carregar e validar `SessionVersion`; usuário bloqueado, usuário desativado, membro sem acesso ou conta bloqueada têm o cookie rejeitado.
+- A migration e o script SQL foram alinhados de forma aditiva, mantendo os campos legados.
+
+## Validações auxiliares de 2026-07-27
+
+- `node scripts/check-ui-contrast.mjs`: passou; 181 arquivos verificados e nenhum padrão bloqueador.
+- `git diff --check`: passou sem erro de whitespace.
+- `powershell -ExecutionPolicy Bypass -File scripts/check-razor-directives.ps1`: bloqueado; `powershell` e `pwsh` não estão instalados.
+- Tentativa de obter o instalador oficial do SDK com `curl https://dot.net/v1/dotnet-install.sh`: bloqueada pelo ambiente remoto com HTTP 403.
 
 ## Próxima validação necessária
 

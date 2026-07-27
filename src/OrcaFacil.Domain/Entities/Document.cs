@@ -8,6 +8,7 @@ namespace OrcaFacil.Domain.Entities;
 public class Document : Entity
 {
     public Guid? AccountId { get; set; }
+    public Guid? ClientId { get; set; }
     public Guid UserId { get; set; }
     public DocumentType Type { get; set; }
     public string Number { get; private set; } = string.Empty;
@@ -58,6 +59,8 @@ public class Document : Entity
 
         var receipt = new Document
         {
+            AccountId = AccountId,
+            ClientId = ClientId,
             UserId = UserId,
             Type = DocumentType.Receipt,
             ClientName = ClientName,

@@ -26,7 +26,7 @@ public class LoginModel : PageModel
             var result = await _authService.LoginAsync(new LoginUserCommand(Input.Email, Input.Password), ct);
             if (!result.Succeeded || result.Value is null) { ModelState.AddModelError(string.Empty, result.Error ?? "Não foi possível entrar."); TempData.Error(result.Error ?? "Não foi possível entrar."); _logger.LogWarning("USER_LOGIN_FAILED_WEB {Email}", Input.Email); return Page(); }
         var user = result.Value;
-        var claims = new[] { new Claim("sub", user.Id.ToString()), new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), new Claim("name", user.Name), new Claim(ClaimTypes.Name, user.Name), new Claim("email", user.Email), new Claim(ClaimTypes.Email, user.Email), new Claim("role", user.Role), new Claim(ClaimTypes.Role, user.Role), new Claim("plan", user.Plan) };
+        var claims = new[] { new Claim("sub", user.Id.ToString()), new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), new Claim("name", user.Name), new Claim(ClaimTypes.Name, user.Name), new Claim("email", user.Email), new Claim(ClaimTypes.Email, user.Email), new Claim("role", user.Role), new Claim(ClaimTypes.Role, user.Role), new Claim("plan", user.Plan), new Claim("session_version", user.SessionVersion.ToString()) };
         await HttpContext.SignInAsync(new ClaimsPrincipal(new ClaimsIdentity(claims, "Cookies")));
             TempData.Success("Login realizado com sucesso.");
             return RedirectToPage("/Dashboard/Index");

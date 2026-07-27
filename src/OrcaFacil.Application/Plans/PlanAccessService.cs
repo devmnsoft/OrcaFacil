@@ -3,31 +3,95 @@ using OrcaFacil.Domain.Enums;
 
 namespace OrcaFacil.Application.Plans;
 
-public sealed class PlanAccessService : IPlanAccessService
+public sealed class PlanAccessService(IPlanAccessDataSource dataSource) : IPlanAccessService
 {
-    private static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, PlanFeatureSetting>> Features = PlanCatalogDefinitions.Features;
+    public Task<Subscription?> GetCurrentSubscriptionAsync(Guid accountId, CancellationToken ct = default) =>
+        dataSource.GetSubscriptionAsync(accountId, ct);
 
-    public Task<string> GetEffectivePlanAsync(Subscription? subscription, DateTime utcNow, PlanOverride? activeOverride = null, CancellationToken ct = default)
+    public async Task<Plan?> GetSelectedPlanAsync(Guid accountId, CancellationToken ct = default)
     {
-        if (activeOverride?.IsEffective(utcNow) == true) return Task.FromResult("OVERRIDE");
-        if (subscription is null || subscription.Status is SubscriptionStatus.Free or SubscriptionStatus.Cancelled) return Task.FromResult("FREE");
-        if (subscription.ManualReleaseUntil > utcNow) return Task.FromResult(Normalize(subscription.Plan));
-        var due = subscription.PaidThroughAt ?? subscription.ExpiresAt ?? subscription.NextDueAt;
-        return Task.FromResult(due.HasValue && due.Value < utcNow ? "FREE" : Normalize(subscription.Plan));
+        var subscription = await dataSource.GetSubscriptionAsync(accountId, ct);
+        if (subscription?.SelectedPlanVersionId is not Guid versionId) return null;
+        var version = await dataSource.GetPlanVersionAsync(versionId, ct);
+        return version is null ? null : await dataSource.GetPlanAsync(version.PlanId, ct);
     }
-    public Task<IReadOnlyDictionary<string, PlanFeatureSetting>> GetPlanFeaturesAsync(string planCode, CancellationToken ct = default) => Task.FromResult(Features.TryGetValue(planCode.ToUpperInvariant(), out var value) ? value : Features["FREE"]);
-    public Task<PlanAccessDecision> CanUseAsync(string planCode, string featureCode, int currentUsage = 0, CancellationToken ct = default)
+
+    public async Task<PlanVersion?> GetEffectivePlanVersionAsync(Guid accountId, DateTime utcNow, CancellationToken ct = default)
     {
-        var code = Features.ContainsKey(planCode.ToUpperInvariant()) ? planCode.ToUpperInvariant() : "FREE";
-        Features[code].TryGetValue(featureCode, out var setting);
-        var allowed = setting is not null && setting.Enabled != false && (setting.IsUnlimited || setting.Limit is null || currentUsage < setting.Limit);
-        var required = allowed ? null : Features.FirstOrDefault(x => x.Value.TryGetValue(featureCode, out var candidate) && candidate.Enabled != false && (candidate.IsUnlimited || candidate.Limit is null || currentUsage < candidate.Limit)).Key;
-        return Task.FromResult(new PlanAccessDecision(allowed, featureCode, code, required, currentUsage, setting?.Limit, allowed ? string.Empty : "Este recurso está pausado. Assim que estiver disponível no seu plano, ele será liberado.", allowed ? "Allowed" : setting is null ? "FeatureNotConfigured" : "PlanLimitReached"));
+        utcNow = EnsureUtc(utcNow);
+        var activeOverride = await dataSource.GetActiveOverrideAsync(accountId, utcNow, ct);
+        if (activeOverride is not null)
+            return await dataSource.GetPlanVersionAsync(activeOverride.PlanVersionId, ct);
+
+        var subscription = await dataSource.GetSubscriptionAsync(accountId, ct);
+        if (subscription is null) return await dataSource.GetPublishedFreeVersionAsync(utcNow, ct);
+
+        var dueAt = subscription.PaidThroughAt ?? subscription.ExpiresAt ?? subscription.NextDueAt;
+        var paidAccess = subscription.Status is not (SubscriptionStatus.Free or SubscriptionStatus.Cancelled or SubscriptionStatus.Suspended)
+                         && (subscription.ManualReleaseUntil > utcNow || dueAt is null || dueAt >= utcNow);
+        var versionId = paidAccess ? subscription.EffectivePlanVersionId ?? subscription.SelectedPlanVersionId : null;
+        return versionId is Guid id
+            ? await dataSource.GetPlanVersionAsync(id, ct)
+            : await dataSource.GetPublishedFreeVersionAsync(utcNow, ct);
     }
-    public async Task<int?> GetLimitAsync(string planCode, string featureCode, CancellationToken ct = default) => (await GetPlanFeaturesAsync(planCode, ct)).TryGetValue(featureCode, out var value) && !value.IsUnlimited ? value.Limit : null;
-    public Task<int> GetUsageAsync(Guid accountId, string featureCode, CancellationToken ct = default) => Task.FromResult(0);
-    public async Task EnsureCanUseAsync(string planCode, string featureCode, int currentUsage = 0, CancellationToken ct = default) { var decision = await CanUseAsync(planCode, featureCode, currentUsage, ct); if (!decision.IsAllowed) throw new PlanAccessDeniedException(decision); }
-    public async Task<string?> GetUpgradeSuggestionAsync(string planCode, string featureCode, CancellationToken ct = default) => (await CanUseAsync(planCode, featureCode, ct: ct)).RequiredPlanCode;
-    private static string Normalize(PlanType plan) => plan switch { PlanType.Business => "BUSINESS", PlanType.Pro => "PROFESSIONAL", _ => "FREE" };
+
+    public async Task<Plan?> GetEffectivePlanAsync(Guid accountId, DateTime utcNow, CancellationToken ct = default)
+    {
+        var version = await GetEffectivePlanVersionAsync(accountId, utcNow, ct);
+        return version is null ? null : await dataSource.GetPlanAsync(version.PlanId, ct);
+    }
+
+    public async Task<IReadOnlyDictionary<string, PlanFeatureSetting>> GetPlanFeaturesAsync(Guid accountId, DateTime utcNow, CancellationToken ct = default)
+    {
+        var version = await GetEffectivePlanVersionAsync(accountId, utcNow, ct);
+        return version is null
+            ? new Dictionary<string, PlanFeatureSetting>()
+            : await dataSource.GetFeaturesAsync(version.Id, ct);
+    }
+
+    public async Task<PlanAccessDecision> CanUseAsync(Guid accountId, string featureCode, CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        var plan = await GetEffectivePlanAsync(accountId, now, ct);
+        var features = await GetPlanFeaturesAsync(accountId, now, ct);
+        features.TryGetValue(featureCode, out var setting);
+        var usage = await GetUsageAsync(accountId, featureCode, ct);
+        var allowed = setting is not null && setting.Enabled != false &&
+                      (setting.IsUnlimited || setting.Limit is null || usage < setting.Limit);
+        return new PlanAccessDecision(allowed, featureCode, plan?.Code ?? "FREE", null, usage,
+            setting?.IsUnlimited == true ? null : setting?.Limit,
+            allowed ? string.Empty : "Este recurso não está disponível no seu plano ou o limite foi atingido.",
+            allowed ? "Allowed" : setting is null ? "FeatureNotConfigured" : "PlanLimitReached");
+    }
+
+    public async Task<int?> GetLimitAsync(Guid accountId, string featureCode, CancellationToken ct = default)
+    {
+        var features = await GetPlanFeaturesAsync(accountId, DateTime.UtcNow, ct);
+        return features.TryGetValue(featureCode, out var value) && !value.IsUnlimited ? value.Limit : null;
+    }
+
+    public Task<int> GetUsageAsync(Guid accountId, string featureCode, CancellationToken ct = default) =>
+        dataSource.GetUsageAsync(accountId, featureCode, StartOfUtcMonth(DateTime.UtcNow), ct);
+
+    public async Task<int?> GetRemainingUsageAsync(Guid accountId, string featureCode, CancellationToken ct = default)
+    {
+        var limit = await GetLimitAsync(accountId, featureCode, ct);
+        return limit is null ? null : Math.Max(0, limit.Value - await GetUsageAsync(accountId, featureCode, ct));
+    }
+
+    public async Task EnsureCanUseAsync(Guid accountId, string featureCode, CancellationToken ct = default)
+    {
+        var decision = await CanUseAsync(accountId, featureCode, ct);
+        if (!decision.IsAllowed) throw new PlanAccessDeniedException(decision);
+    }
+
+    public Task InvalidateAccountCacheAsync(Guid accountId, CancellationToken ct = default) => Task.CompletedTask;
+
+    private static DateTime EnsureUtc(DateTime value) => value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
+    private static DateTime StartOfUtcMonth(DateTime value) => new(value.Year, value.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 }
-public sealed class PlanAccessDeniedException(PlanAccessDecision decision) : InvalidOperationException(decision.UserMessage) { public PlanAccessDecision Decision { get; } = decision; }
+
+public sealed class PlanAccessDeniedException(PlanAccessDecision decision) : InvalidOperationException(decision.UserMessage)
+{
+    public PlanAccessDecision Decision { get; } = decision;
+}

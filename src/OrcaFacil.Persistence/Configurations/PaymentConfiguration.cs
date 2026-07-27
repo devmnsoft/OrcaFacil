@@ -19,6 +19,9 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(x => x.IdempotencyKey).HasMaxLength(180);
         builder.HasIndex(x => x.UserId);
         builder.HasIndex(x => x.SubscriptionId);
+        builder.HasIndex(x => x.BillingInvoiceId);
+        builder.HasIndex(x => x.IdempotencyKey).IsUnique();
+        builder.HasOne<BillingInvoice>().WithMany().HasForeignKey(x => x.BillingInvoiceId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.Provider);
         builder.HasIndex(x => x.ExternalPaymentId);

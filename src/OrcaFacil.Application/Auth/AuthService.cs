@@ -165,7 +165,7 @@ public class AuthService
         }
     }
 
-    private static UserSummaryDto ToSummary(UserAccount user) => new(user.Id, user.Name, user.Email, user.Role.ToString(), user.Plan.ToString());
+    private static UserSummaryDto ToSummary(UserAccount user) => new(user.Id, user.Name, user.Email, user.Role.ToString(), user.Plan.ToString(), user.SessionVersion);
 
     private static string? BuildAddress(RegisterUserCommand command)
     {

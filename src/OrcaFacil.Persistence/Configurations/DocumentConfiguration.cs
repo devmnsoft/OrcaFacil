@@ -11,6 +11,8 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.ToTable("documents", "orcafacil");
         builder.ConfigureBase();
         builder.Property(x => x.UserId).HasColumnName("user_id").IsRequired();
+        builder.HasIndex(x => new { x.AccountId, x.ClientId });
+        builder.HasOne<Client>().WithMany().HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.SetNull);
         builder.Property(x => x.Type).HasColumnName("type").HasConversion<string>().HasMaxLength(30).IsRequired();
         builder.Property(x => x.Number).HasColumnName("number").HasMaxLength(40).IsRequired();
         builder.Property(x => x.Status).HasColumnName("status").HasMaxLength(40).IsRequired();

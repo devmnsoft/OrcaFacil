@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -17,6 +19,7 @@ using OrcaFacil.Persistence.Queries;
 using OrcaFacil.Persistence.Repositories;
 using OrcaFacil.Web.Health;
 using OrcaFacil.Persistence.Diagnostics;
+using OrcaFacil.Persistence.Plans;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,6 +48,7 @@ builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<PlanLimitService>();
 builder.Services.AddScoped<PlanEntitlementService>();
 builder.Services.AddScoped<IPlanAccessService, PlanAccessService>();
+builder.Services.AddScoped<IPlanAccessDataSource, EfPlanAccessDataSource>();
 builder.Services.AddScoped<TrialProService>();
 builder.Services.Configure<PlanOptions>(builder.Configuration.GetSection("Plans"));
 builder.Services.AddScoped<BillingStatusService>();
@@ -65,6 +69,31 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     options.Cookie.SameSite = SameSiteMode.Strict;
     options.LoginPath = "/Auth/Login";
     options.AccessDeniedPath = "/Auth/Login";
+    options.Events.OnValidatePrincipal = async context =>
+    {
+        var idValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+        var versionValue = context.Principal?.FindFirstValue("session_version");
+        if (!Guid.TryParse(idValue, out var userId) || !int.TryParse(versionValue, out var sessionVersion))
+        {
+            context.RejectPrincipal();
+            await context.HttpContext.SignOutAsync();
+            return;
+        }
+
+        var db = context.HttpContext.RequestServices.GetRequiredService<OrcaFacilDbContext>();
+        var platformUser = context.Principal?.IsInRole("SuperAdministrator") == true || context.Principal?.IsInRole("SuperAdmin") == true ||
+                           context.Principal?.IsInRole("PlatformSupport") == true || context.Principal?.IsInRole("PlatformFinance") == true ||
+                           context.Principal?.IsInRole("PlatformAuditor") == true;
+        var valid = await db.Users.AsNoTracking().AnyAsync(x => x.Id == userId && x.IsActive && !x.IsBlocked &&
+            x.SessionVersion == sessionVersion && !x.IsDeleted && (platformUser ||
+            db.AccountMembers.Any(m => m.UserId == x.Id && !m.IsDeleted && m.Status == OrcaFacil.Domain.Enums.AccountMemberStatus.Active &&
+                db.BusinessAccounts.Any(a => a.Id == m.AccountId && !a.IsDeleted && a.Status == OrcaFacil.Domain.Enums.AccountStatus.Active))));
+        if (!valid)
+        {
+            context.RejectPrincipal();
+            await context.HttpContext.SignOutAsync();
+        }
+    };
 });
 builder.Services.AddAuthorization(options =>
 {

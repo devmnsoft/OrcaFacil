@@ -11,5 +11,6 @@ public class UserUsageConfiguration : IEntityTypeConfiguration<UserUsage>
         builder.ToTable("user_usage", "orcafacil");
         builder.ConfigureBase();
         builder.HasIndex(x => new { x.UserId, x.Period }).IsUnique();
+        builder.HasIndex(x => new { x.AccountId, x.Period });
     }
 }
