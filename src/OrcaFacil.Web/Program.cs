@@ -69,12 +69,17 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("SuperAdmin", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin"));
-    options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole("SuperAdministrator"));
-    options.AddPolicy("PlatformSupportOrHigher", policy => policy.RequireRole("SuperAdministrator", "PlatformSupport"));
-    options.AddPolicy("PlatformFinanceOrHigher", policy => policy.RequireRole("SuperAdministrator", "PlatformFinance"));
-    options.AddPolicy("PlatformAuditRead", policy => policy.RequireRole("SuperAdministrator", "PlatformSupport", "PlatformFinance", "PlatformAuditor"));
-    options.AddPolicy("PlatformPlanManagement", policy => policy.RequireRole("SuperAdministrator"));
-    options.AddPolicy("PlatformPaymentManagement", policy => policy.RequireRole("SuperAdministrator", "PlatformFinance"));
+    // "SuperAdmin" remains accepted while existing accounts are migrated to the
+    // canonical platform role name. Authorization is enforced by the backend.
+    options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin"));
+    options.AddPolicy("PlatformSupportOrHigher", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin", "PlatformSupport"));
+    options.AddPolicy("PlatformFinanceOrHigher", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin", "PlatformFinance"));
+    options.AddPolicy("PlatformAuditRead", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin", "PlatformSupport", "PlatformFinance", "PlatformAuditor"));
+    options.AddPolicy("PlatformPlanManagement", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin"));
+    options.AddPolicy("PlatformPaymentManagement", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin", "PlatformFinance"));
+    options.AddPolicy("PlanManagement", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin"));
+    options.AddPolicy("PaymentManagement", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin", "PlatformFinance"));
+    options.AddPolicy("SystemSettingsManagement", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin"));
 });
 builder.Services.AddRateLimiter(options => options.AddFixedWindowLimiter("public", limiter =>
 {

@@ -33,4 +33,16 @@ public sealed class BrazilianDocumentTests
     [Fact]
     public void Normalization_keeps_only_digits() =>
         Assert.Equal("11222333000181", BrazilianDocument.Normalize(" 11.222.333/0001-81 "));
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Rejects_missing_document(string? value)
+    {
+        Assert.False(BrazilianDocument.HasBasicValidLength(BrazilianDocumentType.CPF, value));
+        Assert.False(BrazilianDocument.HasValidCheckDigits(BrazilianDocumentType.CPF, value));
+        Assert.False(BrazilianDocument.HasBasicValidLength(BrazilianDocumentType.CNPJ, value));
+        Assert.False(BrazilianDocument.HasValidCheckDigits(BrazilianDocumentType.CNPJ, value));
+    }
 }

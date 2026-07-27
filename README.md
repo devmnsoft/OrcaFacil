@@ -64,7 +64,7 @@ Esta etapa adiciona a base funcional do MVP backend: autenticação por cookie, 
 
 ### SuperAdmin opcional
 
-Defina `ORCAFACIL_ADMIN_EMAIL` e `ORCAFACIL_ADMIN_PASSWORD` antes de iniciar a aplicação para habilitar seed operacional em ambientes que chamam o bootstrap administrativo.
+Defina `ORCAFACIL_SUPERADMIN_EMAIL` e `ORCAFACIL_SUPERADMIN_PASSWORD` antes de iniciar a aplicação para habilitar o seed seguro do primeiro SuperAdministrador.
 
 ### PDFs
 

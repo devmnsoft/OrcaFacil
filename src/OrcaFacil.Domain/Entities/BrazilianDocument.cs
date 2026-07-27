@@ -9,14 +9,14 @@ public static class BrazilianDocument
 
     public static bool HasBasicValidLength(BrazilianDocumentType? type, string? numbers)
     {
-        if (string.IsNullOrWhiteSpace(numbers)) return true;
+        if (type is null || string.IsNullOrWhiteSpace(numbers)) return false;
         return type == BrazilianDocumentType.CNPJ ? numbers.Length == 14 : numbers.Length == 11;
     }
 
     public static bool HasValidCheckDigits(BrazilianDocumentType? type, string? value)
     {
         var numbers = Normalize(value);
-        if (string.IsNullOrWhiteSpace(numbers)) return true;
+        if (type is null || string.IsNullOrWhiteSpace(numbers)) return false;
         return type == BrazilianDocumentType.CNPJ ? IsValidCnpj(numbers) : IsValidCpf(numbers);
     }
 
