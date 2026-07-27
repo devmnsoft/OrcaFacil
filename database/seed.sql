@@ -1,2 +1,3 @@
 -- Seeds mínimos executados após a criação dos schemas.
--- O seed de SuperAdmin deve ser feito pela aplicação usando ORCAFACIL_ADMIN_EMAIL e ORCAFACIL_ADMIN_PASSWORD.
+-- O seed de SuperAdministrador deve ser feito pela aplicação usando
+-- ORCAFACIL_SUPERADMIN_EMAIL e ORCAFACIL_SUPERADMIN_PASSWORD.

@@ -81,8 +81,8 @@ Depois execute novamente `database/script_completop.sql` ou as migrations.
 
 Não há senha fixa no SQL. A aplicação cria o SuperAdmin a partir das variáveis:
 
-- `ORCAFACIL_ADMIN_EMAIL`
-- `ORCAFACIL_ADMIN_PASSWORD`
+- `ORCAFACIL_SUPERADMIN_EMAIL`
+- `ORCAFACIL_SUPERADMIN_PASSWORD`
 
 ## Validação
 

@@ -12,11 +12,11 @@ public static class SuperAdminSeeder
     {
         using var scope = services.CreateScope();
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("SuperAdminSeeder");
-        var email = Environment.GetEnvironmentVariable("ORCAFACIL_ADMIN_EMAIL");
-        var password = Environment.GetEnvironmentVariable("ORCAFACIL_ADMIN_PASSWORD");
+        var email = Environment.GetEnvironmentVariable("ORCAFACIL_SUPERADMIN_EMAIL");
+        var password = Environment.GetEnvironmentVariable("ORCAFACIL_SUPERADMIN_PASSWORD");
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
-            logger.LogWarning("SuperAdmin seed ignorado: variáveis ORCAFACIL_ADMIN_EMAIL/ORCAFACIL_ADMIN_PASSWORD não configuradas.");
+            logger.LogInformation("Seed do SuperAdministrador ignorado: configuração segura não informada.");
             return;
         }
 
