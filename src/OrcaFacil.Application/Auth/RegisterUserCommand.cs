@@ -21,4 +21,5 @@ public sealed record RegisterUserCommand(
     string State,
     string Password,
     bool AcceptTerms,
-    bool AcceptPrivacy);
+    bool AcceptPrivacy,
+    string? CorrelationId = null);

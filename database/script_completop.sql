@@ -468,9 +468,34 @@ DO $$ BEGIN
   ALTER TABLE orcafacil.clients ADD COLUMN IF NOT EXISTS account_id uuid;
   ALTER TABLE orcafacil.documents ADD COLUMN IF NOT EXISTS account_id uuid;
   ALTER TABLE orcafacil.subscriptions ADD COLUMN IF NOT EXISTS account_id uuid;
+  ALTER TABLE orcafacil.subscriptions ADD COLUMN IF NOT EXISTS selected_plan_version_id uuid;
+  ALTER TABLE orcafacil.subscriptions ADD COLUMN IF NOT EXISTS effective_plan_version_id uuid;
+  ALTER TABLE orcafacil.subscriptions ADD COLUMN IF NOT EXISTS price_at_activation numeric(18,2) NOT NULL DEFAULT 0;
+  ALTER TABLE orcafacil.subscriptions ADD COLUMN IF NOT EXISTS paid_through_at timestamptz;
+  ALTER TABLE orcafacil.subscriptions ADD COLUMN IF NOT EXISTS next_due_at timestamptz;
+  ALTER TABLE orcafacil.subscriptions ADD COLUMN IF NOT EXISTS past_due_since timestamptz;
+  ALTER TABLE orcafacil.subscriptions ADD COLUMN IF NOT EXISTS suspended_at timestamptz;
+  ALTER TABLE orcafacil.subscriptions ADD COLUMN IF NOT EXISTS manual_release_until timestamptz;
+  ALTER TABLE orcafacil.subscriptions ADD COLUMN IF NOT EXISTS trial_started_at timestamptz;
+  ALTER TABLE orcafacil.subscriptions ADD COLUMN IF NOT EXISTS trial_ends_at timestamptz;
+  ALTER TABLE orcafacil.subscriptions ADD COLUMN IF NOT EXISTS trial_used boolean NOT NULL DEFAULT false;
+  ALTER TABLE orcafacil.subscriptions ADD COLUMN IF NOT EXISTS trial_status varchar(30) NOT NULL DEFAULT 'NotStarted';
   ALTER TABLE orcafacil.payments ADD COLUMN IF NOT EXISTS account_id uuid;
   ALTER TABLE orcafacil.notifications ADD COLUMN IF NOT EXISTS account_id uuid;
+  ALTER TABLE orcafacil.notifications ADD COLUMN IF NOT EXISTS category varchar(30) NOT NULL DEFAULT 'System';
+  ALTER TABLE orcafacil.notifications ADD COLUMN IF NOT EXISTS action_url varchar(400);
+  ALTER TABLE orcafacil.notifications ADD COLUMN IF NOT EXISTS action_text varchar(80);
+  ALTER TABLE orcafacil.notifications ADD COLUMN IF NOT EXISTS read_at timestamptz;
+  ALTER TABLE orcafacil.notifications ADD COLUMN IF NOT EXISTS is_read boolean NOT NULL DEFAULT false;
   ALTER TABLE orcafacil.audit_logs ADD COLUMN IF NOT EXISTS account_id uuid;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_subscriptions_selected_plan_version') THEN
+    ALTER TABLE orcafacil.subscriptions ADD CONSTRAINT fk_subscriptions_selected_plan_version FOREIGN KEY (selected_plan_version_id) REFERENCES orcafacil.plan_versions(id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_subscriptions_effective_plan_version') THEN
+    ALTER TABLE orcafacil.subscriptions ADD CONSTRAINT fk_subscriptions_effective_plan_version FOREIGN KEY (effective_plan_version_id) REFERENCES orcafacil.plan_versions(id);
+  END IF;
 END $$;
 CREATE INDEX IF NOT EXISTS ix_account_members_account_id ON orcafacil.account_members(account_id);
 CREATE INDEX IF NOT EXISTS ix_account_members_user_id ON orcafacil.account_members(user_id);

@@ -47,7 +47,7 @@ public sealed class RegisterModel(AuthService authService, ILogger<RegisterModel
         var command = new RegisterUserCommand(Input.AccountType!.Value, Input.DocumentNumber, registrationName,
             Input.ProfessionalName, Input.LegalName, Input.TradeName, Input.ResponsibleName, Input.Phone,
             Input.Email, Input.PostalCode, Input.Street, Input.StreetNumber, Input.Complement, Input.District,
-            Input.City, Input.State, Input.Password, Input.AcceptTerms, Input.AcceptPrivacy);
+            Input.City, Input.State, Input.Password, Input.AcceptTerms, Input.AcceptPrivacy, HttpContext.TraceIdentifier);
         try
         {
             var result = await authService.RegisterAsync(command, ct);
@@ -62,8 +62,9 @@ public sealed class RegisterModel(AuthService authService, ILogger<RegisterModel
         catch (Exception ex)
         {
             var correlationId = HttpContext.TraceIdentifier;
-            logger.LogError(ex, "REGISTER_FAILED CorrelationId {CorrelationId}", correlationId);
-            ModelState.AddModelError(string.Empty, $"Não foi possível concluir seu cadastro agora. Tente novamente em alguns instantes. Se o problema continuar, informe o código {correlationId} ao suporte.");
+            var databaseFailure = ex.GetRegistrationFailure();
+            logger.LogError("REGISTER_FAILED CorrelationId {CorrelationId} ExceptionType {ExceptionType} SqlState {SqlState} Constraint {Constraint} Category {Category}", correlationId, ex.GetType().Name, databaseFailure.SqlState, databaseFailure.Constraint, databaseFailure.Category);
+            ModelState.AddModelError(string.Empty, databaseFailure.ToPublicMessage(correlationId));
             return InvalidPage();
         }
     }

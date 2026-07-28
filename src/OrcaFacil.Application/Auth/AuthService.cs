@@ -5,6 +5,7 @@ using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.ValueObjects;
 using OrcaFacil.Domain.Enums;
 using OrcaFacil.Shared;
+using System.Diagnostics;
 
 namespace OrcaFacil.Application.Auth;
 
@@ -48,6 +49,11 @@ public class AuthService
 
     public async Task<Result<UserSummaryDto>> RegisterAsync(RegisterUserCommand command, CancellationToken ct = default)
     {
+        var timer = Stopwatch.StartNew();
+        var correlationId = string.IsNullOrWhiteSpace(command.CorrelationId) ? "not-provided" : command.CorrelationId;
+        var stage = "REGISTER_STARTED";
+        var transactionStarted = false;
+        _logger.LogInformation("{Stage} CorrelationId {CorrelationId} AccountType {AccountType} Result {Result}", stage, correlationId, command.AccountType, "Started");
         try
         {
             if (string.IsNullOrWhiteSpace(command.Name)) return Result<UserSummaryDto>.Fail("Informe seu nome.");
@@ -67,6 +73,8 @@ public class AuthService
             {
                 return Result<UserSummaryDto>.Fail(!command.AcceptTerms ? "Aceite os termos para continuar." : "Aceite a política de privacidade para continuar.");
             }
+            stage = "REGISTER_VALIDATION_COMPLETED";
+            LogRegistration(stage, correlationId, command.AccountType, null, timer, "Success");
 
             if (_users.Query().Any(user => user.Email == email && user.IsActive))
             {
@@ -80,6 +88,8 @@ public class AuthService
                 return Result<UserSummaryDto>.Fail("Informe um CPF ou CNPJ válido.");
             if (_accounts.Query().Any(account => account.DocumentNumber == document && !account.IsDeleted))
                 return Result<UserSummaryDto>.Fail("Já existe uma conta vinculada a este CPF/CNPJ. Entre com seu e-mail ou use a recuperação de acesso.");
+            stage = "REGISTER_DUPLICATE_CHECK_COMPLETED";
+            LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success");
 
             var now = DateTime.UtcNow;
             var freePlan = _plans.Query().SingleOrDefault(x => x.Code == "FREE" && x.IsActive && !x.IsDeleted);
@@ -92,6 +102,8 @@ public class AuthService
                 _logger.LogCritical("ACCOUNT_REGISTRATION_BLOCKED_FREE_PLAN_CONFIGURATION_MISSING");
                 return Result<UserSummaryDto>.Fail("Não foi possível preparar seu plano grátis agora. Tente novamente em instantes.");
             }
+            stage = "REGISTER_FREE_PLAN_RESOLVED";
+            LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success");
 
             var user = new UserAccount
             {
@@ -134,6 +146,14 @@ public class AuthService
             var issuer = new IssuerProfile { UserId = user.Id, BusinessName = account.DisplayName, DocumentNumber = document, Phone = command.Phone.Trim(), Email = email, City = command.City.Trim(), Address = BuildAddress(command) };
             var notification = new Notification { AccountId = account.Id, UserId = user.Id, Title = "Conta criada", Message = "Conta criada. Vamos preparar seu espaço.", Type = NotificationType.Success, Category = NotificationCategory.Account, ActionUrl = "/Onboarding", ActionText = "Continuar" };
 
+            stage = "REGISTER_ENTITIES_PREPARED";
+            LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success", user.Id, account.Id);
+
+            await _uow.BeginTransactionAsync(ct);
+            transactionStarted = true;
+            stage = "REGISTER_TRANSACTION_STARTED";
+            LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success", user.Id, account.Id);
+
             await _users.AddAsync(user, ct);
             await _accounts.AddAsync(account, ct);
             await _members.AddAsync(member, ct);
@@ -141,17 +161,32 @@ public class AuthService
             await _subscriptions.AddAsync(subscription, ct);
             await _issuerProfiles.AddAsync(issuer, ct);
             await _notificationRepository.AddAsync(notification, ct);
+            stage = "REGISTER_SAVE_STARTED";
+            LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Started", user.Id, account.Id);
             await _audit.RegisterAsync(user.Id, "ACCOUNT_REGISTERED", nameof(BusinessAccount), account.Id.ToString(), null, new { account.Id, AccountType = command.AccountType.ToString() }, null, ct);
+            stage = "REGISTER_AUDIT_CREATED";
+            LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success", user.Id, account.Id);
             await _uow.SaveChangesAsync(ct);
-            _logger.LogInformation("ACCOUNT_REGISTERED {UserId} {AccountId} {DocumentType}", user.Id, account.Id, documentType);
+            stage = "REGISTER_SAVE_COMPLETED";
+            LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success", user.Id, account.Id);
+            await _uow.CommitTransactionAsync(ct);
+            transactionStarted = false;
+            stage = "REGISTER_TRANSACTION_COMMITTED";
+            LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success", user.Id, account.Id);
             return Result<UserSummaryDto>.Ok(ToSummary(user));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao registrar usuário");
+            if (transactionStarted) await _uow.RollbackTransactionAsync(CancellationToken.None);
+            _logger.LogError("REGISTER_FAILED CorrelationId {CorrelationId} Stage {Stage} AccountType {AccountType} ExceptionType {ExceptionType} DurationMs {DurationMs} Result {Result}", correlationId, stage, command.AccountType, ex.GetType().Name, timer.ElapsedMilliseconds, "Failed");
             throw;
         }
     }
+
+    private void LogRegistration(string stage, string correlationId, PersonType accountType,
+        BrazilianDocumentType? documentType, Stopwatch timer, string result, Guid? userId = null, Guid? accountId = null) =>
+        _logger.LogInformation("{Stage} CorrelationId {CorrelationId} AccountType {AccountType} DocumentType {DocumentType} UserId {UserId} AccountId {AccountId} DurationMs {DurationMs} Result {Result}",
+            stage, correlationId, accountType, documentType, userId, accountId, timer.ElapsedMilliseconds, result);
 
     public async Task<Result<UserSummaryDto>> LoginAsync(LoginUserCommand command, CancellationToken ct = default)
     {
