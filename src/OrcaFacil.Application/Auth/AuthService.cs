@@ -156,18 +156,24 @@ public class AuthService
 
             await _users.AddAsync(user, ct);
             await _accounts.AddAsync(account, ct);
+            stage = "REGISTER_PRINCIPALS_SAVE_STARTED";
+            LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Started", user.Id, account.Id);
+            await _uow.SaveChangesAsync(ct);
+            stage = "REGISTER_PRINCIPALS_SAVE_COMPLETED";
+            LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success", user.Id, account.Id);
+
             await _members.AddAsync(member, ct);
             await _billingProfiles.AddAsync(billingProfile, ct);
             await _subscriptions.AddAsync(subscription, ct);
             await _issuerProfiles.AddAsync(issuer, ct);
             await _notificationRepository.AddAsync(notification, ct);
-            stage = "REGISTER_SAVE_STARTED";
+            stage = "REGISTER_DEPENDENTS_SAVE_STARTED";
             LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Started", user.Id, account.Id);
             await _audit.RegisterAsync(user.Id, "ACCOUNT_REGISTERED", nameof(BusinessAccount), account.Id.ToString(), null, new { account.Id, AccountType = command.AccountType.ToString() }, null, ct);
             stage = "REGISTER_AUDIT_CREATED";
             LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success", user.Id, account.Id);
             await _uow.SaveChangesAsync(ct);
-            stage = "REGISTER_SAVE_COMPLETED";
+            stage = "REGISTER_DEPENDENTS_SAVE_COMPLETED";
             LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success", user.Id, account.Id);
             await _uow.CommitTransactionAsync(ct);
             transactionStarted = false;
@@ -177,7 +183,14 @@ public class AuthService
         }
         catch (Exception ex)
         {
-            if (transactionStarted) await _uow.RollbackTransactionAsync(CancellationToken.None);
+            if (transactionStarted)
+            {
+                try { await _uow.RollbackTransactionAsync(CancellationToken.None); }
+                catch (Exception rollbackException)
+                {
+                    _logger.LogCritical(rollbackException, "REGISTER_ROLLBACK_FAILED CorrelationId {CorrelationId} Stage {Stage}", correlationId, stage);
+                }
+            }
             _logger.LogError("REGISTER_FAILED CorrelationId {CorrelationId} Stage {Stage} AccountType {AccountType} ExceptionType {ExceptionType} DurationMs {DurationMs} Result {Result}", correlationId, stage, command.AccountType, ex.GetType().Name, timer.ElapsedMilliseconds, "Failed");
             throw;
         }

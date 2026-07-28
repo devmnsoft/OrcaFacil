@@ -66,7 +66,7 @@ public sealed class RegisterModel(AuthService authService, ILogger<RegisterModel
             var correlationId = HttpContext.TraceIdentifier;
             RegistrationErrorCode = correlationId;
             var databaseFailure = ex.GetRegistrationFailure();
-            logger.LogError("REGISTER_FAILED CorrelationId {CorrelationId} ExceptionType {ExceptionType} SqlState {SqlState} Constraint {Constraint} Category {Category}", correlationId, ex.GetType().Name, databaseFailure.SqlState, databaseFailure.Constraint, databaseFailure.Category);
+            logger.LogWarning("REGISTER_REQUEST_FAILED CorrelationId {CorrelationId} ExceptionType {ExceptionType} SqlState {SqlState} Constraint {Constraint} Category {Category}", correlationId, ex.GetType().Name, databaseFailure.SqlState, databaseFailure.Constraint, databaseFailure.Category);
             ModelState.AddModelError(string.Empty, databaseFailure.ToPublicMessage(correlationId));
             return InvalidPage();
         }

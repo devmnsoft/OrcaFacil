@@ -16,7 +16,7 @@ public class EfRepository<T> : IRepository<T> where T : class
     public IQueryable<T> Query() => _db.Set<T>().AsQueryable();
 }
 
-public class UnitOfWork : IUnitOfWork
+public class UnitOfWork : IUnitOfWork, IAsyncDisposable
 {
     private readonly OrcaFacilDbContext _db;
     private IDbContextTransaction? _transaction;
@@ -34,17 +34,46 @@ public class UnitOfWork : IUnitOfWork
     public async Task CommitTransactionAsync(CancellationToken ct = default)
     {
         if (_transaction is null) throw new InvalidOperationException("Não existe uma transação em andamento.");
-        await _transaction.CommitAsync(ct);
-        await _transaction.DisposeAsync();
-        _transaction = null;
+        var transaction = _transaction;
+        try
+        {
+            await transaction.CommitAsync(ct);
+        }
+        catch
+        {
+            _db.ChangeTracker.Clear();
+            throw;
+        }
+        finally
+        {
+            await transaction.DisposeAsync();
+            _transaction = null;
+        }
     }
 
     public async Task RollbackTransactionAsync(CancellationToken ct = default)
     {
         if (_transaction is null) return;
-        await _transaction.RollbackAsync(ct);
-        await _transaction.DisposeAsync();
+        var transaction = _transaction;
         _transaction = null;
-        _db.ChangeTracker.Clear();
+        try { await transaction.RollbackAsync(ct); }
+        finally
+        {
+            await transaction.DisposeAsync();
+            _db.ChangeTracker.Clear();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_transaction is null) return;
+        var transaction = _transaction;
+        _transaction = null;
+        try { await transaction.RollbackAsync(CancellationToken.None); }
+        finally
+        {
+            await transaction.DisposeAsync();
+            _db.ChangeTracker.Clear();
+        }
     }
 }

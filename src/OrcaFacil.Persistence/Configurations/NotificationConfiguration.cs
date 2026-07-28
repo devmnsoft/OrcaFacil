@@ -17,5 +17,9 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
         builder.Property(x => x.ActionUrl).HasMaxLength(400);
         builder.Property(x => x.ActionText).HasMaxLength(80);
         builder.HasIndex(x => new { x.UserId, x.IsRead, x.IsDeleted });
+        builder.HasOne<BusinessAccount>().WithMany().HasForeignKey(x => x.AccountId)
+            .OnDelete(DeleteBehavior.Restrict).HasConstraintName("notifications_account_id_fkey");
+        builder.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_orcafacil_notifications_users");
     }
 }

@@ -17,5 +17,9 @@ public class BillingCustomerProfileConfiguration : IEntityTypeConfiguration<Bill
         builder.HasIndex(x => x.UserId).IsUnique();
         builder.HasIndex(x => x.AccountId).IsUnique();
         builder.HasIndex(x => x.DocumentNumber).IsUnique();
+        builder.HasOne<BusinessAccount>().WithOne().HasForeignKey<BillingCustomerProfile>(x => x.AccountId)
+            .OnDelete(DeleteBehavior.Restrict).HasConstraintName("billing_customer_profiles_account_id_fkey");
+        builder.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_orcafacil_billing_customer_profiles_users");
     }
 }
