@@ -169,7 +169,8 @@ public class AuthService
             await _notificationRepository.AddAsync(notification, ct);
             stage = "REGISTER_DEPENDENTS_SAVE_STARTED";
             LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Started", user.Id, account.Id);
-            await _audit.RegisterAsync(user.Id, "ACCOUNT_REGISTERED", nameof(BusinessAccount), account.Id.ToString(), null, new { account.Id, AccountType = command.AccountType.ToString() }, null, ct);
+            await _audit.RegisterAsync(user.Id, "ACCOUNT_REGISTERED", nameof(BusinessAccount), account.Id.ToString(),
+                null, new { account.Id, AccountType = command.AccountType.ToString() }, null, ct, account.Id);
             stage = "REGISTER_AUDIT_CREATED";
             LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success", user.Id, account.Id);
             await _uow.SaveChangesAsync(ct);

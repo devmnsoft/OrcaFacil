@@ -30,6 +30,7 @@ public partial class StabilizeRegistrationSchema : Migration
             ALTER TABLE orcafacil.subscriptions ADD COLUMN IF NOT EXISTS is_deleted boolean NOT NULL DEFAULT false;
             ALTER TABLE orcafacil.notifications ADD COLUMN IF NOT EXISTS is_deleted boolean NOT NULL DEFAULT false;
             ALTER TABLE orcafacil.audit_logs ADD COLUMN IF NOT EXISTS is_deleted boolean NOT NULL DEFAULT false;
+            ALTER TABLE orcafacil.audit_logs ADD COLUMN IF NOT EXISTS account_id uuid;
 
             CREATE TABLE IF NOT EXISTS orcafacil.account_members (
                 id uuid PRIMARY KEY, account_id uuid NOT NULL REFERENCES orcafacil.business_accounts(id),

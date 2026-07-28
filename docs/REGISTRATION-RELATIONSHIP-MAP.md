@@ -16,10 +16,13 @@ Este mapa compara o modelo EF com o esquema consolidado em `database/script_comp
 | notifications | account_id | business_accounts.id | notifications_account_id_fkey | sim | Restrict | mapeada | presente |
 | notifications | user_id | users.id | fk_orcafacil_notifications_users | não | Restrict | mapeada | presente |
 | notifications | document_id | documents.id | — | sim | — | não mapeada | FK ausente |
-| audit_logs | account_id | business_accounts.id | — | sim | — | não mapeada | coluna/FK ausente |
+| audit_logs | account_id | business_accounts.id | — | sim | — | propriedade mapeada, sem relação | coluna presente; FK ausente |
 | audit_logs | user_id | users.id | — | sim | — | não mapeada | FK ausente |
 
-Não foi criada migration: as relações necessárias ao cadastro já existem, e `audit_logs.account_id` exige uma evolução separada com coluna, backfill e política de retenção. Mapear relações inexistentes produziria divergência entre o EF e instalações atuais.
+Não foi criada uma nova migration: a migration aditiva de estabilização passou a incluir a coluna nullable
+`audit_logs.account_id`, que já existia no script consolidado. Ela deliberadamente não cria uma FK para auditoria,
+pois essa constraint não existe no esquema consolidado e criá-la sem política de retenção e backfill comprovados
+produziria divergência entre instalações. O cadastro preenche a coluna com a mesma conta criada na primeira fase.
 
 ## Verificação em PostgreSQL
 

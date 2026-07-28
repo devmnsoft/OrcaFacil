@@ -10,10 +10,12 @@ public class AuditService : IAuditService
 
     public AuditService(OrcaFacilDbContext db) => _db = db;
 
-    public Task RegisterAsync(Guid? userId, string action, string entityType, string? entityId, object? before, object? after, object? metadata, CancellationToken ct = default)
+    public Task RegisterAsync(Guid? userId, string action, string entityType, string? entityId, object? before,
+        object? after, object? metadata, CancellationToken ct = default, Guid? accountId = null)
     {
         _db.AuditLogs.Add(new AuditLog
         {
+            AccountId = accountId,
             UserId = userId,
             Action = action,
             EntityType = entityType,
