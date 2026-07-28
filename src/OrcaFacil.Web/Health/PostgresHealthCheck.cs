@@ -2,6 +2,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using OrcaFacil.Application.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Persistence;
+using OrcaFacil.Persistence.Diagnostics;
 
 namespace OrcaFacil.Web.Health;
 

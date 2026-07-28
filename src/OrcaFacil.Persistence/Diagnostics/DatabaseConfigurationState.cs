@@ -54,7 +54,7 @@ public sealed record DatabaseConfigurationState(
             var placeholder = hasAnyPassword && !validPassword;
             var metadataValid = !string.IsNullOrWhiteSpace(cs.Host) && !string.IsNullOrWhiteSpace(cs.Database) &&
                                 !string.IsNullOrWhiteSpace(cs.Username) && cs.Port is > 0 and <= 65535;
-            var fingerprint = Fingerprint(cs.Host, cs.Port, cs.Database, cs.Username, cs.SslMode.ToString());
+            var fingerprint = Fingerprints(cs.Host, cs.Port, cs.Database, cs.Username, cs.SslMode.ToString());
 
             if (!metadataValid)
                 return Invalid(true, validPassword, source.Name, expectedLocalFilePath, cs.Host, cs.Port, cs.Database, cs.Username,
@@ -71,7 +71,7 @@ public sealed record DatabaseConfigurationState(
         }
         catch (ArgumentException)
         {
-            return Invalid(true, false, source.Name, expectedLocalFilePath, "", 0, "", "", "", Fingerprint(raw),
+            return Invalid(true, false, source.Name, expectedLocalFilePath, "", 0, "", "", "", Fingerprints(raw),
                 environmentOverride ? DatabaseConfigurationValidationCode.EnvironmentOverrideInvalid : DatabaseConfigurationValidationCode.InvalidFormat,
                 environmentOverride ? OverrideMessage() : "A connection string possui formato inválido.");
         }
@@ -86,7 +86,7 @@ public sealed record DatabaseConfigurationState(
         new(configured, false, password, source, path, host, port, database, username, ssl, fingerprint,
             code, PublicUnavailableMessage, adminMessage);
 
-    private static string Fingerprint(params object?[] parts)
+    private static string Fingerprints(params object?[] parts)
     {
         var canonical = string.Join("|", parts.Select(x => x?.ToString() ?? ""));
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)))[..12].ToLowerInvariant();
