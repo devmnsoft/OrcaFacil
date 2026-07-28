@@ -87,6 +87,7 @@ builder.Services.AddScoped<IPdfService, QuestPdfDocumentService>();
 builder.Services.AddScoped<INumberToWordsService, NumberToWordsPtBrService>();
 builder.Services.AddSingleton<IDatabaseDiagnosticsService, DatabaseDiagnosticsService>();
 builder.Services.AddSingleton<DatabaseDiagnosticsService>();
+builder.Services.AddSingleton<IDatabaseSchemaContractService, DatabaseSchemaContractService>();
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
     .AddCheck<LocalSettingsHealthCheck>("local-settings", tags: ["ready"])
