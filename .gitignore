@@ -10,6 +10,11 @@ node_modules/
 
 functions/.env
 
+# Local database settings contain developer secrets and must never be committed.
+src/OrcaFacil.Web/appsettings.Local.json
+src/OrcaFacil.Api/appsettings.Local.json
+**/appsettings.Local.json
+
 # Build/produção
 node_modules/
 dist/
