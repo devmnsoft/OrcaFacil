@@ -1,0 +1,90 @@
+using OrcaFacil.Domain.Common;
+using OrcaFacil.Domain.Enums;
+
+namespace OrcaFacil.Domain.Entities;
+
+public sealed class DocumentRevision : Entity
+{
+    public Guid AccountId { get; set; }
+    public Guid DocumentId { get; set; }
+    public int VersionNumber { get; set; }
+    public DocumentRevisionStatus Status { get; set; } = DocumentRevisionStatus.Draft;
+    public Guid CreatedByUserId { get; set; }
+    public DateTime? SentAt { get; set; }
+    public string SnapshotHash { get; set; } = string.Empty;
+    public string ProtectedSnapshot { get; set; } = string.Empty;
+    public string TemplateCode { get; set; } = "essential";
+    public string BrandingSnapshot { get; set; } = "{}";
+    public decimal Total { get; set; }
+    public DateTime? ValidUntil { get; set; }
+    public bool IsCurrent { get; set; }
+    public uint Version { get; set; }
+}
+
+public sealed class PublicDocumentAccess : Entity
+{
+    public Guid AccountId { get; set; }
+    public Guid DocumentId { get; set; }
+    public Guid DocumentRevisionId { get; set; }
+    public string TokenHash { get; set; } = string.Empty;
+    public DateTime ExpiresAt { get; set; }
+    public DateTime? RevokedAt { get; set; }
+    public DateTime? LastViewedAt { get; set; }
+    public int ViewCount { get; set; }
+    public PublicAccessStatus Status { get; set; } = PublicAccessStatus.Active;
+    public Guid CreatedByUserId { get; set; }
+    public uint Version { get; set; }
+}
+
+public sealed class PublicDocumentDecision : Entity
+{
+    public Guid AccountId { get; set; }
+    public Guid DocumentId { get; set; }
+    public Guid DocumentRevisionId { get; set; }
+    public PublicDocumentDecisionType Decision { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string? ReasonCode { get; set; }
+    public string? Comment { get; set; }
+    public string IpHash { get; set; } = string.Empty;
+    public string UserAgentHash { get; set; } = string.Empty;
+    public string IdempotencyKey { get; set; } = string.Empty;
+}
+
+public sealed class CommercialFollowUp : Entity
+{
+    public Guid AccountId { get; set; }
+    public Guid DocumentId { get; set; }
+    public Guid? DocumentRevisionId { get; set; }
+    public FollowUpChannel Channel { get; set; }
+    public FollowUpResult Result { get; set; }
+    public DateTime OccurredAt { get; set; }
+    public string? Note { get; set; }
+    public Guid CreatedByUserId { get; set; }
+}
+
+public sealed class WorkOrder : Entity
+{
+    public Guid AccountId { get; set; }
+    public Guid? SourceDocumentId { get; set; }
+    public Guid? SourceRevisionId { get; set; }
+    public Guid ClientId { get; set; }
+    public string Number { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public WorkOrderStatus Status { get; set; } = WorkOrderStatus.Planned;
+    public DateTime? ScheduledStart { get; set; }
+    public DateTime? ScheduledEnd { get; set; }
+    public DateTime? StartedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public Guid? AssignedUserId { get; set; }
+    public string AddressSnapshot { get; set; } = "{}";
+    public string ClientSnapshot { get; set; } = "{}";
+    public string ItemsSnapshot { get; set; } = "[]";
+    public decimal TotalSnapshot { get; set; }
+    public string? Notes { get; set; }
+    public Guid CreatedByUserId { get; set; }
+    public bool PaymentReceived { get; set; }
+    public string? PaymentMethod { get; set; }
+    public uint Version { get; set; }
+}
