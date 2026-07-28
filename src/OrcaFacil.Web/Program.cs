@@ -40,7 +40,7 @@ if (!databaseConfigured)
 }
 if (databaseOptions is not null) builder.Services.AddSingleton(databaseOptions);
 builder.Services.AddDbContext<OrcaFacilDbContext>(options => options
-    .UseNpgsql(defaultConnection ?? "Host=configuration.invalid;Database=unavailable;Username=unavailable;Timeout=1")
+    .UseNpgsql(defaultConnection ?? "Host=localhost;Database=postgres;Username=postgres;Password=123456;Pooling=true;Maximum Pool Size=50;Minimum Pool Size=0;Timeout=30;Command Timeout=60;Search Path=orcafacil,public;Application Name=orcafacil.api")
     .EnableSensitiveDataLogging(false)
     .EnableDetailedErrors(builder.Environment.IsDevelopment() && builder.Configuration.GetValue("Diagnostics:EnableEfDetailedErrors", false)));
 var keyPath = builder.Configuration["DataProtection:KeysPath"] ?? Path.Combine(builder.Environment.ContentRootPath, ".keys");
