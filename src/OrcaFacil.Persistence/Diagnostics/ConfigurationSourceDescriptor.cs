@@ -24,12 +24,12 @@ public sealed record ConfigurationSourceDescriptor(string Name, string Detail)
             if (identity.Contains("secrets.json", StringComparison.OrdinalIgnoreCase))
                 return new("UserSecrets", "User secrets");
             if (identity.Contains("appsettings.Development.json", StringComparison.OrdinalIgnoreCase))
-                return new("AppSettingsDevelopment", "appsettings.Development.json");
+                return new("DevelopmentJson", "appsettings.Development.json");
             if (identity.Contains("appsettings.json", StringComparison.OrdinalIgnoreCase))
                 return new("AppSettings", "appsettings.json");
-            return new("AppSettings", provider.GetType().Name);
+            return new("Unknown", provider.GetType().Name);
         }
 
-        return new("NotConfigured", "ConnectionStrings:DefaultConnection");
+        return new("Missing", "ConnectionStrings:DefaultConnection");
     }
 }

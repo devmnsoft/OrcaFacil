@@ -9,7 +9,7 @@ public sealed class ConfigurationSourceDescriptorTests
     public void Missing_connection_is_not_configured()
     {
         var configuration = new ConfigurationBuilder().Build();
-        Assert.Equal("NotConfigured", ConfigurationSourceDescriptor.Detect(configuration).Name);
+        Assert.Equal("Missing", ConfigurationSourceDescriptor.Detect(configuration).Name);
     }
 
     [Fact]
@@ -21,7 +21,7 @@ public sealed class ConfigurationSourceDescriptorTests
             .Build();
 
         var source = ConfigurationSourceDescriptor.Detect(configuration);
-        Assert.Equal("AppSettings", source.Name);
+        Assert.Equal("Unknown", source.Name);
         Assert.DoesNotContain("secret", source.ToString(), StringComparison.OrdinalIgnoreCase);
     }
 }
