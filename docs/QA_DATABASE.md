@@ -42,6 +42,6 @@ O script é idempotente e seguro para reexecução: usa `CREATE SCHEMA IF NOT EX
 ## Checklist rápido para erro 28P01
 
 1. Confirme a variável `ConnectionStrings__DefaultConnection`.
-2. Teste com `psql "Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456"`.
+2. Teste com `psql "Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=<informada-localmente>"`.
 3. Se falhar, rode `ALTER USER orcafacil_user WITH PASSWORD '123456';` como administrador.
 4. Acesse `/health/db` e `/Admin/Settings/Database` para validar o status sem expor stack trace.

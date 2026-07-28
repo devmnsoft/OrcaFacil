@@ -13,4 +13,6 @@ public sealed record DatabaseDiagnosticsDto(
     IReadOnlyList<string> MissingTables,
     string? DatabaseName,
     string? PostgreSqlVersion,
-    string? Error);
+    string? Error,
+    bool FreePlanExists = false,
+    bool PublishedFreeVersionExists = false);

@@ -112,7 +112,7 @@ curl http://localhost:5000/health/db
 Use a variável `ConnectionStrings__DefaultConnection` ou o arquivo `src/OrcaFacil.Web/appsettings.Development.json` com:
 
 ```text
-Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456
+Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=<informada-localmente>
 ```
 
 ### Criar usuário e banco do zero
@@ -144,13 +144,13 @@ ALTER USER orcafacil_user WITH PASSWORD '123456';
 ### Testar conexão
 
 ```bash
-psql "Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456" -c "select current_user, current_database();"
+psql "Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=<informada-localmente>" -c "select current_user, current_database();"
 ```
 
 ### Executar script_completop.sql
 
 ```bash
-psql "Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456" -f script_completop.sql
+psql "Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=<informada-localmente>" -f script_completop.sql
 ```
 
 ## Conexão local e erro 28P01
@@ -158,7 +158,7 @@ psql "Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Passwo
 Connection string esperada em desenvolvimento:
 
 ```text
-Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456
+Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=<informada-localmente>
 ```
 
 Para criar ou corrigir o usuário local, execute `database/corrigir_usuario_local.sql` como `postgres`/superuser. O erro PostgreSQL `28P01` significa falha de autenticação: usuário ou senha incorretos na connection string ou variável de ambiente.

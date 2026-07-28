@@ -5,11 +5,20 @@ using OrcaFacil.Persistence.Diagnostics;
 
 namespace OrcaFacil.Web.Areas.Admin.Pages.Settings;
 
-[Authorize(Policy = "SuperAdmin")]
+[Authorize(Policy = "SuperAdminOnly")]
 public class DatabaseModel : PageModel
 {
     private readonly IDatabaseDiagnosticsService _diagnostics;
+    private readonly IConfiguration _configuration;
+    private readonly IHostEnvironment _environment;
     public DatabaseDiagnosticsDto? Result { get; private set; }
-    public DatabaseModel(IDatabaseDiagnosticsService diagnostics) => _diagnostics = diagnostics;
-    public async Task OnGetAsync(CancellationToken ct) => Result = await _diagnostics.CheckAsync(ct);
+    public DatabaseConnectionDescriptor? Descriptor { get; private set; }
+    public DatabaseModel(IDatabaseDiagnosticsService diagnostics, IConfiguration configuration, IHostEnvironment environment) =>
+        (_diagnostics, _configuration, _environment) = (diagnostics, configuration, environment);
+    public async Task OnGetAsync(CancellationToken ct)
+    {
+        Result = await _diagnostics.CheckAsync(ct);
+        if (DatabaseConnectionOptions.TryCreate(_configuration, out var options, out _))
+            Descriptor = DatabaseConnectionDescriptor.From(options!, _environment.EnvironmentName);
+    }
 }

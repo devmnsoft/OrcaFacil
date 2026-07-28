@@ -17,6 +17,6 @@ services:
     profiles: ["tools"]
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-change-me}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?configure no .env}
     ports: ["5050:80"]
 volumes: { orcafacil_pgdata: {} }

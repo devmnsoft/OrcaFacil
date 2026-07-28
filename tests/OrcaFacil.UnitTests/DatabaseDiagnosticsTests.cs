@@ -14,7 +14,8 @@ public class DatabaseDiagnosticsTests
                     "users", "issuer_profiles", "documents", "document_items", "public_quotes",
             "user_usage", "subscriptions", "payments", "payment_events", "mercadopago_webhook_events",
             "billing_customer_profiles", "clients", "plan_features", "admin_settings", "notifications",
-            "audit_logs", "system_logs", "system_errors"
+            "audit_logs", "system_logs", "system_errors", "business_accounts", "account_members",
+            "plans", "plan_versions"
         };
 
         Assert.Equal(expected, DatabaseDiagnosticsService.RequiredTables);
@@ -34,7 +35,7 @@ public class DatabaseDiagnosticsTests
     [Fact]
     public void MaskConnectionString_Hides_Password()
     {
-        var masked = DatabaseDiagnosticsService.MaskConnectionString("Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456");
+        var masked = DatabaseDiagnosticsService.MaskConnectionString("Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=<redacted>");
 
         Assert.Contains("Password=******", masked);
         Assert.DoesNotContain("123456", masked);

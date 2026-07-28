@@ -22,17 +22,29 @@ using OrcaFacil.Persistence.Diagnostics;
 using OrcaFacil.Persistence.Plans;
 using OrcaFacil.Web.Services;
 using Serilog;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(context.Configuration).Enrich.FromLogContext().WriteTo.Console());
+builder.Logging.ClearProviders();
+builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(context.Configuration).Enrich.FromLogContext());
 
 var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection");
-if (string.IsNullOrWhiteSpace(defaultConnection))
+var databaseConfigured = DatabaseConnectionOptions.TryCreate(builder.Configuration, out var databaseOptions, out var databaseConfigurationError);
+if (!databaseConfigured)
 {
-    Log.Logger.Error("ConnectionStrings:DefaultConnection ausente. Configure appsettings, user-secrets ou a variável ConnectionStrings__DefaultConnection.");
+    Log.Logger.Error("Configuração de banco inválida: {ConfigurationError}", databaseConfigurationError);
 }
-builder.Services.AddDbContext<OrcaFacilDbContext>(options => options.UseNpgsql(defaultConnection));
+if (databaseOptions is not null) builder.Services.AddSingleton(databaseOptions);
+builder.Services.AddDbContext<OrcaFacilDbContext>(options => options
+    .UseNpgsql(defaultConnection ?? "Host=configuration.invalid;Database=unavailable;Username=unavailable;Timeout=1")
+    .EnableSensitiveDataLogging(false)
+    .EnableDetailedErrors(builder.Environment.IsDevelopment() && builder.Configuration.GetValue("Diagnostics:EnableEfDetailedErrors", false)));
+var keyPath = builder.Configuration["DataProtection:KeysPath"] ?? Path.Combine(builder.Environment.ContentRootPath, ".keys");
+builder.Services.AddDataProtection().SetApplicationName("OrcaFacil").PersistKeysToFileSystem(new DirectoryInfo(keyPath));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -64,7 +76,9 @@ builder.Services.AddScoped<IPdfService, QuestPdfDocumentService>();
 builder.Services.AddScoped<INumberToWordsService, NumberToWordsPtBrService>();
 builder.Services.AddSingleton<IDatabaseDiagnosticsService, DatabaseDiagnosticsService>();
 builder.Services.AddSingleton<DatabaseDiagnosticsService>();
-builder.Services.AddHealthChecks().AddCheck<PostgresHealthCheck>("postgresql");
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
+    .AddCheck<PostgresHealthCheck>("postgresql", tags: ["ready"]);
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
 {
     options.Cookie.HttpOnly = true;
@@ -129,7 +143,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-await SuperAdminSeeder.SeedAsync(app.Services);
+if (databaseConfigured) await SuperAdminSeeder.SeedAsync(app.Services);
 
 app.UseHttpsRedirection();
 app.UseMiddleware<CorrelationIdMiddleware>();
@@ -140,22 +154,15 @@ app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapHealthChecks("/health");
-app.MapGet("/health/db", async (IDatabaseDiagnosticsService diagnostics, CancellationToken ct) =>
+static Task WritePublicHealth(HttpContext context, HealthReport report)
 {
-    var result = await diagnostics.CheckAsync(ct);
-    var healthy = result.CanConnect && result.SchemaExists && result.MissingTables.Count == 0;
-    var payload = new
-    {
-        status = healthy ? "ok" : "error",
-        database = result.DatabaseName,
-        schema = DatabaseDiagnosticsService.ExpectedSchema,
-        canConnect = result.CanConnect,
-        missingTables = result.MissingTables,
-        error = healthy ? null : result.Error
-    };
-    return healthy ? Results.Ok(payload) : Results.Json(payload, statusCode: StatusCodes.Status503ServiceUnavailable);
-});
+    context.Response.ContentType = "application/json";
+    var status = report.Status.ToString();
+    if (report.Status == HealthStatus.Unhealthy) context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+    return context.Response.WriteAsync(JsonSerializer.Serialize(new { status, correlationId = context.TraceIdentifier }));
+}
+app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = check => check.Tags.Contains("live"), ResponseWriter = WritePublicHealth });
+app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready"), ResponseWriter = WritePublicHealth });
 app.MapPost("/api/webhooks/mercadopago", async (HttpRequest request, OrcaFacil.Application.Abstractions.IPaymentGateway gateway, OrcaFacil.Persistence.OrcaFacilDbContext db, CancellationToken ct) =>
 {
     using var reader = new StreamReader(request.Body);
