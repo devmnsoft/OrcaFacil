@@ -26,8 +26,10 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Text.Json;
+using OrcaFacil.Web.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddOrcaFacilLocalConfiguration();
 
 builder.Logging.ClearProviders();
 builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(context.Configuration).Enrich.FromLogContext());
@@ -40,7 +42,8 @@ if (!databaseConfigured)
 }
 if (databaseOptions is not null) builder.Services.AddSingleton(databaseOptions);
 builder.Services.AddDbContext<OrcaFacilDbContext>(options => options
-    .UseNpgsql(defaultConnection ?? "Host=localhost;Database=postgres;Username=postgres;Password=123456;Pooling=true;Maximum Pool Size=50;Minimum Pool Size=0;Timeout=30;Command Timeout=60;Search Path=orcafacil,public;Application Name=orcafacil.api")
+    // A non-secret placeholder lets liveness and friendly error pages start when local settings are absent.
+    .UseNpgsql(defaultConnection ?? "Host=localhost;Database=orcafacil;Username=orcafacil_unconfigured;Pooling=true;Timeout=1;Command Timeout=1;Search Path=orcafacil,public")
     .EnableSensitiveDataLogging(false)
     .EnableDetailedErrors(builder.Environment.IsDevelopment() && builder.Configuration.GetValue("Diagnostics:EnableEfDetailedErrors", false)));
 var keyPath = builder.Configuration["DataProtection:KeysPath"] ?? Path.Combine(builder.Environment.ContentRootPath, ".keys");
@@ -78,6 +81,7 @@ builder.Services.AddSingleton<IDatabaseDiagnosticsService, DatabaseDiagnosticsSe
 builder.Services.AddSingleton<DatabaseDiagnosticsService>();
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
+    .AddCheck<LocalSettingsHealthCheck>("local-settings", tags: ["ready"])
     .AddCheck<PostgresHealthCheck>("postgresql", tags: ["ready"]);
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
 {

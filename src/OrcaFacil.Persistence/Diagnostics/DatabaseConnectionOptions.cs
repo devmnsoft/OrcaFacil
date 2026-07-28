@@ -18,17 +18,12 @@ public sealed record DatabaseConnectionOptions(
         {
             var cs = new NpgsqlConnectionStringBuilder(value);
             options = new(cs.Host ?? "", cs.Port, cs.Database ?? "", cs.Username ?? "", cs.SslMode.ToString(),
-                cs.Timeout, cs.Pooling, !string.IsNullOrWhiteSpace(cs.Password), ResolveSource(configuration));
+                cs.Timeout, cs.Pooling, !string.IsNullOrWhiteSpace(cs.Password), ConfigurationSourceDescriptor.Detect(configuration).Name);
             error = DatabaseConnectionOptionsValidator.Validate(options);
             return error.Length == 0;
         }
         catch (ArgumentException) { error = "ConnectionStrings:DefaultConnection possui formato inválido."; return false; }
     }
-
-    private static string ResolveSource(IConfiguration configuration) =>
-        !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection"))
-            ? "Environment:ConnectionStrings__DefaultConnection"
-            : "Configuration:ConnectionStrings:DefaultConnection";
 }
 
 public static class DatabaseConnectionOptionsValidator

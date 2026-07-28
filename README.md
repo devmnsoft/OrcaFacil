@@ -21,6 +21,23 @@ dotnet build OrcaFacil.sln
 dotnet run --project src/OrcaFacil.Web
 ```
 
+## Configuração rápida do banco
+
+Execute `powershell -ExecutionPolicy Bypass -File .\scripts\create-local-settings.ps1` e informe sua senha somente no arquivo local criado em:
+
+`src/OrcaFacil.Web/appsettings.Local.json`
+
+O arquivo é ignorado pelo Git e não entra na publicação. Em Development, a prioridade é: `ConnectionStrings__DefaultConnection`, arquivo local, user-secrets, `appsettings.Development.json` e `appsettings.json`. Depois de editar a conexão, reinicie o OrçaFácil e execute:
+
+```bash
+dotnet ef database update \
+  --project src/OrcaFacil.Persistence \
+  --startup-project src/OrcaFacil.Web
+
+dotnet run \
+  --project src/OrcaFacil.Web
+```
+
 ## Docker
 
 Copie `.env.example` para `.env`, preencha os segredos e execute:
