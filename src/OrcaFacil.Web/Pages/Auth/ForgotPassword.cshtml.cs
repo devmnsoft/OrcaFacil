@@ -1,0 +1,3 @@
+using System.ComponentModel.DataAnnotations; using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Mvc; using Microsoft.AspNetCore.Mvc.RazorPages; using OrcaFacil.Web.Security;
+namespace OrcaFacil.Web.Pages.Auth;
+[AllowAnonymous] public sealed class ForgotPasswordModel(IPasswordRecoveryService recovery):PageModel { [BindProperty,Required,EmailAddress] public string Email{get;set;}=""; public void OnGet(){} public async Task<IActionResult> OnPostAsync(CancellationToken ct){if(!ModelState.IsValid)return Page();await recovery.RequestResetAsync(Email,HttpContext.TraceIdentifier,HttpContext.Connection.RemoteIpAddress?.ToString(),Request.Headers.UserAgent.ToString(),ct);return RedirectToPage("/Auth/ForgotPasswordConfirmation");}}
