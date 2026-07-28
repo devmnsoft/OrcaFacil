@@ -1,4 +1,5 @@
 using OrcaFacil.Domain.Entities;
+using OrcaFacil.Domain.Enums;
 
 namespace OrcaFacil.Application.Plans;
 
@@ -26,8 +27,11 @@ public interface IPlanAccessDataSource
     Task<Plan?> GetPlanAsync(Guid planId, CancellationToken ct);
     Task<PlanVersion?> GetPublishedFreeVersionAsync(DateTime utcNow, CancellationToken ct);
     Task<IReadOnlyDictionary<string, PlanFeatureSetting>> GetFeaturesAsync(Guid planVersionId, CancellationToken ct);
+    Task<AccountStatus?> GetAccountStatusAsync(Guid accountId, CancellationToken ct);
+    Task<IReadOnlyList<PlanFeatureCandidate>> GetPublicPlanCandidatesAsync(string featureCode, DateTime utcNow, CancellationToken ct);
     Task<int> GetUsageAsync(Guid accountId, string featureCode, DateTime periodStartUtc, CancellationToken ct);
 }
 
 public sealed record PlanFeatureSetting(bool? Enabled = null, int? Limit = null, bool IsUnlimited = false);
+public sealed record PlanFeatureCandidate(string PlanCode, int DisplayOrder, PlanFeatureSetting Setting);
 public sealed record PlanAccessDecision(bool IsAllowed, string FeatureCode, string CurrentPlanCode, string? RequiredPlanCode, int CurrentUsage, int? Limit, string UserMessage, string InternalReason);
