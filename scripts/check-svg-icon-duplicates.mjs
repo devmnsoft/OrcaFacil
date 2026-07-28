@@ -1,0 +1,4 @@
+import fs from 'node:fs'; import path from 'node:path';
+const root=path.resolve('src/OrcaFacil.Web/wwwroot'); const files=[]; function walk(d){if(!fs.existsSync(d))return;for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);e.isDirectory()?walk(p):e.name.endsWith('.svg')&&files.push(p)}} walk(root);
+const seen=new Map();let failures=0;for(const file of files){const svg=fs.readFileSync(file,'utf8');for(const match of svg.matchAll(/<symbol\b[^>]*id=["']([^"']+)["'][^>]*>([\s\S]*?)<\/symbol>/g)){const paths=[...match[2].matchAll(/<path\b[^>]*d=["']([^"']+)["']/g)].map(x=>x[1].replace(/\s+/g,' ').trim()).sort().join('|');if(!paths)continue;const previous=seen.get(paths);if(previous&&previous!==match[1]){console.error(`Símbolos ${previous} e ${match[1]} possuem paths idênticos.`);failures++;}else seen.set(paths,match[1]);}}
+if(failures)process.exit(1);console.log(`SVG icon check OK (${files.length} arquivos).`);

@@ -28,6 +28,9 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Text.Json;
 using OrcaFacil.Web.Configuration;
 using OrcaFacil.Web.Middleware;
+using OrcaFacil.Web.Email;
+using OrcaFacil.Web.Security;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddOrcaFacilLocalConfiguration();
@@ -83,6 +86,17 @@ builder.Services.Configure<BillingOptions>(builder.Configuration.GetSection("Bil
 builder.Services.AddScoped<IPaymentGateway, MercadoPagoPaymentGateway>();
 builder.Services.AddScoped<UserUsageService>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+builder.Services.Configure<PasswordResetOptions>(builder.Configuration.GetSection("PasswordReset"));
+builder.Services.Configure<ApplicationUrlOptions>(builder.Configuration.GetSection("Application"));
+builder.Services.Configure<SecuritySecretOptions>(builder.Configuration.GetSection("Security"));
+builder.Services.AddSingleton<IValidateOptions<EmailOptions>, EmailOptionsValidator>();
+builder.Services.AddSingleton<IValidateOptions<PasswordResetOptions>, PasswordResetOptionsValidator>();
+builder.Services.AddSingleton<IValidateOptions<SecuritySecretOptions>, SecuritySecretOptionsValidator>();
+builder.Services.AddScoped<IPasswordResetTokenService, PasswordResetTokenService>();
+builder.Services.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
+builder.Services.AddScoped<IEmailSender, GmailSmtpEmailSender>();
+builder.Services.AddHostedService<EmailOutboxWorker>();
 builder.Services.AddScoped<IPdfService, QuestPdfDocumentService>();
 builder.Services.AddScoped<INumberToWordsService, NumberToWordsPtBrService>();
 builder.Services.AddSingleton<IDatabaseDiagnosticsService, DatabaseDiagnosticsService>();

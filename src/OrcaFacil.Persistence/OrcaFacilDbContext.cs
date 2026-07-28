@@ -42,6 +42,8 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<BillingInvoice> BillingInvoices => Set<BillingInvoice>();
     public DbSet<SupportAccessSession> SupportAccessSessions => Set<SupportAccessSession>();
     public DbSet<ActivityEvent> ActivityEvents => Set<ActivityEvent>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+    public DbSet<EmailOutboxMessage> EmailOutboxMessages => Set<EmailOutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
