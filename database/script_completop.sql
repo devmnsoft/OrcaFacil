@@ -334,7 +334,7 @@ CREATE INDEX IF NOT EXISTS ix_orcafacil_clients_document_number ON orcafacil.cli
 
 CREATE TABLE IF NOT EXISTS orcafacil.billing_customer_profiles (
     id uuid NOT NULL DEFAULT gen_random_uuid(), user_id uuid NOT NULL,
-    person_type varchar(30) NOT NULL DEFAULT 'Individual', document_type varchar(10), document_number varchar(20), name varchar(180) NOT NULL, trade_name varchar(180), legal_name varchar(180), email varchar(254), phone varchar(40), city varchar(120), address varchar(300), mercadopago_customer_id varchar(180),
+    person_type varchar(30) NOT NULL DEFAULT 'Individual', document_type varchar(10), document_number varchar(20), name varchar(180) NOT NULL, trade_name varchar(180), legal_name varchar(180), email varchar(254), phone varchar(40), city varchar(120), address varchar(300), mercado_pago_customer_id varchar(180),
     created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false,
     CONSTRAINT pk_orcafacil_billing_customer_profiles PRIMARY KEY (id), CONSTRAINT uq_orcafacil_billing_customer_profiles_user UNIQUE (user_id), CONSTRAINT fk_orcafacil_billing_customer_profiles_users FOREIGN KEY (user_id) REFERENCES orcafacil.users(id) ON DELETE CASCADE,
     CONSTRAINT ck_orcafacil_billing_profiles_person_type CHECK (person_type IN ('Individual', 'Company')), CONSTRAINT ck_orcafacil_billing_profiles_document_type CHECK (document_type IS NULL OR document_type IN ('CPF', 'CNPJ'))
@@ -449,6 +449,8 @@ ALTER TABLE orcafacil.billing_customer_profiles ADD COLUMN IF NOT EXISTS street 
 ALTER TABLE orcafacil.billing_customer_profiles ADD COLUMN IF NOT EXISTS street_number varchar(30);
 ALTER TABLE orcafacil.billing_customer_profiles ADD COLUMN IF NOT EXISTS complement varchar(120);
 ALTER TABLE orcafacil.billing_customer_profiles ADD COLUMN IF NOT EXISTS district varchar(120);
+ALTER TABLE orcafacil.billing_customer_profiles ADD COLUMN IF NOT EXISTS address varchar(300);
+ALTER TABLE orcafacil.billing_customer_profiles ADD COLUMN IF NOT EXISTS mercado_pago_customer_id varchar(180);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_profiles_account_id ON orcafacil.billing_customer_profiles(account_id) WHERE account_id IS NOT NULL AND is_deleted = false;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_profiles_document_number ON orcafacil.billing_customer_profiles(document_number) WHERE document_number IS NOT NULL AND is_deleted = false;
 CREATE TABLE IF NOT EXISTS orcafacil.roles (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), code varchar(80) NOT NULL UNIQUE, display_name varchar(120) NOT NULL, is_platform_role boolean NOT NULL DEFAULT false, is_system boolean NOT NULL DEFAULT true, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
