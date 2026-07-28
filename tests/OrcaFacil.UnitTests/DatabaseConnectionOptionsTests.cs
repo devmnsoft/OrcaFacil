@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using OrcaFacil.Persistence.Diagnostics;
+using Xunit;
 
 namespace OrcaFacil.UnitTests;
 
