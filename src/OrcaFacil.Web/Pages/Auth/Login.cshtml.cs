@@ -27,8 +27,8 @@ public class LoginModel : PageModel
         if (!ModelState.IsValid) { TempData.Warning("Informe e-mail e senha para entrar."); return Page(); }
         try
         {
-            var result = await _authService.LoginAsync(new LoginUserCommand(Input.Email, Input.Password), ct);
-            if (!result.Succeeded || result.Value is null) { ModelState.AddModelError(string.Empty, result.Error ?? "Não foi possível entrar."); TempData.Error(result.Error ?? "Não foi possível entrar."); _logger.LogWarning("USER_LOGIN_FAILED_WEB {Email}", Input.Email); return Page(); }
+            var result = await _authService.LoginAsync(new LoginUserCommand(Input.Email, Input.Password, HttpContext.TraceIdentifier), ct);
+            if (!result.Succeeded || result.Value is null) { ModelState.AddModelError(string.Empty, result.Error ?? "Não foi possível entrar."); TempData.Error(result.Error ?? "Não foi possível entrar."); _logger.LogWarning("USER_LOGIN_FAILED_WEB CorrelationId {CorrelationId}", HttpContext.TraceIdentifier); return Page(); }
         var user = result.Value;
         var claims = new List<Claim> { new("sub", user.Id.ToString()), new(ClaimTypes.NameIdentifier, user.Id.ToString()), new("name", user.Name), new(ClaimTypes.Name, user.Name), new("email", user.Email), new(ClaimTypes.Email, user.Email), new("role", user.Role), new(ClaimTypes.Role, user.Role), new("plan", user.Plan), new("session_version", user.SessionVersion.ToString()) };
         var memberships = await (from member in _db.AccountMembers.AsNoTracking()
@@ -50,9 +50,9 @@ public class LoginModel : PageModel
         }
         catch (Exception ex) when (ex.IsPostgresInvalidPassword())
         {
-            _logger.LogError(ex, "POSTGRES_AUTH_FAILED_LOGIN SqlState 28P01 for {Email}", Input.Email);
-            ModelState.AddModelError(string.Empty, "Não foi possível concluir seu acesso agora. Tente novamente em instantes ou fale com a MNSOFT.");
-            TempData.Error("Não foi possível concluir seu acesso agora. Tente novamente em instantes ou fale com a MNSOFT.");
+            _logger.LogError("POSTGRES_AUTH_FAILED_LOGIN CorrelationId {CorrelationId}", HttpContext.TraceIdentifier);
+            ModelState.AddModelError(string.Empty, "Não foi possível entrar agora porque o serviço de dados está temporariamente indisponível.");
+            TempData.Error("Não foi possível entrar agora porque o serviço de dados está temporariamente indisponível.");
             return Page();
         }
         catch (Exception ex)

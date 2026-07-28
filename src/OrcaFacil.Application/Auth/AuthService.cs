@@ -196,8 +196,8 @@ public class AuthService
             var user = _users.Query().SingleOrDefault(candidate => candidate.Email == email);
             if (user is null || !_hasher.Verify(command.Password, user.PasswordHash))
             {
-                _logger.LogWarning("AUTH_LOGIN_FAILED {Email}", email);
-                return Result<UserSummaryDto>.Fail("Credenciais inválidas.");
+                _logger.LogWarning("AUTH_LOGIN_FAILED CorrelationId {CorrelationId}", command.CorrelationId ?? "not-provided");
+                return Result<UserSummaryDto>.Fail("E-mail ou senha inválidos.");
             }
 
             if (user.IsBlocked)

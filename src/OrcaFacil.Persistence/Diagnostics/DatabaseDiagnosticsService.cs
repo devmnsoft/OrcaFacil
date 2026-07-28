@@ -14,7 +14,8 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
         "users", "issuer_profiles", "documents", "document_items", "public_quotes",
         "user_usage", "subscriptions", "payments", "payment_events", "mercadopago_webhook_events",
         "billing_customer_profiles", "clients", "plan_features", "admin_settings", "notifications",
-        "audit_logs", "system_logs", "system_errors"
+        "audit_logs", "system_logs", "system_errors", "business_accounts", "account_members",
+        "plans", "plan_versions"
     ];
 
     private readonly IConfiguration _configuration;
@@ -64,7 +65,16 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
             var version = await connection.ExecuteScalarAsync<string>(new CommandDefinition(
                 "select version()", cancellationToken: ct));
 
-            return new(true, schemaExists, existingTables, missing, databaseName, version, null);
+            var freePlan = missing.Length == 0 && await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
+                "select exists(select 1 from orcafacil.plans where code='FREE' and is_active and not is_deleted)", cancellationToken: ct));
+            var publishedFreeVersion = freePlan && await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
+                """
+                select exists(select 1 from orcafacil.plan_versions pv join orcafacil.plans p on p.id=pv.plan_id
+                 where p.code='FREE' and pv.status='Published' and not pv.is_deleted
+                   and pv.valid_from <= now() and (pv.valid_until is null or pv.valid_until > now()))
+                """, cancellationToken: ct));
+
+            return new(true, schemaExists, existingTables, missing, databaseName, version, null, freePlan, publishedFreeVersion);
         }
         catch (Exception ex)
         {
@@ -84,10 +94,10 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
     {
         if (HasSqlState(ex, "28P01"))
         {
-            return "Falha de autenticação no PostgreSQL para o usuário orcafacil_user. Verifique a senha configurada em ConnectionStrings:DefaultConnection ou na variável ConnectionStrings__DefaultConnection. (28P01)";
+            return PostgresFailureClassifier.Classify(ex).AdminMessage;
         }
 
-        return ex.Message.Replace("Password=", "Password=******", StringComparison.OrdinalIgnoreCase);
+        return PostgresFailureClassifier.Classify(ex).AdminMessage;
     }
 
     private static bool HasSqlState(Exception ex, string sqlState)

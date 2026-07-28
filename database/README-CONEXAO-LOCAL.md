@@ -3,7 +3,7 @@
 Connection string esperada em desenvolvimento:
 
 ```text
-Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456
+Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=<informada-localmente>
 ```
 
 ## Criar ou corrigir usuário local

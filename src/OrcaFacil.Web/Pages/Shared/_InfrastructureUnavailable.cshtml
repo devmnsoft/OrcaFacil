@@ -1,0 +1,13 @@
+@model string
+<section class="of-infrastructure" role="alert" aria-labelledby="infrastructure-title">
+    <svg class="of-infrastructure__icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-connection" /></svg>
+    <div>
+        <h2 id="infrastructure-title">Estamos com dificuldade para acessar seus dados.</h2>
+        <p>Seus dados não foram alterados. Aguarde alguns instantes e tente novamente.</p>
+        <small>Código de correlação: <strong>@Model</strong></small>
+        <div class="of-infrastructure__actions">
+            <button class="btn btn-primary" type="button" onclick="location.reload()">Tentar novamente</button>
+            <a class="btn btn-outline-primary" asp-page="/Support/Index" asp-route-correlationId="@Model">Falar com o suporte</a>
+        </div>
+    </div>
+</section>

@@ -48,7 +48,7 @@ Execute `publish-iis.bat`. O script deve restaurar, compilar, testar e publicar 
 
 ## Status atual
 
-A base foi reorganizada para separar entidades, enums, value objects, abstrações, DTOs, comandos, validadores, middleware e PDF. O ambiente desta revisão não possui `dotnet` instalado; portanto, restore/build/test precisam ser confirmados em máquina com SDK .NET 10.
+A base foi reorganizada para separar entidades, enums, value objects, abstrações, DTOs, comandos, validadores, middleware e PDF. O pipeline de entrega restaura, compila e testa a solução com o SDK .NET 10.
 
 ## MVP ASP.NET Core/PostgreSQL
 
@@ -57,7 +57,7 @@ Esta etapa adiciona a base funcional do MVP backend: autenticação por cookie, 
 ### Rodar localmente
 
 1. Suba o PostgreSQL com `docker compose up -d postgres`.
-2. Configure `ConnectionStrings:DefaultConnection` em `src/OrcaFacil.Web/appsettings.Development.json`.
+2. Configure `ConnectionStrings:DefaultConnection` com user-secrets (recomendado) ou `ConnectionStrings__DefaultConnection`.
 3. Restaure e compile com `dotnet restore OrcaFacil.sln` e `dotnet build OrcaFacil.sln`.
 4. Aplique migrations com `dotnet ef database update --project src/OrcaFacil.Persistence --startup-project src/OrcaFacil.Web`.
 5. Execute com `dotnet run --project src/OrcaFacil.Web`.
@@ -130,10 +130,10 @@ GRANT ALL PRIVILEGES ON DATABASE orcafacil TO orcafacil_user;
 psql -h localhost -p 5432 -U orcafacil_user -d orcafacil -f database/script_completop.sql
 ```
 
-4. Configure `ConnectionStrings:DefaultConnection` em `src/OrcaFacil.Web/appsettings.Development.json`, user-secrets ou variável de ambiente:
+4. Configure `ConnectionStrings:DefaultConnection` em user-secrets ou use a variável de ambiente oficial:
 
 ```bash
-ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456"
+ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=<informada-localmente>"
 ```
 
 5. Restaure, compile e execute:
@@ -197,7 +197,7 @@ O script completo e idempotente do banco está em `database/script_completop.sql
    ```json
    {
      "ConnectionStrings": {
-       "DefaultConnection": "Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=123456"
+       "DefaultConnection": "Host=localhost;Port=5432;Database=orcafacil;Username=orcafacil_user;Password=<informada-localmente>"
      }
    }
    ```
@@ -226,7 +226,7 @@ O MVP ASP.NET Core usa PostgreSQL com todas as tabelas da aplicação no schema 
 
 1. Instale PostgreSQL localmente.
 2. Crie o banco `orcafacil` e o usuário `orcafacil_user`.
-3. Configure `src/OrcaFacil.Web/appsettings.Development.json` ou a variável `ConnectionStrings__DefaultConnection`.
+3. Configure user-secrets ou a variável `ConnectionStrings__DefaultConnection`.
 4. Execute o SQL idempotente:
 
 ```bash
