@@ -1,0 +1,6 @@
+.form-control,.form-select { min-height:48px; border-color:var(--of-line); border-radius:.75rem; color:var(--of-text-primary); }
+.form-control:focus,.form-select:focus,.btn:focus-visible,a:focus-visible { outline:3px solid var(--of-focus); outline-offset:2px; box-shadow:none; }
+.of-password-field { position:relative; }
+.of-password-field .form-control { padding-right:3.25rem; }
+.of-password-toggle { position:absolute; right:.35rem; top:.35rem; width:2.55rem; height:2.55rem; border:0; border-radius:.6rem; background:transparent; color:var(--of-brand); }
+.of-password-requirements { color:var(--of-text-secondary); font-size:.875rem; margin:.5rem 0 0; }

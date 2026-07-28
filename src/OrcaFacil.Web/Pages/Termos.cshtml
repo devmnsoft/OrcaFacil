@@ -1,3 +1,27 @@
 @page
-@{ ViewData["Title"]="Termos"; }
-<div class="container py-5"><h1>Termos</h1><p class="lead">OrçaFácil ASP.NET Core com PostgreSQL.</p></div>
+@{ Layout="/Pages/Shared/_PublicLayout.cshtml"; ViewData["Title"]="Termos de Uso"; var sections = new[]{
+("identificacao","Identificação","O OrçaFácil é um produto MNSOFT, CNPJ 18.160.057/0001-13. O contato institucional é comercial@mnsoft.com.br."),
+("objetivo","Objetivo do sistema","O serviço auxilia na organização de clientes e na criação de orçamentos e recibos. Ele não emite nota fiscal."),
+("conta","Criação da conta","O usuário deve informar dados verdadeiros, manter um único acesso pessoal e aceitar os documentos vigentes."),
+("seguranca","Segurança do acesso","A senha é pessoal. Comunique imediatamente qualquer suspeita de acesso indevido."),
+("uso","Uso permitido","Use o sistema somente para atividades lícitas relacionadas ao seu trabalho."),
+("responsabilidades","Responsabilidades do usuário","O usuário revisa dados, valores, tributos, prazos e condições antes de enviar documentos."),
+("clientes","Clientes e dados cadastrados","Cadastre apenas dados necessários e mantenha base legal adequada para tratá-los."),
+("orcamentos","Orçamentos","Orçamentos representam propostas e dependem das condições definidas pelo emissor e da aceitação do cliente."),
+("recibos","Recibos","Recibos registram pagamentos declarados pelo usuário e não substituem documentos fiscais exigíveis."),
+("nota-fiscal","Esclarecimento sobre nota fiscal","O OrçaFácil não calcula tributos nem substitui sistemas públicos ou municipais de emissão fiscal."),
+("planos","Planos e recursos","Recursos disponíveis seguem o plano efetivamente liberado para a conta."),
+("limites","Limites","Limites de uso são informados na página do plano e podem variar entre versões publicadas."),
+("pagamentos","Pagamentos","Contratações pagas devem mostrar preço, ciclo e condição antes da confirmação."),
+("atraso","Atraso e retorno ao Grátis","Em atraso, recursos pagos podem ser suspensos e a conta pode retornar ao plano Grátis sem apagar dados."),
+("preservacao","Preservação de dados","A suspensão de recursos não implica exclusão automática do conteúdo cadastrado."),
+("cancelamento","Cancelamento","O titular pode solicitar cancelamento pelos canais disponíveis, sujeito às obrigações pendentes."),
+("disponibilidade","Disponibilidade e manutenção","Manutenções e incidentes podem causar indisponibilidade temporária; eventos relevantes serão comunicados quando possível."),
+("suporte","Suporte","O suporte recebe dúvidas e incidentes pelos canais exibidos no produto, sem promessa automática de prazo."),
+("propriedade","Propriedade intelectual","Marca, interface e software pertencem aos respectivos titulares; os dados inseridos continuam sob responsabilidade do usuário."),
+("privacidade","Privacidade","O tratamento de dados é explicado no Aviso de Privacidade vigente."),
+("suspensao","Suspensão por abuso ou segurança","A conta pode ser bloqueada para conter abuso, fraude ou risco, preservando registros necessários à apuração."),
+("alteracoes","Alterações do documento","Nova versão material será identificada e, quando necessário, submetida a novo aceite."),
+("contato","Contato","Dúvidas podem ser enviadas para comercial@mnsoft.com.br."),
+("vigencia","Versão e vigência","Versão técnica 1.0, vigente a partir de 28 de julho de 2026, sujeita à aprovação antes da publicação definitiva.")}; }
+<main class="of-legal"><p class="of-eyebrow">Documento legal</p><h1>Termos de Uso</h1><p class="of-legal-meta"><strong>Versão técnica 1.0</strong> · 28 de julho de 2026</p><p class="of-legal-notice">Minuta preparada tecnicamente e sujeita à validação jurídica antes da publicação definitiva.</p><nav aria-label="Índice dos Termos">@for(var i=0;i<sections.Length;i++){<a href="#@sections[i].Item1">@(i+1). @sections[i].Item2</a>}</nav>@for(var i=0;i<sections.Length;i++){<section id="@sections[i].Item1"><h2>@(i+1). @sections[i].Item2</h2><p>@sections[i].Item3</p></section>}</main>

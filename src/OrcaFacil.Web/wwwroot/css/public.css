@@ -1,0 +1,7 @@
+.of-new-hero { padding:clamp(4rem,8vw,7rem) 0; background:linear-gradient(135deg,var(--of-dark),var(--of-brand)); color:var(--of-text-on-dark); }
+.of-new-hero h1 { color:#fff; font-size:clamp(2.4rem,5vw,4.5rem); line-height:1.03; letter-spacing:-.045em; }
+.of-new-hero .lead { color:#e0ebf5; max-width:680px; }
+.of-new-hero-art { background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.24); border-radius:2rem; padding:1.25rem; }
+.of-new-hero-art img { width:100%; height:auto; }
+.of-content-section { padding:clamp(3.5rem,7vw,6rem) 0; background:var(--of-page); color:var(--of-text-primary); }
+.of-content-section:nth-of-type(odd) { background:var(--of-soft); }

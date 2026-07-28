@@ -1,0 +1,12 @@
+.of-icon { width:1.25em; height:1.25em; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; vertical-align:-.2em; }
+.of-section-title { max-width:720px; margin-bottom:2rem; }
+.of-section-title h2 { font-weight:800; letter-spacing:-.025em; }
+.of-step-grid,.of-benefit-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; }
+.of-step,.of-benefit { background:var(--of-card); color:var(--of-text-primary); border:1px solid var(--of-line); border-radius:var(--of-radius); padding:1.4rem; }
+.of-step-number { display:grid; place-items:center; width:2.3rem; height:2.3rem; border-radius:50%; background:var(--of-brand); color:#fff; font-weight:800; }
+.of-step h3,.of-benefit h3 { margin:.9rem 0 .35rem; font-size:1.05rem; }
+.of-step p,.of-benefit p { color:var(--of-text-secondary); margin:0; }
+.of-final-cta { display:flex; align-items:center; justify-content:space-between; gap:2rem; padding:clamp(1.5rem,4vw,3rem); border-radius:calc(var(--of-radius) + .5rem); background:var(--of-card); color:var(--of-text-primary); border:1px solid var(--of-line); box-shadow:var(--of-shadow); }
+.of-final-cta p { color:var(--of-text-secondary); margin:0; }
+.btn-success { background:var(--of-action); border-color:var(--of-action); }
+.btn-success:hover { background:var(--of-action-hover); border-color:var(--of-action-hover); }

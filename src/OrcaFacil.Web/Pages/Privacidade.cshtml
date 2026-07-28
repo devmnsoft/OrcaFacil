@@ -1,3 +1,13 @@
 @page
-@{ ViewData["Title"]="Privacidade"; }
-<div class="container py-5"><h1>Privacidade</h1><p class="lead">OrçaFácil ASP.NET Core com PostgreSQL.</p></div>
+@{ Layout="/Pages/Shared/_PublicLayout.cshtml"; ViewData["Title"]="Aviso de Privacidade"; var sections=new[]{
+("controlador","Controlador e contato","A MNSOFT, CNPJ 18.160.057/0001-13, é identificada como responsável pelo OrçaFácil. Contato: comercial@mnsoft.com.br."),
+("dados","Dados tratados","Podemos tratar dados de conta, CPF ou CNPJ, contatos, clientes cadastrados, documentos, uso do sistema, logs, pagamentos e solicitações de suporte."),
+("finalidades","Finalidades","Usamos dados para criar e administrar a conta, autenticar acessos, gerar documentos solicitados, prestar suporte, proteger o serviço e cumprir obrigações aplicáveis."),
+("bases","Hipóteses legais","As hipóteses legais aplicáveis a cada finalidade exigem validação jurídica antes da versão definitiva."),
+("fornecedores","Fornecedores","Categorias e fornecedores operacionais serão documentados após definição contratual. Este aviso não presume localização de servidores."),
+("seguranca","Segurança","Aplicamos controles técnicos e organizacionais proporcionais ao risco, incluindo restrição de acesso, registro de eventos e proteção de credenciais."),
+("retencao","Retenção","Os prazos dependem da finalidade e de obrigações aplicáveis e ainda exigem definição operacional e revisão jurídica."),
+("direitos","Direitos do titular","O titular pode solicitar confirmação, acesso, correção, eliminação quando cabível, portabilidade quando aplicável, informação, oposição e revogação do consentimento quando esta for a base utilizada."),
+("solicitacoes","Como exercer direitos","Envie a solicitação para comercial@mnsoft.com.br. Poderemos confirmar a identidade antes de responder para proteger os dados."),
+("versao","Versão e vigência","Versão técnica 1.0, datada de 28 de julho de 2026. Alterações relevantes serão identificadas.")}; }
+<main class="of-legal"><p class="of-eyebrow">Seus dados</p><h1>Aviso de Privacidade</h1><p class="of-legal-meta"><strong>Versão técnica 1.0</strong> · 28 de julho de 2026</p><p class="of-legal-notice">Minuta preparada tecnicamente e sujeita à validação jurídica antes da publicação definitiva. Itens de base legal, fornecedores e retenção permanecem marcados para definição operacional e revisão jurídica.</p><nav aria-label="Índice do Aviso de Privacidade">@for(var i=0;i<sections.Length;i++){<a href="#@sections[i].Item1">@(i+1). @sections[i].Item2</a>}</nav>@for(var i=0;i<sections.Length;i++){<section id="@sections[i].Item1"><h2>@(i+1). @sections[i].Item2</h2><p>@sections[i].Item3</p></section>}</main>

@@ -1,4 +1,15 @@
-/* 1. Tokens */
+@import url("tokens.css");
+@import url("surfaces.css");
+@import url("components.css");
+@import url("forms.css");
+@import url("public.css");
+@import url("auth.css");
+@import url("app-layout.css");
+@import url("admin.css");
+@import url("legal.css");
+@import url("responsive.css");
+
+/* Legacy rules progressively migrated to the design-system modules above. */
 :root {
   --of-primary: #1e3a5f;
   --of-primary-dark: #132b48;

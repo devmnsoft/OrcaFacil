@@ -1,0 +1,11 @@
+.of-surface-page,.of-surface-light,.of-surface-soft,.of-surface-dark,.of-surface-brand,.of-surface-success,.of-surface-warning,.of-surface-danger { border-color: var(--surface-border,var(--of-line)); color: var(--surface-text,var(--of-text-primary)); }
+.of-surface-page { --surface-text:var(--of-text-primary); background:var(--of-page); }
+.of-surface-light { --surface-text:var(--of-text-primary); background:var(--of-card); }
+.of-surface-soft { --surface-text:var(--of-text-primary); background:var(--of-soft); }
+.of-surface-dark { --surface-text:var(--of-text-on-dark); --surface-border:#38526e; background:var(--of-dark); }
+.of-surface-brand { --surface-text:var(--of-text-on-dark); --surface-border:#46749a; background:var(--of-brand); }
+.of-surface-success { --surface-text:#14583e; --surface-border:#91d4b7; background:var(--of-success-bg); }
+.of-surface-warning { --surface-text:#684900; --surface-border:#e6c968; background:var(--of-warning-bg); }
+.of-surface-danger { --surface-text:var(--of-danger-text); --surface-border:#e7a9af; background:var(--of-danger-bg); }
+.of-surface-dark a:not(.btn),.of-surface-brand a:not(.btn) { color:#d7ebff; }
+.of-surface-dark .of-text-secondary,.of-surface-brand .of-text-secondary { color:#dbe6f0; }

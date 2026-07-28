@@ -1,18 +1,19 @@
 @page
 @model OrcaFacil.Web.Pages.Auth.RegisterModel
 @{ Layout = "/Pages/Shared/_PublicLayout.cshtml"; ViewData["Title"] = "Criar sua conta"; }
-<section class="of-public-auth of-surface-soft">
-  <div class="container py-5">
-    <div class="of-auth-panel mx-auto" style="max-width: 880px">
-      <form method="post" class="of-form-card of-card" data-account-registration novalidate>
-        <p class="of-eyebrow">Sua conta</p>
-        <h1 class="h2">Como você vai usar o OrçaFácil?</h1>
+<section class="of-auth-v2">
+  <div class="container">
+    <div class="of-auth-grid">
+      <aside class="of-auth-context"><p class="of-eyebrow of-on-dark-muted">Sua nova rotina</p><h1>Comece com seus dados seguros e organizados.</h1><img src="/img/illustrations/register-person.svg" data-register-illustration alt="Ilustração de cadastro" /><p data-register-context>Esses dados ajudam a identificar sua conta e preparar os documentos do seu trabalho.</p><p><svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-shield"></use></svg> Sua senha nunca aparece nos registros do sistema.</p></aside>
+      <form method="post" class="of-auth-form" data-account-registration novalidate>
+        <p class="of-eyebrow">Crie sua conta grátis</p><h1 class="h2">Vamos preparar seu espaço.</h1><div class="of-form-step"><b>1</b><h2>Como você trabalha?</h2></div>
         <p class="of-text-secondary">Escolha uma opção para mostrarmos somente os dados necessários.</p>
         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
         <fieldset class="mb-4">
           <legend class="visually-hidden">Tipo da conta</legend>
-          <div class="row g-3">
+          <div class="of-form-step"><b>2</b><h2>Seus dados</h2></div>
+        <div class="row g-3">
             <div class="col-md-6"><label class="of-account-choice of-card h-100" for="account-individual"><input asp-for="Input.AccountType" id="account-individual" type="radio" value="Individual" /><strong>Pessoa Física</strong><span>Para autônomos e profissionais que trabalham usando o próprio CPF.</span></label></div>
             <div class="col-md-6"><label class="of-account-choice of-card h-100" for="account-company"><input asp-for="Input.AccountType" id="account-company" type="radio" value="Company" /><strong>Pessoa Jurídica</strong><span>Para MEIs, empresas e negócios que trabalham usando CNPJ.</span></label></div>
           </div>
@@ -36,11 +37,11 @@
           <div class="col-md-4" data-company-field><label asp-for="Input.District" class="form-label">Bairro</label><input asp-for="Input.District" class="form-control" /><span asp-validation-for="Input.District" class="text-danger"></span></div>
           <div class="col-md-8"><label asp-for="Input.City" class="form-label">Cidade</label><input asp-for="Input.City" class="form-control" autocomplete="address-level2" /><span asp-validation-for="Input.City" class="text-danger"></span></div>
           <div class="col-md-4"><label asp-for="Input.State" class="form-label">Estado</label><input asp-for="Input.State" class="form-control text-uppercase" maxlength="2" autocomplete="address-level1" placeholder="UF" /><span asp-validation-for="Input.State" class="text-danger"></span></div>
-          <div class="col-md-6"><label asp-for="Input.Password" class="form-label">Senha</label><input asp-for="Input.Password" type="password" class="form-control" autocomplete="new-password" /><span asp-validation-for="Input.Password" class="text-danger"></span></div>
-          <div class="col-md-6"><label asp-for="Input.ConfirmPassword" class="form-label">Confirmar senha</label><input asp-for="Input.ConfirmPassword" type="password" class="form-control" autocomplete="new-password" /><span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span></div>
+          <div class="col-12"><div class="of-form-step"><b>3</b><h2>Seu acesso</h2></div></div><div class="col-md-6"><label asp-for="Input.Password" class="form-label">Senha</label><div class="of-password-field"><input asp-for="Input.Password" type="password" class="form-control" autocomplete="new-password" /><button type="button" class="of-password-toggle" data-password-toggle aria-label="Mostrar senha" aria-pressed="false"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-eye"></use></svg></button></div><p class="of-password-requirements">Use pelo menos 8 caracteres, com letras e números.</p><span asp-validation-for="Input.Password" class="text-danger"></span></div>
+          <div class="col-md-6"><label asp-for="Input.ConfirmPassword" class="form-label">Confirmar senha</label><div class="of-password-field"><input asp-for="Input.ConfirmPassword" type="password" class="form-control" autocomplete="new-password" /><button type="button" class="of-password-toggle" data-password-toggle aria-label="Mostrar senha" aria-pressed="false"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-eye"></use></svg></button></div><span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span></div>
         </div>
-        <div class="form-check mt-4"><input asp-for="Input.AcceptTerms" class="form-check-input" /><label asp-for="Input.AcceptTerms" class="form-check-label">Aceito os <a asp-page="/Termos">termos</a>.</label><span asp-validation-for="Input.AcceptTerms" class="text-danger d-block"></span></div>
-        <div class="form-check mt-2"><input asp-for="Input.AcceptPrivacy" class="form-check-input" /><label asp-for="Input.AcceptPrivacy" class="form-check-label">Aceito a <a asp-page="/Privacidade">política de privacidade</a>.</label><span asp-validation-for="Input.AcceptPrivacy" class="text-danger d-block"></span></div>
+        <div class="of-form-step"><b>4</b><h2>Termos e privacidade</h2></div><div class="form-check mt-4"><input asp-for="Input.AcceptTerms" class="form-check-input" /><label asp-for="Input.AcceptTerms" class="form-check-label">Li e concordo com os <a asp-page="/Termos" target="_blank">Termos de Uso</a>.</label><span asp-validation-for="Input.AcceptTerms" class="text-danger d-block"></span></div>
+        <div class="form-check mt-2"><input asp-for="Input.AcceptPrivacy" class="form-check-input" /><label asp-for="Input.AcceptPrivacy" class="form-check-label">Li o <a asp-page="/Privacidade" target="_blank">Aviso de Privacidade</a> e entendi como meus dados serão utilizados para criar e administrar minha conta.</label><span asp-validation-for="Input.AcceptPrivacy" class="text-danger d-block"></span></div>
         <button class="btn btn-success btn-lg w-100 mt-4" type="submit" data-loading>Criar minha conta grátis</button>
         <p class="text-center mt-3 mb-0"><a asp-page="/Auth/Login">Já tenho uma conta</a></p>
       </form>

@@ -1,0 +1,5 @@
+.of-legal { max-width:900px; margin:auto; padding:4rem 1.25rem; color:var(--of-text-primary); }
+.of-legal-meta,.of-legal-notice,.of-legal nav { padding:1rem 1.25rem; border:1px solid var(--of-line); border-radius:var(--of-radius); background:var(--of-soft); }
+.of-legal nav a { display:inline-block; margin:.35rem .8rem .35rem 0; }
+.of-legal section { padding-top:2rem; scroll-margin-top:2rem; }
+.of-legal section p,.of-legal li { color:var(--of-text-secondary); }

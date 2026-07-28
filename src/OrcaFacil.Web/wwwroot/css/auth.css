@@ -1,0 +1,9 @@
+.of-auth-v2 { padding:clamp(2rem,6vw,5rem) 0; background:var(--of-page); color:var(--of-text-primary); }
+.of-auth-grid { max-width:1100px; margin:auto; display:grid; grid-template-columns:minmax(280px,.82fr) minmax(0,1.18fr); background:var(--of-card); border:1px solid var(--of-line); border-radius:2rem; overflow:hidden; box-shadow:var(--of-shadow); }
+.of-auth-context { padding:clamp(2rem,4vw,3.5rem); background:var(--of-dark); color:#fff; }
+.of-auth-context h1,.of-auth-context p { color:inherit; }
+.of-auth-context img { width:100%; max-height:260px; margin:1.5rem 0; }
+.of-auth-form { padding:clamp(1.5rem,4vw,3.5rem); }
+.of-form-step { display:flex; gap:.75rem; align-items:center; margin:2rem 0 1rem; }
+.of-form-step b { display:grid; place-items:center; width:2rem; height:2rem; border-radius:50%; background:var(--of-brand); color:#fff; }
+.of-form-step h2 { font-size:1.1rem; margin:0; }
