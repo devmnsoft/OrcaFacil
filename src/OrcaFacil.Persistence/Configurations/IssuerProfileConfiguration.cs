@@ -13,5 +13,7 @@ public class IssuerProfileConfiguration : IEntityTypeConfiguration<IssuerProfile
         builder.Property(x => x.UserId).HasColumnName("user_id");
         builder.Property(x => x.BusinessName).HasColumnName("business_name").HasMaxLength(180).IsRequired();
         builder.HasIndex(x => x.UserId).IsUnique();
+        builder.HasOne<UserAccount>().WithOne().HasForeignKey<IssuerProfile>(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_orcafacil_issuer_profiles_users");
     }
 }

@@ -5,7 +5,21 @@ using OrcaFacil.Domain.Entities;
 namespace OrcaFacil.Persistence.Configurations;
 
 public sealed class BusinessAccountConfiguration : IEntityTypeConfiguration<BusinessAccount> { public void Configure(EntityTypeBuilder<BusinessAccount> b) { b.ToTable("business_accounts"); b.ConfigureBase(); b.HasIndex(x => x.DocumentNumber).IsUnique(); b.HasIndex(x => x.Status); b.Property(x => x.Status).HasConversion<string>(); b.Property(x => x.PersonType).HasConversion<string>(); b.Property(x => x.DocumentType).HasConversion<string>(); b.Property(x => x.DocumentNumber).HasMaxLength(14).IsRequired(); b.Property(x => x.CurrentPlanCode).HasMaxLength(40); } }
-public sealed class AccountMemberConfiguration : IEntityTypeConfiguration<AccountMember> { public void Configure(EntityTypeBuilder<AccountMember> b) { b.ToTable("account_members"); b.ConfigureBase(); b.HasIndex(x => new { x.AccountId, x.UserId }).IsUnique(); b.HasIndex(x => x.UserId); b.Property(x => x.Status).HasConversion<string>(); } }
+public sealed class AccountMemberConfiguration : IEntityTypeConfiguration<AccountMember>
+{
+    public void Configure(EntityTypeBuilder<AccountMember> b)
+    {
+        b.ToTable("account_members");
+        b.ConfigureBase();
+        b.HasIndex(x => new { x.AccountId, x.UserId }).IsUnique();
+        b.HasIndex(x => x.UserId);
+        b.Property(x => x.Status).HasConversion<string>();
+        b.HasOne<BusinessAccount>().WithMany().HasForeignKey(x => x.AccountId)
+            .OnDelete(DeleteBehavior.Restrict).HasConstraintName("account_members_account_id_fkey");
+        b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict).HasConstraintName("account_members_user_id_fkey");
+    }
+}
 public sealed class RoleConfiguration : IEntityTypeConfiguration<Role> { public void Configure(EntityTypeBuilder<Role> b) { b.ToTable("roles"); b.ConfigureBase(); b.HasIndex(x => x.Code).IsUnique(); } }
 public sealed class PermissionConfiguration : IEntityTypeConfiguration<Permission> { public void Configure(EntityTypeBuilder<Permission> b) { b.ToTable("permissions"); b.ConfigureBase(); b.HasIndex(x => x.Code).IsUnique(); } }
 public sealed class RolePermissionConfiguration : IEntityTypeConfiguration<RolePermission> { public void Configure(EntityTypeBuilder<RolePermission> b) { b.ToTable("role_permissions"); b.ConfigureBase(); b.HasIndex(x => new { x.RoleId, x.PermissionId }).IsUnique(); } }

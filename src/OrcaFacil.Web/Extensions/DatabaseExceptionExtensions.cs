@@ -27,7 +27,7 @@ public static class DatabaseExceptionExtensions
             return new RegistrationDatabaseFailure(sqlState, constraint, sqlState switch
             {
                 "23505" => "Duplicate",
-                "23503" => "ForeignKey",
+                "23503" => "ForeignKeyViolation",
                 "23502" => "RequiredField",
                 "42P01" => "MissingTable",
                 "42703" => "MissingColumn",
@@ -51,6 +51,6 @@ public sealed record RegistrationDatabaseFailure(string? SqlState, string? Const
             return "Já existe uma conta com este e-mail. Entre ou recupere seu acesso.";
         if (SqlState == "23505" && Constraint?.Contains("document", StringComparison.OrdinalIgnoreCase) == true)
             return "Já existe uma conta vinculada a este CPF ou CNPJ. Entre ou recupere seu acesso.";
-        return $"Não conseguimos concluir seu cadastro. Seus dados ainda não foram salvos. Tente novamente. Caso o problema continue, informe o código {correlationId} ao suporte.";
+        return $"Não conseguimos concluir seu cadastro. Nenhum dado foi salvo. Tente novamente. Caso o problema continue, informe o código {correlationId} ao suporte.";
     }
 }
