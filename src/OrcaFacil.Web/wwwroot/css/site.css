@@ -1,16 +1,1 @@
-:root{--navy:#1E3A5F;--blue:#2D7DD2;--green:#1F9D6B;--bg:#F4F6F9;--text:#1C2430}body{background:var(--bg);color:var(--text)}.navbar{background:linear-gradient(90deg,var(--navy),var(--blue))}.btn-primary{background:var(--blue);border-color:var(--blue)}
-/* Superfícies semânticas do OrçaFácil: contraste previsível em todos os fluxos. */
-.of-surface-light { background: #fff; color: #172033; }
-.of-surface-soft { background: #f4f7fb; color: #172033; }
-.of-surface-dark { background: #172033; color: #fff; }
-.of-surface-brand { background: #154c79; color: #fff; }
-.of-card { background: #fff; color: #172033; border: 1px solid #d8e0eb; border-radius: 1rem; }
-.of-card-dark { background: #202c43; color: #fff; border-radius: 1rem; }
-.of-text-primary { color: #172033; }
-.of-text-secondary { color: #445269; }
-.of-text-on-dark { color: rgba(255, 255, 255, .9); }
-.of-account-choice { display: grid; grid-template-columns: auto 1fr; gap: .35rem .75rem; padding: 1rem; cursor: pointer; }
-.of-account-choice input { grid-row: 1 / span 2; margin-top: .3rem; }
-.of-account-choice span { color: #445269; }
-.of-account-choice:has(input:checked) { border-color: #176b4d; box-shadow: 0 0 0 3px rgba(23, 107, 77, .16); }
-.of-account-choice:focus-within { outline: 3px solid #f2b84b; outline-offset: 2px; }
+/* Compatibility entry point. Runtime styles are owned by app.css and its design-system modules. */

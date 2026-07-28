@@ -12,6 +12,7 @@ namespace OrcaFacil.Web.Pages.Auth;
 public sealed class RegisterModel(AuthService authService, ILogger<RegisterModel> logger) : PageModel
 {
     [BindProperty] public InputModel Input { get; set; } = new();
+    public string? RegistrationErrorCode { get; private set; }
 
     public sealed class InputModel
     {
@@ -36,6 +37,7 @@ public sealed class RegisterModel(AuthService authService, ILogger<RegisterModel
         [Required, Compare(nameof(Password), ErrorMessage = "As senhas não conferem.")] public string ConfirmPassword { get; set; } = string.Empty;
         [Range(typeof(bool), "true", "true", ErrorMessage = "Aceite os termos para continuar.")] public bool AcceptTerms { get; set; }
         [Range(typeof(bool), "true", "true", ErrorMessage = "Aceite a política de privacidade para continuar.")] public bool AcceptPrivacy { get; set; }
+        public bool AcceptMarketing { get; set; }
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
@@ -62,6 +64,7 @@ public sealed class RegisterModel(AuthService authService, ILogger<RegisterModel
         catch (Exception ex)
         {
             var correlationId = HttpContext.TraceIdentifier;
+            RegistrationErrorCode = correlationId;
             var databaseFailure = ex.GetRegistrationFailure();
             logger.LogError("REGISTER_FAILED CorrelationId {CorrelationId} ExceptionType {ExceptionType} SqlState {SqlState} Constraint {Constraint} Category {Category}", correlationId, ex.GetType().Name, databaseFailure.SqlState, databaseFailure.Constraint, databaseFailure.Category);
             ModelState.AddModelError(string.Empty, databaseFailure.ToPublicMessage(correlationId));
