@@ -8,6 +8,10 @@ namespace OrcaFacil.Persistence.Plans;
 /// <summary>Database-backed source of truth for plan authorization and account usage.</summary>
 public sealed class EfPlanAccessDataSource(OrcaFacilDbContext db) : IPlanAccessDataSource
 {
+    public Task<AccountStatus?> GetAccountStatusAsync(Guid accountId, CancellationToken ct) => db.BusinessAccounts
+        .AsNoTracking().Where(x => x.Id == accountId && !x.IsDeleted)
+        .Select(x => (AccountStatus?)x.Status).SingleOrDefaultAsync(ct);
+
     public Task<Subscription?> GetSubscriptionAsync(Guid accountId, CancellationToken ct) => db.Subscriptions
         .AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted)
         .OrderByDescending(x => x.CreatedAt).FirstOrDefaultAsync(ct);
@@ -38,6 +42,24 @@ public sealed class EfPlanAccessDataSource(OrcaFacilDbContext db) : IPlanAccessD
                where value.PlanVersionId == planVersionId && feature.IsActive && !feature.IsDeleted && !value.IsDeleted
                select new { feature.Code, value.BooleanValue, value.IntegerValue, value.IsUnlimited })
             .ToDictionaryAsync(x => x.Code, x => new PlanFeatureSetting(x.BooleanValue, x.IntegerValue, x.IsUnlimited), ct);
+
+    public async Task<IReadOnlyList<PlanFeatureCandidate>> GetPublicPlanCandidatesAsync(string featureCode, DateTime utcNow, CancellationToken ct)
+    {
+        var rows = await (from plan in db.Plans.AsNoTracking()
+                          join version in db.PlanVersions.AsNoTracking() on plan.Id equals version.PlanId
+                          join value in db.PlanFeatureValues.AsNoTracking() on version.Id equals value.PlanVersionId
+                          join feature in db.Features.AsNoTracking() on value.FeatureId equals feature.Id
+                          where plan.IsActive && plan.IsPublic && !plan.IsDeleted && !version.IsDeleted && !value.IsDeleted &&
+                                feature.IsActive && !feature.IsDeleted && feature.Code == featureCode &&
+                                version.Status == PlanVersionStatus.Published && version.ValidFrom <= utcNow &&
+                                (version.ValidUntil == null || version.ValidUntil > utcNow)
+                          orderby plan.DisplayOrder, version.VersionNumber descending
+                          select new { plan.Code, plan.DisplayOrder, value.BooleanValue, value.IntegerValue, value.IsUnlimited })
+            .ToListAsync(ct);
+
+        return rows.Select(x => new PlanFeatureCandidate(x.Code, x.DisplayOrder,
+            new PlanFeatureSetting(x.BooleanValue, x.IntegerValue, x.IsUnlimited))).ToList();
+    }
 
     public async Task<int> GetUsageAsync(Guid accountId, string featureCode, DateTime periodStartUtc, CancellationToken ct)
     {

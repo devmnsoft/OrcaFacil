@@ -46,6 +46,18 @@ public sealed class CommercialPlatformTests
         var decision = await new PlanAccessService(source).CanUseAsync(source.AccountId, "pdf.monthly_limit");
         Assert.False(decision.IsAllowed);
         Assert.Equal(10, decision.CurrentUsage);
+        Assert.Equal("BUSINESS", decision.RequiredPlanCode);
+        Assert.Equal("PlanLimitReached", decision.InternalReason);
+    }
+
+    [Fact]
+    public async Task Account_outside_active_state_fails_closed()
+    {
+        var source = new FakePlanSource { AccountStatus = AccountStatus.Blocked };
+        var decision = await new PlanAccessService(source).CanUseAsync(source.AccountId, "pdf.monthly_limit");
+
+        Assert.False(decision.IsAllowed);
+        Assert.Equal("AccountBlocked", decision.InternalReason);
     }
 
     [Fact]
@@ -67,6 +79,7 @@ public sealed class CommercialPlatformTests
         public Subscription? Subscription { get; set; }
         public PlanOverride? Override { get; set; }
         public int Usage { get; set; }
+        public AccountStatus AccountStatus { get; set; } = AccountStatus.Active;
 
         public FakePlanSource()
         {
@@ -82,6 +95,10 @@ public sealed class CommercialPlatformTests
         public Task<Plan?> GetPlanAsync(Guid id, CancellationToken ct) =>
             Task.FromResult<Plan?>(id == BusinessPlan.Id ? BusinessPlan : id == FreePlan.Id ? FreePlan : null);
         public Task<PlanVersion?> GetPublishedFreeVersionAsync(DateTime now, CancellationToken ct) => Task.FromResult<PlanVersion?>(FreeVersion);
+        public Task<AccountStatus?> GetAccountStatusAsync(Guid accountId, CancellationToken ct) =>
+            Task.FromResult<AccountStatus?>(AccountStatus);
+        public Task<IReadOnlyList<PlanFeatureCandidate>> GetPublicPlanCandidatesAsync(string featureCode, DateTime now, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<PlanFeatureCandidate>>([new("BUSINESS", 30, new(true, null, true))]);
         public Task<IReadOnlyDictionary<string, PlanFeatureSetting>> GetFeaturesAsync(Guid versionId, CancellationToken ct) =>
             Task.FromResult<IReadOnlyDictionary<string, PlanFeatureSetting>>(new Dictionary<string, PlanFeatureSetting>
             { ["pdf.monthly_limit"] = versionId == FreeVersion.Id ? new(true, 10) : new(true, null, true) });
