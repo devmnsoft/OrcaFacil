@@ -10,16 +10,22 @@ public sealed class PostgresHealthCheck : IHealthCheck
     private readonly IDatabaseDiagnosticsService _diagnostics;
     private readonly ILogger<PostgresHealthCheck> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IDatabaseConfigurationState _configurationState;
 
-    public PostgresHealthCheck(IDatabaseDiagnosticsService diagnostics, ILogger<PostgresHealthCheck> logger, IServiceScopeFactory scopeFactory)
+    public PostgresHealthCheck(IDatabaseDiagnosticsService diagnostics, ILogger<PostgresHealthCheck> logger, IServiceScopeFactory scopeFactory,
+        IDatabaseConfigurationState configurationState)
     {
         _diagnostics = diagnostics;
         _logger = logger;
         _scopeFactory = scopeFactory;
+        _configurationState = configurationState;
     }
 
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
+        if (!_configurationState.IsValid)
+            return HealthCheckResult.Unhealthy(_configurationState.AdminMessage);
+
         var result = await _diagnostics.CheckAsync(cancellationToken);
         var migrationsCurrent = false;
         if (result.CanConnect)

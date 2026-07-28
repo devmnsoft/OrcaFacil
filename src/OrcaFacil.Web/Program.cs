@@ -27,6 +27,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Text.Json;
 using OrcaFacil.Web.Configuration;
+using OrcaFacil.Web.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddOrcaFacilLocalConfiguration();
@@ -36,14 +37,21 @@ builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(conte
 
 var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection");
 var databaseConfigured = DatabaseConnectionOptions.TryCreate(builder.Configuration, out var databaseOptions, out var databaseConfigurationError);
+var localSettingsPath = Path.Combine(builder.Environment.ContentRootPath, LocalConfigurationExtensions.FileName);
+var databaseConfigurationState = DatabaseConfigurationState.Create(builder.Configuration, localSettingsPath);
 if (!databaseConfigured)
 {
     Log.Logger.Error("Configuração de banco inválida: {ConfigurationError}", databaseConfigurationError);
 }
-if (databaseOptions is not null) builder.Services.AddSingleton(databaseOptions);
+builder.Services.AddSingleton<IDatabaseConfigurationState>(databaseConfigurationState);
+if (databaseOptions is not null && databaseConfigured) builder.Services.AddSingleton(databaseOptions);
+var configuredConnection = databaseConfigured && databaseConfigurationState.IsValid && !string.IsNullOrWhiteSpace(defaultConnection)
+    ? defaultConnection
+    : null;
+const string fallbackConnection = "Host=127.0.0.1;Port=1;Database=unavailable;Username=unavailable;Password=unavailable;Pooling=false;Timeout=1;Command Timeout=1";
 builder.Services.AddDbContext<OrcaFacilDbContext>(options => options
     // A non-secret placeholder lets liveness and friendly error pages start when local settings are absent.
-    .UseNpgsql(defaultConnection ?? "Host=localhost;Database=orcafacil;Username=orcafacil_unconfigured;Pooling=true;Timeout=1;Command Timeout=1;Search Path=orcafacil,public")
+    .UseNpgsql(configuredConnection ?? fallbackConnection)
     .EnableSensitiveDataLogging(false)
     .EnableDetailedErrors(builder.Environment.IsDevelopment() && builder.Configuration.GetValue("Diagnostics:EnableEfDetailedErrors", false)));
 var keyPath = builder.Configuration["DataProtection:KeysPath"] ?? Path.Combine(builder.Environment.ContentRootPath, ".keys");
@@ -152,6 +160,7 @@ if (databaseConfigured) await SuperAdminSeeder.SeedAsync(app.Services);
 app.UseHttpsRedirection();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<DatabaseReadinessMiddleware>();
 app.UseSerilogRequestLogging();
 app.UseStaticFiles();
 app.UseRouting();

@@ -13,28 +13,47 @@ public sealed record DatabaseConnectionOptions(
     {
         options = null;
         var value = configuration.GetConnectionString("DefaultConnection");
-        if (string.IsNullOrWhiteSpace(value)) { error = "ConnectionStrings:DefaultConnection não foi configurada."; return false; }
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            error = "ConnectionStrings:DefaultConnection não foi configurada.";
+            return false;
+        }
+
         try
         {
             var cs = new NpgsqlConnectionStringBuilder(value);
+            var passwordValid = DatabaseConnectionOptionsValidator.IsPasswordValid(cs.Password);
             options = new(cs.Host ?? "", cs.Port, cs.Database ?? "", cs.Username ?? "", cs.SslMode.ToString(),
-                cs.Timeout, cs.Pooling, !string.IsNullOrWhiteSpace(cs.Password), ConfigurationSourceDescriptor.Detect(configuration).Name);
+                cs.Timeout, cs.Pooling, passwordValid, ConfigurationSourceDescriptor.Detect(configuration).Name);
             error = DatabaseConnectionOptionsValidator.Validate(options);
             return error.Length == 0;
         }
-        catch (ArgumentException) { error = "ConnectionStrings:DefaultConnection possui formato inválido."; return false; }
+        catch (ArgumentException)
+        {
+            error = "ConnectionStrings:DefaultConnection possui formato inválido.";
+            return false;
+        }
     }
 }
 
 public static class DatabaseConnectionOptionsValidator
 {
+    private static readonly HashSet<string> PlaceholderPasswords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "INFORME_SUA_SENHA", "ALTERE_A_SENHA_AQUI", "<informada-localmente>",
+        "YOUR_PASSWORD", "CHANGE_ME", "CHANGEME", "PASSWORD", "SUA_SENHA"
+    };
+
+    public static bool IsPasswordValid(string? password) =>
+        !string.IsNullOrWhiteSpace(password) && !PlaceholderPasswords.Contains(password.Trim());
+
     public static string Validate(DatabaseConnectionOptions value)
     {
         if (string.IsNullOrWhiteSpace(value.Host)) return "O host do banco não foi configurado.";
         if (value.Port is < 1 or > 65535) return "A porta do banco é inválida.";
         if (string.IsNullOrWhiteSpace(value.Database)) return "O nome do banco não foi configurado.";
         if (string.IsNullOrWhiteSpace(value.Username)) return "O usuário do banco não foi configurado.";
-        if (!value.HasPassword) return "A senha do banco não foi fornecida por um provedor seguro.";
+        if (!value.HasPassword) return "A configuração do banco não possui uma senha válida.";
         if (value.Timeout is < 1 or > 120) return "O timeout deve estar entre 1 e 120 segundos.";
         if (!value.Pooling) return "O pooling de conexões deve estar habilitado.";
         return string.Empty;
