@@ -1,0 +1,8 @@
+.of-action-card { align-items: flex-start; background: var(--of-card-bg); border: 1px solid var(--of-line); border-radius: var(--of-radius); box-shadow: var(--of-elevation); color: var(--of-text-primary); display: flex; gap: 1rem; padding: clamp(1.25rem, 3vw, 2rem); }
+.of-action-card h2, .of-action-card h3 { color: var(--of-text-primary); }
+.of-action-card p { color: var(--of-text-secondary); }
+.of-action-card__icon { background: var(--of-success-bg); border-radius: 1rem; color: var(--of-action); display: grid; flex: 0 0 3.5rem; height: 3.5rem; place-items: center; }
+.of-progress { display: grid; gap: .5rem; grid-template-columns: repeat(4, 1fr); list-style: none; margin: 1.5rem 0; padding: 0; }
+.of-progress li { border-top: 4px solid var(--of-line); color: var(--of-text-secondary); font-size: .78rem; font-weight: 800; padding-top: .5rem; }
+.of-progress li.is-active { border-color: var(--of-action); color: var(--of-text-primary); }
+.of-alert-danger { background: var(--of-danger-bg); border: 1px solid #e6a7ae; border-radius: 1rem; color: var(--of-danger-text); padding: 1rem; }

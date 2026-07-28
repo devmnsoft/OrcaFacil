@@ -1,0 +1,19 @@
+.of-surface-page,
+.of-surface-light,
+.of-surface-soft,
+.of-surface-dark,
+.of-surface-brand,
+.of-surface-success,
+.of-surface-warning,
+.of-surface-danger { border-color: var(--of-line); color: var(--of-text-primary); }
+.of-surface-page { background: var(--of-page-bg); }
+.of-surface-light { background: var(--of-card-bg); }
+.of-surface-soft { background: var(--of-soft-bg); }
+.of-surface-dark { background: var(--of-dark-bg); color: var(--of-text-on-dark); }
+.of-surface-brand { background: var(--of-brand); color: var(--of-text-on-dark); }
+.of-surface-success { background: var(--of-success-bg); }
+.of-surface-warning { background: var(--of-warning-bg); }
+.of-surface-danger { background: var(--of-danger-bg); color: var(--of-danger-text); }
+.of-surface-dark :is(h1,h2,h3,h4,h5,h6),
+.of-surface-brand :is(h1,h2,h3,h4,h5,h6) { color: var(--of-text-on-dark); }
+.of-surface-dark a:not(.btn), .of-surface-brand a:not(.btn) { color: #c7e5ff; }

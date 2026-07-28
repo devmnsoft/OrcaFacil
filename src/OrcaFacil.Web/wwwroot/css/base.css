@@ -1,0 +1,6 @@
+body { background: var(--of-page-bg); color: var(--of-text-primary); }
+main { display: block; }
+:focus-visible { outline: 3px solid var(--of-focus); outline-offset: 3px; }
+.of-icon { fill: none; height: 1.25em; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; vertical-align: -.2em; width: 1.25em; }
+.of-icon-lg { height: 2rem; width: 2rem; }
+.of-text-secondary { color: var(--of-text-secondary); }

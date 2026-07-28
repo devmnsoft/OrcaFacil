@@ -1,0 +1,24 @@
+:root {
+  --of-page-bg: #f4f7fb;
+  --of-card-bg: #ffffff;
+  --of-soft-bg: #edf4fa;
+  --of-dark-bg: #0f2238;
+  --of-brand: #174a78;
+  --of-brand-hover: #103653;
+  --of-action: #167b55;
+  --of-action-hover: #0f6544;
+  --of-text-primary: #132238;
+  --of-text-secondary: #46566a;
+  --of-text-on-dark: #ffffff;
+  --of-info: #1769aa;
+  --of-success-bg: #e7f7ef;
+  --of-warning-bg: #fff5d9;
+  --of-danger-bg: #fff0f1;
+  --of-danger-text: #8f1d2c;
+  --of-focus: #ffbf47;
+  --of-line: #ccd8e4;
+  --of-elevation: 0 18px 48px rgba(15, 34, 56, .12);
+  --of-radius: 1.25rem;
+  --of-space: 1rem;
+  --of-content: 74rem;
+}

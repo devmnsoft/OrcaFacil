@@ -1,0 +1,5 @@
+.of-auth-context h1, .of-auth-context h2 { color: var(--of-text-on-dark); }
+.of-auth-context { order: 1; }
+.of-auth-form { order: 2; }
+.of-auth-form-section { border-top: 1px solid var(--of-line); margin-top: 1.5rem; padding-top: 1.5rem; }
+.of-auth-form-section h2 { font-size: 1.15rem; }

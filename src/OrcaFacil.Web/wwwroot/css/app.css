@@ -1,3 +1,16 @@
+@import url("tokens.css");
+@import url("base.css");
+@import url("surfaces.css");
+@import url("components.css");
+@import url("forms.css");
+@import url("public.css");
+@import url("auth.css");
+@import url("app-layout.css");
+@import url("admin.css");
+@import url("legal.css");
+@import url("responsive.css");
+
+/* Regras legadas ainda usadas pelas telas operacionais. Novos estilos vivem nos módulos acima. */
 /* 1. Tokens */
 :root {
   --of-primary: #1e3a5f;
@@ -79,12 +92,11 @@ h6 { color: var(--of-heading); font-weight: 900; letter-spacing: -.025em; }
 .btn-link { color: var(--of-accent); font-weight: 800; text-decoration: none; }
 
 /* 5. Layout público */
-.of-public,
-.of-public main {
+.of-public {
   background: radial-gradient(circle at 10% 0, #3b8fe5 0, #1e3a5f 34%, #0f172a 100%);
-  color: var(--of-on-dark);
   min-height: 100vh;
 }
+.of-public main { color: var(--of-text); }
 .of-public-nav { background: rgba(19, 43, 72, .72); backdrop-filter: blur(18px); border-bottom: 1px solid rgba(255, 255, 255, .12); padding: 1rem 0; }
 .of-public-nav .nav-link { color: rgba(255, 255, 255, .84); font-weight: 800; }
 .of-public-nav .nav-link:hover { color: #fff; }

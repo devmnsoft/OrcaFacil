@@ -1,0 +1,3 @@
+.of-legal { background: var(--of-card-bg); border-radius: var(--of-radius); box-shadow: var(--of-elevation); margin-inline: auto; max-width: 56rem; padding: clamp(1.5rem, 5vw, 4rem); }
+.of-legal nav { background: var(--of-soft-bg); border-radius: 1rem; padding: 1rem; }
+.of-legal section { scroll-margin-top: 2rem; }

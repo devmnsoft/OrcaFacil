@@ -1,0 +1,4 @@
+.of-password-field .of-icon { pointer-events: none; }
+.of-password-requirements { color: var(--of-text-secondary); font-size: .875rem; margin-top: .5rem; }
+.of-account-choice { cursor: pointer; }
+.of-account-choice:has(input:checked) { border-color: var(--of-action); box-shadow: 0 0 0 3px rgba(22,123,85,.14); }

@@ -36,6 +36,7 @@ public sealed class RegisterModel(AuthService authService, ILogger<RegisterModel
         [Required, Compare(nameof(Password), ErrorMessage = "As senhas não conferem.")] public string ConfirmPassword { get; set; } = string.Empty;
         [Range(typeof(bool), "true", "true", ErrorMessage = "Aceite os termos para continuar.")] public bool AcceptTerms { get; set; }
         [Range(typeof(bool), "true", "true", ErrorMessage = "Aceite a política de privacidade para continuar.")] public bool AcceptPrivacy { get; set; }
+        public bool AcceptMarketing { get; set; }
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
