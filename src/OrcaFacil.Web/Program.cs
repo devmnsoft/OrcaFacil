@@ -35,6 +35,8 @@ using OrcaFacil.Application.WorkOrders;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddOrcaFacilLocalConfiguration();
+if (builder.Configuration.GetValue("Diagnostics:EnableEfCommandLogging", false))
+    builder.Configuration["Serilog:MinimumLevel:Override:Microsoft.EntityFrameworkCore.Database.Command"] = "Information";
 
 builder.Logging.ClearProviders();
 builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(context.Configuration).Enrich.FromLogContext());
@@ -68,6 +70,8 @@ builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
 builder.Services.AddScoped<SuperAdminDashboardQueries>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ICurrentAccountService, CurrentAccountService>();
+builder.Services.AddScoped<IAccountSelectionService, AccountSelectionService>();
+builder.Services.AddScoped<IUserSignInService, CookieUserSignInService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<ILoggerService, LoggerService>();
 builder.Services.AddScoped<AuthService>();
@@ -91,6 +95,7 @@ builder.Services.AddScoped<IPaymentGateway, MercadoPagoPaymentGateway>();
 builder.Services.AddScoped<UserUsageService>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+builder.Services.Configure<EmailOutboxOptions>(builder.Configuration.GetSection("EmailOutbox"));
 builder.Services.Configure<PasswordResetOptions>(builder.Configuration.GetSection("PasswordReset"));
 builder.Services.Configure<ApplicationUrlOptions>(builder.Configuration.GetSection("Application"));
 builder.Services.Configure<SecuritySecretOptions>(builder.Configuration.GetSection("Security"));
@@ -221,3 +226,5 @@ app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (Guid id, OrcaFacil.A
     return Results.File(bytes, "application/pdf", $"{document.Number}.pdf");
 }).RequireAuthorization();
 app.Run();
+
+public partial class Program;

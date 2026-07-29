@@ -5,11 +5,12 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using OrcaFacil.Application.Auth;
 using OrcaFacil.Domain.Enums;
 using OrcaFacil.Web.Extensions;
+using OrcaFacil.Web.Services;
 
 namespace OrcaFacil.Web.Pages.Auth;
 
 [AllowAnonymous]
-public sealed class RegisterModel(AuthService authService, ILogger<RegisterModel> logger) : PageModel
+public sealed class RegisterModel(AuthService authService, IUserSignInService signIn, ILogger<RegisterModel> logger) : PageModel
 {
     [BindProperty] public InputModel Input { get; set; } = new();
     public string? RegistrationErrorCode { get; private set; }
@@ -53,11 +54,12 @@ public sealed class RegisterModel(AuthService authService, ILogger<RegisterModel
         try
         {
             var result = await authService.RegisterAsync(command, ct);
-            if (!result.Succeeded)
+            if (!result.Succeeded || result.Value is null)
             {
                 ModelState.AddModelError(string.Empty, result.Error ?? "Não foi possível concluir o cadastro.");
                 return InvalidPage();
             }
+            await signIn.SignInAsync(HttpContext, result.Value, cancellationToken: ct);
             TempData.Success("Conta criada. Vamos preparar seu espaço.");
             return RedirectToPage("/Onboarding/Index");
         }
