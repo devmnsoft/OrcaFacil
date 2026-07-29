@@ -12,9 +12,12 @@ public sealed class CommercialStatusTransitionTests
     [InlineData(DocumentStatus.Draft, DocumentStatus.Ready)]
     [InlineData(DocumentStatus.Ready, DocumentStatus.Sent)]
     [InlineData(DocumentStatus.Sent, DocumentStatus.Viewed)]
+    [InlineData(DocumentStatus.Sent, DocumentStatus.InNegotiation)]
     [InlineData(DocumentStatus.Viewed, DocumentStatus.InNegotiation)]
     [InlineData(DocumentStatus.InNegotiation, DocumentStatus.Sent)]
     [InlineData(DocumentStatus.Viewed, DocumentStatus.Approved)]
+    [InlineData(DocumentStatus.InNegotiation, DocumentStatus.Approved)]
+    [InlineData(DocumentStatus.InNegotiation, DocumentStatus.Rejected)]
     [InlineData(DocumentStatus.Approved, DocumentStatus.ConvertedToWorkOrder)]
     public void Allows_supported_document_transition(DocumentStatus current, DocumentStatus next) =>
         Assert.True(_documents.CanTransition(current, next));
