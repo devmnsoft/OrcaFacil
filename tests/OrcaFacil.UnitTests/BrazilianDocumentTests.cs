@@ -15,7 +15,11 @@ public sealed class BrazilianDocumentTests
     [Theory]
     [InlineData("52998224724")]
     [InlineData("111.111.111-11")]
-    public void Rejects_invalid_or_repeated_cpf(string value) =>
+    [InlineData("52998224735")] // primeiro dígito verificador incorreto
+    [InlineData("5299822472")]
+    [InlineData("529982247250")]
+    [InlineData("5299822472A")]
+    public void Rejects_invalid_repeated_or_malformed_cpf(string value) =>
         Assert.False(BrazilianDocument.HasValidCheckDigits(BrazilianDocumentType.CPF, value));
 
     [Theory]
@@ -27,7 +31,11 @@ public sealed class BrazilianDocumentTests
     [Theory]
     [InlineData("11222333000180")]
     [InlineData("11.111.111/1111-11")]
-    public void Rejects_invalid_or_repeated_cnpj(string value) =>
+    [InlineData("11222333000171")] // primeiro dígito verificador incorreto
+    [InlineData("1122233300018")]
+    [InlineData("112223330001810")]
+    [InlineData("1122233300018A")]
+    public void Rejects_invalid_repeated_or_malformed_cnpj(string value) =>
         Assert.False(BrazilianDocument.HasValidCheckDigits(BrazilianDocumentType.CNPJ, value));
 
     [Fact]

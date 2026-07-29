@@ -15,10 +15,15 @@ public static class BrazilianDocument
 
     public static bool HasValidCheckDigits(BrazilianDocumentType? type, string? value)
     {
+        if (!HasOnlySupportedCharacters(value)) return false;
         var numbers = Normalize(value);
         if (type is null || string.IsNullOrWhiteSpace(numbers)) return false;
         return type == BrazilianDocumentType.CNPJ ? IsValidCnpj(numbers) : IsValidCpf(numbers);
     }
+
+    private static bool HasOnlySupportedCharacters(string? value) =>
+        value is null || value.All(character => char.IsDigit(character) ||
+            char.IsWhiteSpace(character) || character is '.' or '-' or '/');
 
     public static string Mask(BrazilianDocumentType? type, string? numbers)
     {

@@ -37,6 +37,9 @@ jobs:
       - name: Restore .NET
         run: dotnet restore OrcaFacil.sln
 
+      - name: Check C# test type collisions
+        run: npm run check:csharp-test-types
+
       - name: Build .NET
         run: dotnet build OrcaFacil.sln --no-restore
 

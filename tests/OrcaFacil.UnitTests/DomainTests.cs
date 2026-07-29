@@ -56,39 +56,3 @@ public class DomainTests
         Assert.False(service.PdfHasWatermark(PlanType.Pro));
     }
 }
-
-public class BrazilianDocumentTests
-{
-    [Theory]
-    [InlineData("529.982.247-25")]
-    [InlineData("52998224725")]
-    public void Cpf_Valid_CheckDigits_Are_Accepted(string value) =>
-        Assert.True(BrazilianDocument.HasValidCheckDigits(BrazilianDocumentType.CPF, value));
-
-    [Theory]
-    [InlineData("52998224724")]
-    [InlineData("11111111111")]
-    [InlineData("123")]
-    public void Cpf_Invalid_CheckDigits_Are_Rejected(string value) =>
-        Assert.False(BrazilianDocument.HasValidCheckDigits(BrazilianDocumentType.CPF, value));
-
-    [Theory]
-    [InlineData("04.252.011/0001-10")]
-    [InlineData("04252011000110")]
-    public void Cnpj_Valid_CheckDigits_Are_Accepted(string value) =>
-        Assert.True(BrazilianDocument.HasValidCheckDigits(BrazilianDocumentType.CNPJ, value));
-
-    [Theory]
-    [InlineData("04252011000111")]
-    [InlineData("00000000000000")]
-    [InlineData("123")]
-    public void Cnpj_Invalid_CheckDigits_Are_Rejected(string value) =>
-        Assert.False(BrazilianDocument.HasValidCheckDigits(BrazilianDocumentType.CNPJ, value));
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Optional_Documents_Are_Accepted(string? value) =>
-        Assert.True(BrazilianDocument.HasValidCheckDigits(BrazilianDocumentType.CPF, value));
-}
