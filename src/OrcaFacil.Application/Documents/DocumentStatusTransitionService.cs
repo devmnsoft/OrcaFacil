@@ -15,9 +15,9 @@ public sealed class DocumentStatusTransitionService : IDocumentStatusTransitionS
         {
             [DocumentStatus.Draft] = [DocumentStatus.Ready, DocumentStatus.Cancelled],
             [DocumentStatus.Ready] = [DocumentStatus.Sent, DocumentStatus.Draft, DocumentStatus.Cancelled],
-            [DocumentStatus.Sent] = [DocumentStatus.Viewed, DocumentStatus.Approved, DocumentStatus.Rejected, DocumentStatus.Expired, DocumentStatus.Cancelled],
+            [DocumentStatus.Sent] = [DocumentStatus.Viewed, DocumentStatus.InNegotiation, DocumentStatus.Approved, DocumentStatus.Rejected, DocumentStatus.Expired, DocumentStatus.Cancelled],
             [DocumentStatus.Viewed] = [DocumentStatus.InNegotiation, DocumentStatus.Approved, DocumentStatus.Rejected, DocumentStatus.Expired, DocumentStatus.Cancelled],
-            [DocumentStatus.InNegotiation] = [DocumentStatus.Sent, DocumentStatus.Cancelled],
+            [DocumentStatus.InNegotiation] = [DocumentStatus.Sent, DocumentStatus.Approved, DocumentStatus.Rejected, DocumentStatus.Cancelled],
             [DocumentStatus.Approved] = [DocumentStatus.ConvertedToWorkOrder, DocumentStatus.Cancelled]
         };
 

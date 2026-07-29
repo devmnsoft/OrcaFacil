@@ -78,6 +78,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<IDocumentStatusTransitionService, DocumentStatusTransitionService>();
 builder.Services.AddSingleton<IPublicDocumentTokenService, PublicDocumentTokenService>();
+builder.Services.AddSingleton<IDocumentSnapshotSerializer, DocumentSnapshotSerializer>();
 builder.Services.AddScoped<IWorkOrderStatusTransitionService, WorkOrderStatusTransitionService>();
 builder.Services.AddScoped<IDocumentNumberService, DocumentNumberService>();
 builder.Services.AddScoped<ProfileService>();
