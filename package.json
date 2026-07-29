@@ -12,6 +12,7 @@
     "serve:root": "PUBLIC_DIR=. node server.js",
     "check": "node --check server.js",
     "check:js": "node scripts/check-js.mjs",
+    "check:csharp-test-types": "node scripts/check-csharp-test-type-collisions.mjs",
     "emulators:start": "firebase emulators:start --only auth,firestore,functions,hosting",
     "test:rules": "firebase emulators:exec --only firestore \"node tests/rules/run-rules-tests.mjs\"",
     "test:functions": "firebase emulators:exec --only firestore,functions \"node tests/functions/run-functions-tests.mjs\"",
