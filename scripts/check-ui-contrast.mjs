@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { extname, relative } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
@@ -8,6 +8,7 @@ const allowedExtensions = new Set(['.cshtml', '.html', '.css', '.js']);
 const files = execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' })
   .split('\n')
   .filter(Boolean)
+  .filter((file) => existsSync(file))
   .filter((file) => allowedExtensions.has(extname(file)) && !file.includes('node_modules/'));
 
 const riskyPatterns = [
