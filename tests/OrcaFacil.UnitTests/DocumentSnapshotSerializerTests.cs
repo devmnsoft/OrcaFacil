@@ -1,5 +1,5 @@
 using OrcaFacil.Application.Documents;
-
+using Xunit;
 namespace OrcaFacil.UnitTests;
 
 public sealed class DocumentSnapshotSerializerTests
