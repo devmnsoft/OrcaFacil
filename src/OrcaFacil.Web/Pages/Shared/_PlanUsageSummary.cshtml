@@ -1,0 +1,8 @@
+@model OrcaFacil.Web.ViewModels.PlanUsageSummaryViewModel
+<section class="of-plan-usage of-surface" aria-labelledby="plan-usage-title">
+  <header><div><p class="of-eyebrow">Uso do plano</p><h2 id="plan-usage-title">Seu espaço disponível</h2></div><a asp-page="/Subscription/Index">Ver plano e benefícios</a></header>
+  <div class="of-plan-identities"><div><span>Plano escolhido</span><strong>@Model.SelectedPlan</strong><small>O plano escolhido para sua conta.</small></div><div><span>Disponível agora</span><strong>@Model.EffectivePlan</strong><small>Benefícios liberados neste momento.</small></div><span class="of-status">@Model.Status</span></div>
+  @foreach (var item in Model.Items) { <div class="of-usage-row"><div><strong>@item.Label</strong>@if(item.Limit.HasValue){<span>@item.Used de @item.Limit usados. Restam @item.Remaining.</span>}else{<span>Uso sem limite definido para este recurso.</span>}</div>@if(item.Limit.HasValue){<progress value="@item.Used" max="@item.Limit" aria-label="@item.Label: @item.Percentage% usado">@item.Percentage%</progress>}</div> }
+  @if(Model.RenewsAt.HasValue){<p>O uso mensal será renovado em @Model.RenewsAt.Value.ToString("dd/MM/yyyy").</p>}
+  @if(!string.IsNullOrWhiteSpace(Model.NextBenefit)){<p class="of-benefit"><strong>Próximo benefício:</strong> @Model.NextBenefit</p>}
+</section>

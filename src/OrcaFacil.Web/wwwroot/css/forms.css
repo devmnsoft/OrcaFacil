@@ -1,1 +1,7 @@
-.form-label{color:var(--of-text);font-weight:700}.form-control{border:1px solid #aebdce;border-radius:.75rem;min-height:3rem}.form-control:focus{border-color:var(--of-info);box-shadow:0 0 0 .2rem rgba(23,95,158,.16)}.of-password-field{position:relative}.of-password-field .form-control{padding-right:3rem}.of-password-toggle{background:transparent;border:0;color:var(--of-info);height:100%;position:absolute;right:.25rem;top:0;width:2.75rem}.of-account-choice{box-shadow:none;cursor:pointer;display:grid;gap:.35rem}.of-account-choice:has(input:checked){border:2px solid var(--of-info);background:#eff7ff}.of-form-step{border:0;border-top:1px solid var(--of-border);margin-top:1.5rem;padding-top:1.5rem}.of-step-label{align-items:center;display:flex;gap:.65rem;font-weight:800}.of-step-label span{background:var(--of-brand);border-radius:50%;color:#fff;display:grid;height:1.8rem;place-items:center;width:1.8rem}
+label,.form-label { display: inline-block; margin-bottom: .35rem; color: var(--of-text); font-weight: 650; }
+input,select,textarea,.form-control,.form-select { width: 100%; min-height: 44px; padding: .65rem .75rem; border: 1px solid var(--of-border-strong); border-radius: var(--of-radius-sm); background: white; color: var(--of-text); }
+textarea { min-height: 7rem; resize: vertical; }
+input:disabled,select:disabled,textarea:disabled { background: var(--of-subtle); color: var(--of-disabled); cursor: not-allowed; }
+.field-validation-error,.text-danger { color: var(--of-danger); font-size: var(--of-text-sm); }
+.form-text { color: var(--of-text-secondary); font-size: var(--of-text-sm); }
+button,.btn { min-height: 44px; }
