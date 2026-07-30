@@ -4,55 +4,149 @@
     var authenticated = User.Identity?.IsAuthenticated == true;
     var shell = authenticated ? await ShellFactory.CreateAsync(Context.RequestAborted) : null;
     var currentPath = Context.Request.Path.Value ?? string.Empty;
+    var pageTitle = ViewData["Title"]?.ToString() ?? "OrçaFácil";
+    var pageSection = ViewData["Section"]?.ToString() ?? "Início";
+    var helpCode = ViewData["HelpCode"]?.ToString() ?? "dashboard";
 }
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>@ViewData["Title"] · OrçaFácil</title>
-  <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
-  <link rel="stylesheet" href="~/css/base.css" asp-append-version="true" />
-  <link rel="stylesheet" href="~/css/surfaces.css" asp-append-version="true" />
-  <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
-  <link rel="stylesheet" href="~/css/forms.css" asp-append-version="true" />
-  <link rel="stylesheet" href="~/css/app-layout.css" asp-append-version="true" />
-  <link rel="stylesheet" href="~/css/responsive.css" asp-append-version="true" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@pageTitle · OrçaFácil</title>
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/base.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/surfaces.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/forms.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/app-layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/responsive.css" asp-append-version="true" />
 </head>
 <body>
-<a class="of-skip-link" href="#main-content">Ir para o conteúdo</a>
-@if (shell is not null)
-{
-<div class="of-client-shell">
-  <aside class="of-client-sidebar" id="client-sidebar" aria-label="Navegação principal">
-    <a class="of-shell-brand" asp-page="/Dashboard/Index"><img src="~/img/brand/orcafacil-wordmark-light.svg" alt="OrçaFácil — um produto MNSOFT" /></a>
-    <section class="of-account-summary" aria-label="Conta e plano"><strong>@shell.AccountName</strong><span>@shell.AccountRole</span><span class="of-plan-pill">Plano @shell.EffectivePlanName</span></section>
-    <a class="of-primary-create" asp-page="/Documents/CreateBudget"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg>Novo orçamento</a>
-    <nav class="of-grouped-menu">
-      @foreach (var group in shell.Menus)
-      {
-        <section><h2>@group.Label</h2>
-        @foreach (var item in group.Items)
-        {
-          var active = currentPath.StartsWith(item.Page, StringComparison.OrdinalIgnoreCase);
-          <a class="@(active ? "is-active" : null)" asp-page="@item.Page" aria-current="@(active ? "page" : null)"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-@item.Icon" /></svg><span>@item.Label</span>@if(item.Premium){<span class="of-premium-tag" title="Disponível no plano @item.RequiredPlan">@item.RequiredPlan</span>}</a>
-        }
-        </section>
-      }
-    </nav>
-    <div class="of-sidebar-profile"><span>@shell.FirstName</span><form method="post" asp-page="/Auth/Logout">@Html.AntiForgeryToken()<button type="submit">Sair</button></form></div>
-  </aside>
-  <div class="of-shell-stage">
-    <header class="of-client-topbar"><div><span class="of-breadcrumb">OrçaFácil / @ViewData["Title"]</span><strong>@ViewData["Title"]</strong></div><div class="of-topbar-actions"><button type="button" data-help-open aria-haspopup="dialog">Ajuda desta página</button><a asp-page="/Notifications/Index" aria-label="Notificações: @shell.UnreadNotifications não lidas">Notificações@if(shell.UnreadNotifications > 0){<span>@shell.UnreadNotifications</span>}</a><span>@shell.AccountName</span></div></header>
-    @if (shell.IsUsingFreeFallback) { <section class="of-paused-banner" role="status"><div><strong>Seus benefícios pagos estão pausados.</strong><p>Você está usando o plano Grátis neste momento. Seus clientes, documentos e configurações continuam seguros.</p></div><a asp-page="/Subscription/Index">Regularizar</a><button type="button" data-preserved-open>Ver o que está pausado</button><button type="button" data-banner-dismiss>Fechar por agora</button></section> }
-    <main class="of-content" id="main-content" tabindex="-1"><partial name="Partials/_ToastHost" />@RenderBody()</main>
-  </div>
-</div>
-<nav class="of-mobile-nav" aria-label="Navegação móvel"><a asp-page="/Dashboard/Index"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-dashboard" /></svg>Início</a><a asp-page="/Documents/Index"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg>Documentos</a><button type="button" class="of-mobile-new" data-action-open aria-haspopup="dialog"><span>+</span>Novo</button><a asp-page="/Clients/Index"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-client" /></svg>Clientes</a><button type="button" data-menu-open><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-menu" /></svg>Menu</button></nav>
-<div class="of-action-sheet" data-action-sheet hidden role="dialog" aria-modal="true" aria-labelledby="action-title"><div><h2 id="action-title">O que você quer criar?</h2><a asp-page="/Documents/CreateBudget">Novo orçamento</a><a asp-page="/Documents/CreateReceipt">Novo recibo</a><a asp-page="/Clients/Create">Novo cliente</a><a asp-page="/Services/Index">Novo serviço</a><button type="button" data-dialog-close>Cancelar</button></div></div>
-<div class="of-experience-dialog" data-preserved-dialog hidden role="dialog" aria-modal="true" aria-labelledby="preserved-title"><div><button type="button" data-dialog-close aria-label="Fechar">×</button><h2 id="preserved-title">Seus dados continuam aqui</h2><h3>Continua disponível</h3><p>Clientes, serviços, documentos, recibos, histórico e dados da conta.</p><h3>Fica pausado</h3><p>Benefícios pagos, novos usos acima dos limites, identidade visual, modelos, aprovações, equipe e automações.</p><h3>Quando regularizar</h3><p>Os benefícios são restaurados e suas configurações voltam a ser aplicadas.</p><a href="/Subscription">Ver plano e regularizar</a></div></div>
-<div class="of-drawer" data-help-drawer hidden role="dialog" aria-modal="true" aria-labelledby="help-title"><div><button type="button" data-dialog-close aria-label="Fechar ajuda">×</button><p class="of-eyebrow">Ajuda contextual</p><h2 id="help-title">Entenda esta página</h2><p>Veja o objetivo, o próximo passo e as condições do seu plano sem sair da tarefa atual.</p><a asp-page="/Support/Index">Abrir Central de ajuda</a></div></div>
-} else { <main id="main-content"><partial name="Partials/_ToastHost" />@RenderBody()</main> }
-<script src="~/js/experience.js" asp-append-version="true"></script>
-@await RenderSectionAsync("Scripts", false)
-</body></html>
+    <a class="of-skip-link" href="#main-content">Ir para o conteúdo</a>
+    @if (shell is not null)
+    {
+        <div class="of-client-shell" data-client-shell>
+            <aside class="of-client-sidebar" id="client-sidebar" aria-label="Navegação principal">
+                <div class="of-sidebar-brand-row">
+                    <a class="of-shell-brand" asp-page="/Dashboard/Index">
+                        <img src="~/img/brand/orcafacil-wordmark-light.svg" alt="OrçaFácil, um produto MNSOFT" />
+                    </a>
+                    <button class="of-sidebar-toggle" type="button" data-sidebar-toggle aria-label="Recolher menu" aria-controls="client-sidebar" aria-expanded="true">
+                        <svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-menu" /></svg>
+                    </button>
+                </div>
+                <button class="of-account-summary" type="button" aria-label="Trocar conta">
+                    <span class="of-avatar" aria-hidden="true">@shell.AccountName[..1].ToUpperInvariant()</span>
+                    <span class="of-account-copy">
+                        <strong>@shell.AccountName</strong>
+                        <small>@shell.AccountRole</small>
+                        <span class="of-plan-pill">@shell.EffectivePlanName · @shell.PlanAccessStatus</span>
+                    </span>
+                    <span aria-hidden="true">⌄</span>
+                </button>
+                <a class="of-primary-create" asp-page="/Documents/CreateBudget" title="Novo orçamento">
+                    <svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg>
+                    <span>Novo orçamento</span>
+                </a>
+                <nav class="of-grouped-menu" aria-label="Áreas de trabalho">
+                    @foreach (var group in shell.Menus)
+                    {
+                        <section>
+                            <h2>@group.Label</h2>
+                            @foreach (var item in group.Items)
+                            {
+                                var active = currentPath.StartsWith(item.Page, StringComparison.OrdinalIgnoreCase);
+                                <a class="@(active ? "is-active" : null)" asp-page="@item.Page" aria-current="@(active ? "page" : null)" title="@item.Label">
+                                    <svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-@item.Icon" /></svg>
+                                    <span class="of-menu-label">@item.Label</span>
+                                    @if (item.Premium)
+                                    {
+                                        <span class="of-premium-tag" title="Disponível no plano @item.RequiredPlan">@item.RequiredPlan</span>
+                                    }
+                                </a>
+                            }
+                        </section>
+                    }
+                </nav>
+                <div class="of-sidebar-profile">
+                    <span class="of-avatar" aria-hidden="true">@shell.FirstName[..1].ToUpperInvariant()</span>
+                    <span class="of-profile-copy"><strong>@shell.FirstName</strong><small>Minha conta</small></span>
+                    <form method="post" asp-page="/Auth/Logout">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" title="Sair">Sair</button>
+                    </form>
+                </div>
+            </aside>
+            <div class="of-shell-stage">
+                <header class="of-client-topbar">
+                    <div class="of-topbar-heading">
+                        <nav class="of-breadcrumb" aria-label="Breadcrumb">
+                            <a asp-page="/Dashboard/Index">Início</a><span aria-hidden="true">/</span>
+                            @if (pageSection != "Início") { <span>@pageSection</span><span aria-hidden="true">/</span> }
+                            <span aria-current="page">@pageTitle</span>
+                        </nav>
+                        <strong>@pageTitle</strong>
+                    </div>
+                    <div class="of-topbar-actions">
+                        <button class="of-search-trigger" type="button" data-search-open aria-haspopup="dialog">
+                            <svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-search" /></svg>
+                            <span>Buscar</span><kbd>Ctrl K</kbd>
+                        </button>
+                        <button class="of-icon-button" type="button" data-help-open data-help-code="@helpCode" aria-haspopup="dialog" aria-label="Como usar esta página">
+                            <svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-help" /></svg>
+                        </button>
+                        <a class="of-icon-button" asp-page="/Notifications/Index" aria-label="Notificações: @shell.UnreadNotifications não lidas">
+                            <svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-notification" /></svg>
+                            @if (shell.UnreadNotifications > 0) { <span class="of-notification-count">@shell.UnreadNotifications</span> }
+                        </a>
+                        <span class="of-topbar-avatar">@shell.FirstName[..1].ToUpperInvariant()</span>
+                    </div>
+                </header>
+                <main class="of-content" id="main-content" tabindex="-1">
+                    <partial name="Partials/_ToastHost" />
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+        <nav class="of-mobile-nav" aria-label="Navegação móvel">
+            <a asp-page="/Dashboard/Index"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-dashboard" /></svg><span>Início</span></a>
+            <a asp-page="/Documents/Index"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg><span>Documentos</span></a>
+            <button type="button" class="of-mobile-new" data-action-open aria-haspopup="dialog"><span class="of-mobile-plus">+</span><span>Novo</span></button>
+            <a asp-page="/Clients/Index"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-client" /></svg><span>Clientes</span></a>
+            <button type="button" data-menu-open><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-menu" /></svg><span>Menu</span></button>
+        </nav>
+        <div class="of-action-sheet" data-action-sheet hidden role="dialog" aria-modal="true" aria-labelledby="action-title">
+            <div class="of-sheet-panel">
+                <span class="of-sheet-handle" aria-hidden="true"></span><h2 id="action-title">O que você quer criar?</h2>
+                <p>Escolha o resultado que precisa agora.</p>
+                <a asp-page="/Documents/CreateBudget"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg><span><strong>Novo orçamento</strong><small>Prepare uma proposta com serviços, valores e condições.</small></span><span class="of-plan-pill">Grátis</span></a>
+                <a asp-page="/Documents/CreateReceipt"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-receipt" /></svg><span><strong>Novo recibo</strong><small>Registre um valor recebido de forma organizada.</small></span><span class="of-plan-pill">Grátis</span></a>
+                <a asp-page="/Clients/Create"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-client" /></svg><span><strong>Novo cliente</strong><small>Salve dados para reutilizar nos documentos.</small></span><span class="of-plan-pill">Grátis</span></a>
+                <button type="button" data-dialog-close>Cancelar</button>
+            </div>
+        </div>
+        <div class="of-command-palette" data-search-dialog hidden role="dialog" aria-modal="true" aria-labelledby="search-title">
+            <div>
+                <header><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-search" /></svg><label id="search-title" class="sr-only" for="global-search">Busca global</label><input id="global-search" type="search" placeholder="Buscar clientes, serviços e documentos" autocomplete="off" data-global-search /><kbd>Esc</kbd></header>
+                <section aria-live="polite" data-search-results><p>Digite ao menos dois caracteres para buscar nesta conta.</p><h2>Ações rápidas</h2><a href="/Documents/CreateBudget">Criar novo orçamento</a><a href="/Clients/Create">Cadastrar cliente</a></section>
+            </div>
+        </div>
+        <div class="of-drawer" data-help-drawer hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
+            <div>
+                <header><div><p class="of-eyebrow">Como usar esta página</p><h2 id="help-title">Transforme a informação em ação</h2></div><button type="button" data-dialog-close aria-label="Fechar ajuda">×</button></header>
+                <section><h3>Para que serve</h3><p>Organize esta etapa da sua rotina sem perder o contexto do cliente.</p></section>
+                <section><h3>Antes de começar</h3><p>Confira a conta selecionada e os dados que serão usados.</p></section>
+                <section><h3>Passo a passo</h3><ol><li>Revise o resumo.</li><li>Escolha a ação principal.</li><li>Confirme o resultado antes de sair.</li></ol></section>
+                <section><h3>Próxima etapa</h3><a asp-page="/Support/Index">Abrir Central de ajuda</a></section>
+            </div>
+        </div>
+    }
+    else
+    {
+        <main id="main-content"><partial name="Partials/_ToastHost" />@RenderBody()</main>
+    }
+    <script src="~/js/experience.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", false)
+</body>
+</html>

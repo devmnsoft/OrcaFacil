@@ -1,8 +1,47 @@
 @page
-@{ ViewData["Title"]="Conheça os recursos"; }
-<header class="of-page-heading"><p class="of-eyebrow">Centro de demonstrações</p><h1>Conheça o que o OrçaFácil pode fazer</h1><p>Explore resultados antes de escolher um plano. Tudo nesta página é demonstração e nunca se mistura aos seus dados.</p></header>
-<div class="of-demo-grid">
-@foreach(var demo in new[]{("PDF com OrçaFácil","Veja um documento claro e pronto para compartilhar.","Grátis"),("PDF com sua marca","Use seu logo e remova a identificação do OrçaFácil.","Profissional"),("Aprovação online","Receba a resposta do cliente diretamente pelo orçamento.","Profissional"),("Pipeline","Veja quais propostas precisam de atenção.","Profissional"),("Modelos","Reaproveite estruturas que funcionam para sua rotina.","Profissional"),("Equipe","Compartilhe a rotina com outras pessoas.","Empresarial"),("Relatórios","Acompanhe resultados comerciais em um só lugar.","Empresarial"),("Ordem de serviço","Transforme a proposta aceita em execução organizada.","Empresarial"),("Agenda","Planeje visitas e entregas sem perder contexto.","Empresarial")}){
-<article><span class="of-demo-label">Demonstração</span><h2>@demo.Item1</h2><p>@demo.Item2</p><small>Disponível no plano @demo.Item3</small><button type="button" data-demo-title="@demo.Item1">Ver demonstração</button></article>}
+@{
+    ViewData["Title"] = "Conhecer recursos";
+    ViewData["Section"] = "Aprender";
+    ViewData["HelpCode"] = "discover";
+    var demos = new[]
+    {
+        new { Code="free-pdf", Title="PDF claro e pronto para enviar", Problem="Substitui propostas improvisadas por um documento organizado.", Benefit="Passe confiança desde o primeiro contato.", Plan="Grátis", Image="demo-free-pdf.svg", Steps=new[]{"Escolha o cliente","Adicione serviços","Gere o PDF"} },
+        new { Code="branded-pdf", Title="Documento com sua identidade", Problem="Evita que sua proposta pareça genérica ou desconectada da empresa.", Benefit="Sua marca permanece presente na decisão do cliente.", Plan="Profissional", Image="demo-branded-pdf.svg", Steps=new[]{"Envie seu logo","Escolha as cores","Revise a prévia"} },
+        new { Code="public-approval", Title="Aprovação pelo cliente", Problem="Centraliza a resposta que antes ficava perdida em mensagens.", Benefit="Saiba quando avançar para a execução.", Plan="Profissional", Image="demo-public-approval.svg", Steps=new[]{"Compartilhe o link","Cliente revisa","Resposta vira atividade"} },
+        new { Code="commercial-pipeline", Title="Pipeline comercial", Problem="Mostra propostas paradas e qual conversa retomar.", Benefit="Priorize oportunidades sem planilhas paralelas.", Plan="Profissional", Image="demo-commercial-pipeline.svg", Steps=new[]{"Visualize etapas","Selecione a proposta","Defina a próxima ação"} },
+        new { Code="professional-templates", Title="Modelos profissionais", Problem="Reduz o retrabalho para criar documentos consistentes.", Benefit="Reutilize uma apresentação adequada ao seu negócio.", Plan="Profissional", Image="demo-professional-templates.svg", Steps=new[]{"Compare modelos","Visualize a página","Defina o padrão"} },
+        new { Code="team-workspace", Title="Espaço para equipe", Problem="Evita informações isoladas entre as pessoas da operação.", Benefit="Todos trabalham com o mesmo contexto e permissões.", Plan="Negócio", Image="demo-team-workspace.svg", Steps=new[]{"Convide pessoas","Defina acessos","Acompanhe atividades"} },
+        new { Code="business-report", Title="Relatório comercial", Problem="Transforma documentos em sinais sobre o negócio.", Benefit="Entenda volume, valor e evolução por período.", Plan="Negócio", Image="demo-business-report.svg", Steps=new[]{"Escolha o período","Compare os sinais","Abra os detalhes"} },
+        new { Code="work-order", Title="Ordem de serviço", Problem="Conecta uma proposta aprovada ao trabalho que será executado.", Benefit="Organize responsável, prazo e entrega.", Plan="Negócio", Image="demo-work-order.svg", Steps=new[]{"Use a proposta","Planeje a execução","Registre a conclusão"} },
+        new { Code="schedule", Title="Agenda com contexto", Problem="Reúne compromissos e o cliente relacionado a cada visita.", Benefit="Planeje o trabalho sem perder informações importantes.", Plan="Negócio", Image="demo-schedule.svg", Steps=new[]{"Escolha a ordem","Agende a visita","Acompanhe o dia"} }
+    };
+}
+<header class="of-discover-hero">
+    <div><p class="of-eyebrow">Demonstrações reais do produto</p><h1>Veja o resultado antes de escolher um recurso.</h1><p>Explore fluxos com dados ilustrativos. Nenhum cliente, documento ou configuração da sua conta será alterado.</p></div>
+    <img src="~/img/illustrations/quote-preview.svg" alt="Prévia de uma proposta profissional no OrçaFácil" />
+</header>
+<section class="of-demo-grid" aria-label="Demonstrações disponíveis">
+    @foreach (var demo in demos)
+    {
+        <article class="of-demo-card">
+            <div class="of-demo-visual"><img src="~/img/illustrations/demos/@demo.Image" alt="Prévia: @demo.Title" loading="lazy" /></div>
+            <div class="of-demo-content">
+                <div class="of-demo-meta"><span>Demonstração</span><span class="of-demo-plan">Plano @demo.Plan</span></div>
+                <h2>@demo.Title</h2><p>@demo.Problem</p>
+                <ol>@foreach (var step in demo.Steps) { <li>@step</li> }</ol>
+                <p class="of-demo-benefit"><strong>Benefício</strong> @demo.Benefit</p>
+                <button type="button" data-demo-title="@demo.Code">Testar demonstração</button>
+            </div>
+        </article>
+        <template data-demo-content="@demo.Code">
+            <p class="of-eyebrow">Demonstração · nenhum dado real será alterado</p>
+            <h2>@demo.Title</h2>
+            <img src="/img/illustrations/demos/@demo.Image" alt="Demonstração visual de @demo.Title" />
+            <h3>Como funciona</h3><ol>@foreach (var step in demo.Steps) { <li>@step</li> }</ol>
+            <p>@demo.Benefit</p><p><strong>Disponível no plano @demo.Plan.</strong></p>
+        </template>
+    }
+</section>
+<div class="of-experience-dialog" data-demo-dialog hidden role="dialog" aria-modal="true" aria-labelledby="demo-dialog-title">
+    <div><button type="button" data-dialog-close aria-label="Fechar demonstração">×</button><div data-demo-host id="demo-dialog-title"></div><a class="of-button-primary" asp-page="/Subscription/Index">Comparar planos</a></div>
 </div>
-<div class="of-experience-dialog" data-demo-dialog hidden role="dialog" aria-modal="true" aria-labelledby="demo-dialog-title"><div><button type="button" data-dialog-close aria-label="Fechar demonstração">×</button><span class="of-demo-label">Demonstração</span><h2 id="demo-dialog-title">Recurso</h2><p>Esta prévia usa conteúdo ilustrativo. Nenhum cliente, documento ou configuração real foi alterado.</p><a asp-page="/Subscription/Index">Comparar planos</a></div></div>

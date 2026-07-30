@@ -2,13 +2,116 @@
 @model OrcaFacil.Web.Pages.Dashboard.IndexModel
 @using OrcaFacil.Web.ViewModels
 @{
- ViewData["Title"]="Início"; var d=Model.Dashboard; var plan=d?.Plan ?? "Grátis";
- var usage=new PlanUsageSummaryViewModel(plan.Equals("Free",StringComparison.OrdinalIgnoreCase)?"Grátis":plan,plan.Equals("Free",StringComparison.OrdinalIgnoreCase)?"Grátis":plan,"Disponível",[new("PDFs neste mês",d?.PdfsThisMonth??0,null)],DateTimeOffset.UtcNow.AddMonths(1),"Use sua marca nos documentos.");
+    ViewData["Title"] = "Visão geral";
+    ViewData["Section"] = "Início";
+    ViewData["HelpCode"] = "dashboard";
+    var dashboard = Model.Dashboard;
+    var plan = dashboard?.Plan ?? "Grátis";
+    var planName = plan.Equals("Free", StringComparison.OrdinalIgnoreCase) ? "Grátis" : plan;
+    var usage = new PlanUsageSummaryViewModel(
+        planName,
+        planName,
+        "Disponível",
+        [new("PDFs neste mês", dashboard?.PdfsThisMonth ?? 0, null)],
+        DateTimeOffset.UtcNow.AddMonths(1),
+        "Use sua marca nos documentos.");
 }
-<header class="of-dashboard-hero"><div><p class="of-eyebrow">Sua rotina hoje</p><h1>Olá, @Model.FirstName. O que vamos preparar hoje?</h1><p>Seus clientes, serviços e documentos estão organizados aqui.</p></div><a class="of-hero-action" asp-page="/Documents/CreateBudget">Novo orçamento <span>Apresente serviços e valores ao cliente</span></a></header>
-@if(Model.NextAction is { } next){<section class="of-next-action" aria-labelledby="next-title"><div><p class="of-eyebrow">Próximo passo recomendado</p><h2 id="next-title">@next.Title</h2><p>@next.Explanation</p></div><a asp-page="@next.Page">@next.ActionLabel</a></section>}
-<section aria-labelledby="quick-title"><div class="of-section-heading"><div><p class="of-eyebrow">Ações rápidas</p><h2 id="quick-title">Comece pelo resultado que precisa</h2></div></div><div class="of-quick-grid"><a asp-page="/Documents/CreateBudget"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg><strong>Novo orçamento</strong><span>Apresente serviços, condições e total.</span><small>Resultado: proposta pronta para enviar</small></a><a asp-page="/Documents/CreateReceipt"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-receipt" /></svg><strong>Novo recibo</strong><span>Registre um pagamento informado por você.</span><small>Não substitui nota fiscal</small></a><a asp-page="/Clients/Create"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-client" /></svg><strong>Cadastrar cliente</strong><span>Salve contato e dados comerciais.</span><small>Resultado: preenchimento mais rápido</small></a><a asp-page="/Services/Index"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-service" /></svg><strong>Cadastrar serviço</strong><span>Organize descrição e preço de referência.</span><small>Resultado: catálogo reutilizável</small></a></div></section>
-<section class="of-dashboard-columns"><div><div class="of-section-heading"><div><p class="of-eyebrow">Visão do mês</p><h2>Indicadores principais</h2></div></div><div class="of-metric-grid"><article class="is-primary"><span>Orçamentos</span><strong>@d?.TotalBudgets</strong><small>@((d?.BudgetTotal??0).ToString("C")) em propostas</small></article><article><span>Recibos</span><strong>@d?.TotalReceipts</strong><small>@((d?.ReceiptTotal??0).ToString("C")) registrados</small></article><article><span>Documentos</span><strong>@d?.TotalDocuments</strong><small>@d?.DocumentsThisMonth neste mês</small></article><article class="is-usage"><span>PDFs usados</span><strong>@d?.PdfsThisMonth</strong><small>Acompanhe o seu limite abaixo</small></article></div></div><aside class="of-attention"><p class="of-eyebrow">O que precisa de atenção</p><h2>Uma ação por vez</h2>@if(!Model.HasIssuerProfile){<p><strong>Dados do emitente incompletos</strong><span>Complete antes de gerar um documento profissional.</span><a asp-page="/Profile/Index">Resolver agora</a></p>}else if((d?.TotalDocuments??0)==0){<p><strong>Nenhum orçamento criado</strong><span>Prepare a primeira proposta com um fluxo guiado.</span><a asp-page="/Documents/CreateBudget">Começar</a></p>}else{<p class="is-clear"><strong>Tudo organizado por aqui</strong><span>Não encontramos uma pendência prioritária agora.</span></p>}</aside></section>
-<section class="of-recent"><div class="of-section-heading"><div><p class="of-eyebrow">Continuidade</p><h2>Documentos recentes</h2></div><a asp-page="/Documents/Index">Ver todos</a></div>@if((d?.LatestDocuments?.Count??0)==0){<partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Seu primeiro documento começa aqui", Text="Crie um orçamento para apresentar serviços, valores, condições e prazo da proposta.", ActionText="Criar orçamento", ActionPage="/Documents/CreateBudget", Icon="bi-file-earmark-plus" }'/>}else{<partial name="_DocumentTable" model="d?.LatestDocuments"/>}</section>
-<partial name="_PlanUsageSummary" model="usage" />
-<section class="of-guidance"><div><p class="of-eyebrow">Progresso inicial</p><h2>Prepare seu espaço no seu ritmo</h2><p>Confira os dados, cadastre um cliente e um serviço, crie o orçamento, gere o PDF e compartilhe.</p></div><a asp-page="/Onboarding/Index">Continuar guia</a><a asp-page="/Discover">Conhecer benefícios</a></section>
+<section class="of-dashboard-hero" aria-labelledby="welcome-title">
+    <div class="of-hero-copy">
+        <p class="of-eyebrow">Seu comando comercial</p>
+        <h1 id="welcome-title">Olá, @Model.FirstName. Transforme o próximo pedido em uma proposta clara.</h1>
+        <p>Hoje você pode preparar, acompanhar e concluir seu trabalho sem perder o contexto.</p>
+        <div class="of-hero-actions">
+            <a class="of-button-primary" asp-page="/Documents/CreateBudget">Criar novo orçamento</a>
+            <a class="of-button-secondary" asp-page="/Documents/Index">Continuar de onde parei</a>
+        </div>
+        <dl class="of-day-summary">
+            <div><dt>Propostas</dt><dd>@(dashboard?.TotalBudgets ?? 0)</dd></div>
+            <div><dt>Em documentos</dt><dd>@((dashboard?.BudgetTotal ?? 0).ToString("C"))</dd></div>
+            <div><dt>Plano atual</dt><dd>@planName</dd></div>
+        </dl>
+    </div>
+    <div class="of-hero-visual">
+        <img src="~/img/illustrations/dashboard-command-center.svg" alt="Prévia do centro de comando com orçamento, aprovação e evolução comercial" />
+    </div>
+</section>
+
+@if (Model.NextAction is { } next)
+{
+    <section class="of-next-action" aria-labelledby="next-title">
+        <div class="of-next-icon"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-success" /></svg></div>
+        <div>
+            <p class="of-eyebrow">Próximo passo recomendado · cerca de 2 minutos</p>
+            <h2 id="next-title">@next.Title</h2>
+            <p>@next.Explanation</p>
+            <small>Benefício: seus próximos documentos ficam mais completos e fáceis de reutilizar.</small>
+        </div>
+        <a class="of-button-secondary" asp-page="@next.Page">@next.ActionLabel</a>
+        <img src="~/img/illustrations/client-management.svg" alt="" aria-hidden="true" />
+    </section>
+}
+
+<section class="of-dashboard-columns" aria-labelledby="attention-title">
+    <div class="of-attention-list">
+        <div class="of-section-heading">
+            <div><p class="of-eyebrow">Prioridades</p><h2 id="attention-title">O que precisa de atenção</h2></div>
+            <a asp-page="/Notifications/Index">Ver todas as pendências</a>
+        </div>
+        @if (!Model.HasIssuerProfile)
+        {
+            <article class="of-attention-item is-warning">
+                <span class="of-attention-icon"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-alert" /></svg></span>
+                <div><small>Cadastro profissional · atenção</small><h3>Complete os dados do emitente</h3><p>O cabeçalho dos documentos depende dessas informações.</p></div>
+                <time>Hoje</time><a asp-page="/Profile/Index">Resolver</a>
+            </article>
+        }
+        else if ((dashboard?.TotalDocuments ?? 0) == 0)
+        {
+            <article class="of-attention-item is-opportunity">
+                <span class="of-attention-icon"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg></span>
+                <div><small>Primeira venda · oportunidade</small><h3>Prepare sua primeira proposta</h3><p>Use o fluxo guiado para organizar cliente, serviços e condições.</p></div>
+                <time>Agora</time><a asp-page="/Documents/CreateBudget">Começar</a>
+            </article>
+        }
+        else
+        {
+            <article class="of-attention-item is-clear">
+                <span class="of-attention-icon"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-success" /></svg></span>
+                <div><small>Rotina · informativo</small><h3>Nenhuma pendência prioritária</h3><p>Seu espaço está organizado. Confira os documentos recentes.</p></div>
+                <time>Agora</time><a asp-page="/Documents/Index">Revisar</a>
+            </article>
+        }
+    </div>
+    <aside class="of-quick-actions" aria-labelledby="quick-title">
+        <p class="of-eyebrow">Atalhos</p><h2 id="quick-title">Crie com contexto</h2>
+        <a class="of-quick-primary" asp-page="/Documents/CreateBudget"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg><span><strong>Novo orçamento</strong><small>Proposta pronta para enviar</small></span></a>
+        <div><a asp-page="/Documents/CreateReceipt">Novo recibo</a><a asp-page="/Clients/Create">Novo cliente</a><a asp-page="/Services/Index">Novo serviço</a></div>
+    </aside>
+</section>
+
+<section aria-labelledby="metrics-title">
+    <div class="of-section-heading"><div><p class="of-eyebrow">Visão comercial</p><h2 id="metrics-title">O mês em quatro sinais</h2></div><a asp-page="/Documents/Index">Ver relatório completo</a></div>
+    <div class="of-metric-grid">
+        <article><span>Orçamentos enviados</span><strong>@(dashboard?.TotalBudgets ?? 0)</strong><small>@((dashboard?.TotalBudgets ?? 0) == 0 ? "Você ainda não enviou um orçamento neste mês." : "Propostas preparadas no período.")</small></article>
+        <article class="is-money"><span>Valor em propostas</span><strong>@((dashboard?.BudgetTotal ?? 0).ToString("C"))</strong><small>Total apresentado aos clientes.</small></article>
+        <article><span>Respostas aguardando</span><strong>—</strong><small>Disponível após compartilhar propostas.</small></article>
+        <article class="is-success"><span>Registrado em recibos</span><strong>@((dashboard?.ReceiptTotal ?? 0).ToString("C"))</strong><small>Valores informados por você no período.</small></article>
+    </div>
+</section>
+
+<section class="of-recent" aria-labelledby="recent-title">
+    <div class="of-section-heading"><div><p class="of-eyebrow">Continuidade</p><h2 id="recent-title">Documentos recentes</h2></div><a asp-page="/Documents/Index">Ver todos</a></div>
+    @if ((dashboard?.LatestDocuments?.Count ?? 0) == 0)
+    {
+        <partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Seu primeiro documento começa aqui", Text="Crie um orçamento para apresentar serviços, valores, condições e prazo da proposta.", ActionText="Criar orçamento", ActionPage="/Documents/CreateBudget", Icon="bi-file-earmark-plus" }' />
+    }
+    else
+    {
+        <partial name="_DocumentTable" model="dashboard?.LatestDocuments" />
+    }
+</section>
+
+<div class="of-dashboard-lower">
+    <partial name="_PlanUsageSummary" model="usage" />
+    <section class="of-guidance"><div><p class="of-eyebrow">Guia inicial</p><h2>Prepare seu espaço no seu ritmo</h2><p>Complete os dados, cadastre um cliente e transforme a oportunidade em documento.</p></div><a asp-page="/Onboarding/Index">Continuar guia</a><a asp-page="/Discover">Conhecer recursos</a></section>
+</div>
