@@ -77,6 +77,7 @@ builder.Services.AddScoped<IClientShellViewModelFactory, ClientShellViewModelFac
 builder.Services.AddScoped<INextBestActionService, NextBestActionService>();
 builder.Services.AddSingleton<IContextualHelpService, ContextualHelpService>();
 builder.Services.AddScoped<IPlanExperienceService, PlanExperienceService>();
+builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
 builder.Services.AddScoped<IAdminShellViewModelFactory, AdminShellViewModelFactory>();
 builder.Services.AddScoped<IUserSignInService, CookieUserSignInService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
@@ -228,6 +229,17 @@ app.MapPost("/api/webhooks/mercadopago", async (HttpRequest request, OrcaFacil.A
     return Results.Ok(new { received = true, result.EventKey });
 }).AllowAnonymous();
 app.MapGet("/health/version", () => new { app = "OrcaFacil", version = "1.0.0", environment = app.Environment.EnvironmentName, date = DateTime.UtcNow });
+app.MapGet("/Internal/Search", async Task<IResult> (string? q, int? limit, IGlobalSearchService search, CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(q) || q.Trim().Length < 2)
+        return Results.BadRequest(new { message = "Digite ao menos dois caracteres." });
+    return Results.Ok(new { results = await search.SearchAsync(q, limit ?? 12, ct) });
+}).RequireAuthorization();
+app.MapGet("/Internal/Help/{code}", async Task<IResult> (string code, IContextualHelpService help, CancellationToken ct) =>
+{
+    var content = await help.GetAsync(code, ct);
+    return content is null ? Results.NotFound(new { message = "Ajuda não encontrada para esta página." }) : Results.Ok(content);
+}).RequireAuthorization();
 app.MapControllers();
 app.MapRazorPages();
 app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (Guid id, OrcaFacil.Application.Abstractions.ICurrentUserService currentUser, OrcaFacil.Application.Abstractions.IPdfService pdf, OrcaFacil.Persistence.OrcaFacilDbContext db, CancellationToken ct) =>

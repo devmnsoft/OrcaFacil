@@ -13,6 +13,7 @@ public sealed class ClientShellViewModelFactory(
     ICurrentUserService user,
     ICurrentAccountService account,
     INotificationService notifications,
+    IPlanExperienceService planExperience,
     OrcaFacilDbContext db) : IClientShellViewModelFactory
 {
     public async Task<ClientShellViewModel> CreateAsync(CancellationToken cancellationToken = default)
@@ -24,19 +25,20 @@ public sealed class ClientShellViewModelFactory(
                 .Select(x => x.DisplayName)
                 .SingleOrDefaultAsync(cancellationToken) ?? accountName;
 
-        var plan = string.IsNullOrWhiteSpace(user.Plan) ? "Grátis" : HumanizePlan(user.Plan!);
+        var plan = await planExperience.GetAsync(cancellationToken);
         var unread = await notifications.GetUnreadCountAsync(user.UserId, cancellationToken);
         return new ClientShellViewModel(
             user.UserId, FirstName(user.Name), account.AccountId, accountName,
-            account.AccountRoleCode ?? "Responsável", plan, plan, plan, plan,
-            "Disponível", false, unread, ClientMenu.Items, ["documents.read"],
-            [], null, null,
+            account.AccountRoleCode ?? "Responsável", plan.SelectedPlan, plan.SelectedPlan,
+            plan.EffectivePlan, plan.EffectivePlan, plan.Status, plan.IsUsingFreeFallback,
+            unread, ClientMenu.Items, ["documents.read"],
+            plan.UsageItems.Select(x => new ShellUsageItem(x.Label, x.Used, x.Limit)).ToArray(),
+            plan.IsUsingFreeFallback ? plan.ContextualRecommendation : null, null,
             new ShellAction("Novo orçamento", "/Documents/CreateBudget", "budget"),
             "dashboard.overview");
     }
 
     private static string FirstName(string? name) => string.IsNullOrWhiteSpace(name) ? "bem-vindo" : name.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
-    private static string HumanizePlan(string value) => value.Equals("Free", StringComparison.OrdinalIgnoreCase) ? "Grátis" : value;
 }
 
 public sealed record ClientShellViewModel(

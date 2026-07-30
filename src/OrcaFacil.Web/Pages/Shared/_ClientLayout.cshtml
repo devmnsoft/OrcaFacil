@@ -129,16 +129,13 @@
         <div class="of-command-palette" data-search-dialog hidden role="dialog" aria-modal="true" aria-labelledby="search-title">
             <div>
                 <header><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-search" /></svg><label id="search-title" class="sr-only" for="global-search">Busca global</label><input id="global-search" type="search" placeholder="Buscar clientes, serviços e documentos" autocomplete="off" data-global-search /><kbd>Esc</kbd></header>
-                <section aria-live="polite" data-search-results><p>Digite ao menos dois caracteres para buscar nesta conta.</p><h2>Ações rápidas</h2><a href="/Documents/CreateBudget">Criar novo orçamento</a><a href="/Clients/Create">Cadastrar cliente</a></section>
+                <section aria-live="polite" aria-busy="false" data-search-results><p>Digite ao menos dois caracteres para buscar nesta conta.</p></section>
             </div>
         </div>
         <div class="of-drawer" data-help-drawer hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
             <div>
-                <header><div><p class="of-eyebrow">Como usar esta página</p><h2 id="help-title">Transforme a informação em ação</h2></div><button type="button" data-dialog-close aria-label="Fechar ajuda">×</button></header>
-                <section><h3>Para que serve</h3><p>Organize esta etapa da sua rotina sem perder o contexto do cliente.</p></section>
-                <section><h3>Antes de começar</h3><p>Confira a conta selecionada e os dados que serão usados.</p></section>
-                <section><h3>Passo a passo</h3><ol><li>Revise o resumo.</li><li>Escolha a ação principal.</li><li>Confirme o resultado antes de sair.</li></ol></section>
-                <section><h3>Próxima etapa</h3><a asp-page="/Support/Index">Abrir Central de ajuda</a></section>
+                <header><div><p class="of-eyebrow">Como usar esta página</p><h2 id="help-title" data-help-title>Carregando ajuda…</h2></div><button type="button" data-dialog-close aria-label="Fechar ajuda">×</button></header>
+                <div data-help-content aria-live="polite" aria-busy="true"><p>Buscando orientações específicas para esta etapa.</p></div>
             </div>
         </div>
     }
@@ -147,6 +144,7 @@
         <main id="main-content"><partial name="Partials/_ToastHost" />@RenderBody()</main>
     }
     <script src="~/js/experience.js" asp-append-version="true"></script>
+    <script type="module" src="~/js/shell.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", false)
 </body>
 </html>
