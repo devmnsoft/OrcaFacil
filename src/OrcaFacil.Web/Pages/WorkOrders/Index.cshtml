@@ -1,0 +1,8 @@
+@page
+@model OrcaFacil.Web.Pages.WorkOrders.IndexModel
+@{ ViewData["Title"] = "Ordens de serviço"; }
+<header class="of-page-header"><div><p class="of-eyebrow">Operação</p><h1>Ordens de serviço</h1><p>Acompanhe do planejamento à conclusão sem perder o orçamento de origem.</p></div><a class="btn btn-outline-primary" asp-page="/Schedule/Index">Abrir agenda</a></header>
+<form method="get" class="of-card mb-4"><label class="form-label" for="search">Buscar por número ou título</label><div class="input-group"><input id="search" name="search" value="@Model.Search" class="form-control"/><button class="btn btn-primary">Buscar</button></div></form>
+<section class="of-card" aria-labelledby="orders-title"><h2 id="orders-title" class="h5">Resultados</h2>
+@if (Model.Orders.Count == 0) { <p>Nenhuma ordem encontrada.</p> } else { <div class="list-group list-group-flush">@foreach(var order in Model.Orders){<a class="list-group-item list-group-item-action" asp-page="Details" asp-route-id="@order.Id"><strong>@order.Number</strong> — @order.Title <span class="badge text-bg-light">@order.Status</span></a>}</div> }
+</section>

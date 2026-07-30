@@ -88,3 +88,36 @@ public sealed class WorkOrder : Entity
     public string? PaymentMethod { get; set; }
     public uint Version { get; set; }
 }
+
+public sealed class ManualPayment : Entity
+{
+    public Guid AccountId { get; set; }
+    public Guid WorkOrderId { get; set; }
+    public Guid? DocumentId { get; set; }
+    public Guid ClientId { get; set; }
+    public decimal Amount { get; set; }
+    public string PaymentMethod { get; set; } = string.Empty;
+    public DateTime PaidAt { get; set; }
+    public string? Notes { get; set; }
+    public Guid RegisteredByUserId { get; set; }
+    public string IdempotencyKey { get; set; } = string.Empty;
+}
+
+public sealed class Receipt : Entity
+{
+    public Guid AccountId { get; set; }
+    public Guid PaymentId { get; set; }
+    public Guid WorkOrderId { get; set; }
+    public Guid ClientId { get; set; }
+    public string Number { get; set; } = string.Empty;
+    public string IssuerSnapshot { get; set; } = "{}";
+    public string ClientSnapshot { get; set; } = "{}";
+    public string ServiceSnapshot { get; set; } = "[]";
+    public decimal Amount { get; set; }
+    public string AmountInWords { get; set; } = string.Empty;
+    public string PaymentMethod { get; set; } = string.Empty;
+    public DateTime IssuedAt { get; set; }
+    public string? City { get; set; }
+    public string? Notes { get; set; }
+    public string FiscalNotice { get; set; } = "Recibo de pagamento registrado manualmente; não substitui documento fiscal quando exigido.";
+}

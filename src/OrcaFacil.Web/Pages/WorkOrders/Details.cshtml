@@ -1,0 +1,5 @@
+@page "{id:guid}"
+@model OrcaFacil.Web.Pages.WorkOrders.DetailsModel
+@{ ViewData["Title"] = "Ordem de serviço"; }
+<header class="of-page-header"><div><p class="of-eyebrow">Ordem @Model.Order?.Number</p><h1>@Model.Order?.Title</h1><p>Status: <strong>@Model.Order?.Status</strong></p></div></header>
+@if(Model.Order is not null){<div class="row g-4"><section class="col-lg-8"><div class="of-card"><h2 class="h5">Execução</h2><p>Total congelado: <strong>@Model.Order.TotalSnapshot.ToString("C")</strong></p><p>@Model.Order.Notes</p></div></section><aside class="col-lg-4"><div class="of-card"><h2 class="h5">Próxima ação</h2><div class="d-grid gap-2"><a class="btn btn-primary" asp-page="/Schedule/Index">Agendar</a><form method="post" asp-page-handler="Start"><button class="btn btn-outline-primary w-100">Iniciar</button></form><form method="post" asp-page-handler="Complete"><button class="btn btn-outline-primary w-100">Concluir</button></form><a class="btn btn-success" asp-page="/Payments/Register" asp-route-id="@Model.Order.Id">Registrar pagamento</a></div></div></aside></div>}
