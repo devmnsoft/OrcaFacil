@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using OrcaFacil.Persistence.Diagnostics;
+using Xunit;
 
 namespace OrcaFacil.UnitTests;
 
@@ -18,10 +19,10 @@ public sealed class RazorRouteUniquenessTests : IClassFixture<RouteApplicationFa
     {
         var endpoints = RouteEndpoints();
         var duplicates = endpoints
-            .GroupBy(endpoint => new
+            .GroupBy(endpoint => new                
             {
                 Pattern = Normalize(endpoint.RoutePattern.RawText),
-                Methods = string.Join(',', endpoint.Metadata.GetMetadata<HttpMethodMetadata>()?.HttpMethods.Order() ?? ["*"]),
+                Methods = string.Join(',', (endpoint.Metadata.GetMetadata<HttpMethodMetadata>()?.HttpMethods ?? new[] { "*" }).OrderBy(m => m)),
                 endpoint.Order
             })
             .Where(group => group.Select(endpoint => endpoint.DisplayName).Distinct().Count() > 1)

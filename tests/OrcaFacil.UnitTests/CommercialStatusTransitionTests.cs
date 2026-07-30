@@ -1,6 +1,7 @@
 using OrcaFacil.Application.Documents;
 using OrcaFacil.Application.WorkOrders;
 using OrcaFacil.Domain.Enums;
+using Xunit;
 
 namespace OrcaFacil.UnitTests;
 
