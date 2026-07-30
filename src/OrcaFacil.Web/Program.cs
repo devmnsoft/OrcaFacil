@@ -32,6 +32,8 @@ using OrcaFacil.Web.Email;
 using OrcaFacil.Web.Security;
 using Microsoft.Extensions.Options;
 using OrcaFacil.Application.WorkOrders;
+using OrcaFacil.Application.Commercial;
+using OrcaFacil.Persistence.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddOrcaFacilLocalConfiguration();
@@ -85,6 +87,9 @@ builder.Services.AddScoped<IDocumentStatusTransitionService, DocumentStatusTrans
 builder.Services.AddSingleton<IPublicDocumentTokenService, PublicDocumentTokenService>();
 builder.Services.AddSingleton<IDocumentSnapshotSerializer, DocumentSnapshotSerializer>();
 builder.Services.AddScoped<IWorkOrderStatusTransitionService, WorkOrderStatusTransitionService>();
+builder.Services.AddScoped<CommercialJourneyService>();
+builder.Services.AddScoped<ICommercialJourneyService>(sp => sp.GetRequiredService<CommercialJourneyService>());
+builder.Services.AddScoped<IManualPaymentRegistrationService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IDocumentNumberService, DocumentNumberService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<PlanLimitService>();

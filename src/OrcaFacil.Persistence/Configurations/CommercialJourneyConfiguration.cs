@@ -68,3 +68,29 @@ public sealed class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
         b.HasIndex(x => new { x.AccountId, x.Status, x.ScheduledStart }); b.HasIndex(x => new { x.AccountId, x.AssignedUserId, x.ScheduledStart });
     }
 }
+
+public sealed class ManualPaymentConfiguration : IEntityTypeConfiguration<ManualPayment>
+{
+    public void Configure(EntityTypeBuilder<ManualPayment> b)
+    {
+        b.ToTable("manual_payments"); b.ConfigureBase();
+        b.Property(x => x.Amount).HasPrecision(18, 2); b.Property(x => x.PaymentMethod).HasMaxLength(40);
+        b.Property(x => x.Notes).HasMaxLength(1000); b.Property(x => x.IdempotencyKey).HasMaxLength(128);
+        b.HasIndex(x => new { x.AccountId, x.IdempotencyKey }).IsUnique();
+        b.HasIndex(x => new { x.AccountId, x.WorkOrderId, x.PaidAt });
+    }
+}
+
+public sealed class ReceiptConfiguration : IEntityTypeConfiguration<Receipt>
+{
+    public void Configure(EntityTypeBuilder<Receipt> b)
+    {
+        b.ToTable("receipts"); b.ConfigureBase(); b.Property(x => x.Number).HasMaxLength(40);
+        b.Property(x => x.Amount).HasPrecision(18, 2); b.Property(x => x.AmountInWords).HasMaxLength(500);
+        b.Property(x => x.PaymentMethod).HasMaxLength(40); b.Property(x => x.City).HasMaxLength(180);
+        b.Property(x => x.Notes).HasMaxLength(1000); b.Property(x => x.FiscalNotice).HasMaxLength(500);
+        b.Property(x => x.IssuerSnapshot).HasColumnType("jsonb"); b.Property(x => x.ClientSnapshot).HasColumnType("jsonb");
+        b.Property(x => x.ServiceSnapshot).HasColumnType("jsonb");
+        b.HasIndex(x => new { x.AccountId, x.Number }).IsUnique(); b.HasIndex(x => new { x.AccountId, x.PaymentId }).IsUnique();
+    }
+}

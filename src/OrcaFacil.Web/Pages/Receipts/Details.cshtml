@@ -1,0 +1,5 @@
+@page
+@model OrcaFacil.Web.Pages.Receipts.DetailsModel
+@{ ViewData["Title"] = "Recibo"; }
+<header class="of-page-header"><div><p class="of-eyebrow">Comprovante</p><h1>Recibo de pagamento</h1><p>@Model.Message</p></div></header>
+@if(Model.Receipt is not null){<article class="of-card"><h2>@Model.Receipt.Number</h2><p>Recebemos o valor de <strong>@Model.Receipt.Amount.ToString("C")</strong> (@Model.Receipt.AmountInWords).</p><p>Forma de pagamento: @Model.Receipt.PaymentMethod · Data: @Model.Receipt.IssuedAt.ToLocalTime().ToString("dd/MM/yyyy")</p><small>@Model.Receipt.FiscalNotice</small></article>}
