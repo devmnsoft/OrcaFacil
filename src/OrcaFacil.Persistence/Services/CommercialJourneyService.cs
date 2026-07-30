@@ -18,19 +18,37 @@ public sealed class CommercialJourneyService(
     OrcaFacilDbContext db, ICurrentAccountService currentAccount, ICurrentUserService currentUser,
     IPlanAccessService plans, IDocumentSnapshotSerializer snapshots, IPublicDocumentTokenService tokens,
     IDocumentStatusTransitionService documentTransitions, IWorkOrderStatusTransitionService workOrderTransitions,
-    INumberToWordsService numberToWords) : ICommercialJourneyService, IManualPaymentRegistrationService
+    INumberToWordsService numberToWords, ITechnicalFingerprintService fingerprints) : ICommercialJourneyService, IManualPaymentRegistrationService
 {
     private string CorrelationId => Guid.NewGuid().ToString("N");
     private Guid AccountId => currentAccount.AccountId ?? throw new InvalidOperationException("Conta ativa não selecionada.");
 
     public async Task<RevisionResult> CreateRevisionAsync(Guid documentId, string templateCode, CancellationToken ct = default)
     {
-        var correlation = CorrelationId;
         await currentAccount.EnsureAccountAccessAsync(ct);
+        var correlation = CorrelationId;
         await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+        var result = await CreateOrReuseRevisionCoreAsync(documentId, templateCode, correlation, ct);
+        if (!result.Succeeded) return result;
+        await db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+        return result;
+    }
+
+    private async Task<RevisionResult> CreateOrReuseRevisionCoreAsync(
+        Guid documentId, string templateCode, string correlation, CancellationToken ct)
+    {
         var document = await OwnedDocument(documentId, ct);
-        if (document is null) return Revision(false, "NotFound", "Orçamento não encontrado.", null, null, correlation);
-        if (document.Items.Count == 0) return Revision(false, "NoItems", "Inclua ao menos um serviço.", document.Id, document.Status, correlation);
+        if (document is null)
+            return RevisionFailure(QuoteLifecycleCode.DocumentNotFound, "Orçamento não encontrado.", correlation);
+        if (!ParseDocumentStatus(document, out var documentStatus))
+        {
+            AddEvent("QuoteInvalidStatus", document.Id, "O orçamento possui estado inválido.");
+            return RevisionFailure(QuoteLifecycleCode.InvalidStatus, "O estado do orçamento é inválido.", correlation, document.Id);
+        }
+        if (document.Items.Count == 0)
+            return RevisionFailure(QuoteLifecycleCode.NoItems, "Inclua ao menos um serviço.", correlation, document.Id, documentStatus);
+
         document.CalculateTotals();
         var issuer = await db.IssuerProfiles.AsNoTracking().SingleOrDefaultAsync(x => x.UserId == document.UserId, ct);
         var client = document.ClientId is Guid clientId
@@ -41,8 +59,18 @@ public sealed class CommercialJourneyService(
             new(document.Number, document.IssueDate, document.ValidUntil, null, null, null, document.Notes, templateCode, null, null, true, document.Subtotal, document.Discount, document.Total),
             document.Items.Select(x => new QuoteItemSnapshot(x.Description, null, x.Quantity, x.UnitPrice, x.Discount, x.Quantity * x.UnitPrice, x.CalculateTotal())).ToArray());
         var serialized = snapshots.Serialize(value);
-        await db.DocumentRevisions.Where(x => x.AccountId == AccountId && x.DocumentId == document.Id && x.IsCurrent)
-            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsCurrent, false).SetProperty(x => x.Status, DocumentRevisionStatus.Superseded), ct);
+        var current = await db.DocumentRevisions.SingleOrDefaultAsync(
+            x => x.AccountId == AccountId && x.DocumentId == document.Id && x.IsCurrent, ct);
+        if (current is not null && CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(current.SnapshotHash), Encoding.UTF8.GetBytes(serialized.Hash)))
+            return new(true, QuoteLifecycleCode.None, "Revisão atual reutilizada.", document.Id, current.Id, null,
+                documentStatus, correlation, current.VersionNumber, current.SnapshotHash, true);
+
+        if (current is not null)
+        {
+            current.IsCurrent = false;
+            current.Status = DocumentRevisionStatus.Superseded;
+        }
         var next = (await db.DocumentRevisions.Where(x => x.AccountId == AccountId && x.DocumentId == document.Id)
             .MaxAsync(x => (int?)x.VersionNumber, ct) ?? 0) + 1;
         var revision = new DocumentRevision { AccountId = AccountId, DocumentId = document.Id, VersionNumber = next,
@@ -51,23 +79,49 @@ public sealed class CommercialJourneyService(
             ValidUntil = document.ValidUntil, IsCurrent = true };
         db.DocumentRevisions.Add(revision);
         AddEvent("QuoteRevisionCreated", document.Id, $"Versão {next} criada.");
-        await db.SaveChangesAsync(ct); await transaction.CommitAsync(ct);
-        return Revision(true, "Created", $"Versão {next} criada.", revision.Id, revision.Status.ToString(), correlation);
+        return new(true, QuoteLifecycleCode.None, $"Versão {next} criada.", document.Id, revision.Id, null,
+            documentStatus, correlation, next, serialized.Hash, false);
     }
 
     public async Task<PublicQuoteResult> CreatePublicAccessAsync(Guid documentId, TimeSpan validity, CancellationToken ct = default)
     {
-        var correlation = CorrelationId; var accessDecision = await plans.CanUseAsync(AccountId, "public_link.enabled", ct);
-        if (!accessDecision.IsAllowed) return new(false, accessDecision.InternalReason, accessDecision.UserMessage, null, null, correlation, "ComparePlans", "/Subscription");
-        var revisionResult = await CreateRevisionAsync(documentId, "essential", ct);
-        if (!revisionResult.Succeeded) return new(false, revisionResult.Code, revisionResult.Message, revisionResult.EntityId, revisionResult.CurrentStatus, correlation, null, revisionResult.RedirectPage);
-        var document = await OwnedDocument(documentId, ct); var generated = tokens.Create(); var now = DateTime.UtcNow;
-        var access = new PublicDocumentAccess { AccountId = AccountId, DocumentId = documentId, DocumentRevisionId = revisionResult.EntityId!.Value,
-            TokenHash = generated.Hash, ExpiresAt = now.Add(validity <= TimeSpan.Zero ? TimeSpan.FromDays(30) : validity), CreatedByUserId = currentUser.UserId };
+        await currentAccount.EnsureAccountAccessAsync(ct);
+        var correlation = CorrelationId;
+        var planDecision = await plans.CanUseAsync(AccountId, "public_link.enabled", ct);
+        if (!planDecision.IsAllowed)
+            return new(false, QuoteLifecycleCode.PlanLimitReached, planDecision.UserMessage, documentId, CorrelationId: correlation);
+
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+        var revisionResult = await CreateOrReuseRevisionCoreAsync(documentId, "essential", correlation, ct);
+        if (!revisionResult.Succeeded)
+            return new(false, revisionResult.Code, revisionResult.Message, revisionResult.DocumentId,
+                revisionResult.RevisionId, null, revisionResult.CurrentStatus, correlation);
+
+        var activeAccess = await db.PublicDocumentAccesses.SingleOrDefaultAsync(x =>
+            x.AccountId == AccountId && x.DocumentRevisionId == revisionResult.RevisionId && !x.IsDeleted &&
+            x.Status == PublicAccessStatus.Active && x.RevokedAt == null && x.ExpiresAt > DateTime.UtcNow, ct);
+        if (activeAccess is not null)
+            return new(false, QuoteLifecycleCode.PublicLinkUnavailable,
+                "Já existe um link ativo. Revogue-o antes de gerar outro.", documentId,
+                revisionResult.RevisionId, activeAccess.Id, revisionResult.CurrentStatus, correlation);
+
+        var document = await OwnedDocument(documentId, ct);
+        if (document is null || !ParseDocumentStatus(document, out _))
+            return new(false, document is null ? QuoteLifecycleCode.DocumentNotFound : QuoteLifecycleCode.InvalidStatus,
+                document is null ? "Orçamento não encontrado." : "O estado do orçamento é inválido.", documentId,
+                revisionResult.RevisionId, CorrelationId: correlation);
+        var generated = tokens.Create();
+        var access = new PublicDocumentAccess { AccountId = AccountId, DocumentId = documentId,
+            DocumentRevisionId = revisionResult.RevisionId!.Value, TokenHash = generated.Hash,
+            ExpiresAt = DateTime.UtcNow.Add(validity <= TimeSpan.Zero ? TimeSpan.FromDays(30) : validity),
+            CreatedByUserId = currentUser.UserId };
         db.PublicDocumentAccesses.Add(access);
-        if (document is not null) { Transition(document, DocumentStatus.Sent); }
-        AddEvent("QuoteSent", documentId, "Orçamento enviado."); await db.SaveChangesAsync(ct);
-        return new(true, "Created", "Link seguro criado.", access.Id, document?.Status, correlation, "Share", "/Documents/Versions", generated.Token);
+        SetDocumentStatus(document, DocumentStatus.Sent);
+        AddEvent("QuoteSent", documentId, "Orçamento enviado.");
+        await db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+        return new(true, QuoteLifecycleCode.None, "Link seguro criado.", document.Id, revisionResult.RevisionId,
+            access.Id, DocumentStatus.Sent, correlation, generated.Token);
     }
 
     public async Task<PublicDecisionResult> DecideAsync(string token, PublicDocumentDecisionType decision, string customerName, string? reason,
@@ -76,23 +130,32 @@ public sealed class CommercialJourneyService(
         var correlation = CorrelationId; var hash = tokens.Hash(token); var now = DateTime.UtcNow;
         await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         var access = await db.PublicDocumentAccesses.SingleOrDefaultAsync(x => x.TokenHash == hash && !x.IsDeleted, ct);
-        if (access is null || access.RevokedAt is not null || access.Status != PublicAccessStatus.Active || access.ExpiresAt <= now)
-            return Decision(false, "Unavailable", "Este link expirou ou foi revogado.", null, null, correlation);
+        if (access is null)
+            return DecisionFailure(QuoteLifecycleCode.PublicLinkUnavailable, "Link inválido.", correlation);
+        if (access.RevokedAt is not null || access.Status != PublicAccessStatus.Active)
+            return DecisionFailure(QuoteLifecycleCode.PublicLinkRevoked, "Este link foi revogado.", correlation, access);
+        if (access.ExpiresAt <= now)
+            return DecisionFailure(QuoteLifecycleCode.PublicLinkExpired, "Este link expirou.", correlation, access);
         var existing = await db.PublicDocumentDecisions.SingleOrDefaultAsync(x => x.AccountId == access.AccountId && x.IdempotencyKey == idempotencyKey, ct);
-        if (existing is not null) return Decision(true, "IdempotentReplay", "Resposta já registrada.", existing.Id, existing.Decision.ToString(), correlation);
+        var document = await db.Documents.SingleAsync(x => x.Id == access.DocumentId && x.AccountId == access.AccountId, ct);
+        if (!ParseDocumentStatus(document, out var currentStatus))
+            return DecisionFailure(QuoteLifecycleCode.InvalidStatus, "O estado do orçamento é inválido.", correlation, access);
+        if (existing is not null)
+            return new(true, QuoteLifecycleCode.None, "Resposta já registrada.", access.DocumentId,
+                access.DocumentRevisionId, access.Id, currentStatus, correlation, existing.Id);
         if (await db.PublicDocumentDecisions.AnyAsync(x => x.AccountId == access.AccountId && x.DocumentRevisionId == access.DocumentRevisionId, ct))
-            return Decision(false, "AlreadyDecided", "Esta versão já recebeu uma resposta.", null, null, correlation);
+            return DecisionFailure(QuoteLifecycleCode.DecisionAlreadyRegistered, "Esta versão já recebeu uma resposta.", correlation, access, currentStatus);
         var current = await db.DocumentRevisions.AnyAsync(x => x.Id == access.DocumentRevisionId && x.IsCurrent, ct);
-        if (!current) return Decision(false, "Superseded", "Existe uma versão mais recente deste orçamento.", null, null, correlation);
+        if (!current) return DecisionFailure(QuoteLifecycleCode.VersionOutdated, "Existe uma versão mais recente deste orçamento.", correlation, access, currentStatus);
         var entity = new PublicDocumentDecision { AccountId = access.AccountId, DocumentId = access.DocumentId, DocumentRevisionId = access.DocumentRevisionId,
             Decision = decision, CustomerName = Clean(customerName, 180), ReasonCode = Clean(reason, 40), Comment = Clean(comment, 1000),
-            IpHash = Hash(ip), UserAgentHash = Hash(userAgent), IdempotencyKey = idempotencyKey };
+            IpHash = fingerprints.Create(ip), UserAgentHash = fingerprints.Create(userAgent), IdempotencyKey = idempotencyKey };
         db.PublicDocumentDecisions.Add(entity);
-        var document = await db.Documents.SingleAsync(x => x.Id == access.DocumentId && x.AccountId == access.AccountId, ct);
         var status = decision switch { PublicDocumentDecisionType.Approved => DocumentStatus.Approved, PublicDocumentDecisionType.Rejected => DocumentStatus.Rejected, _ => DocumentStatus.InNegotiation };
-        Transition(document, status); AddEvent($"Quote{decision}", document.Id, decision == PublicDocumentDecisionType.ChangeRequested ? "Alteração solicitada." : $"Orçamento {decision}.", access.AccountId);
+        SetDocumentStatus(document, status); AddEvent($"Quote{decision}", document.Id, decision == PublicDocumentDecisionType.ChangeRequested ? "Alteração solicitada." : $"Orçamento {decision}.", access.AccountId);
         await db.SaveChangesAsync(ct); await transaction.CommitAsync(ct);
-        return Decision(true, "Registered", "Resposta registrada com segurança.", entity.Id, status.ToString(), correlation);
+        return new(true, QuoteLifecycleCode.None, "Resposta registrada com segurança.", access.DocumentId,
+            access.DocumentRevisionId, access.Id, status, correlation, entity.Id);
     }
 
     public async Task<WorkOrderResult> ConvertToWorkOrderAsync(Guid documentId, CancellationToken ct = default)
@@ -160,12 +223,24 @@ public sealed class CommercialJourneyService(
     }
 
     private Task<Document?> OwnedDocument(Guid id, CancellationToken ct) => db.Documents.Include(x => x.Items).SingleOrDefaultAsync(x => x.Id == id && x.AccountId == AccountId && !x.IsDeleted, ct);
-    private void Transition(Document document, DocumentStatus next) { var current = Enum.TryParse<DocumentStatus>(document.Status, out var value) ? value : DocumentStatus.Draft; documentTransitions.EnsureCanTransition(current, next); document.Status = next.ToString(); }
+    private static bool ParseDocumentStatus(Document document, out DocumentStatus status) =>
+        Enum.TryParse(document.Status, ignoreCase: false, out status);
+    private void SetDocumentStatus(Document document, DocumentStatus next)
+    {
+        if (!ParseDocumentStatus(document, out var current))
+            throw new InvalidOperationException("O documento possui estado inválido.");
+        documentTransitions.EnsureCanTransition(current, next);
+        document.Status = next.ToString();
+    }
+    private void Transition(Document document, DocumentStatus next) => SetDocumentStatus(document, next);
     private void AddEvent(string action, Guid entityId, string summary, Guid? account = null) => db.ActivityEvents.Add(new ActivityEvent { AccountId = account ?? AccountId, ActorUserId = currentUser.TryGetUserId(), Action = action, EntityType = "CommercialJourney", EntityId = entityId, Summary = summary });
-    private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value ?? string.Empty)));
     private static string? Clean(string? value, int max) => string.IsNullOrWhiteSpace(value) ? null : value.Trim()[..Math.Min(value.Trim().Length, max)];
-    private static RevisionResult Revision(bool ok,string code,string msg,Guid? id,string? status,string c)=>new(ok,code,msg,id,status,c,ok?"Continue":"Review",ok?"/Documents/Versions":null);
-    private static PublicDecisionResult Decision(bool ok,string code,string msg,Guid? id,string? status,string c)=>new(ok,code,msg,id,status,c,null,null);
+    private static RevisionResult RevisionFailure(QuoteLifecycleCode code, string message, string correlation,
+        Guid? documentId = null, DocumentStatus? status = null) =>
+        new(false, code, message, documentId, CurrentStatus: status, CorrelationId: correlation);
+    private static PublicDecisionResult DecisionFailure(QuoteLifecycleCode code, string message, string correlation,
+        PublicDocumentAccess? access = null, DocumentStatus? status = null) =>
+        new(false, code, message, access?.DocumentId, access?.DocumentRevisionId, access?.Id, status, correlation);
     private static WorkOrderResult Work(bool ok,string code,string msg,Guid? id,string? status,string c)=>new(ok,code,msg,id,status,c,ok?"OpenWorkOrder":"Review",ok?"/WorkOrders/Details":null);
     private static PaymentRegistrationResult Pay(bool ok,string code,string msg,Guid? id,string? status,string c)=>new(ok,code,msg,id,status,c,ok?"GenerateReceipt":"Review",ok?"/Payments/Register":null);
     private static ReceiptGenerationResult ReceiptResult(bool ok,string code,string msg,Guid? id,string? status,string c)=>new(ok,code,msg,id,status,c,ok?"Download":"Review",ok?"/Receipts/Details":null);

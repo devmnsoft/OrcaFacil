@@ -87,6 +87,7 @@ builder.Services.AddScoped<IDocumentStatusTransitionService, DocumentStatusTrans
 builder.Services.AddSingleton<IPublicDocumentTokenService, PublicDocumentTokenService>();
 builder.Services.AddSingleton<IDocumentSnapshotSerializer, DocumentSnapshotSerializer>();
 builder.Services.AddScoped<IWorkOrderStatusTransitionService, WorkOrderStatusTransitionService>();
+builder.Services.AddSingleton<ITechnicalFingerprintService, TechnicalFingerprintService>();
 builder.Services.AddScoped<CommercialJourneyService>();
 builder.Services.AddScoped<ICommercialJourneyService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IManualPaymentRegistrationService>(sp => sp.GetRequiredService<CommercialJourneyService>());
