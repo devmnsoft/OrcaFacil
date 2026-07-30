@@ -1,4 +1,52 @@
 @using OrcaFacil.Web.Services
 @inject IAdminShellViewModelFactory ShellFactory
-@{var shell=await ShellFactory.CreateAsync(Context.RequestAborted);var path=Context.Request.Path.Value??"";}
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>@ViewData["Title"] · Operação OrçaFácil</title><link rel="stylesheet" href="~/css/tokens.css"/><link rel="stylesheet" href="~/css/base.css"/><link rel="stylesheet" href="~/css/admin.css"/></head><body class="of-admin-body"><a class="of-skip-link" href="#admin-content">Ir para o conteúdo</a><div class="of-admin-shell"><aside class="of-admin-sidebar"><a asp-area="Admin" asp-page="/Dashboard"><img src="~/img/brand/orcafacil-wordmark-light.svg" alt="OrçaFácil — operação MNSOFT"/></a><p>Central de operação</p><nav aria-label="Administração">@foreach(var group in shell.Menus){<section><h2>@group.Label</h2>@foreach(var item in group.Items){var active=path.Contains(item.Page,StringComparison.OrdinalIgnoreCase);<a class="@(active?"is-active":null)" asp-area="Admin" asp-page="@item.Page" aria-current="@(active?"page":null)"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-@item.Icon"/></svg>@item.Label</a>}</section>}</nav><a asp-page="/Dashboard/Index" asp-area="">Voltar à conta</a></aside><div><header class="of-admin-topbar"><div><span>Operação / @ViewData["Title"]</span><strong>@ViewData["Title"]</strong></div><div><span class="of-admin-alert">@shell.CriticalAlertCount alertas críticos</span><span>@shell.SuperAdminName</span></div></header><main id="admin-content" class="of-admin-content" tabindex="-1"><partial name="/Pages/Shared/Partials/_ToastHost.cshtml"/>@RenderBody()</main></div></div><script src="~/js/experience.js"></script>@await RenderSectionAsync("Scripts",false)</body></html>
+@{
+    var shell = await ShellFactory.CreateAsync(Context.RequestAborted);
+    var path = Context.Request.Path.Value ?? string.Empty;
+    var title = ViewData["Title"]?.ToString() ?? "Operação";
+}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@title · Operação OrçaFácil</title>
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/base.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body class="of-admin-body">
+    <a class="of-skip-link" href="#admin-content">Ir para o conteúdo</a>
+    <div class="of-admin-shell">
+        <aside class="of-admin-sidebar">
+            <a class="of-admin-brand" asp-area="Admin" asp-page="/Dashboard"><img src="~/img/brand/orcafacil-wordmark-light.svg" alt="OrçaFácil, operação MNSOFT" /></a>
+            <div class="of-environment"><span></span><div><small>Ambiente</small><strong>Produção</strong></div></div>
+            <p class="of-admin-kicker">Central de operação</p>
+            <nav aria-label="Administração da plataforma">
+                @foreach (var group in shell.Menus)
+                {
+                    <section><h2>@group.Label</h2>
+                        @foreach (var item in group.Items)
+                        {
+                            var active = path.Contains(item.Page, StringComparison.OrdinalIgnoreCase);
+                            <a class="@(active ? "is-active" : null)" asp-area="Admin" asp-page="@item.Page" aria-current="@(active ? "page" : null)"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-@item.Icon" /></svg><span>@item.Label</span></a>
+                        }
+                    </section>
+                }
+            </nav>
+            <div class="of-admin-sidebar-footer"><span class="of-avatar">@shell.SuperAdminName[..1].ToUpperInvariant()</span><div><strong>@shell.SuperAdminName</strong><small>SuperAdministrador</small></div></div>
+            <a class="of-back-account" asp-page="/Dashboard/Index" asp-area="">Voltar à conta do cliente</a>
+        </aside>
+        <div class="of-admin-stage">
+            <header class="of-admin-topbar">
+                <div><nav aria-label="Breadcrumb"><span>Operação</span><span>/</span><span aria-current="page">@title</span></nav><strong>@title</strong></div>
+                <div><button type="button" class="of-admin-search"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-search" /></svg>Buscar na operação</button><a href="/health/ready" class="of-health-pill"><span></span>Saúde</a><span class="of-admin-alert">@shell.CriticalAlertCount críticos</span><span class="of-topbar-avatar">@shell.SuperAdminName[..1].ToUpperInvariant()</span></div>
+            </header>
+            <main id="admin-content" class="of-admin-content" tabindex="-1"><partial name="/Pages/Shared/Partials/_ToastHost.cshtml" />@RenderBody()</main>
+        </div>
+    </div>
+    <script src="~/js/experience.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", false)
+</body>
+</html>

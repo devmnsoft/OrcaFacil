@@ -55,10 +55,11 @@ internal static class ClientMenu
 {
     internal static readonly IReadOnlyList<ShellMenuGroup> Items =
     [
-        new("Visão geral", [new("Início", "/Dashboard/Index", "dashboard")]),
-        new("Vendas", [new("Orçamentos", "/Documents/Index", "budget"), new("Recibos", "/Documents/CreateReceipt", "receipt")]),
-        new("Cadastros", [new("Clientes", "/Clients/Index", "client"), new("Serviços", "/Services/Index", "service"), new("Modelos", "/Templates/Index", "template", true, "Profissional")]),
-        new("Conta", [new("Dados do emitente", "/Profile/Index", "account"), new("Meu plano", "/Subscription/Index", "plan"), new("Notificações", "/Notifications/Index", "notification")]),
-        new("Suporte", [new("Central de ajuda", "/Support/Index", "help"), new("Conheça os recursos", "/Discover", "demo")])
+        new("Início", [new("Visão geral", "/Dashboard/Index", "dashboard")]),
+        new("Vender", [new("Orçamentos", "/Documents/Index", "budget")]),
+        new("Receber", [new("Recibos", "/Documents/CreateReceipt", "receipt")]),
+        new("Organizar", [new("Clientes", "/Clients/Index", "client"), new("Serviços", "/Services/Index", "service"), new("Modelos", "/Templates/Index", "template", true, "Profissional")]),
+        new("Minha conta", [new("Dados do emitente", "/Profile/Index", "account"), new("Meu plano", "/Subscription/Index", "plan"), new("Notificações", "/Notifications/Index", "notification")]),
+        new("Aprender", [new("Central de ajuda", "/Support/Index", "help"), new("Conhecer recursos", "/Discover", "demo")])
     ];
 }
