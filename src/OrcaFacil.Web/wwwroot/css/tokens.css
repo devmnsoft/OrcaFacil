@@ -1,1 +1,12 @@
-:root{--of-page:#f6f8fc;--of-card:#fff;--of-soft:#eef4fa;--of-dark:#10233c;--of-brand:#173b65;--of-action:#16845b;--of-action-hover:#0f6847;--of-text:#152033;--of-muted:#4b5b70;--of-on-dark:#fff;--of-on-dark-muted:#d9e6f3;--of-success:#126b49;--of-info:#175f9e;--of-warning:#815500;--of-danger:#9f2525;--of-danger-soft:#fff1f1;--of-border:#ced9e6;--of-focus:#ffbf47;--of-shadow:0 18px 50px rgba(16,35,60,.12);--of-radius:1.25rem;--of-space:.5rem;--of-max:1180px}
+:root {
+  --of-page: #f5f7fb; --of-surface: #fff; --of-subtle: #eef3f9; --of-sidebar: #0c1d34; --of-topbar: rgba(255,255,255,.96);
+  --of-text: #10233f; --of-text-secondary: #596b82; --of-text-inverse: #f8fbff; --of-border: #dce4ee; --of-border-strong: #aebdce;
+  --of-primary: #1267d6; --of-primary-hover: #0c52ae; --of-secondary: #e7eef8; --of-success: #16794c; --of-warning: #a45b00;
+  --of-danger: #b4232d; --of-info: #176b9c; --of-premium: #6952c7; --of-paused: #9a5d10; --of-disabled: #8694a6; --of-focus: #68a9ff;
+  --of-skeleton: #e5ebf2; --of-overlay: rgba(6,18,35,.64); --of-space-1: .25rem; --of-space-2: .5rem; --of-space-3: .75rem;
+  --of-space-4: 1rem; --of-space-5: 1.5rem; --of-space-6: 2rem; --of-space-7: 3rem; --of-font: Inter,system-ui,-apple-system,sans-serif;
+  --of-text-xs: .75rem; --of-text-sm: .875rem; --of-text-md: 1rem; --of-text-lg: 1.25rem; --of-text-xl: clamp(1.7rem,3vw,2.35rem);
+  --of-shadow-sm: 0 1px 2px rgba(16,35,63,.07); --of-shadow-lg: 0 18px 50px rgba(16,35,63,.14); --of-radius-sm: .5rem;
+  --of-radius: .85rem; --of-radius-lg: 1.25rem; --of-sidebar-width: 17rem; --of-topbar-height: 5.25rem; --of-mobile-nav-height: 4.5rem;
+  --of-safe-bottom: env(safe-area-inset-bottom,0px); --of-transition: 160ms ease; --of-z-topbar: 30; --of-z-nav: 40; --of-z-overlay: 70; --of-z-dialog: 80;
+}
