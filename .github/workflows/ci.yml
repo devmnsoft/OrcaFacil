@@ -37,6 +37,9 @@ jobs:
       - name: Restore .NET
         run: dotnet restore OrcaFacil.sln
 
+      - name: Block authenticated UI legacy dependencies
+        run: npm run check:authenticated-ui
+
       - name: Check C# test type collisions
         run: npm run check:csharp-test-types
 
