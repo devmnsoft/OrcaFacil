@@ -23,8 +23,8 @@ public sealed class CommercialJourneyService(
 
     public async Task<RevisionResult> CreateRevisionAsync(Guid documentId, string templateCode, CancellationToken ct = default)
     {
-        var correlation = CorrelationId;
         await currentAccount.EnsureAccountAccessAsync(ct);
+        var correlation = CorrelationId;
         await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         var result = await CreateOrReuseRevisionCoreAsync(documentId, templateCode, correlation, ct);
         if (!result.Succeeded) return result;
