@@ -32,7 +32,8 @@
     "release:major": "node scripts/release.mjs major",
     "publish:iis": "node scripts/publish-iis.mjs",
     "build:iis": "node scripts/publish-iis.mjs",
-    "check:public-contracts": "node scripts/check-public-contract-collisions.mjs"
+    "check:public-contracts": "node scripts/check-public-contract-collisions.mjs",
+    "check:authenticated-ui": "node scripts/check-authenticated-ui-legacy-dependencies.mjs"
   },
   "engines": {
     "node": ">=18"

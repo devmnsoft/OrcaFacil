@@ -1,0 +1,401 @@
+[
+  {
+    "file": "src/OrcaFacil.Web/Pages/Admin/Index.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Ajuda.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Clients/Create.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Clients/Details.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Clients/Edit.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Clients/Index.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Clients/_ClientActions.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Clients/_ClientDocumentList.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Documents/CreateBudget.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Documents/CreateReceipt.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Documents/Details.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Documents/Index.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Documents/_DocumentTable.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Emitente.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Help/GerarPdf.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Help/Historico.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Help/Modelos.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Help/PlanoPro.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Help/PrimeiroOrcamento.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Help/PrimeiroRecibo.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Historico.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Notifications/Index.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Onboarding/Index.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Payments/Register.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Profile/Index.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Schedule/Index.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Services/Index.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Shared/Partials/_ActionButton.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Shared/Partials/_ConfirmModal.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Shared/Partials/_EmptyState.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Shared/Partials/_FeatureCard.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Shared/Partials/_ProfessionCard.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Shared/Partials/_StepCard.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Shared/Partials/_ToastHost.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Shared/_AuthLayout.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Shared/_ConfirmModal.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Shared/_DocumentForm.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Shared/_DocumentTable.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Shared/_InfrastructureUnavailable.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Shared/_Layout.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Shared/_PublicLayout.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Shared/_PublicQuoteLayout.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Subscription/BillingProfile.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Templates/Details.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/Templates/Index.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/WorkOrders/Details.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Pages/WorkOrders/Index.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Areas/Admin/Pages/Clients/Index.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Areas/Admin/Pages/Errors.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Areas/Admin/Pages/Logs.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Areas/Admin/Pages/Payments/Details.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Areas/Admin/Pages/Payments/Index.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Areas/Admin/Pages/Plans/Index.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Areas/Admin/Pages/Settings/Database.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Areas/Admin/Pages/Users/Details.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Areas/Admin/Pages/Users/Index.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  },
+  {
+    "file": "src/OrcaFacil.Web/Areas/Admin/Pages/Users.cshtml",
+    "reason": "Migração visual incremental inventariada na RELEASE OPERACIONAL 9; remoção exige preservar o comportamento existente.",
+    "owner": "Product Experience",
+    "deadline": "2026-09-30",
+    "issue": "#80"
+  }
+]
