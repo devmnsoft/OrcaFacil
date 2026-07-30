@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using OrcaFacil.Application.Commercial;
 using OrcaFacil.Persistence.Services;
-
+using Xunit;
 namespace OrcaFacil.UnitTests;
 
 public sealed class CommercialJourneyDependencyInjectionTests
