@@ -1,6 +1,6 @@
 namespace OrcaFacil.Application.Abstractions;
 
-/// <summary>Creates non-reversible, deployment-specific fingerprints for security telemetry.</summary>
+/// <summary>Creates non-reversible, keyed fingerprints for technical abuse-prevention data.</summary>
 public interface ITechnicalFingerprintService
 {
     string Create(string value);

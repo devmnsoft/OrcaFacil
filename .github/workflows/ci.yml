@@ -40,7 +40,7 @@ jobs:
       - name: Check C# test type collisions
         run: npm run check:csharp-test-types
 
-      - name: Check public application contract collisions
+      - name: Check public contract collisions
         run: npm run check:public-contracts
 
       - name: Build .NET

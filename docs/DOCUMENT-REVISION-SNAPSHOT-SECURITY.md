@@ -1,7 +1,9 @@
 # Segurança do snapshot de revisão
 
-`DocumentRevision.ProtectedSnapshot` preserva atualmente o JSON canônico usado para renderizar a revisão. Apesar do nome histórico, o valor **não é cifrado**. A coluna permanece inalterada nesta entrega para evitar mudar silenciosamente sua finalidade e invalidar revisões existentes.
+## Decisão atual
 
-O conteúdo é isolado por conta nas consultas da aplicação e deve receber a mesma proteção operacional aplicada aos demais dados comerciais (TLS, controle de acesso, backups protegidos e criptografia do volume do PostgreSQL). Uma futura adoção de ASP.NET Data Protection deverá ser feita por migration aditiva e usar o purpose versionado `OrcaFacil.DocumentRevision.Snapshot.v1`, incluindo uma estratégia explícita de rotação e leitura dos registros legados.
+`DocumentRevision.ProtectedSnapshot` preserva, por compatibilidade com a migration já aplicada, o JSON canônico usado para renderizar uma versão imutável do orçamento. Apesar do nome histórico, o conteúdo **não é criptografado pela aplicação**. O banco e seus backups devem, portanto, usar criptografia em repouso e acesso de menor privilégio.
 
-Hashes técnicos de IP e user-agent são independentes desse snapshot e usam HMAC-SHA256 com `Security:TechnicalFingerprintPepper`. O segredo não deve ser registrado nem armazenado no banco.
+A Release Operacional 8.1 não altera silenciosamente a semântica dessa coluna nem reescreve migrations aplicadas. Uma evolução futura deve usar migration aditiva para renomeá-la para `SnapshotJson` ou introduzir uma nova coluna protegida. Caso se adote ASP.NET Data Protection, o purpose obrigatório será `OrcaFacil.DocumentRevision.Snapshot.v1`, com rotação e persistência segura das chaves antes da migração dos dados.
+
+O `SnapshotHash` continua sendo apenas o identificador de integridade e reutilização da revisão; ele não substitui proteção do conteúdo.

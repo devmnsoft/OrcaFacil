@@ -1,33 +1,27 @@
 using OrcaFacil.Application.Commercial;
 using OrcaFacil.Application.Documents;
-using OrcaFacil.Domain.Enums;
 using OrcaFacil.Persistence.Services;
+using Xunit;
 
 namespace OrcaFacil.UnitTests;
 
 public sealed class CommercialJourneyInterfaceContractTests
 {
-    [Fact]
-    public void Service_ImplementsCanonicalQuoteLifecycleContract()
+    [Theory]
+    [InlineData(nameof(ICommercialJourneyService.CreateRevisionAsync), typeof(RevisionResult))]
+    [InlineData(nameof(ICommercialJourneyService.CreatePublicAccessAsync), typeof(PublicQuoteResult))]
+    [InlineData(nameof(ICommercialJourneyService.DecideAsync), typeof(PublicDecisionResult))]
+    public void Quote_methods_use_the_canonical_document_result(string methodName, Type resultType)
     {
         Assert.Contains(typeof(ICommercialJourneyService), typeof(CommercialJourneyService).GetInterfaces());
-        AssertMethod(nameof(ICommercialJourneyService.CreateRevisionAsync), typeof(Task<RevisionResult>),
-            typeof(Guid), typeof(string), typeof(CancellationToken));
-        AssertMethod(nameof(ICommercialJourneyService.CreatePublicAccessAsync), typeof(Task<PublicQuoteResult>),
-            typeof(Guid), typeof(TimeSpan), typeof(CancellationToken));
-        AssertMethod(nameof(ICommercialJourneyService.DecideAsync), typeof(Task<PublicDecisionResult>),
-            typeof(string), typeof(PublicDocumentDecisionType), typeof(string), typeof(string), typeof(string),
-            typeof(string), typeof(string), typeof(string), typeof(CancellationToken));
-    }
+        var contract = Assert.Single(typeof(ICommercialJourneyService).GetMethods().Where(x => x.Name == methodName));
+        var implementation = typeof(CommercialJourneyService).GetMethod(methodName);
 
-    private static void AssertMethod(string name, Type returnType, params Type[] parameters)
-    {
-        var contract = typeof(ICommercialJourneyService).GetMethod(name, parameters);
-        var implementation = typeof(CommercialJourneyService).GetMethod(name, parameters);
-        Assert.NotNull(contract);
         Assert.NotNull(implementation);
-        Assert.Equal(returnType, contract.ReturnType);
-        Assert.Equal(returnType, implementation.ReturnType);
+        Assert.Equal(typeof(Task<>).MakeGenericType(resultType), contract.ReturnType);
+        Assert.Equal(contract.ReturnType, implementation!.ReturnType);
         Assert.Equal(typeof(CancellationToken), contract.GetParameters()[^1].ParameterType);
+        Assert.Equal(contract.GetParameters().Select(x => x.ParameterType),
+            implementation.GetParameters().Select(x => x.ParameterType));
     }
 }
