@@ -31,7 +31,8 @@
     "release:minor": "node scripts/release.mjs minor",
     "release:major": "node scripts/release.mjs major",
     "publish:iis": "node scripts/publish-iis.mjs",
-    "build:iis": "node scripts/publish-iis.mjs"
+    "build:iis": "node scripts/publish-iis.mjs",
+    "check:public-contracts": "node scripts/check-public-contract-collisions.mjs"
   },
   "engines": {
     "node": ">=18"

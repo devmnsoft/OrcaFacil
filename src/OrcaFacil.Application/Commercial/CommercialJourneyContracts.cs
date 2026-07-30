@@ -1,17 +1,10 @@
 using OrcaFacil.Domain.Enums;
+using OrcaFacil.Application.Documents;
 
 namespace OrcaFacil.Application.Commercial;
 
 public record CommercialResult(bool Succeeded, string Code, string Message, Guid? EntityId,
     string? CurrentStatus, string CorrelationId, string? NextAction, string? RedirectPage);
-public sealed record QuoteLifecycleResult(bool Succeeded, string Code, string Message, Guid? EntityId, string? CurrentStatus,
-    string CorrelationId, string? NextAction, string? RedirectPage) : CommercialResult(Succeeded, Code, Message, EntityId, CurrentStatus, CorrelationId, NextAction, RedirectPage);
-public sealed record PublicQuoteResult(bool Succeeded, string Code, string Message, Guid? EntityId, string? CurrentStatus,
-    string CorrelationId, string? NextAction, string? RedirectPage, string? Token = null) : CommercialResult(Succeeded, Code, Message, EntityId, CurrentStatus, CorrelationId, NextAction, RedirectPage);
-public sealed record PublicDecisionResult(bool Succeeded, string Code, string Message, Guid? EntityId, string? CurrentStatus,
-    string CorrelationId, string? NextAction, string? RedirectPage) : CommercialResult(Succeeded, Code, Message, EntityId, CurrentStatus, CorrelationId, NextAction, RedirectPage);
-public sealed record RevisionResult(bool Succeeded, string Code, string Message, Guid? EntityId, string? CurrentStatus,
-    string CorrelationId, string? NextAction, string? RedirectPage) : CommercialResult(Succeeded, Code, Message, EntityId, CurrentStatus, CorrelationId, NextAction, RedirectPage);
 public sealed record WorkOrderResult(bool Succeeded, string Code, string Message, Guid? EntityId, string? CurrentStatus,
     string CorrelationId, string? NextAction, string? RedirectPage) : CommercialResult(Succeeded, Code, Message, EntityId, CurrentStatus, CorrelationId, NextAction, RedirectPage);
 public sealed record PaymentRegistrationResult(bool Succeeded, string Code, string Message, Guid? EntityId, string? CurrentStatus,
@@ -28,9 +21,9 @@ public interface IManualPaymentRegistrationService
 
 public interface ICommercialJourneyService
 {
-    Task<RevisionResult> CreateRevisionAsync(Guid documentId, string templateCode, CancellationToken ct = default);
-    Task<PublicQuoteResult> CreatePublicAccessAsync(Guid documentId, TimeSpan validity, CancellationToken ct = default);
-    Task<PublicDecisionResult> DecideAsync(string token, PublicDocumentDecisionType decision, string customerName,
+    Task<OrcaFacil.Application.Documents.RevisionResult> CreateRevisionAsync(Guid documentId, string templateCode, CancellationToken ct = default);
+    Task<OrcaFacil.Application.Documents.PublicQuoteResult> CreatePublicAccessAsync(Guid documentId, TimeSpan validity, CancellationToken ct = default);
+    Task<OrcaFacil.Application.Documents.PublicDecisionResult> DecideAsync(string token, PublicDocumentDecisionType decision, string customerName,
         string? reason, string? comment, string idempotencyKey, string ip, string userAgent, CancellationToken ct = default);
     Task<WorkOrderResult> ConvertToWorkOrderAsync(Guid documentId, CancellationToken ct = default);
     Task<WorkOrderResult> ScheduleAsync(Guid workOrderId, DateTime start, DateTime end, Guid? assigneeId, CancellationToken ct = default);
