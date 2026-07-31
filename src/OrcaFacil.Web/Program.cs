@@ -73,6 +73,7 @@ builder.Services.AddScoped<SuperAdminDashboardQueries>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ICurrentAccountService, CurrentAccountService>();
 builder.Services.AddScoped<IAccountSelectionService, AccountSelectionService>();
+builder.Services.AddScoped<IAccountSwitcherService, AccountSwitcherService>();
 builder.Services.AddScoped<IClientShellViewModelFactory, ClientShellViewModelFactory>();
 builder.Services.AddScoped<INextBestActionService, NextBestActionService>();
 builder.Services.AddSingleton<IContextualHelpService, ContextualHelpService>();
@@ -235,6 +236,19 @@ app.MapGet("/Internal/Search", async Task<IResult> (string? q, int? limit, IGlob
         return Results.BadRequest(new { message = "Digite ao menos dois caracteres." });
     return Results.Ok(new { results = await search.SearchAsync(q, limit ?? 12, ct) });
 }).RequireAuthorization();
+app.MapGet("/Internal/Accounts", async Task<IResult> (HttpContext context, IAccountSwitcherService switcher, CancellationToken ct) =>
+{
+    if (!Guid.TryParse(context.User.FindFirst("user_id")?.Value, out var userId)) return Results.Unauthorized();
+    Guid? current = Guid.TryParse(context.User.FindFirst("account_id")?.Value, out var accountId) ? accountId : null;
+    return Results.Ok(new { accounts = await switcher.GetAuthorizedAsync(userId, current, ct) });
+}).RequireAuthorization();
+app.MapPost("/Internal/Accounts/Switch", async Task<IResult> (AccountSwitchRequest request, HttpContext context,
+    Microsoft.AspNetCore.Antiforgery.IAntiforgery antiforgery, IAccountSwitcherService switcher, CancellationToken ct) =>
+{
+    await antiforgery.ValidateRequestAsync(context);
+    var result = await switcher.SwitchAsync(context, request.AccountId, ct);
+    return result.Succeeded ? Results.Ok(new { redirectUrl = "/Dashboard" }) : Results.BadRequest(new { message = result.Error });
+}).RequireAuthorization();
 app.MapGet("/Internal/Help/{code}", async Task<IResult> (string code, IContextualHelpService help, CancellationToken ct) =>
 {
     var content = await help.GetAsync(code, ct);
@@ -254,3 +268,4 @@ app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (Guid id, OrcaFacil.A
 app.Run();
 
 public partial class Program;
+public sealed record AccountSwitchRequest(Guid AccountId);

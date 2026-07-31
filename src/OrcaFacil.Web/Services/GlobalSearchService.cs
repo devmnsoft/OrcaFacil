@@ -21,42 +21,52 @@ public sealed class GlobalSearchService(ICurrentAccountService currentAccount, O
         var term = query.Trim();
         if (term.Length < 2) return [];
         limit = Math.Clamp(limit, 1, 20);
+        var categoryLimit = Math.Max(1, (int)Math.Ceiling(limit / 4d));
         var pattern = $"%{term.Replace("%", "\\%").Replace("_", "\\_")}%";
+        var startsWith = $"{term.Replace("%", "\\%").Replace("_", "\\_")}%";
 
-        var clients = await db.Clients.AsNoTracking()
+        var clients = await (currentAccount.HasPermissionAsync("clients.read", cancellationToken)) ? await db.Clients.AsNoTracking()
             .Where(x => x.AccountId == accountId && !x.IsDeleted &&
-                (EF.Functions.ILike(x.Name, pattern) || (x.Email != null && EF.Functions.ILike(x.Email, pattern)) ||
+                (EF.Functions.ILike(x.Name, pattern) ||
                  (x.Phone != null && EF.Functions.ILike(x.Phone, pattern))))
-            .OrderBy(x => x.Name).Take(limit)
+            .OrderByDescending(x => x.Name.ToLower() == term.ToLower())
+            .ThenByDescending(x => EF.Functions.ILike(x.Name, startsWith))
+            .ThenByDescending(x => x.UpdatedAt ?? x.CreatedAt).ThenBy(x => x.Name).Take(categoryLimit)
             .Select(x => new GlobalSearchResult("Cliente", x.Name,
-                (x.City ?? "Sem cidade") + (x.Email == null ? "" : " · " + x.Email), "Ativo", "client",
+                x.City ?? "Sem cidade informada", "Ativo", "client",
                 "/Clients/Details/" + x.Id, "Abrir cliente"))
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken) : [];
 
-        var documents = await db.Documents.AsNoTracking()
+        var documents = await (currentAccount.HasPermissionAsync("documents.read", cancellationToken)) ? await db.Documents.AsNoTracking()
             .Where(x => x.AccountId == accountId && !x.IsDeleted &&
                 (EF.Functions.ILike(x.Number, pattern) || EF.Functions.ILike(x.ClientName, pattern)))
-            .OrderByDescending(x => x.UpdatedAt).Take(limit)
+            .OrderByDescending(x => x.Number.ToLower() == term.ToLower() || x.ClientName.ToLower() == term.ToLower())
+            .ThenByDescending(x => EF.Functions.ILike(x.Number, startsWith) || EF.Functions.ILike(x.ClientName, startsWith))
+            .ThenByDescending(x => x.UpdatedAt ?? x.CreatedAt).Take(categoryLimit)
             .Select(x => new GlobalSearchResult("Orçamento", x.Number, x.ClientName, x.Status, "budget",
                 "/Documents/Details/" + x.Id, "Abrir orçamento"))
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken) : [];
 
-        var orders = await db.WorkOrders.AsNoTracking()
+        var orders = await (currentAccount.HasPermissionAsync("work_orders.read", cancellationToken)) ? await db.WorkOrders.AsNoTracking()
             .Where(x => x.AccountId == accountId && !x.IsDeleted &&
                 (EF.Functions.ILike(x.Number, pattern) || EF.Functions.ILike(x.Title, pattern)))
-            .OrderByDescending(x => x.UpdatedAt).Take(limit)
+            .OrderByDescending(x => x.Number.ToLower() == term.ToLower() || x.Title.ToLower() == term.ToLower())
+            .ThenByDescending(x => EF.Functions.ILike(x.Number, startsWith) || EF.Functions.ILike(x.Title, startsWith))
+            .ThenByDescending(x => x.UpdatedAt ?? x.CreatedAt).Take(categoryLimit)
             .Select(x => new GlobalSearchResult("Ordem de serviço", x.Number, x.Title, x.Status.ToString(), "service",
                 "/WorkOrders/Details/" + x.Id, "Abrir ordem"))
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken) : [];
 
-        var receipts = await db.Receipts.AsNoTracking()
+        var receipts = await (currentAccount.HasPermissionAsync("receipts.read", cancellationToken)) ? await db.Receipts.AsNoTracking()
             .Where(x => x.AccountId == accountId && !x.IsDeleted && EF.Functions.ILike(x.Number, pattern))
-            .OrderByDescending(x => x.IssuedAt).Take(limit)
+            .OrderByDescending(x => x.Number.ToLower() == term.ToLower())
+            .ThenByDescending(x => EF.Functions.ILike(x.Number, startsWith))
+            .ThenByDescending(x => x.IssuedAt).Take(categoryLimit)
             .Select(x => new GlobalSearchResult("Recibo", x.Number, "Valor registrado: " + x.Amount, "Emitido", "receipt",
                 "/Receipts/Details/" + x.Id, "Abrir recibo"))
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken) : [];
 
         return clients.Concat(documents).Concat(orders).Concat(receipts)
-            .OrderBy(x => x.Title, StringComparer.CurrentCultureIgnoreCase).Take(limit).ToArray();
+            .Take(limit).ToArray();
     }
 }

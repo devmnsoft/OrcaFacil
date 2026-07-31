@@ -36,7 +36,7 @@
                         <svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-menu" /></svg>
                     </button>
                 </div>
-                <button class="of-account-summary" type="button" aria-label="Trocar conta">
+                <button class="of-account-summary" type="button" data-account-switcher-open aria-haspopup="dialog" aria-controls="account-switcher" aria-label="Trocar conta">
                     <span class="of-avatar" aria-hidden="true">@shell.AccountName[..1].ToUpperInvariant()</span>
                     <span class="of-account-copy">
                         <strong>@shell.AccountName</strong>
@@ -120,10 +120,32 @@
             <div class="of-sheet-panel">
                 <span class="of-sheet-handle" aria-hidden="true"></span><h2 id="action-title">O que você quer criar?</h2>
                 <p>Escolha o resultado que precisa agora.</p>
-                <a asp-page="/Documents/CreateBudget"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg><span><strong>Novo orçamento</strong><small>Prepare uma proposta com serviços, valores e condições.</small></span><span class="of-plan-pill">Grátis</span></a>
-                <a asp-page="/Documents/CreateReceipt"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-receipt" /></svg><span><strong>Novo recibo</strong><small>Registre um valor recebido de forma organizada.</small></span><span class="of-plan-pill">Grátis</span></a>
-                <a asp-page="/Clients/Create"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-client" /></svg><span><strong>Novo cliente</strong><small>Salve dados para reutilizar nos documentos.</small></span><span class="of-plan-pill">Grátis</span></a>
+                <a asp-page="/Documents/CreateBudget"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg><span><strong>Novo orçamento</strong><small>Prepare uma proposta com serviços, valores e condições.</small></span><span class="of-plan-pill">@shell.EffectivePlanName</span></a>
+                <a asp-page="/Documents/CreateReceipt"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-receipt" /></svg><span><strong>Novo recibo</strong><small>Registre um valor recebido de forma organizada.</small></span><span class="of-plan-pill">@shell.EffectivePlanName</span></a>
+                <a asp-page="/Clients/Create"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-client" /></svg><span><strong>Novo cliente</strong><small>Salve dados para reutilizar nos documentos.</small></span><span class="of-plan-pill">@shell.EffectivePlanName</span></a>
                 <button type="button" data-dialog-close>Cancelar</button>
+            </div>
+        </div>
+        <div class="of-drawer" id="account-switcher" data-account-switcher hidden role="dialog" aria-modal="true" aria-labelledby="account-switcher-title">
+            <div>
+                <header>
+                    <div><p class="of-eyebrow">Espaço de trabalho</p><h2 id="account-switcher-title">Trocar de conta</h2></div>
+                    <button type="button" data-account-switcher-close aria-label="Fechar seletor de conta">×</button>
+                </header>
+                <div class="of-account-switcher-current">
+                    <span class="of-avatar" aria-hidden="true">@shell.AccountName[..1].ToUpperInvariant()</span>
+                    <span><small>Conta atual</small><strong>@shell.AccountName</strong><span>@shell.AccountRole · @shell.EffectivePlanName</span></span>
+                </div>
+                <label class="of-account-search" hidden data-account-search-wrap>
+                    <span>Buscar conta</span><input type="search" data-account-search autocomplete="off" placeholder="Digite o nome da conta" />
+                </label>
+                <form method="post" data-account-switch-form>
+                    @Html.AntiForgeryToken()
+                    <div class="of-account-switcher-list" data-account-list aria-live="polite" aria-busy="false">
+                        <p>Carregando contas autorizadas…</p>
+                    </div>
+                    <p class="of-inline-message" data-account-error role="alert" hidden></p>
+                </form>
             </div>
         </div>
         <div class="of-command-palette" data-search-dialog hidden role="dialog" aria-modal="true" aria-labelledby="search-title">
@@ -145,6 +167,7 @@
     }
     <script src="~/js/experience.js" asp-append-version="true"></script>
     <script type="module" src="~/js/shell.js" asp-append-version="true"></script>
+    <script type="module" src="~/js/account-switcher.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", false)
 </body>
 </html>
