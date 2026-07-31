@@ -1,25 +1,113 @@
 @page
 @model OrcaFacil.Web.Pages.Documents.CreateBudgetModel
-@{ViewData["Title"]="Novo orçamento";}
-<header class="of-page-header"><div><p class="of-eyebrow">Documento comercial</p><h1>Novo orçamento guiado</h1><p>Escolha um modelo pronto por profissão ou preencha manualmente. O OrçaFácil conduz cliente, itens, condições e revisão final.</p></div></header>
-<section class="of-card of-guided-budget mb-4" aria-labelledby="modelos-prontos-title">
-    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
-        <div>
-            <p class="of-eyebrow">Modelos prontos por profissão</p>
-            <h2 id="modelos-prontos-title" class="h4">Comece sem tela em branco</h2>
-            <p class="mb-0">Selecione um modelo para preencher itens e observações automaticamente. Depois ajuste valores, quantidades e texto para o seu cliente.</p>
+@{
+    ViewData["Title"] = "Novo orçamento";
+    ViewData["Section"] = "Comercial";
+    ViewData["HelpCode"] = "budget-create";
+}
+
+<header class="of-page-header of-budget-heading">
+    <div>
+        <p class="of-eyebrow">Orçamento guiado</p>
+        <h1>Transforme o pedido em uma proposta clara</h1>
+        <p>Avance no seu ritmo. Nada será enviado ao cliente ao finalizar.</p>
+    </div>
+    <div class="of-save-state" data-save-state role="status" aria-live="polite">
+        <span aria-hidden="true"></span><strong>Alterações pendentes</strong>
+    </div>
+</header>
+
+<form method="post" class="of-budget-wizard" data-budget-wizard novalidate>
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="of-form-error" role="alert"></div>
+
+    <nav class="of-wizard-steps" aria-label="Etapas do orçamento">
+        @foreach (var step in new[] { ("Cliente", "Para quem"), ("Serviços", "O que será feito"), ("Condições", "Prazos e pagamento"), ("Apresentação", "Aparência"), ("Revisão", "Conferência") }.Select((value, index) => (value, index)))
+        {
+            <button type="button" data-step-target="@step.index" class="@(step.index == 0 ? "is-active" : null)" aria-current="@(step.index == 0 ? "step" : null)">
+                <span>@(step.index + 1)</span><span><strong>@step.value.Item1</strong><small>@step.value.Item2</small></span>
+            </button>
+        }
+    </nav>
+
+    <div class="of-wizard-layout">
+        <div class="of-wizard-main">
+            <section class="of-wizard-panel is-active" data-step="0" aria-labelledby="wizard-client-title">
+                <div class="of-wizard-intro"><span class="of-wizard-number">01</span><div><p class="of-eyebrow">Cliente</p><h2 id="wizard-client-title">Quem receberá esta proposta?</h2><p>Localize um cadastro ou informe o nome. Os dados atuais serão copiados para esta versão do orçamento.</p></div></div>
+                <label class="of-field"><span>Buscar ou informar cliente</span><input asp-for="Input.ClientName" data-client-name placeholder="Ex.: Maria Souza ou Empresa ABC" autocomplete="organization" required /><small>Você poderá complementar o cadastro depois.</small><span asp-validation-for="Input.ClientName"></span></label>
+                <div class="of-inline-callout"><svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-client" /></svg><div><strong>Cliente novo?</strong><span>Abra o cadastro completo sem perder este fluxo.</span></div><a asp-page="/Clients/Create" asp-route-returnUrl="/Documents/CreateBudget">Cadastrar cliente</a></div>
+            </section>
+
+            <section class="of-wizard-panel" data-step="1" aria-labelledby="wizard-items-title" hidden>
+                <div class="of-wizard-intro"><span class="of-wizard-number">02</span><div><p class="of-eyebrow">Serviços</p><h2 id="wizard-items-title">O que você vai entregar?</h2><p>Descreva cada resultado, ajuste quantidade, preço e desconto. O total é atualizado na hora.</p></div></div>
+                <div class="of-service-examples" aria-label="Exemplos de serviços">
+                    @foreach (var example in new[] { "Consultoria por hora", "Instalação elétrica", "Manutenção preventiva", "Limpeza pós-obra" }) { <button type="button" data-service-example="@example">+ @example</button> }
+                </div>
+                <div class="of-budget-items" data-budget-items>
+                    @for (var i = 0; i < Model.Input.Items.Count; i++)
+                    {
+                        <article class="of-budget-item" data-budget-item>
+                            <span class="of-drag-handle" title="Reordenar" aria-hidden="true">⋮⋮</span>
+                            <label class="of-field of-item-description"><span>Serviço ou produto</span><input name="Input.Items[@i].Description" value="@Model.Input.Items[i].Description" placeholder="Descreva o resultado para o cliente" data-item-description /></label>
+                            <label class="of-field"><span>Quantidade</span><input name="Input.Items[@i].Quantity" value="@Model.Input.Items[i].Quantity" type="number" min="0.01" step="0.01" inputmode="decimal" data-item-quantity /></label>
+                            <label class="of-field"><span>Unidade</span><select data-item-unit><option>serviço</option><option>hora</option><option>dia</option><option>unidade</option><option>m²</option></select></label>
+                            <label class="of-field"><span>Preço unitário</span><input name="Input.Items[@i].UnitPrice" value="@Model.Input.Items[i].UnitPrice" type="number" min="0" step="0.01" inputmode="decimal" data-item-price /></label>
+                            <label class="of-field"><span>Desconto</span><input name="Input.Items[@i].Discount" value="@Model.Input.Items[i].Discount" type="number" min="0" step="0.01" inputmode="decimal" data-item-discount /></label>
+                            <div class="of-item-result"><small>Total do item</small><strong data-item-total>R$ 0,00</strong><button type="button" data-item-duplicate>Duplicar</button><button type="button" data-item-remove>Remover</button></div>
+                        </article>
+                    }
+                </div>
+                <button class="of-button-secondary" type="button" data-item-add>Adicionar item manual</button>
+            </section>
+
+            <section class="of-wizard-panel" data-step="2" aria-labelledby="wizard-conditions-title" hidden>
+                <div class="of-wizard-intro"><span class="of-wizard-number">03</span><div><p class="of-eyebrow">Condições</p><h2 id="wizard-conditions-title">Combine os detalhes antes de começar</h2><p>Informações objetivas evitam dúvidas e protegem a relação comercial.</p></div></div>
+                <div class="of-condition-groups">
+                    <fieldset><legend>Prazo</legend><label class="of-field"><span>Validade da proposta</span><select data-condition="validade"><option>7 dias</option><option selected>15 dias</option><option>30 dias</option></select></label><label class="of-field"><span>Início previsto</span><input type="date" data-condition="inicio" /></label><label class="of-field"><span>Duração estimada</span><input placeholder="Ex.: 3 dias úteis" data-condition="duracao" /></label></fieldset>
+                    <fieldset><legend>Pagamento</legend><label class="of-field"><span>Método preferencial</span><select data-condition="pagamento"><option>Pix</option><option>Transferência</option><option>Dinheiro</option><option>Cartão</option></select></label><label class="of-field"><span>Parcelas</span><select data-condition="parcelas"><option>À vista</option><option>2 parcelas</option><option>3 parcelas</option></select></label><label class="of-field"><span>Sinal</span><input type="number" min="0" step="0.01" placeholder="R$ 0,00" data-condition="sinal" /></label></fieldset>
+                </div>
+                <details class="of-progressive-fields"><summary>Adicionar garantia e observações</summary><label class="of-field"><span>Observações para o cliente</span><textarea asp-for="Input.Notes" rows="5" placeholder="Ex.: Garantia de 90 dias. Materiais cobrados separadamente."></textarea><small>Este texto aparecerá no documento.</small></label></details>
+            </section>
+
+            <section class="of-wizard-panel" data-step="3" aria-labelledby="wizard-template-title" hidden>
+                <div class="of-wizard-intro"><span class="of-wizard-number">04</span><div><p class="of-eyebrow">Apresentação</p><h2 id="wizard-template-title">Escolha como sua proposta será apresentada</h2><p>Compare o resultado visual antes de decidir. Recursos indisponíveis continuam demonstráveis.</p></div></div>
+                <div class="of-template-gallery">
+                    <label class="of-template-option is-selected"><input type="radio" name="presentation" value="Essencial" checked /><span class="of-template-preview is-essential"><i></i><b></b><b></b><em></em></span><span><strong>Essencial</strong><small>Claro, direto e disponível no Grátis.</small></span><span class="of-availability">Disponível</span></label>
+                    <label class="of-template-option"><input type="radio" name="presentation" value="Profissional" /><span class="of-template-preview is-professional"><i>Logo</i><b></b><b></b><em></em></span><span><strong>Profissional</strong><small>Logo, suas cores e cabeçalho refinado.</small></span><span class="of-premium-tag">Profissional</span></label>
+                    <label class="of-template-option"><input type="radio" name="presentation" value="Negócio" /><span class="of-template-preview is-business"><i>Logo</i><b></b><b></b><em>QR</em></span><span><strong>Negócio</strong><small>Assinatura e apresentação corporativa.</small></span><span class="of-premium-tag">Negócio</span></label>
+                </div>
+                <p class="of-honest-plan-note">Modelos acima do seu plano servem como demonstração. Você confirma qualquer mudança antes de contratar.</p>
+            </section>
+
+            <section class="of-wizard-panel" data-step="4" aria-labelledby="wizard-review-title" hidden>
+                <div class="of-wizard-intro"><span class="of-wizard-number">05</span><div><p class="of-eyebrow">Revisão</p><h2 id="wizard-review-title">Tudo pronto para finalizar</h2><p>Confira a proposta. Finalizar cria o documento como Pronto, mas não envia nada automaticamente.</p></div></div>
+                <div class="of-review-sheet">
+                    <div><small>Cliente</small><strong data-review-client>Não informado</strong></div><div><small>Modelo</small><strong data-review-template>Essencial</strong></div><div><small>Itens</small><strong data-review-items>0 serviços</strong></div><div><small>Total</small><strong data-review-total>R$ 0,00</strong></div>
+                </div>
+                <div class="of-inline-callout is-success"><svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-success" /></svg><div><strong>Você mantém o controle</strong><span>Depois de finalizar, a próxima ação será compartilhar. Nenhum e-mail ou mensagem será disparado agora.</span></div></div>
+            </section>
+
+            <footer class="of-wizard-actions"><button class="of-button-secondary" type="button" data-step-previous hidden>Voltar</button><span></span><a asp-page="/Documents/Index">Cancelar</a><button class="of-button-primary" type="button" data-step-next>Continuar</button><button class="of-button-primary" type="submit" data-finish hidden>Finalizar orçamento</button></footer>
         </div>
-        <span class="of-badge status-emitido"><i class="bi bi-magic"></i> Orçamento guiado</span>
+
+        <aside class="of-budget-summary" data-budget-summary>
+            <button type="button" data-summary-toggle aria-expanded="true"><span><small>Resumo do orçamento</small><strong data-summary-total>R$ 0,00</strong></span><span aria-hidden="true">⌃</span></button>
+            <div data-summary-content>
+                <p data-summary-client>Nenhum cliente selecionado</p>
+                <dl><div><dt>Subtotal</dt><dd data-summary-subtotal>R$ 0,00</dd></div><div><dt>Desconto geral</dt><dd><input asp-for="Input.Discount" type="number" min="0" step="0.01" inputmode="decimal" data-general-discount aria-label="Desconto geral" /></dd></div><div class="is-total"><dt>Total</dt><dd data-summary-total>R$ 0,00</dd></div></dl>
+                <button type="button" class="of-preview-button" data-preview-open>Pré-visualizar proposta</button>
+                <small>Valores permanecem nesta página até você finalizar.</small>
+            </div>
+        </aside>
     </div>
-    <div class="row g-3 mt-2"><div class="col-md-6 col-xl-4"><a class="of-template-card" href="/Documents/CreateBudget"><i class="bi bi-file-earmark-text"></i><strong>Orçamento em branco</strong><span>Preencha tudo manualmente.</span></a></div><div class="col-md-6 col-xl-4"><a class="of-template-card" href="/Templates"><i class="bi bi-magic"></i><strong>Usar modelo por profissão</strong><span>Veja todos os modelos salvos.</span></a></div><div class="col-md-6 col-xl-4"><span class="of-template-card"><i class="bi bi-tools"></i><strong>Usar serviço salvo</strong><span>Use seu catálogo quando disponível.</span></span></div></div>
-    @if (Model.LoadedTemplateId is not null) { <div class="alert alert-info mt-3"><i class="bi bi-magic me-2"></i>Você está usando o modelo <strong>@Model.LoadedTemplateTitle</strong>. Você pode alterar os itens, quantidades e valores antes de salvar.</div> }
-    <div class="row g-3 mt-2" data-budget-templates>
-        <div class="col-md-6 col-xl-4"><button class="of-template-card" type="button" data-template="eletricista"><i class="bi bi-lightning-charge"></i><strong>Eletricista</strong><span>Instalação, revisão e materiais.</span></button></div>
-        <div class="col-md-6 col-xl-4"><button class="of-template-card" type="button" data-template="pintor"><i class="bi bi-brush"></i><strong>Pintor</strong><span>Preparação, pintura e acabamento.</span></button></div>
-        <div class="col-md-6 col-xl-4"><button class="of-template-card" type="button" data-template="pedreiro"><i class="bi bi-bricks"></i><strong>Pedreiro</strong><span>Mão de obra, reparos e acabamento.</span></button></div>
-        <div class="col-md-6 col-xl-4"><button class="of-template-card" type="button" data-template="diarista"><i class="bi bi-stars"></i><strong>Diarista</strong><span>Limpeza comum, pesada ou pós-obra.</span></button></div>
-        <div class="col-md-6 col-xl-4"><button class="of-template-card" type="button" data-template="tecnico"><i class="bi bi-tools"></i><strong>Técnico</strong><span>Visita, diagnóstico e manutenção.</span></button></div>
-        <div class="col-md-6 col-xl-4"><button class="of-template-card" type="button" data-template="designer"><i class="bi bi-palette"></i><strong>Designer</strong><span>Criação, revisão e entrega digital.</span></button></div>
-    </div>
-</section>
-<div class="mt-4"><partial name="_DocumentForm" model="Model.Input" /></div>
+</form>
+
+<dialog class="of-document-preview-dialog" data-budget-preview aria-labelledby="budget-preview-title">
+    <div class="of-preview-toolbar"><div><p class="of-eyebrow">Pré-visualização</p><h2 id="budget-preview-title">Como o cliente verá</h2></div><label>Zoom <input type="range" min="70" max="110" value="85" data-preview-zoom /></label><button type="button" data-preview-close aria-label="Fechar pré-visualização">×</button></div>
+    <div class="of-a4-stage"><article class="of-a4-page" data-preview-page><header><strong>ORÇAFÁCIL</strong><span>ORÇAMENTO</span></header><section><small>PREPARADO PARA</small><h3 data-preview-client>Cliente</h3></section><div data-preview-items></div><footer><span>Total da proposta</span><strong data-preview-total>R$ 0,00</strong></footer></article></div>
+    <div class="of-preview-actions"><button class="of-button-secondary" type="button" data-preview-close>Voltar ao orçamento</button><button class="of-button-primary" type="button" data-preview-finish>Ir para revisão</button></div>
+</dialog>
+
+@section Scripts {
+    <script type="module" src="~/js/budget-wizard.js" asp-append-version="true"></script>
+}
