@@ -4,88 +4,46 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Documents;
-using OrcaFacil.Application.DTOs;
-using OrcaFacil.Domain.Enums;
 using OrcaFacil.Persistence;
-using OrcaFacil.Web.Extensions;
 
 namespace OrcaFacil.Web.Pages.Documents;
 
 [Authorize]
-public class CreateBudgetModel : PageModel
+public sealed class CreateBudgetModel : PageModel
 {
     private readonly ICurrentUserService _current;
-    private readonly DocumentService _service;
+    private readonly ICurrentAccountService _account;
+    private readonly BudgetWizardService _wizard;
     private readonly OrcaFacilDbContext _db;
+    public CreateBudgetModel(ICurrentUserService current, ICurrentAccountService account, BudgetWizardService wizard, OrcaFacilDbContext db)
+    { _current = current; _account = account; _wizard = wizard; _db = db; }
 
-    public CreateBudgetModel(ICurrentUserService current, DocumentService service, OrcaFacilDbContext db)
+    public BudgetWizardViewModel Draft { get; private set; } = default!;
+    public IReadOnlyList<ClientChoice> Clients { get; private set; } = [];
+
+    public async Task OnGetAsync(Guid? id, Guid? clientId, CancellationToken ct)
     {
-        _current = current;
-        _service = service;
-        _db = db;
+        Draft = await _wizard.OpenAsync(_current.UserId, _account.AccountId, id, clientId, ct);
+        await LoadClients(ct);
     }
 
-    [BindProperty] public DocumentForm Input { get; set; } = DocumentForm.Default();
-    public Guid? LoadedTemplateId { get; private set; }
-    public string? LoadedTemplateTitle { get; private set; }
-
-    public async Task OnGetAsync(Guid? templateId, Guid? clientId, CancellationToken ct)
+    public async Task<IActionResult> OnPostAutosaveAsync([FromBody] SaveBudgetDraftRequest input, CancellationToken ct)
     {
-        if (clientId.HasValue)
-        {
-            var client = await _db.Clients.AsNoTracking().SingleOrDefaultAsync(x => x.Id == clientId && x.UserId == _current.UserId && !x.IsDeleted, ct);
-            if (client is not null)
-            {
-                Input.ClientName = client.Name;
-            }
-        }
-
-        if (templateId is null) return;
-        var template = await _db.BudgetTemplates.Include(x => x.Items).SingleOrDefaultAsync(x => x.Id == templateId && x.IsActive && !x.IsDeleted && (x.IsSystemTemplate || x.UserId == _current.UserId), ct);
-        if (template is null)
-        {
-            TempData.Warning("Não encontramos este modelo. Escolha outro ou comece em branco.");
-            return;
-        }
-        LoadedTemplateId = template.Id;
-        LoadedTemplateTitle = template.Title;
-        Input = new DocumentForm
-        {
-            Notes = $"Orçamento criado a partir do modelo {template.Title}. Revise prazos, condições de pagamento e valores antes do envio.",
-            Items = template.Items.OrderBy(i => i.SortOrder).Select(i => new DocumentItemForm { Description = i.Description, Quantity = i.Quantity, UnitPrice = i.UnitPrice }).ToList()
-        };
-        TempData.Success("Modelo carregado. Revise os itens e ajuste os valores antes de salvar.");
+        if (string.IsNullOrWhiteSpace(input.IdempotencyKey)) return BadRequest(new { error = "Identificador de salvamento ausente." });
+        var result = await _wizard.SaveAsync(_current.UserId, _account.AccountId, input, ct);
+        return result.Succeeded ? new JsonResult(result.Draft) : StatusCode(result.Conflict ? 409 : 400, new { error = result.Error, draft = result.Draft });
     }
 
-    public async Task<IActionResult> OnPostAsync(CancellationToken ct)
+    public async Task<IActionResult> OnPostFinalizeAsync([FromBody] SaveBudgetDraftRequest input, CancellationToken ct)
     {
-        if (!ModelState.IsValid) return Page();
-        var cmd = new CreateDocumentCommand(_current.UserId, DocumentType.Budget, "", Input.ClientName, Input.ToItems(), Input.Discount, Input.Notes);
-        var r = await _service.CreateBudgetAsync(cmd, ct);
-        if (!r.Succeeded)
-        {
-            ModelState.AddModelError("", r.Error ?? "Erro ao criar orçamento.");
-            return Page();
-        }
-        TempData.Success("Orçamento criado a partir de modelo ou formulário guiado. Gere o PDF no histórico.");
-        return RedirectToPage("/Documents/Details", new { id = r.Value });
+        var result = await _wizard.FinalizeAsync(_current.UserId, _account.AccountId, input, ct);
+        return result.Succeeded ? new JsonResult(new { redirectUrl = Url.Page("/Documents/Details", new { id = input.DocumentId }) })
+            : StatusCode(result.Conflict ? 409 : 400, new { error = result.Error, draft = result.Draft });
     }
+
+    private async Task LoadClients(CancellationToken ct) => Clients = await _db.Clients.AsNoTracking()
+        .Where(x => x.UserId == _current.UserId && x.AccountId == _account.AccountId && !x.IsDeleted).OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt).Take(40)
+        .Select(x => new ClientChoice(x.Id, x.Name, x.DocumentNumber, x.Phone, x.Email, x.City)).ToListAsync(ct);
 }
 
-public class DocumentForm
-{
-    public string ClientName { get; set; } = "";
-    public decimal Discount { get; set; }
-    public string? Notes { get; set; }
-    public List<DocumentItemForm> Items { get; set; } = [];
-    public static DocumentForm Default() => new() { Items = [new()] };
-    public IReadOnlyList<DocumentItemDto> ToItems() => Items.Where(i => !string.IsNullOrWhiteSpace(i.Description)).Select(i => new DocumentItemDto(i.Description, i.Quantity, i.UnitPrice, i.Discount)).ToList();
-}
-
-public class DocumentItemForm
-{
-    public string Description { get; set; } = "";
-    public decimal Quantity { get; set; } = 1;
-    public decimal UnitPrice { get; set; }
-    public decimal Discount { get; set; }
-}
+public sealed record ClientChoice(Guid Id, string Name, string? Document, string? Phone, string? Email, string? City);

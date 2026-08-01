@@ -1,0 +1,13 @@
+@page "/Documents/Preview/{id:guid}"
+@model OrcaFacil.Web.Pages.Documents.PreviewModel
+@{ ViewData["Title"] = "Prévia do orçamento"; ViewData["Section"] = "Comercial"; }
+<header class="of-page-header"><div><p class="of-eyebrow">Prévia persistida</p><h1>Orçamento @Model.Document.Number</h1><p>Esta visualização usa o rascunho salvo no servidor e não envia, versiona ou consome limite.</p></div><a class="of-button-secondary" asp-page="/Documents/CreateBudget" asp-route-id="@Model.Document.Id">Voltar ao editor</a></header>
+<div class="of-preview-toolbar of-preview-toolbar-inline"><label>Zoom <input type="range" min="60" max="110" value="85" data-server-preview-zoom /></label><span>Modelo: @Model.Document.TemplateCode</span></div>
+<div class="of-a4-stage"><article class="of-a4-page" data-server-preview-page>
+    <header><strong>ORÇAFÁCIL</strong><span>ORÇAMENTO</span></header>
+    <section><small>PREPARADO PARA</small><h2>@Model.Document.ClientName</h2><p>@Model.Document.ClientCity · @Model.Document.ClientEmail</p></section>
+    <div class="of-preview-document-items">@foreach (var item in Model.Document.Items.OrderBy(x => x.SortOrder)) { <div><span><strong>@item.Description</strong><small>@item.Quantity.ToString("0.##") @item.Unit × @item.UnitPrice.ToString("C")</small></span><strong>@item.CalculateTotal().ToString("C")</strong></div> }</div>
+    <section class="of-preview-conditions"><h3>Condições</h3><p>Validade: @(Model.Document.ValidUntil?.ToString("dd/MM/yyyy") ?? "não informada") · Pagamento: @(Model.Document.PaymentMethod ?? "a combinar")</p><p>@Model.Document.ConditionsText</p></section>
+    <footer><span>Total da proposta</span><strong>@Model.Document.Total.ToString("C")</strong></footer>
+</article></div>
+<script>document.querySelector('[data-server-preview-zoom]')?.addEventListener('input',e=>document.querySelector('[data-server-preview-page]').style.setProperty('--preview-scale',e.target.value/100));</script>

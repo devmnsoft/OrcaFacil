@@ -182,3 +182,14 @@
 @keyframes of-pulse { 50% { opacity: .35; } }
 @media (max-width: 1050px) { .of-wizard-layout { grid-template-columns: 1fr; }.of-budget-summary { position: static; grid-row: 1; }.of-budget-summary > div { display: none; }.of-budget-summary > button[aria-expanded="true"] + div { display: block; }.of-budget-item { grid-template-columns: auto 2fr 1fr 1fr; }.of-item-result { grid-column: 2 / -1; grid-template-columns: 1fr auto auto; align-items: center; } }
 @media (max-width: 720px) { .of-wizard-steps button { justify-content: center; padding: .75rem .35rem; border-right: 0; }.of-wizard-steps button > span:last-child { display: none; }.of-wizard-panel { min-height: 0; padding: 1.1rem; }.of-wizard-intro { gap: .6rem; }.of-budget-item { grid-template-columns: 1fr 1fr; }.of-drag-handle { display: none; }.of-item-description { grid-column: 1 / -1; }.of-item-result { grid-column: 1 / -1; }.of-condition-groups, .of-template-gallery, .of-review-sheet { grid-template-columns: 1fr; }.of-wizard-actions { position: sticky; bottom: calc(66px + env(safe-area-inset-bottom)); z-index: 4; padding: .75rem; }.of-wizard-actions > a { display: none; }.of-wizard-actions button { flex: 1; }.of-a4-stage { padding: 1rem; }.of-preview-toolbar label { display: none; } }
+/* Client selection is a task list, not a generic card grid. */
+.of-client-choices { display: grid; gap: var(--of-space-2); max-height: 22rem; overflow: auto; margin-top: var(--of-space-4); }
+.of-client-choices button { display: flex; align-items: center; justify-content: space-between; gap: var(--of-space-4); width: 100%; padding: var(--of-space-4); border: 1px solid var(--of-border); border-radius: var(--of-radius); background: var(--of-surface); color: var(--of-text); text-align: left; cursor: pointer; }
+.of-client-choices button span:first-child { display: grid; gap: var(--of-space-1); }
+.of-client-choices button small { color: var(--of-text-secondary); }
+.of-client-choices button.is-selected { border-color: var(--of-primary); background: var(--of-primary-soft); }
+.of-preview-toolbar-inline { position: sticky; top: var(--of-space-4); z-index: 2; max-width: 52rem; margin: 0 auto var(--of-space-4); }
+.of-preview-document-items { display: grid; gap: var(--of-space-3); margin: var(--of-space-8) 0; }
+.of-preview-document-items > div { display: flex; justify-content: space-between; gap: var(--of-space-6); padding-bottom: var(--of-space-3); border-bottom: 1px solid var(--of-border); }
+.of-preview-document-items span { display: grid; gap: var(--of-space-1); }
+.of-preview-conditions { margin-top: var(--of-space-8); }

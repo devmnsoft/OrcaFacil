@@ -1,153 +1,85 @@
 const wizard = document.querySelector('[data-budget-wizard]');
-
 if (wizard) {
   const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+  const token = wizard.querySelector('input[name="__RequestVerificationToken"]')?.value;
   const panels = [...wizard.querySelectorAll('[data-step]')];
-  const stepButtons = [...wizard.querySelectorAll('[data-step-target]')];
+  const steps = [...wizard.querySelectorAll('[data-step-target]')];
+  const itemHost = wizard.querySelector('[data-budget-items]');
   const previous = wizard.querySelector('[data-step-previous]');
   const next = wizard.querySelector('[data-step-next]');
   const finish = wizard.querySelector('[data-finish]');
-  const itemHost = wizard.querySelector('[data-budget-items]');
-  const preview = document.querySelector('[data-budget-preview]');
-  let currentStep = 0;
+  let currentStep = Math.max(0, Math.min(4, Number(wizard.dataset.currentStep) || 0));
+  let rowVersion = wizard.dataset.rowVersion;
+  let timer;
+  let saving = false;
+  let queued = false;
 
-  const number = (input) => Math.max(0, Number.parseFloat(input?.value?.replace(',', '.')) || 0);
-  const itemRows = () => [...itemHost.querySelectorAll('[data-budget-item]')];
-
-  const setSaveState = (label, state = 'pending') => {
-    const host = document.querySelector('[data-save-state]');
-    if (!host) return;
-    host.dataset.state = state;
-    host.querySelector('strong').textContent = label;
-  };
-
-  const renameItems = () => itemRows().forEach((row, index) => {
-    const names = ['Description', 'Quantity', 'UnitPrice', 'Discount'];
-    row.querySelectorAll('input[name]').forEach((input, inputIndex) => {
-      input.name = `Input.Items[${index}].${names[inputIndex]}`;
-    });
-  });
-
+  const num = input => Math.max(0, Number.parseFloat(input?.value?.replace(',', '.')) || 0);
+  const rows = () => [...itemHost.querySelectorAll('[data-budget-item]')];
+  const field = name => wizard.querySelector(`[data-field="${name}"]`);
+  const setState = (label, state = 'pending') => { const host = document.querySelector('[data-save-state]'); host.dataset.state = state; host.querySelector('strong').textContent = label; };
+  const rename = () => rows().forEach((row, i) => row.querySelectorAll('input[name]').forEach(input => { const prop = input.name.split('.').pop(); input.name = `Items[${i}].${prop}`; }));
   const calculate = () => {
     let subtotal = 0;
-    itemRows().forEach((row) => {
-      const total = Math.max(0, number(row.querySelector('[data-item-quantity]')) * number(row.querySelector('[data-item-price]')) - number(row.querySelector('[data-item-discount]')));
-      subtotal += total;
-      row.querySelector('[data-item-total]').textContent = money.format(total);
-    });
-    const total = Math.max(0, subtotal - number(wizard.querySelector('[data-general-discount]')));
-    document.querySelectorAll('[data-summary-subtotal]').forEach((node) => { node.textContent = money.format(subtotal); });
-    document.querySelectorAll('[data-summary-total], [data-review-total], [data-preview-total]').forEach((node) => { node.textContent = money.format(total); });
-    const completed = itemRows().filter((row) => row.querySelector('[data-item-description]').value.trim()).length;
-    wizard.querySelector('[data-review-items]').textContent = `${completed} ${completed === 1 ? 'serviço' : 'serviços'}`;
+    rows().forEach(row => { const total = Math.max(0, num(row.querySelector('[data-item-quantity]')) * num(row.querySelector('[data-item-price]')) - num(row.querySelector('[data-item-discount]'))); subtotal += total; row.querySelector('[data-item-total]').textContent = money.format(total); });
+    const total = Math.max(0, subtotal - num(wizard.querySelector('[data-general-discount]')));
+    document.querySelectorAll('[data-summary-subtotal]').forEach(x => x.textContent = money.format(subtotal));
+    document.querySelectorAll('[data-summary-total], [data-review-total]').forEach(x => x.textContent = money.format(total));
+    const count = rows().filter(x => x.querySelector('[data-item-description]').value.trim()).length;
+    wizard.querySelector('[data-review-items]').textContent = `${count} ${count === 1 ? 'serviço' : 'serviços'}`;
   };
-
-  const updateReview = () => {
-    const client = wizard.querySelector('[data-client-name]').value.trim() || 'Não informado';
-    const template = wizard.querySelector('input[name="presentation"]:checked')?.value || 'Essencial';
+  const update = () => {
+    const client = wizard.querySelector('[data-client-name]').value || 'Não informado';
     wizard.querySelector('[data-review-client]').textContent = client;
-    wizard.querySelector('[data-review-template]').textContent = template;
     wizard.querySelector('[data-summary-client]').textContent = client === 'Não informado' ? 'Nenhum cliente selecionado' : client;
-    document.querySelector('[data-preview-client]').textContent = client;
+    wizard.querySelector('[data-review-template]').textContent = wizard.querySelector('input[name="presentation"]:checked')?.closest('label')?.querySelector('strong')?.textContent || 'Essencial';
     calculate();
   };
-
-  const goTo = (step) => {
-    currentStep = Math.max(0, Math.min(panels.length - 1, step));
-    panels.forEach((panel, index) => { panel.hidden = index !== currentStep; panel.classList.toggle('is-active', index === currentStep); });
-    stepButtons.forEach((button, index) => {
-      button.classList.toggle('is-active', index === currentStep);
-      button.classList.toggle('is-complete', index < currentStep);
-      if (index === currentStep) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current');
-    });
-    previous.hidden = currentStep === 0;
-    next.hidden = currentStep === panels.length - 1;
-    finish.hidden = currentStep !== panels.length - 1;
-    updateReview();
-    panels[currentStep].querySelector('h2')?.focus({ preventScroll: true });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const payload = () => ({
+    documentId: wizard.dataset.documentId, clientId: wizard.querySelector('[data-client-id]').value || null, currentStep,
+    validUntil: field('validUntil')?.value || null, expectedStartAt: field('expectedStartAt')?.value || null,
+    estimatedDuration: field('estimatedDuration')?.value || null, paymentMethod: field('paymentMethod')?.value || null,
+    installmentCount: num(field('installmentCount')) || null, depositAmount: num(field('depositAmount')), pixInformation: field('pixInformation')?.value || null,
+    warrantyText: field('warrantyText')?.value || null, conditionsText: field('conditionsText')?.value || null,
+    templateCode: wizard.querySelector('input[name="presentation"]:checked')?.value || 'essential', discount: num(wizard.querySelector('[data-general-discount]')),
+    items: rows().map((row, sortOrder) => ({ serviceCatalogItemId: null, description: row.querySelector('[data-item-description]').value, unit: row.querySelector('[data-item-unit]').value, quantity: num(row.querySelector('[data-item-quantity]')), unitPrice: num(row.querySelector('[data-item-price]')), discount: num(row.querySelector('[data-item-discount]')), notes: null, sortOrder })),
+    rowVersion, idempotencyKey: crypto.randomUUID()
+  });
+  const save = async (finalize = false) => {
+    if (saving) { queued = true; return false; }
+    saving = true; setState('Salvando…', 'saving');
+    try {
+      const response = await fetch(`?handler=${finalize ? 'Finalize' : 'Autosave'}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token }, body: JSON.stringify(payload()) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Não foi possível salvar.');
+      if (finalize) { window.location.assign(data.redirectUrl); return true; }
+      rowVersion = data.rowVersion; setState('Salvo agora', 'saved'); return true;
+    } catch (error) { setState(error.message || 'Falha ao salvar — tentar novamente', 'error'); return false; }
+    finally { saving = false; if (queued && !finalize) { queued = false; save(); } }
   };
-
-  const validateStep = () => {
-    if (currentStep === 0 && !wizard.querySelector('[data-client-name]').value.trim()) {
-      wizard.querySelector('[data-client-name]').setCustomValidity('Informe quem receberá o orçamento.');
-      wizard.querySelector('[data-client-name]').reportValidity();
-      return false;
-    }
-    if (currentStep === 1 && !itemRows().some((row) => row.querySelector('[data-item-description]').value.trim())) {
-      itemRows()[0]?.querySelector('[data-item-description]').setCustomValidity('Adicione pelo menos um serviço ou produto.');
-      itemRows()[0]?.querySelector('[data-item-description]').reportValidity();
-      return false;
-    }
+  const scheduleSave = () => { clearTimeout(timer); setState('Alterações pendentes'); timer = setTimeout(() => save(), 700); };
+  const go = step => {
+    currentStep = Math.max(0, Math.min(4, step)); panels.forEach((p, i) => { p.hidden = i !== currentStep; p.classList.toggle('is-active', i === currentStep); });
+    steps.forEach((b, i) => { b.classList.toggle('is-active', i === currentStep); b.classList.toggle('is-complete', i < currentStep); b.toggleAttribute('aria-current', i === currentStep); });
+    previous.hidden = currentStep === 0; next.hidden = currentStep === 4; finish.hidden = currentStep !== 4; update(); scheduleSave();
+  };
+  const valid = () => {
+    if (currentStep === 0 && !wizard.querySelector('[data-client-id]').value) { wizard.querySelector('[data-client-search]').setCustomValidity('Selecione um cliente cadastrado.'); wizard.querySelector('[data-client-search]').reportValidity(); return false; }
+    if (currentStep === 1 && !rows().some(x => x.querySelector('[data-item-description]').value.trim())) { rows()[0].querySelector('[data-item-description]').setCustomValidity('Adicione ao menos um serviço.'); rows()[0].querySelector('[data-item-description]').reportValidity(); return false; }
     return true;
   };
-
-  const newItem = (description = '') => {
-    const source = itemRows()[0];
-    const row = source.cloneNode(true);
-    row.querySelectorAll('input').forEach((input) => { input.value = input.matches('[data-item-quantity]') ? '1' : ''; });
-    row.querySelector('[data-item-description]').value = description;
-    itemHost.append(row);
-    renameItems();
-    calculate();
-    row.querySelector('[data-item-description]').focus();
-  };
-
-  next.addEventListener('click', () => { if (validateStep()) goTo(currentStep + 1); });
-  previous.addEventListener('click', () => goTo(currentStep - 1));
-  stepButtons.forEach((button) => button.addEventListener('click', () => { const target = Number(button.dataset.stepTarget); if (target <= currentStep || validateStep()) goTo(target); }));
-  wizard.querySelector('[data-item-add]').addEventListener('click', () => newItem());
-  wizard.querySelectorAll('[data-service-example]').forEach((button) => button.addEventListener('click', () => { newItem(button.dataset.serviceExample); }));
-
-  itemHost.addEventListener('click', (event) => {
-    const row = event.target.closest('[data-budget-item]');
-    if (!row) return;
-    if (event.target.closest('[data-item-remove]')) {
-      if (itemRows().length === 1) row.querySelectorAll('input').forEach((input) => { input.value = input.matches('[data-item-quantity]') ? '1' : ''; });
-      else row.remove();
-      renameItems(); calculate();
-    }
-    if (event.target.closest('[data-item-duplicate]')) {
-      const clone = row.cloneNode(true); row.after(clone); renameItems(); calculate();
-    }
-  });
-
-  wizard.addEventListener('input', (event) => {
-    event.target.setCustomValidity?.('');
-    setSaveState('Alterações pendentes');
-    updateReview();
-  });
-  wizard.addEventListener('change', (event) => {
-    if (event.target.name === 'presentation') wizard.querySelectorAll('.of-template-option').forEach((option) => option.classList.toggle('is-selected', option.contains(event.target)));
-    updateReview();
-  });
-  wizard.addEventListener('submit', () => setSaveState('Salvando…', 'saving'));
-
-  wizard.querySelector('[data-summary-toggle]').addEventListener('click', (event) => {
-    const content = wizard.querySelector('[data-summary-content]');
-    content.hidden = !content.hidden;
-    event.currentTarget.setAttribute('aria-expanded', String(!content.hidden));
-  });
-
-  const renderPreview = () => {
-    updateReview();
-    const host = preview.querySelector('[data-preview-items]');
-    host.replaceChildren(...itemRows().filter((row) => row.querySelector('[data-item-description]').value.trim()).map((row) => {
-      const line = document.createElement('div');
-      const description = document.createElement('span');
-      const value = document.createElement('strong');
-      description.textContent = row.querySelector('[data-item-description]').value;
-      value.textContent = row.querySelector('[data-item-total]').textContent;
-      line.append(description, value);
-      return line;
-    }));
-    preview.showModal();
-  };
-  wizard.querySelector('[data-preview-open]').addEventListener('click', renderPreview);
-  preview.querySelectorAll('[data-preview-close]').forEach((button) => button.addEventListener('click', () => preview.close()));
-  preview.querySelector('[data-preview-finish]').addEventListener('click', () => { preview.close(); goTo(4); });
-  preview.querySelector('[data-preview-zoom]').addEventListener('input', (event) => { preview.querySelector('[data-preview-page]').style.setProperty('--preview-scale', event.target.value / 100); });
-
-  renameItems();
-  calculate();
+  const addItem = (description = '') => { const row = rows()[0].cloneNode(true); row.querySelectorAll('input').forEach(x => x.value = x.matches('[data-item-quantity]') ? '1' : ''); row.querySelector('[data-item-description]').value = description; itemHost.append(row); rename(); update(); scheduleSave(); };
+  next.addEventListener('click', () => { if (valid()) go(currentStep + 1); }); previous.addEventListener('click', () => go(currentStep - 1));
+  steps.forEach(x => x.addEventListener('click', () => { const target = Number(x.dataset.stepTarget); if (target <= currentStep || valid()) go(target); }));
+  wizard.querySelector('[data-item-add]').addEventListener('click', () => addItem()); wizard.querySelectorAll('[data-service-example]').forEach(x => x.addEventListener('click', () => addItem(x.dataset.serviceExample)));
+  itemHost.addEventListener('click', event => { const row = event.target.closest('[data-budget-item]'); if (!row) return; if (event.target.closest('[data-item-remove]')) { if (rows().length === 1) row.querySelectorAll('input').forEach(x => x.value = x.matches('[data-item-quantity]') ? '1' : ''); else row.remove(); } if (event.target.closest('[data-item-duplicate]')) row.after(row.cloneNode(true)); rename(); update(); scheduleSave(); });
+  wizard.querySelectorAll('[data-client-option]').forEach(option => option.addEventListener('click', () => { wizard.querySelector('[data-client-id]').value = option.dataset.clientId; wizard.querySelector('[data-client-name]').value = option.dataset.clientName; wizard.querySelectorAll('[data-client-option]').forEach(x => x.classList.toggle('is-selected', x === option)); update(); scheduleSave(); }));
+  wizard.querySelector('[data-client-search]').addEventListener('input', event => { event.target.setCustomValidity(''); const term = event.target.value.trim().toLocaleLowerCase('pt-BR'); wizard.querySelectorAll('[data-client-option]').forEach(x => x.hidden = !x.dataset.search.includes(term)); });
+  wizard.addEventListener('input', event => { event.target.setCustomValidity?.(''); update(); scheduleSave(); }); wizard.addEventListener('change', scheduleSave);
+  wizard.querySelector('[data-summary-toggle]').addEventListener('click', event => { const content = wizard.querySelector('[data-summary-content]'); content.hidden = !content.hidden; event.currentTarget.setAttribute('aria-expanded', String(!content.hidden)); });
+  wizard.querySelector('[data-preview-link]').addEventListener('click', async event => { event.preventDefault(); if (await save()) window.location.assign(event.currentTarget.href); });
+  finish.addEventListener('click', async () => { if (valid()) await save(true); });
+  wizard.querySelectorAll('[data-initial-unit]').forEach(x => { x.value = x.dataset.initialUnit || 'serviço'; });
+  wizard.querySelectorAll('[data-initial-value]').forEach(x => { if (x.dataset.initialValue) x.value = x.dataset.initialValue; });
+  rename(); update(); go(currentStep);
 }

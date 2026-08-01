@@ -6,9 +6,13 @@ public class DocumentItem : Entity
 {
     public Guid DocumentId { get; set; }
     public string Description { get; set; } = string.Empty;
+    public Guid? ServiceCatalogItemId { get; set; }
+    public string Unit { get; set; } = "serviço";
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal Discount { get; set; }
+    public string? Notes { get; set; }
+    public int SortOrder { get; set; }
     public decimal Total { get; private set; }
 
     public decimal CalculateTotal() => Total = Math.Max(0, Quantity * UnitPrice - Discount);

@@ -18,8 +18,23 @@ public class Document : Entity
     public string? ClientPhone { get; set; }
     public string? ClientEmail { get; set; }
     public string? ClientCity { get; set; }
+    public string? ClientSnapshot { get; set; }
+    public int CurrentWizardStep { get; set; }
     public DateTime IssueDate { get; set; } = DateTime.UtcNow;
     public DateTime? ValidUntil { get; set; }
+    public DateTime? ExpectedStartAt { get; set; }
+    public string? EstimatedDuration { get; set; }
+    public string? PaymentMethod { get; set; }
+    public int? InstallmentCount { get; set; }
+    public decimal? DepositAmount { get; set; }
+    public string? PixInformation { get; set; }
+    public string? WarrantyText { get; set; }
+    public string? ConditionsText { get; set; }
+    public string TemplateCode { get; set; } = "essential";
+    public string? TemplateSnapshot { get; set; }
+    public byte[] RowVersion { get; set; } = Guid.NewGuid().ToByteArray();
+    public DateTime? LastAutosavedAt { get; set; }
+    public string? LastAutosaveKey { get; set; }
     public string? Notes { get; set; }
     public decimal Subtotal { get; private set; }
     public decimal Discount { get; set; }

@@ -21,8 +21,19 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.Property(x => x.ClientPhone).HasColumnName("client_phone").HasMaxLength(40);
         builder.Property(x => x.ClientEmail).HasColumnName("client_email").HasMaxLength(254);
         builder.Property(x => x.ClientCity).HasColumnName("client_city").HasMaxLength(120);
+        builder.Property(x => x.ClientSnapshot).HasColumnName("client_snapshot").HasColumnType("jsonb");
         builder.Property(x => x.IssueDate).HasColumnName("issue_date");
         builder.Property(x => x.ValidUntil).HasColumnName("valid_until");
+        builder.Property(x => x.EstimatedDuration).HasMaxLength(120);
+        builder.Property(x => x.PaymentMethod).HasMaxLength(60);
+        builder.Property(x => x.DepositAmount).HasPrecision(18, 2);
+        builder.Property(x => x.PixInformation).HasMaxLength(300);
+        builder.Property(x => x.WarrantyText).HasMaxLength(2000);
+        builder.Property(x => x.ConditionsText).HasMaxLength(4000);
+        builder.Property(x => x.TemplateCode).HasMaxLength(40);
+        builder.Property(x => x.TemplateSnapshot).HasColumnType("jsonb");
+        builder.Property(x => x.RowVersion).IsConcurrencyToken();
+        builder.Property(x => x.LastAutosaveKey).HasMaxLength(80);
         builder.Property(x => x.Notes).HasColumnName("notes").HasMaxLength(4000);
         builder.Property(x => x.Subtotal).HasColumnName("subtotal").HasPrecision(18, 2);
         builder.Property(x => x.Discount).HasColumnName("discount").HasPrecision(18, 2);
@@ -43,5 +54,6 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.HasIndex(x => new { x.UserId, x.Type, x.Number }).IsUnique();
         builder.HasIndex(x => x.CreatedAt);
         builder.HasIndex(x => x.Status);
+        builder.HasIndex(x => new { x.AccountId, x.Status, x.LastAutosavedAt });
     }
 }

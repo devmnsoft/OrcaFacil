@@ -85,6 +85,8 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<ILoggerService, LoggerService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<DocumentService>();
+builder.Services.AddScoped<BudgetWizardService>();
+builder.Services.AddScoped<BudgetDraftService>();
 builder.Services.AddScoped<IDocumentStatusTransitionService, DocumentStatusTransitionService>();
 builder.Services.AddSingleton<IPublicDocumentTokenService, PublicDocumentTokenService>();
 builder.Services.AddSingleton<IDocumentSnapshotSerializer, DocumentSnapshotSerializer>();
