@@ -100,7 +100,16 @@
                             <svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-notification" /></svg>
                             @if (shell.UnreadNotifications > 0) { <span class="of-notification-count">@shell.UnreadNotifications</span> }
                         </a>
-                        <span class="of-topbar-avatar">@shell.FirstName[..1].ToUpperInvariant()</span>
+                        <button class="of-topbar-avatar" type="button" data-profile-menu-trigger aria-label="Abrir menu do usuário" aria-haspopup="menu" aria-expanded="false">@shell.FirstName[..1].ToUpperInvariant()</button>
+                        <div class="of-profile-menu" data-profile-menu hidden role="menu">
+                            <header><span class="of-avatar" aria-hidden="true">@shell.FirstName[..1].ToUpperInvariant()</span><span><strong>@shell.FirstName</strong><small>@shell.MaskedEmail</small></span></header>
+                            <div class="of-profile-context"><small>@shell.AccountName</small><span>@shell.AccountRole · @shell.EffectivePlanName</span></div>
+                            <a role="menuitem" asp-page="/Profile/Index">Minha conta</a>
+                            <a role="menuitem" asp-page="/Subscription/Index">Meu plano</a>
+                            <a role="menuitem" asp-page="/Profile/Index" asp-fragment="security">Segurança</a>
+                            <button role="menuitem" type="button" data-account-switcher-open>Trocar conta</button>
+                            <form method="post" asp-page="/Auth/Logout">@Html.AntiForgeryToken()<button role="menuitem" type="submit">Sair</button></form>
+                        </div>
                     </div>
                 </header>
                 <main class="of-content" id="main-content" tabindex="-1">
@@ -168,6 +177,7 @@
     <script src="~/js/experience.js" asp-append-version="true"></script>
     <script type="module" src="~/js/shell.js" asp-append-version="true"></script>
     <script type="module" src="~/js/account-switcher.js" asp-append-version="true"></script>
+    <script type="module" src="~/js/profile-menu.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", false)
 </body>
 </html>
