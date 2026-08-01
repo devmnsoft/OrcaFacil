@@ -15,14 +15,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>@pageTitle · OrçaFácil</title>
     <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/icons.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/base.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/surfaces.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/forms.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/app-layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/responsive.css" asp-append-version="true" />
 </head>
 <body>
+    <partial name="Partials/_IconSprite" />
     <a class="of-skip-link" href="#main-content">Ir para o conteúdo</a>
     @if (shell is not null)
     {
@@ -33,7 +36,7 @@
                         <img src="~/img/brand/orcafacil-wordmark-light.svg" alt="OrçaFácil, um produto MNSOFT" />
                     </a>
                     <button class="of-sidebar-toggle" type="button" data-sidebar-toggle aria-label="Recolher menu" aria-controls="client-sidebar" aria-expanded="true">
-                        <svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-menu" /></svg>
+                        <svg class="of-icon" aria-hidden="true"><use href="#of-icon-menu" /></svg>
                     </button>
                 </div>
                 <button class="of-account-summary" type="button" data-account-switcher-open aria-haspopup="dialog" aria-controls="account-switcher" aria-label="Trocar conta">
@@ -43,10 +46,10 @@
                         <small>@shell.AccountRole</small>
                         <span class="of-plan-pill">@shell.EffectivePlanName · @shell.PlanAccessStatus</span>
                     </span>
-                    <span aria-hidden="true">⌄</span>
+                    <partial name="Partials/_Icon" model='new IconViewModel("chevron-down", "sm")' />
                 </button>
                 <a class="of-primary-create" asp-page="/Documents/CreateBudget" title="Novo orçamento">
-                    <svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg>
+                    <svg class="of-icon" aria-hidden="true"><use href="#of-icon-quote" /></svg>
                     <span>Novo orçamento</span>
                 </a>
                 <nav class="of-grouped-menu" aria-label="Áreas de trabalho">
@@ -58,7 +61,7 @@
                             {
                                 var active = currentPath.StartsWith(item.Page, StringComparison.OrdinalIgnoreCase);
                                 <a class="@(active ? "is-active" : null)" asp-page="@item.Page" aria-current="@(active ? "page" : null)" title="@item.Label">
-                                    <svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-@item.Icon" /></svg>
+                                    <svg class="of-icon" aria-hidden="true"><use href="#of-icon-@item.Icon" /></svg>
                                     <span class="of-menu-label">@item.Label</span>
                                     @if (item.Premium)
                                     {
@@ -74,7 +77,7 @@
                     <span class="of-profile-copy"><strong>@shell.FirstName</strong><small>Minha conta</small></span>
                     <form method="post" asp-page="/Auth/Logout">
                         @Html.AntiForgeryToken()
-                        <button type="submit" title="Sair">Sair</button>
+                        <button type="submit" title="Sair" aria-label="Sair"><partial name="Partials/_Icon" model='new IconViewModel("logout", "sm")' /><span class="of-menu-label">Sair</span></button>
                     </form>
                 </div>
             </aside>
@@ -90,14 +93,14 @@
                     </div>
                     <div class="of-topbar-actions">
                         <button class="of-search-trigger" type="button" data-search-open aria-haspopup="dialog">
-                            <svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-search" /></svg>
+                            <svg class="of-icon" aria-hidden="true"><use href="#of-icon-search" /></svg>
                             <span>Buscar</span><kbd>Ctrl K</kbd>
                         </button>
                         <button class="of-icon-button" type="button" data-help-open data-help-code="@helpCode" aria-haspopup="dialog" aria-label="Como usar esta página">
-                            <svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-help" /></svg>
+                            <svg class="of-icon" aria-hidden="true"><use href="#of-icon-help" /></svg>
                         </button>
                         <a class="of-icon-button" asp-page="/Notifications/Index" aria-label="Notificações: @shell.UnreadNotifications não lidas">
-                            <svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-notification" /></svg>
+                            <svg class="of-icon" aria-hidden="true"><use href="#of-icon-notification" /></svg>
                             @if (shell.UnreadNotifications > 0) { <span class="of-notification-count">@shell.UnreadNotifications</span> }
                         </a>
                         <button class="of-topbar-avatar" type="button" data-profile-menu-trigger aria-label="Abrir menu do usuário" aria-haspopup="menu" aria-expanded="false">@shell.FirstName[..1].ToUpperInvariant()</button>
@@ -119,19 +122,20 @@
             </div>
         </div>
         <nav class="of-mobile-nav" aria-label="Navegação móvel">
-            <a asp-page="/Dashboard/Index"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-dashboard" /></svg><span>Início</span></a>
-            <a asp-page="/Documents/Index"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg><span>Documentos</span></a>
-            <button type="button" class="of-mobile-new" data-action-open aria-haspopup="dialog"><span class="of-mobile-plus">+</span><span>Novo</span></button>
-            <a asp-page="/Clients/Index"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-client" /></svg><span>Clientes</span></a>
-            <button type="button" data-menu-open><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-menu" /></svg><span>Menu</span></button>
+            <a asp-page="/Dashboard/Index"><svg class="of-icon"><use href="#of-icon-dashboard" /></svg><span>Início</span></a>
+            <a asp-page="/Documents/Index"><svg class="of-icon"><use href="#of-icon-quote" /></svg><span>Orçamentos</span></a>
+            <button type="button" class="of-mobile-new" data-action-open aria-haspopup="dialog"><partial name="Partials/_Icon" model='new IconViewModel("plus", "lg")' /><span>Novo</span></button>
+            <a asp-page="/Clients/Index"><svg class="of-icon"><use href="#of-icon-client" /></svg><span>Clientes</span></a>
+            <button type="button" data-menu-open><svg class="of-icon"><use href="#of-icon-menu" /></svg><span>Menu</span></button>
         </nav>
         <div class="of-action-sheet" data-action-sheet hidden role="dialog" aria-modal="true" aria-labelledby="action-title">
             <div class="of-sheet-panel">
                 <span class="of-sheet-handle" aria-hidden="true"></span><h2 id="action-title">O que você quer criar?</h2>
                 <p>Escolha o resultado que precisa agora.</p>
-                <a asp-page="/Documents/CreateBudget"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg><span><strong>Novo orçamento</strong><small>Prepare uma proposta com serviços, valores e condições.</small></span><span class="of-plan-pill">@shell.EffectivePlanName</span></a>
-                <a asp-page="/Documents/CreateReceipt"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-receipt" /></svg><span><strong>Novo recibo</strong><small>Registre um valor recebido de forma organizada.</small></span><span class="of-plan-pill">@shell.EffectivePlanName</span></a>
-                <a asp-page="/Clients/Create"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-client" /></svg><span><strong>Novo cliente</strong><small>Salve dados para reutilizar nos documentos.</small></span><span class="of-plan-pill">@shell.EffectivePlanName</span></a>
+                <a asp-page="/Documents/CreateBudget"><svg class="of-icon"><use href="#of-icon-quote" /></svg><span><strong>Novo orçamento</strong><small>Prepare uma proposta com serviços, valores e condições.</small></span><span class="of-plan-pill">@shell.EffectivePlanName</span></a>
+                <a asp-page="/Documents/CreateReceipt"><svg class="of-icon"><use href="#of-icon-receipt" /></svg><span><strong>Novo recibo</strong><small>Registre um valor recebido de forma organizada.</small></span><span class="of-plan-pill">@shell.EffectivePlanName</span></a>
+                <a asp-page="/Clients/Create"><svg class="of-icon"><use href="#of-icon-client" /></svg><span><strong>Novo cliente</strong><small>Salve dados para reutilizar nos documentos.</small></span><span class="of-plan-pill">@shell.EffectivePlanName</span></a>
+                <a asp-page="/Services/Index"><svg class="of-icon"><use href="#of-icon-service" /></svg><span><strong>Novo serviço</strong><small>Organize o catálogo usado nos seus orçamentos.</small></span><span class="of-plan-pill">Disponível</span></a>
                 <button type="button" data-dialog-close>Cancelar</button>
             </div>
         </div>
@@ -139,7 +143,7 @@
             <div>
                 <header>
                     <div><p class="of-eyebrow">Espaço de trabalho</p><h2 id="account-switcher-title">Trocar de conta</h2></div>
-                    <button type="button" data-account-switcher-close aria-label="Fechar seletor de conta">×</button>
+                    <button type="button" data-account-switcher-close aria-label="Fechar seletor de conta"><partial name="Partials/_Icon" model='new IconViewModel("close")' /></button>
                 </header>
                 <div class="of-account-switcher-current">
                     <span class="of-avatar" aria-hidden="true">@shell.AccountName[..1].ToUpperInvariant()</span>
@@ -159,13 +163,13 @@
         </div>
         <div class="of-command-palette" data-search-dialog hidden role="dialog" aria-modal="true" aria-labelledby="search-title">
             <div>
-                <header><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-search" /></svg><label id="search-title" class="sr-only" for="global-search">Busca global</label><input id="global-search" type="search" placeholder="Buscar clientes, serviços e documentos" autocomplete="off" data-global-search /><kbd>Esc</kbd></header>
+                <header><svg class="of-icon"><use href="#of-icon-search" /></svg><label id="search-title" class="sr-only" for="global-search">Busca global</label><input id="global-search" type="search" placeholder="Buscar clientes, serviços e documentos" autocomplete="off" data-global-search /><kbd>Esc</kbd></header>
                 <section aria-live="polite" aria-busy="false" data-search-results><p>Digite ao menos dois caracteres para buscar nesta conta.</p></section>
             </div>
         </div>
         <div class="of-drawer" data-help-drawer hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
             <div>
-                <header><div><p class="of-eyebrow">Como usar esta página</p><h2 id="help-title" data-help-title>Carregando ajuda…</h2></div><button type="button" data-dialog-close aria-label="Fechar ajuda">×</button></header>
+                <header><div><p class="of-eyebrow">Como usar esta página</p><h2 id="help-title" data-help-title>Carregando ajuda…</h2></div><button type="button" data-dialog-close aria-label="Fechar ajuda"><partial name="Partials/_Icon" model='new IconViewModel("close")' /></button></header>
                 <div data-help-content aria-live="polite" aria-busy="true"><p>Buscando orientações específicas para esta etapa.</p></div>
             </div>
         </div>

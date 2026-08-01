@@ -1,0 +1,10 @@
+@model IconViewModel
+@{
+    var name = IconRegistry.Resolve(Model.Name);
+    var size = Model.Size is "xs" or "sm" or "md" or "lg" or "xl" or "display" ? Model.Size : "md";
+    var classes = $"of-icon of-icon--{size}{(string.IsNullOrWhiteSpace(Model.Tone) ? "" : $" of-icon--{Model.Tone}")}{(string.IsNullOrWhiteSpace(Model.CssClass) ? "" : $" {Model.CssClass}")}";
+    var decorative = Model.Decorative || string.IsNullOrWhiteSpace(Model.Label);
+}
+<svg class="@classes" focusable="false" aria-hidden="@(decorative ? "true" : null)" aria-label="@(!decorative ? Model.Label : null)" role="@(!decorative ? "img" : null)">
+    <use href="#of-icon-@name"></use>
+</svg>

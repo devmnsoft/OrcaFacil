@@ -31,15 +31,13 @@
             <div><dt>Plano atual</dt><dd>@planName</dd></div>
         </dl>
     </div>
-    <div class="of-hero-visual">
-        <img src="~/img/illustrations/dashboard-command-center.svg" alt="Prévia do centro de comando com orçamento, aprovação e evolução comercial" />
-    </div>
+    <div class="of-hero-visual"><partial name="Partials/_ProductDashboardPreview" /></div>
 </section>
 
 @if (experience.NextAction is { } next)
 {
     <section class="of-next-action" aria-labelledby="next-title">
-        <div class="of-next-icon"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-success" /></svg></div>
+        <div class="of-next-icon"><svg class="of-icon"><use href="#of-icon-success" /></svg></div>
         <div>
             <p class="of-eyebrow">Próximo passo recomendado · cerca de 2 minutos</p>
             <h2 id="next-title">@next.Title</h2>
@@ -60,7 +58,7 @@
         @if (!experience.HasIssuerProfile)
         {
             <article class="of-attention-item is-warning">
-                <span class="of-attention-icon"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-alert" /></svg></span>
+                <span class="of-attention-icon"><partial name="Partials/_Icon" model='new IconViewModel("warning", "md", "Atenção", false, "warning")' /></span>
                 <div><small>Cadastro profissional · atenção</small><h3>Complete os dados do emitente</h3><p>O cabeçalho dos documentos depende dessas informações.</p></div>
                 <time>Hoje</time><a asp-page="/Profile/Index">Resolver</a>
             </article>
@@ -68,7 +66,7 @@
         else if (dashboard.TotalDocuments == 0)
         {
             <article class="of-attention-item is-opportunity">
-                <span class="of-attention-icon"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg></span>
+                <span class="of-attention-icon"><partial name="Partials/_Icon" model='new IconViewModel("quote")' /></span>
                 <div><small>Primeira venda · oportunidade</small><h3>Prepare sua primeira proposta</h3><p>Use o fluxo guiado para organizar cliente, serviços e condições.</p></div>
                 <time>Agora</time><a asp-page="/Documents/CreateBudget">Começar</a>
             </article>
@@ -76,7 +74,7 @@
         else
         {
             <article class="of-attention-item is-clear">
-                <span class="of-attention-icon"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-success" /></svg></span>
+                <span class="of-attention-icon"><partial name="Partials/_Icon" model='new IconViewModel("success", Tone: "success")' /></span>
                 <div><small>Rotina · informativo</small><h3>Nenhuma pendência prioritária</h3><p>Seu espaço está organizado. Confira os documentos recentes.</p></div>
                 <time>Agora</time><a asp-page="/Documents/Index">Revisar</a>
             </article>
@@ -84,9 +82,14 @@
     </div>
     <aside class="of-quick-actions" aria-labelledby="quick-title">
         <p class="of-eyebrow">Atalhos</p><h2 id="quick-title">Crie com contexto</h2>
-        <a class="of-quick-primary" asp-page="/Documents/CreateBudget"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg><span><strong>Novo orçamento</strong><small>Proposta pronta para enviar</small></span></a>
+        <a class="of-quick-primary" asp-page="/Documents/CreateBudget"><svg class="of-icon"><use href="#of-icon-quote" /></svg><span><strong>Novo orçamento</strong><small>Proposta pronta para enviar</small></span></a>
         <div><a asp-page="/Documents/CreateReceipt">Novo recibo</a><a asp-page="/Clients/Create">Novo cliente</a><a asp-page="/Services/Index">Novo serviço</a></div>
     </aside>
+</section>
+
+<section aria-labelledby="pipeline-title">
+    <div class="of-section-heading"><div><p class="of-eyebrow">Jornada comercial</p><h2 id="pipeline-title">Oportunidades em movimento</h2></div><a asp-page="/Documents/Index">Abrir orçamentos</a></div>
+    <partial name="Partials/_ProductPipelinePreview" />
 </section>
 
 <section aria-labelledby="metrics-title">
