@@ -1,4 +1,19 @@
 @page "{id:guid}"
 @model OrcaFacil.Web.Pages.Documents.EditModel
-@{ViewData["Title"]="Editar documento";}
-<header class="of-page-header"><div><p class="of-eyebrow">Ajuste rápido</p><h1>Editar documento</h1><p>Atualize cliente, itens, valores e observações antes de gerar o PDF novamente.</p></div></header><partial name="_DocumentForm" model="Model.Input" />
+@{ ViewData["Title"] = "Documento protegido"; }
+
+<main class="of-page-shell">
+    <header class="of-page-header">
+        <div><p class="of-eyebrow">Ciclo comercial</p><h1>@Model.Title</h1><p>@Model.Message</p></div>
+    </header>
+    @if (Model.IsLegacyReceipt)
+    {
+        <section class="of-card">
+            <p>Este recibo histórico continua disponível somente para leitura.</p>
+            <div class="of-actions">
+                <a class="of-button of-button--primary" asp-page="/Receipts/Create" asp-route-documentId="@Model.DocumentId">Migrar para o novo recibo</a>
+                <a class="of-button" asp-page="/Documents/Details" asp-route-id="@Model.DocumentId">Voltar aos detalhes</a>
+            </div>
+        </section>
+    }
+</main>

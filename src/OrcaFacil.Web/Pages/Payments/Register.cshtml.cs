@@ -15,7 +15,7 @@ public sealed class RegisterModel(IManualPaymentRegistrationService payments) : 
         if (!ModelState.IsValid) return Page();
         var result = await payments.RegisterAsync(new(id, Input.Amount, Input.PaymentMethod, Input.PaidAt, Input.Notes, $"payment:{id}:{Input.IdempotencyKey}"), ct);
         if (!result.Succeeded) { ModelState.AddModelError(string.Empty, result.Message); return Page(); }
-        return RedirectToPage("/Receipts/Details", new { paymentId = result.EntityId });
+        return RedirectToPage("/Receipts/Create", new { paymentId = result.EntityId });
     }
     public sealed class InputModel { [Range(typeof(decimal), "0.01", "999999999")] public decimal Amount { get; set; } [Required] public string PaymentMethod { get; set; } = "Pix"; public DateTime PaidAt { get; set; } public string? Notes { get; set; } public Guid IdempotencyKey { get; set; } = Guid.NewGuid(); }
 }

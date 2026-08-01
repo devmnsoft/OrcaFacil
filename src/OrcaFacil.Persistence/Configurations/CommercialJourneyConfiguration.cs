@@ -76,6 +76,7 @@ public sealed class ManualPaymentConfiguration : IEntityTypeConfiguration<Manual
         b.ToTable("manual_payments"); b.ConfigureBase();
         b.Property(x => x.Amount).HasPrecision(18, 2); b.Property(x => x.PaymentMethod).HasMaxLength(40);
         b.Property(x => x.Notes).HasMaxLength(1000); b.Property(x => x.IdempotencyKey).HasMaxLength(128);
+        b.Property(x => x.Status).HasConversion<string>().HasMaxLength(24); b.Property(x => x.ReversalReason).HasMaxLength(500);
         b.HasIndex(x => new { x.AccountId, x.IdempotencyKey }).IsUnique();
         b.HasIndex(x => new { x.AccountId, x.WorkOrderId, x.PaidAt });
     }
@@ -91,6 +92,9 @@ public sealed class ReceiptConfiguration : IEntityTypeConfiguration<Receipt>
         b.Property(x => x.Notes).HasMaxLength(1000); b.Property(x => x.FiscalNotice).HasMaxLength(500);
         b.Property(x => x.IssuerSnapshot).HasColumnType("jsonb"); b.Property(x => x.ClientSnapshot).HasColumnType("jsonb");
         b.Property(x => x.ServiceSnapshot).HasColumnType("jsonb");
+        b.Property(x => x.OriginType).HasConversion<string>().HasMaxLength(24);
+        b.Property(x => x.ServiceDescription).HasMaxLength(1000).IsRequired();
+        b.Property(x => x.CancellationReason).HasMaxLength(500); b.Property(x => x.PdfStorageKey).HasMaxLength(500);
         b.HasIndex(x => new { x.AccountId, x.Number }).IsUnique(); b.HasIndex(x => new { x.AccountId, x.PaymentId }).IsUnique();
     }
 }

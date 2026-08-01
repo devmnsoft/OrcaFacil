@@ -92,7 +92,7 @@ public sealed class WorkOrder : Entity
 public sealed class ManualPayment : Entity
 {
     public Guid AccountId { get; set; }
-    public Guid WorkOrderId { get; set; }
+    public Guid? WorkOrderId { get; set; }
     public Guid? DocumentId { get; set; }
     public Guid ClientId { get; set; }
     public decimal Amount { get; set; }
@@ -101,13 +101,19 @@ public sealed class ManualPayment : Entity
     public string? Notes { get; set; }
     public Guid RegisteredByUserId { get; set; }
     public string IdempotencyKey { get; set; } = string.Empty;
+    public FinancialRecordStatus Status { get; set; } = FinancialRecordStatus.Active;
+    public DateTime? ReversedAt { get; set; }
+    public Guid? ReversedByUserId { get; set; }
+    public string? ReversalReason { get; set; }
 }
 
 public sealed class Receipt : Entity
 {
     public Guid AccountId { get; set; }
     public Guid PaymentId { get; set; }
-    public Guid WorkOrderId { get; set; }
+    public Guid? WorkOrderId { get; set; }
+    public Guid? DocumentId { get; set; }
+    public Guid? LegacyDocumentId { get; set; }
     public Guid ClientId { get; set; }
     public string Number { get; set; } = string.Empty;
     public string IssuerSnapshot { get; set; } = "{}";
@@ -120,4 +126,12 @@ public sealed class Receipt : Entity
     public string? City { get; set; }
     public string? Notes { get; set; }
     public string FiscalNotice { get; set; } = "Recibo de pagamento registrado manualmente; não substitui documento fiscal quando exigido.";
+    public ReceiptOriginType OriginType { get; set; }
+    public string ServiceDescription { get; set; } = string.Empty;
+    public DateTime? CancelledAt { get; set; }
+    public Guid? CancelledByUserId { get; set; }
+    public string? CancellationReason { get; set; }
+    public string? PdfStorageKey { get; set; }
+    public DateTime? SentAt { get; set; }
+    public DateTime? LastSharedAt { get; set; }
 }

@@ -34,6 +34,7 @@ using Microsoft.Extensions.Options;
 using OrcaFacil.Application.WorkOrders;
 using OrcaFacil.Application.Commercial;
 using OrcaFacil.Persistence.Services;
+using OrcaFacil.Application.Receipts;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddOrcaFacilLocalConfiguration();
@@ -98,6 +99,7 @@ builder.Services.AddSingleton<ITechnicalFingerprintService>(_ => new OrcaFacil.P
 builder.Services.AddScoped<CommercialJourneyService>();
 builder.Services.AddScoped<ICommercialJourneyService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IManualPaymentRegistrationService>(sp => sp.GetRequiredService<CommercialJourneyService>());
+builder.Services.AddScoped<IReceiptApplicationService, ReceiptApplicationService>();
 builder.Services.AddScoped<IDocumentNumberService, DocumentNumberService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<PlanLimitService>();
