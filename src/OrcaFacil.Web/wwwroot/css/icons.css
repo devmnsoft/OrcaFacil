@@ -1,0 +1,20 @@
+:root {
+    --of-icon-xs: 14px;
+    --of-icon-sm: 16px;
+    --of-icon-md: 20px;
+    --of-icon-lg: 24px;
+    --of-icon-xl: 32px;
+    --of-icon-display: 48px;
+}
+
+.of-icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.of-icon { width: var(--of-icon-md); height: var(--of-icon-md); display: inline-block; flex: 0 0 auto; vertical-align: -.18em; color: inherit; }
+.of-icon--xs { width: var(--of-icon-xs); height: var(--of-icon-xs); }
+.of-icon--sm { width: var(--of-icon-sm); height: var(--of-icon-sm); }
+.of-icon--md { width: var(--of-icon-md); height: var(--of-icon-md); }
+.of-icon--lg { width: var(--of-icon-lg); height: var(--of-icon-lg); }
+.of-icon--xl { width: var(--of-icon-xl); height: var(--of-icon-xl); }
+.of-icon--display { width: var(--of-icon-display); height: var(--of-icon-display); }
+.of-icon--success { color: var(--of-color-success, #14805e); }
+.of-icon--warning { color: var(--of-color-warning, #a86100); }
+.of-icon--danger { color: var(--of-color-danger, #c33b4a); }
