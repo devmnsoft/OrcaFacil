@@ -59,6 +59,7 @@ public class DocumentService
     public Task<Result<Guid>> CreateBudgetAsync(CreateDocumentCommand command, CancellationToken ct = default)
         => CreateAsync(command with { Type = DocumentType.Budget }, ct);
 
+    [Obsolete("Use IReceiptApplicationService; legacy Documents remain read-only.")]
     public Task<Result<Guid>> CreateReceiptAsync(CreateDocumentCommand command, CancellationToken ct = default)
         => CreateAsync(command with { Type = DocumentType.Receipt }, ct);
 
@@ -110,6 +111,7 @@ public class DocumentService
         return Result.Ok();
     }
 
+    [Obsolete("Use ICommercialJourneyService.CreatePublicAccessAsync.")]
     public async Task<Result<string>> GeneratePublicLinkAsync(Guid userId, Guid documentId, CancellationToken ct = default)
     {
         try

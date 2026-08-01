@@ -1,0 +1,52 @@
+@page
+@model OrcaFacil.Web.Pages.Receipts.CreateModel
+@using OrcaFacil.Domain.Enums
+@{ ViewData["Title"] = "Criar recibo"; }
+
+<main class="receipt-create">
+    <header class="receipt-create__header"><div><p class="of-eyebrow">Financeiro</p><h1>Criar recibo</h1><p>Registre o recebimento e emita um comprovante profissional.</p></div></header>
+    <form method="post" class="receipt-create__grid" id="receipt-form">
+        <input asp-for="Input.IdempotencyKey" type="hidden" />
+        <div class="receipt-create__form">
+            <div asp-validation-summary="ModelOnly" class="receipt-errors"></div>
+            <section class="receipt-section">
+                <div class="receipt-section__heading"><span>1</span><div><h2>Origem</h2><p>Escolha de onde vem este recebimento.</p></div></div>
+                <div class="origin-options">
+                    <label><input asp-for="Input.OriginType" type="radio" value="WorkOrder" /><strong>Ordem de serviço</strong><small>Vincule a uma entrega concluída.</small></label>
+                    <label><input asp-for="Input.OriginType" type="radio" value="Budget" /><strong>Orçamento</strong><small>Registre o recebimento de uma proposta.</small></label>
+                    <label><input asp-for="Input.OriginType" type="radio" value="Standalone" /><strong>Recebimento avulso</strong><small>Emita sem ordem ou orçamento.</small></label>
+                </div>
+                <div class="origin-dependent" data-origin="WorkOrder"><label>Ordem<select asp-for="Input.WorkOrderId" asp-items="Model.WorkOrders"><option value="">Selecione uma ordem</option></select></label></div>
+                <div class="origin-dependent" data-origin="Budget"><label>Orçamento<select asp-for="Input.DocumentId" asp-items="Model.Budgets"><option value="">Selecione um orçamento</option></select></label></div>
+            </section>
+            <section class="receipt-section">
+                <div class="receipt-section__heading"><span>2</span><div><h2>Cliente</h2><p>Somente clientes da conta ativa aparecem aqui.</p></div></div>
+                <label>Cliente<select asp-for="Input.ClientId" asp-items="Model.Clients" data-preview="client"><option value="">Selecione um cliente</option></select><span asp-validation-for="Input.ClientId"></span></label>
+                <a asp-page="/Clients/Create" class="receipt-link">Cadastrar novo cliente</a>
+            </section>
+            <section class="receipt-section">
+                <div class="receipt-section__heading"><span>3</span><div><h2>Recebimento</h2><p>Dados do pagamento registrado manualmente.</p></div></div>
+                <div class="receipt-fields"><label>Valor recebido<input asp-for="Input.Amount" type="number" min="0.01" step="0.01" data-preview="amount" /><span asp-validation-for="Input.Amount"></span></label><label>Data<input asp-for="Input.PaidAt" type="date" data-preview="date" /><span asp-validation-for="Input.PaidAt"></span></label></div>
+                <fieldset><legend>Forma de pagamento</legend><div class="payment-options">@foreach (var method in Model.PaymentMethods) { <label><input asp-for="Input.PaymentMethod" type="radio" value="@method" /><span>@method</span></label> }</div></fieldset>
+                <label>Cidade<input asp-for="Input.City" maxlength="180" /></label>
+                <p class="receipt-manual-notice">Este pagamento é registrado manualmente e não representa confirmação bancária automática.</p>
+            </section>
+            <section class="receipt-section">
+                <div class="receipt-section__heading"><span>4</span><div><h2>Serviço</h2><p>Explique com clareza o motivo do recebimento.</p></div></div>
+                <label>Descrição<textarea asp-for="Input.ServiceDescription" rows="3" data-preview="service"></textarea><span asp-validation-for="Input.ServiceDescription"></span></label>
+                <label>Observações<textarea asp-for="Input.Notes" rows="3" data-preview="notes"></textarea></label>
+            </section>
+        </div>
+        <aside class="receipt-preview" aria-label="Prévia do recibo">
+            <div class="receipt-paper"><p class="receipt-paper__brand">ORÇAFÁCIL</p><p class="receipt-paper__number">RECIBO · número provisório</p><h2>Recibo de pagamento</h2><div class="receipt-paper__amount" data-output="amount">R$ 0,00</div><p>Recebemos de <strong data-output="client">cliente selecionado</strong> o valor acima referente a:</p><p data-output="service">descrição do serviço</p><dl><div><dt>Forma</dt><dd data-output="method">Pix</dd></div><div><dt>Data</dt><dd data-output="date">—</dd></div></dl><p class="receipt-paper__signature">Assinatura do emitente</p><small>Este recibo não substitui documento fiscal quando exigido.</small></div>
+            <button class="receipt-submit" type="submit">Registrar e emitir recibo</button>
+        </aside>
+    </form>
+</main>
+
+<style>
+.receipt-create{max-width:1220px;margin:auto;padding:2rem}.receipt-create__header{margin-bottom:1.5rem}.receipt-create__header h1{font-size:2rem;margin:.2rem 0}.receipt-create__grid{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:1.5rem}.receipt-create__form{display:grid;gap:1rem}.receipt-section,.receipt-preview{background:var(--of-surface,#fff);border:1px solid var(--of-border,#e2e8f0);border-radius:20px;padding:1.4rem;box-shadow:0 8px 28px rgba(15,23,42,.06)}.receipt-section__heading{display:flex;gap:.8rem;margin-bottom:1.2rem}.receipt-section__heading>span{display:grid;place-items:center;width:2rem;height:2rem;border-radius:50%;background:#e9f7ef;color:#087443;font-weight:700}.receipt-section h2{margin:0;font-size:1.1rem}.receipt-section p{margin:.25rem 0;color:#64748b}.receipt-section label{display:grid;gap:.4rem;font-weight:600}.receipt-section input,.receipt-section select,.receipt-section textarea{border:1px solid #cbd5e1;border-radius:10px;padding:.75rem;background:#fff;color:#0f172a;font:inherit}.origin-options,.payment-options{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem}.origin-options label{border:1px solid #dbe4ea;border-radius:12px;padding:.85rem;cursor:pointer}.origin-options small{font-weight:400;color:#64748b}.origin-dependent{margin-top:1rem}.receipt-fields{display:grid;grid-template-columns:1fr 1fr;gap:1rem}.payment-options label{display:flex;align-items:center;gap:.4rem;border:1px solid #dbe4ea;border-radius:10px;padding:.65rem}.receipt-manual-notice{padding:.8rem;border-left:3px solid #d69e2e;background:#fffaf0;color:#744210!important}.receipt-preview{position:sticky;top:1rem;height:max-content;background:#f4f7f6}.receipt-paper{background:white;padding:2rem;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.1)}.receipt-paper__brand{color:#087443!important;font-weight:800;letter-spacing:.12em}.receipt-paper__number{font-size:.75rem}.receipt-paper__amount{font-size:2rem;font-weight:800;margin:1.5rem 0}.receipt-paper dl div{display:flex;justify-content:space-between;border-top:1px solid #e2e8f0;padding:.6rem 0}.receipt-paper__signature{border-top:1px solid #334155;text-align:center;margin-top:3rem;padding-top:.5rem}.receipt-submit{width:100%;margin-top:1rem;border:0;border-radius:12px;padding:1rem;background:#087443;color:white;font-weight:750;font-size:1rem;cursor:pointer}.receipt-link{display:inline-block;margin-top:.8rem;color:#087443}.receipt-errors,.field-validation-error{color:#b42318}.receipt-errors:empty{display:none}@media(max-width:850px){.receipt-create{padding:1rem}.receipt-create__grid{display:flex;flex-direction:column}.origin-options{grid-template-columns:1fr}.receipt-fields{grid-template-columns:1fr}.receipt-preview{position:static}.receipt-submit{position:sticky;bottom:.5rem}}
+</style>
+<script>
+(()=>{const form=document.querySelector('#receipt-form');if(!form)return;const out=(n,v)=>{const e=form.querySelector(`[data-output="${n}"]`);if(e)e.textContent=v};const update=()=>{const client=form.querySelector('[data-preview="client"]');out('client',client?.selectedOptions[0]?.text||'cliente selecionado');const amount=Number(form.querySelector('[data-preview="amount"]')?.value||0);out('amount',amount.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));out('service',form.querySelector('[data-preview="service"]')?.value||'descrição do serviço');out('date',form.querySelector('[data-preview="date"]')?.value?.split('-').reverse().join('/')||'—');out('method',form.querySelector('[name="Input.PaymentMethod"]:checked')?.value||'—');const origin=form.querySelector('[name="Input.OriginType"]:checked')?.value;form.querySelectorAll('.origin-dependent').forEach(x=>x.hidden=x.dataset.origin!==origin)};form.addEventListener('input',update);form.addEventListener('change',update);update()})();
+</script>

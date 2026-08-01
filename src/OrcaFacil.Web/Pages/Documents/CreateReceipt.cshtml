@@ -1,4 +1,2 @@
 @page
 @model OrcaFacil.Web.Pages.Documents.CreateReceiptModel
-@{ViewData["Title"]="Novo recibo";}
-<header class="of-page-header"><div><p class="of-eyebrow">Comprovante</p><h1>Novo recibo</h1><p>Use o recibo quando quiser registrar um pagamento recebido.</p></div></header><div class="alert alert-warning"><strong>Aviso importante:</strong> O OrçaFácil gera recibos simples. Ele não substitui nota fiscal quando ela for obrigatória.</div><partial name="Partials/_ExplainerCard" model='new ExplainerCardViewModel { Title="O que preencher?", Text="Informe quem pagou, o serviço prestado, o valor recebido e observações úteis para o cliente.", Icon="bi-receipt" }' /><div class="mt-4"><partial name="_DocumentForm" model="Model.Input" /></div>
