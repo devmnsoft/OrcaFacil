@@ -38,7 +38,7 @@ public sealed class ClientShellViewModelFactory(
             .Where(group => group.Items.Count > 0).ToArray();
         var unread = await notifications.GetUnreadCountAsync(user.UserId, cancellationToken);
         return new ClientShellViewModel(
-            user.UserId, FirstName(user.Name), account.AccountId, accountName,
+            user.UserId, FirstName(user.Name), MaskEmail(user.Email), account.AccountId, accountName,
             account.AccountRoleCode ?? "Responsável", plan.SelectedPlanCode, plan.SelectedPlanName,
             plan.EffectivePlanCode, plan.EffectivePlanName, plan.Status, plan.IsUsingFreeFallback,
             unread, allowedMenus, permissions,
@@ -49,10 +49,17 @@ public sealed class ClientShellViewModelFactory(
     }
 
     private static string FirstName(string? name) => string.IsNullOrWhiteSpace(name) ? "bem-vindo" : name.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
+    private static string MaskEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@')) return "E-mail não informado";
+        var parts = email.Split('@', 2);
+        var visible = parts[0].Length > 1 ? parts[0][..2] : parts[0][..1];
+        return $"{visible}***@{parts[1]}";
+    }
 }
 
 public sealed record ClientShellViewModel(
-    Guid UserId, string FirstName, Guid? AccountId, string AccountName, string AccountRole,
+    Guid UserId, string FirstName, string MaskedEmail, Guid? AccountId, string AccountName, string AccountRole,
     string SelectedPlanCode, string SelectedPlanName, string EffectivePlanCode, string EffectivePlanName,
     string PlanAccessStatus, bool IsUsingFreeFallback, int UnreadNotifications,
     IReadOnlyList<ShellMenuGroup> Menus, IReadOnlyList<string> Permissions,

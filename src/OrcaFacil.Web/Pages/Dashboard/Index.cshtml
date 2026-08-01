@@ -5,29 +5,29 @@
     ViewData["Title"] = "Visão geral";
     ViewData["Section"] = "Início";
     ViewData["HelpCode"] = "dashboard";
-    var dashboard = Model.Dashboard;
-    var plan = dashboard?.Plan ?? "Grátis";
-    var planName = plan.Equals("Free", StringComparison.OrdinalIgnoreCase) ? "Grátis" : plan;
+    var experience = Model.Experience;
+    var dashboard = experience.Metrics;
+    var planName = experience.PlanName;
     var usage = new PlanUsageSummaryViewModel(
         planName,
         planName,
-        "Disponível",
-        [new("PDFs neste mês", dashboard?.PdfsThisMonth ?? 0, null)],
-        DateTimeOffset.UtcNow.AddMonths(1),
-        "Use sua marca nos documentos.");
+        experience.PlanStatus,
+        experience.PlanUsage.Select(item => new PlanUsageItemViewModel(item.Label, item.Used, item.Limit)).ToArray(),
+        experience.PlanDueAt,
+        experience.PlanRecommendation);
 }
 <section class="of-dashboard-hero" aria-labelledby="welcome-title">
     <div class="of-hero-copy">
         <p class="of-eyebrow">Seu comando comercial</p>
-        <h1 id="welcome-title">Olá, @Model.FirstName. Transforme o próximo pedido em uma proposta clara.</h1>
-        <p>Hoje você pode preparar, acompanhar e concluir seu trabalho sem perder o contexto.</p>
+        <h1 id="welcome-title">Olá, @experience.FirstName. Vamos organizar o próximo trabalho?</h1>
+        <p>Crie propostas, acompanhe respostas e transforme aprovações em serviços.</p>
         <div class="of-hero-actions">
             <a class="of-button-primary" asp-page="/Documents/CreateBudget">Criar novo orçamento</a>
             <a class="of-button-secondary" asp-page="/Documents/Index">Continuar de onde parei</a>
         </div>
         <dl class="of-day-summary">
-            <div><dt>Propostas</dt><dd>@(dashboard?.TotalBudgets ?? 0)</dd></div>
-            <div><dt>Em documentos</dt><dd>@((dashboard?.BudgetTotal ?? 0).ToString("C"))</dd></div>
+            <div><dt>Propostas</dt><dd>@dashboard.TotalBudgets</dd></div>
+            <div><dt>Em documentos</dt><dd>@dashboard.BudgetTotal.ToString("C")</dd></div>
             <div><dt>Plano atual</dt><dd>@planName</dd></div>
         </dl>
     </div>
@@ -36,7 +36,7 @@
     </div>
 </section>
 
-@if (Model.NextAction is { } next)
+@if (experience.NextAction is { } next)
 {
     <section class="of-next-action" aria-labelledby="next-title">
         <div class="of-next-icon"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-success" /></svg></div>
@@ -57,7 +57,7 @@
             <div><p class="of-eyebrow">Prioridades</p><h2 id="attention-title">O que precisa de atenção</h2></div>
             <a asp-page="/Notifications/Index">Ver todas as pendências</a>
         </div>
-        @if (!Model.HasIssuerProfile)
+        @if (!experience.HasIssuerProfile)
         {
             <article class="of-attention-item is-warning">
                 <span class="of-attention-icon"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-alert" /></svg></span>
@@ -65,7 +65,7 @@
                 <time>Hoje</time><a asp-page="/Profile/Index">Resolver</a>
             </article>
         }
-        else if ((dashboard?.TotalDocuments ?? 0) == 0)
+        else if (dashboard.TotalDocuments == 0)
         {
             <article class="of-attention-item is-opportunity">
                 <span class="of-attention-icon"><svg class="of-icon"><use href="/img/icons/orcafacil-icons.svg#icon-budget" /></svg></span>
@@ -92,22 +92,22 @@
 <section aria-labelledby="metrics-title">
     <div class="of-section-heading"><div><p class="of-eyebrow">Visão comercial</p><h2 id="metrics-title">O mês em quatro sinais</h2></div><a asp-page="/Documents/Index">Ver relatório completo</a></div>
     <div class="of-metric-grid">
-        <article><span>Orçamentos enviados</span><strong>@(dashboard?.TotalBudgets ?? 0)</strong><small>@((dashboard?.TotalBudgets ?? 0) == 0 ? "Você ainda não enviou um orçamento neste mês." : "Propostas preparadas no período.")</small></article>
-        <article class="is-money"><span>Valor em propostas</span><strong>@((dashboard?.BudgetTotal ?? 0).ToString("C"))</strong><small>Total apresentado aos clientes.</small></article>
-        <article><span>Respostas aguardando</span><strong>—</strong><small>Disponível após compartilhar propostas.</small></article>
-        <article class="is-success"><span>Registrado em recibos</span><strong>@((dashboard?.ReceiptTotal ?? 0).ToString("C"))</strong><small>Valores informados por você no período.</small></article>
+        <article><span>Orçamentos criados</span><strong>@dashboard.TotalBudgets</strong><small>@(dashboard.TotalBudgets == 0 ? "Você ainda não criou um orçamento." : "Propostas organizadas na sua conta.")</small></article>
+        <article class="is-money"><span>Valor em propostas</span><strong>@dashboard.BudgetTotal.ToString("C")</strong><small>Total apresentado aos clientes.</small></article>
+        <article><span>Documentos no mês</span><strong>@dashboard.DocumentsThisMonth</strong><small>Orçamentos e recibos criados no período atual.</small></article>
+        <article class="is-success"><span>Registrado em recibos</span><strong>@dashboard.ReceiptTotal.ToString("C")</strong><small>Valores informados por você no período.</small></article>
     </div>
 </section>
 
 <section class="of-recent" aria-labelledby="recent-title">
     <div class="of-section-heading"><div><p class="of-eyebrow">Continuidade</p><h2 id="recent-title">Documentos recentes</h2></div><a asp-page="/Documents/Index">Ver todos</a></div>
-    @if ((dashboard?.LatestDocuments?.Count ?? 0) == 0)
+    @if (dashboard.LatestDocuments.Count == 0)
     {
         <partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Seu primeiro documento começa aqui", Text="Crie um orçamento para apresentar serviços, valores, condições e prazo da proposta.", ActionText="Criar orçamento", ActionPage="/Documents/CreateBudget", Icon="bi-file-earmark-plus" }' />
     }
     else
     {
-        <partial name="_DocumentTable" model="dashboard?.LatestDocuments" />
+        <partial name="_DocumentTable" model="dashboard.LatestDocuments" />
     }
 </section>
 

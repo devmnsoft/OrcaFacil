@@ -76,6 +76,7 @@ builder.Services.AddScoped<IAccountSelectionService, AccountSelectionService>();
 builder.Services.AddScoped<IAccountSwitcherService, AccountSwitcherService>();
 builder.Services.AddScoped<IClientShellViewModelFactory, ClientShellViewModelFactory>();
 builder.Services.AddScoped<INextBestActionService, NextBestActionService>();
+builder.Services.AddScoped<IDashboardExperienceService, DashboardExperienceService>();
 builder.Services.AddSingleton<IContextualHelpService, ContextualHelpService>();
 builder.Services.AddScoped<IPlanExperienceService, PlanExperienceService>();
 builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
