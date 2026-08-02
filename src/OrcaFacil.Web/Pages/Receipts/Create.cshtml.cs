@@ -18,7 +18,15 @@ public sealed class CreateModel(IReceiptApplicationService receipts, ICurrentAcc
     public IReadOnlyList<SelectListItem> Clients { get; private set; } = [];
     public IReadOnlyList<SelectListItem> WorkOrders { get; private set; } = [];
     public IReadOnlyList<SelectListItem> Budgets { get; private set; } = [];
-    public static IReadOnlyList<string> PaymentMethods => ["Pix", "Dinheiro", "Transferência", "Cartão", "Boleto", "Outro"];
+    public IReadOnlyList<PaymentMethodOption> PaymentMethods { get; } =
+    [
+        new("pix", "Pix", "pix"),
+        new("cash", "Dinheiro", "cash"),
+        new("transfer", "Transferência", "transfer"),
+        new("card", "Cartão", "card"),
+        new("boleto", "Boleto", "boleto"),
+        new("other", "Outro", "payment")
+    ];
 
     public async Task<IActionResult> OnGetAsync(Guid? clientId, Guid? workOrderId, Guid? paymentId, Guid? documentId, CancellationToken ct)
     {
@@ -69,3 +77,5 @@ public sealed class CreateModel(IReceiptApplicationService receipts, ICurrentAcc
             .OrderByDescending(x => x.CreatedAt).Select(x => new SelectListItem(x.Number + " · " + x.ClientName, x.Id.ToString())).Take(30).ToListAsync(ct);
     }
 }
+
+public sealed record PaymentMethodOption(string Code, string Label, string IconName);

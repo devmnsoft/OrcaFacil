@@ -14,6 +14,7 @@ public sealed class DetailsModel(OrcaFacilDbContext db, ICurrentAccountService a
 {
     public Receipt? Receipt { get; private set; }
     public Client? Client { get; private set; }
+    public string WhatsAppShareUrl { get; private set; } = string.Empty;
     [BindProperty] public string CancellationReason { get; set; } = string.Empty;
 
     public async Task<IActionResult> OnGetAsync(Guid id, CancellationToken ct)
@@ -21,6 +22,8 @@ public sealed class DetailsModel(OrcaFacilDbContext db, ICurrentAccountService a
         Receipt = await db.Receipts.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id && x.AccountId == account.AccountId && !x.IsDeleted, ct);
         if (Receipt is null) return NotFound();
         Client = await db.Clients.AsNoTracking().SingleOrDefaultAsync(x => x.Id == Receipt.ClientId && x.AccountId == account.AccountId && !x.IsDeleted, ct);
+        var message = $"Olá, {Client?.Name}. Segue o recibo {Receipt.Number}, referente a {Receipt.ServiceDescription}, no valor de {Receipt.Amount:C}.";
+        WhatsAppShareUrl = $"https://wa.me/?text={Uri.EscapeDataString(message)}";
         return Page();
     }
 

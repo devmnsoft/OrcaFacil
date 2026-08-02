@@ -1,5 +1,77 @@
 @page
 @model OrcaFacil.Web.Pages.Receipts.IndexModel
-@{ViewData["Title"]="Recibos";}
-<main class="of-page-shell"><header class="of-page-header"><div><p class="of-eyebrow">Financeiro</p><h1>Recibos</h1><p>Emissões, compartilhamentos e cancelamentos em um só lugar.</p></div><a class="of-button of-button--primary" asp-page="Create">Novo recibo</a></header><form method="get" class="receipt-filters"><input name="from" type="date" aria-label="Data inicial"/><input name="to" type="date" aria-label="Data final"/><select name="method"><option value="">Todos os métodos</option><option>Pix</option><option>Dinheiro</option><option>Transferência</option><option>Cartão</option><option>Boleto</option></select><button>Filtrar</button></form><div class="receipt-list">@foreach(var receipt in Model.Receipts){<a asp-page="Details" asp-route-id="@receipt.Id"><strong>@receipt.Number</strong><span>@receipt.OriginType</span><span>@receipt.Amount.ToString("C")</span><span>@receipt.PaymentMethod · @receipt.IssuedAt.ToLocalTime().ToString("dd/MM/yyyy")</span><em>@(receipt.CancelledAt.HasValue?"Cancelado":receipt.LastSharedAt.HasValue?"Compartilhado":"Emitido")</em></a>}</div></main>
-<style>.receipt-filters{display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0}.receipt-filters input,.receipt-filters select,.receipt-filters button{padding:.7rem;border:1px solid #cbd5e1;border-radius:9px;background:#fff}.receipt-list{display:grid;gap:.5rem}.receipt-list a{display:grid;grid-template-columns:1.2fr .8fr .7fr 1.2fr .7fr;gap:1rem;align-items:center;padding:1rem;background:#fff;border:1px solid #e2e8f0;border-radius:12px;color:inherit;text-decoration:none}.receipt-list em{font-style:normal;color:#087443}@media(max-width:760px){.receipt-list a{grid-template-columns:1fr 1fr}.receipt-list strong{grid-column:1/-1}}</style>
+@using OrcaFacil.Domain.Enums
+@{
+    ViewData["Title"] = "Recibos";
+}
+
+<main class="of-finance-page">
+    <header class="of-finance-header">
+        <div>
+            <p class="of-eyebrow">Financeiro</p>
+            <h1>Recibos</h1>
+            <p>Emissões, compartilhamentos e cancelamentos em um só lugar.</p>
+        </div>
+        <a class="of-button of-button--primary" asp-page="Create">Novo recibo</a>
+    </header>
+
+    <form method="get" class="receipt-filters">
+        <label>De <input asp-for="From" type="date" /></label>
+        <label>Até <input asp-for="To" type="date" /></label>
+        <label>
+            Método
+            <select asp-for="PaymentMethod">
+                <option value="">Todos</option>
+                <option value="pix">Pix</option>
+                <option value="cash">Dinheiro</option>
+                <option value="transfer">Transferência</option>
+                <option value="card">Cartão</option>
+                <option value="boleto">Boleto</option>
+                <option value="other">Outro</option>
+            </select>
+        </label>
+        <label>Valor mínimo <input asp-for="MinimumAmount" type="number" min="0" step="0.01" /></label>
+        <label>Valor máximo <input asp-for="MaximumAmount" type="number" min="0" step="0.01" /></label>
+        <label>
+            Situação
+            <select asp-for="Status">
+                <option value="">Todas</option>
+                <option value="active">Emitido</option>
+                <option value="cancelled">Cancelado</option>
+            </select>
+        </label>
+        <button class="of-button" type="submit">Filtrar</button>
+        <a class="of-button" asp-page="Index">Limpar</a>
+    </form>
+
+    @if (Model.Receipts.Count == 0)
+    {
+        <section class="of-finance-empty"><h2>Nenhum recibo encontrado</h2><p>Revise os filtros ou emita um novo recibo.</p></section>
+    }
+    else
+    {
+        <div class="receipt-list">
+            @foreach (var receipt in Model.Receipts)
+            {
+                <a asp-page="Details" asp-route-id="@receipt.Id">
+                    <strong>@receipt.Number</strong>
+                    <span>@receipt.OriginType</span>
+                    <span>@receipt.Amount.ToString("C")</span>
+                    <span>@PaymentMethodCodes.ToDisplayLabel(receipt.PaymentMethod) · @receipt.IssuedAt.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                    <em>@(receipt.CancelledAt.HasValue ? "Cancelado" : receipt.LastSharedAt.HasValue ? "Compartilhado" : "Emitido")</em>
+                </a>
+            }
+        </div>
+        <nav class="of-pagination" aria-label="Paginação de recibos">
+            @if (Model.PageNumber > 1)
+            {
+                <a asp-all-route-data="@Context.Request.Query.ToDictionary(item => item.Key, item => item.Value.ToString())" asp-route-PageNumber="@(Model.PageNumber - 1)">Anterior</a>
+            }
+            <span>Página @Model.PageNumber de @Model.TotalPages</span>
+            @if (Model.PageNumber < Model.TotalPages)
+            {
+                <a asp-all-route-data="@Context.Request.Query.ToDictionary(item => item.Key, item => item.Value.ToString())" asp-route-PageNumber="@(Model.PageNumber + 1)">Próxima</a>
+            }
+        </nav>
+    }
+</main>
