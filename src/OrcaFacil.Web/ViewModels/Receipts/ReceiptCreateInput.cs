@@ -13,7 +13,7 @@ public sealed class ReceiptCreateInput
     public Guid? DocumentId { get; set; }
     [Range(0.01, 999999999, ErrorMessage = "Informe um valor maior que zero.")]
     public decimal Amount { get; set; }
-    [Required, StringLength(40)] public string PaymentMethod { get; set; } = "Pix";
+    [Required, StringLength(40)] public string PaymentMethod { get; set; } = "pix";
     [Required] public DateTime PaidAt { get; set; } = DateTime.Today;
     [StringLength(180)] public string? City { get; set; }
     [Required(ErrorMessage = "Descreva o serviço recebido."), StringLength(1000)]

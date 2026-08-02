@@ -21,7 +21,9 @@ public sealed class ReceiptApplicationService(
             return Failure(CreateReceiptCode.AccessDenied, "A conta ativa não permite esta operação.", correlationId);
         if (request.Amount <= 0) return Failure(CreateReceiptCode.InvalidAmount, "Informe um valor maior que zero.", correlationId);
         if (request.PaidAt > DateTime.UtcNow.AddDays(1)) return Failure(CreateReceiptCode.InvalidDate, "A data do recebimento não pode estar no futuro.", correlationId);
-        if (string.IsNullOrWhiteSpace(request.PaymentMethod)) return Failure(CreateReceiptCode.InvalidPaymentMethod, "Escolha a forma de pagamento.", correlationId);
+        if (!PaymentMethodCodes.TryParse(request.PaymentMethod, out var paymentMethod))
+            return Failure(CreateReceiptCode.InvalidPaymentMethod, "Escolha uma forma de pagamento válida.", correlationId);
+        var canonicalPaymentMethod = paymentMethod.ToCode();
 
         var duplicate = await db.ManualPayments.AsNoTracking().FirstOrDefaultAsync(
             x => x.AccountId == accountId && x.IdempotencyKey == request.IdempotencyKey, ct);
@@ -49,7 +51,7 @@ public sealed class ReceiptApplicationService(
         {
             AccountId = accountId, ClientId = client.Id, WorkOrderId = request.WorkOrderId,
             DocumentId = request.DocumentId, Amount = request.Amount,
-            PaymentMethod = request.PaymentMethod.Trim(), PaidAt = request.PaidAt.ToUniversalTime(),
+            PaymentMethod = canonicalPaymentMethod, PaidAt = request.PaidAt.ToUniversalTime(),
             Notes = request.Notes?.Trim(), RegisteredByUserId = currentAccount.UserId,
             IdempotencyKey = request.IdempotencyKey
         };
@@ -62,7 +64,7 @@ public sealed class ReceiptApplicationService(
             WorkOrderId = request.WorkOrderId, DocumentId = request.DocumentId,
             LegacyDocumentId = request.LegacyDocumentId, OriginType = request.OriginType,
             Number = $"REC-{DateTime.UtcNow:yyyy}-{sequence:00000}", Amount = request.Amount,
-            AmountInWords = numberToWords.ToCurrencyWords(request.Amount), PaymentMethod = request.PaymentMethod.Trim(),
+            AmountInWords = numberToWords.ToCurrencyWords(request.Amount), PaymentMethod = canonicalPaymentMethod,
             IssuedAt = DateTime.UtcNow, City = request.City?.Trim(), Notes = request.Notes?.Trim(),
             ServiceDescription = request.ServiceDescription.Trim(),
             ClientSnapshot = JsonSerializer.Serialize(new { client.Id, client.Name, client.DocumentNumber, client.Email, client.Phone, client.City }),
