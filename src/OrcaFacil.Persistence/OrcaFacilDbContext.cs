@@ -22,6 +22,13 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<AdminSetting> AdminSettings => Set<AdminSetting>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Client> Clients => Set<Client>();
+    public DbSet<ClientContact> ClientContacts => Set<ClientContact>();
+    public DbSet<ClientTag> ClientTags => Set<ClientTag>();
+    public DbSet<ClientTagAssignment> ClientTagAssignments => Set<ClientTagAssignment>();
+    public DbSet<ClientNote> ClientNotes => Set<ClientNote>();
+    public DbSet<ServiceCatalogItem> ServiceCatalogItems => Set<ServiceCatalogItem>();
+    public DbSet<ServiceCategory> ServiceCategories => Set<ServiceCategory>();
+    public DbSet<ServicePriceHistory> ServicePriceHistories => Set<ServicePriceHistory>();
     public DbSet<BillingCustomerProfile> BillingCustomerProfiles => Set<BillingCustomerProfile>();
     public DbSet<PlanFeature> PlanFeatures => Set<PlanFeature>();
     public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();

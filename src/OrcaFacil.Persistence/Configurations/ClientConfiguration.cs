@@ -21,8 +21,35 @@ public class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.Property(x => x.City).HasMaxLength(120);
         builder.Property(x => x.Address).HasMaxLength(300);
         builder.Property(x => x.Notes).HasMaxLength(1000);
+        builder.Property(x => x.InternalNotes).HasMaxLength(2000);
+        builder.Property(x => x.PreferredContactChannel).HasMaxLength(24);
+        builder.Property(x => x.Version).IsRowVersion();
         builder.HasIndex(x => x.UserId);
         builder.HasIndex(x => x.Name);
         builder.HasIndex(x => x.DocumentNumber);
     }
+}
+
+public sealed class ClientContactConfiguration : IEntityTypeConfiguration<ClientContact>
+{
+    public void Configure(EntityTypeBuilder<ClientContact> builder)
+    {
+        builder.ToTable("client_contacts", "orcafacil"); builder.ConfigureBase();
+        builder.Property(x => x.Name).HasMaxLength(160).IsRequired();
+        builder.Property(x => x.ContactType).HasConversion<string>().HasMaxLength(16);
+        builder.Property(x => x.Value).HasMaxLength(254).IsRequired(); builder.Property(x => x.Label).HasMaxLength(60);
+        builder.HasIndex(x => new { x.AccountId, x.ClientId, x.SortOrder });
+    }
+}
+public sealed class ClientTagConfiguration : IEntityTypeConfiguration<ClientTag>
+{
+    public void Configure(EntityTypeBuilder<ClientTag> builder) { builder.ToTable("client_tags", "orcafacil"); builder.ConfigureBase(); builder.Property(x => x.Name).HasMaxLength(60).IsRequired(); builder.Property(x => x.NormalizedName).HasMaxLength(60).IsRequired(); builder.Property(x => x.ColorToken).HasMaxLength(32); builder.HasIndex(x => new { x.AccountId, x.NormalizedName }).IsUnique(); }
+}
+public sealed class ClientTagAssignmentConfiguration : IEntityTypeConfiguration<ClientTagAssignment>
+{
+    public void Configure(EntityTypeBuilder<ClientTagAssignment> builder) { builder.ToTable("client_tag_assignments", "orcafacil"); builder.HasKey(x => new { x.AccountId, x.ClientId, x.ClientTagId }); }
+}
+public sealed class ClientNoteConfiguration : IEntityTypeConfiguration<ClientNote>
+{
+    public void Configure(EntityTypeBuilder<ClientNote> builder) { builder.ToTable("client_notes", "orcafacil"); builder.ConfigureBase(); builder.Property(x => x.Content).HasMaxLength(4000).IsRequired(); builder.HasIndex(x => new { x.AccountId, x.ClientId, x.CreatedAt }); }
 }

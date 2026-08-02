@@ -1,0 +1,14 @@
+@model OrcaFacil.Web.Pages.Services.ServiceFormModel
+<div asp-validation-summary="ModelOnly" class="of-validation"></div>
+<section class="commercial-form-block"><h2>Identificação</h2><div class="commercial-form-grid">
+<label><span>Nome</span><input name="Input.Name" value="@Model.Name" maxlength="180" required autocomplete="off" /></label>
+<label><span>Código interno</span><input name="Input.Code" value="@Model.Code" maxlength="40" autocomplete="off" /></label>
+<label class="is-wide"><span>Descrição comercial</span><textarea name="Input.Description" maxlength="1200" rows="4">@Model.Description</textarea></label>
+</div></section>
+<section class="commercial-form-block"><h2>Preço e execução</h2><div class="commercial-form-grid">
+<label><span>Unidade</span><select name="Input.UnitCode">@foreach(var unit in ServiceFormModel.Units){<option value="@unit.Key" selected="@(Model.UnitCode==unit.Key)">@unit.Value</option>}</select></label>
+<label><span>Preço padrão</span><input name="Input.StandardPrice" value="@Model.StandardPrice" inputmode="decimal" data-price /></label>
+<label><span>Custo estimado</span><input name="Input.EstimatedCost" value="@Model.EstimatedCost" inputmode="decimal" data-cost /></label>
+<label><span>Duração sugerida (minutos)</span><input name="Input.SuggestedDurationMinutes" value="@Model.SuggestedDurationMinutes" inputmode="numeric" /></label>
+</div><output class="margin-preview" data-margin>Margem estimada: @((Model.StandardPrice-Model.EstimatedCost).ToString("C"))</output></section>
+<section class="commercial-form-block"><h2>Uso interno</h2><label><span>Observação interna</span><textarea name="Input.InternalNotes" maxlength="2000" rows="3">@Model.InternalNotes</textarea></label><div class="commercial-checks"><label><input name="Input.IsFavorite" type="checkbox" value="true" checked="@Model.IsFavorite" /> Favorito</label><label><input name="Input.IsActive" type="checkbox" value="true" checked="@Model.IsActive" /> Ativo</label></div></section>
