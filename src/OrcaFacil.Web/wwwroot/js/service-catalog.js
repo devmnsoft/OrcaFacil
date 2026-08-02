@@ -1,0 +1,7 @@
+const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const form = document.querySelector('.commercial-editor');
+if (form) {
+  const price = form.querySelector('[data-price]'); const cost = form.querySelector('[data-cost]');
+  const update = () => { const value = Number(String(price?.value || 0).replace(',', '.')) - Number(String(cost?.value || 0).replace(',', '.')); const output = form.querySelector('[data-margin]'); if (output) { output.textContent = `Margem estimada: ${money.format(value)}`; output.classList.toggle('is-negative', value < 0); } const name=form.querySelector('[name="Input.Name"]'); const description=form.querySelector('[name="Input.Description"]'); const previewName=form.querySelector('[data-preview-name]'); const previewDescription=form.querySelector('[data-preview-description]'); const previewPrice=form.querySelector('[data-preview-price]'); if(previewName) previewName.textContent=name?.value||'Nome do serviço'; if(previewDescription) previewDescription.textContent=description?.value||'Descrição comercial do serviço.'; if(previewPrice) previewPrice.textContent=money.format(Number(String(price?.value||0).replace(',','.'))); };
+  form.addEventListener('input', update); form.addEventListener('submit', () => form.querySelectorAll('button[type="submit"]').forEach(button => { button.disabled=true; button.setAttribute('aria-busy','true'); })); update();
+}
