@@ -6,72 +6,203 @@
 }
 
 <main class="of-finance-page">
-    <header class="of-finance-header">
+    <header class="of-finance-header receipt-hero">
         <div>
             <p class="of-eyebrow">Financeiro</p>
             <h1>Recibos</h1>
-            <p>Emissões, compartilhamentos e cancelamentos em um só lugar.</p>
+            <p>Acompanhe valores recebidos, compartilhamentos e cancelamentos.</p>
         </div>
         <a class="of-button of-button--primary" asp-page="Create">Novo recibo</a>
     </header>
 
-    <form method="get" class="receipt-filters">
-        <label>De <input asp-for="From" type="date" /></label>
-        <label>Até <input asp-for="To" type="date" /></label>
-        <label>
-            Método
-            <select asp-for="PaymentMethod">
-                <option value="">Todos</option>
-                <option value="pix">Pix</option>
-                <option value="cash">Dinheiro</option>
-                <option value="transfer">Transferência</option>
-                <option value="card">Cartão</option>
-                <option value="boleto">Boleto</option>
-                <option value="other">Outro</option>
-            </select>
-        </label>
-        <label>Ordenação<select asp-for="Sort"><option value="recent">Mais recentes</option><option value="oldest">Mais antigos</option><option value="amount_desc">Maior valor</option><option value="amount_asc">Menor valor</option><option value="client">Cliente</option></select></label>
-        <label>Valor mínimo <input asp-for="MinimumAmount" type="number" min="0" step="0.01" /></label>
-        <label>Valor máximo <input asp-for="MaximumAmount" type="number" min="0" step="0.01" /></label>
-        <label>
-            Situação
-            <select asp-for="Status">
-                <option value="">Todas</option>
-                <option value="active">Emitido</option>
-                <option value="cancelled">Cancelado</option>
-            </select>
-        </label>
-        <button class="of-button" type="submit">Filtrar</button>
-        <a class="of-button" asp-page="Index">Limpar</a>
-    </form>
+    <section class="receipt-summary" aria-label="Resumo dos recibos filtrados">
+        <article><span>Emitidos</span><strong>@Model.Result.IssuedCount</strong></article>
+        <article><span>Compartilhados</span><strong>@Model.Result.SharedCount</strong></article>
+        <article><span>Cancelados</span><strong>@Model.Result.CancelledCount</strong></article>
+        <article class="receipt-summary__value"><span>Valor ativo</span><strong>@Model.Result.ActiveAmount.ToString("C")</strong></article>
+    </section>
+
+    <section class="receipt-filter-panel" aria-labelledby="receipt-filter-title">
+        <div class="receipt-filter-panel__heading">
+            <div>
+                <h2 id="receipt-filter-title">Encontre um recibo</h2>
+                <p>Combine os filtros para localizar movimentações específicas.</p>
+            </div>
+        </div>
+
+        <form method="get" class="receipt-filters" aria-busy="false">
+            <input type="hidden" name="PageNumber" value="1" />
+            <input type="hidden" asp-for="PageSize" />
+
+            <div class="receipt-filter-field">
+                <label asp-for="From">Data inicial</label>
+                <input asp-for="From" type="date" aria-describedby="from-help from-error" />
+                <small id="from-help">Início do período de emissão.</small>
+                <span id="from-error" asp-validation-for="From"></span>
+            </div>
+            <div class="receipt-filter-field">
+                <label asp-for="To">Data final</label>
+                <input asp-for="To" type="date" aria-describedby="to-error" />
+                <span id="to-error" asp-validation-for="To"></span>
+            </div>
+            <div class="receipt-filter-field">
+                <label asp-for="ClientId">Cliente</label>
+                <input asp-for="ClientId" type="text" placeholder="Identificador do cliente" aria-describedby="client-help client-error" />
+                <small id="client-help">Use o identificador do cadastro.</small>
+                <span id="client-error" asp-validation-for="ClientId"></span>
+            </div>
+            <div class="receipt-filter-field">
+                <label asp-for="PaymentMethod">Método</label>
+                <select asp-for="PaymentMethod" aria-describedby="payment-error">
+                    <option value="">Todos</option>
+                    <option value="pix">Pix</option>
+                    <option value="cash">Dinheiro</option>
+                    <option value="transfer">Transferência</option>
+                    <option value="card">Cartão</option>
+                    <option value="boleto">Boleto</option>
+                    <option value="other">Outro</option>
+                </select>
+                <span id="payment-error" asp-validation-for="PaymentMethod"></span>
+            </div>
+            <div class="receipt-filter-field">
+                <label asp-for="OriginType">Origem</label>
+                <select asp-for="OriginType" aria-describedby="origin-error">
+                    <option value="">Todas</option>
+                    <option value="@ReceiptOriginType.Budget">Orçamento</option>
+                    <option value="@ReceiptOriginType.WorkOrder">Ordem de serviço</option>
+                    <option value="@ReceiptOriginType.Standalone">Pagamento manual</option>
+                </select>
+                <span id="origin-error" asp-validation-for="OriginType"></span>
+            </div>
+            <div class="receipt-filter-field">
+                <label asp-for="Status">Situação</label>
+                <select asp-for="Status" aria-describedby="status-error">
+                    <option value="">Todas</option>
+                    <option value="active">Ativo</option>
+                    <option value="cancelled">Cancelado</option>
+                </select>
+                <span id="status-error" asp-validation-for="Status"></span>
+            </div>
+            <div class="receipt-filter-field">
+                <label asp-for="MinimumAmount">Valor mínimo</label>
+                <input asp-for="MinimumAmount" type="number" min="0" step="0.01" aria-describedby="minimum-error" />
+                <span id="minimum-error" asp-validation-for="MinimumAmount"></span>
+            </div>
+            <div class="receipt-filter-field">
+                <label asp-for="MaximumAmount">Valor máximo</label>
+                <input asp-for="MaximumAmount" type="number" min="0" step="0.01" aria-describedby="maximum-error" />
+                <span id="maximum-error" asp-validation-for="MaximumAmount"></span>
+            </div>
+            <div class="receipt-filter-field">
+                <label asp-for="Sort">Ordenação</label>
+                <select asp-for="Sort" aria-describedby="sort-error">
+                    <option value="recent">Mais recentes</option>
+                    <option value="oldest">Mais antigos</option>
+                    <option value="amount_desc">Maior valor</option>
+                    <option value="amount_asc">Menor valor</option>
+                    <option value="client">Cliente</option>
+                </select>
+                <span id="sort-error" asp-validation-for="Sort"></span>
+            </div>
+            <div class="receipt-filter-actions">
+                <button class="of-button of-button--primary" type="submit">Filtrar</button>
+                <a class="of-button" asp-page="Index">Limpar filtros</a>
+            </div>
+            <p class="receipt-loading" role="status" aria-live="polite">Atualizando recibos…</p>
+        </form>
+    </section>
+
+    <div class="receipt-chips" aria-label="Filtros ativos">
+        @if (Model.Filters.From.HasValue || Model.Filters.To.HasValue)
+        {
+            <span class="receipt-chip">Período: @(Model.Filters.From?.ToString("dd/MM/yyyy") ?? "início") – @(Model.Filters.To?.ToString("dd/MM/yyyy") ?? "hoje")
+                <a asp-all-route-data="@Model.GetRouteValuesWithout("Period")" aria-label="Remover período" title="Remover período">×</a>
+            </span>
+        }
+        @if (Model.Filters.ClientId.HasValue)
+        {
+            <span class="receipt-chip">Cliente: @Model.Filters.ClientId <a asp-all-route-data="@Model.GetRouteValuesWithout(nameof(Model.ClientId))" aria-label="Remover cliente" title="Remover cliente">×</a></span>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Filters.PaymentMethod))
+        {
+            <span class="receipt-chip">Método: @PaymentMethodCodes.ToDisplayLabel(Model.Filters.PaymentMethod) <a asp-all-route-data="@Model.GetRouteValuesWithout(nameof(Model.PaymentMethod))" aria-label="Remover método" title="Remover método">×</a></span>
+        }
+        @if (Model.Filters.OriginType.HasValue)
+        {
+            <span class="receipt-chip">Origem: @Model.Filters.OriginType <a asp-all-route-data="@Model.GetRouteValuesWithout(nameof(Model.OriginType))" aria-label="Remover origem" title="Remover origem">×</a></span>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Filters.Status))
+        {
+            <span class="receipt-chip">Situação: @(Model.Filters.Status == "active" ? "Ativo" : "Cancelado") <a asp-all-route-data="@Model.GetRouteValuesWithout(nameof(Model.Status))" aria-label="Remover situação" title="Remover situação">×</a></span>
+        }
+        @if (Model.Filters.MinimumAmount.HasValue)
+        {
+            <span class="receipt-chip">Mínimo: @Model.Filters.MinimumAmount.Value.ToString("C") <a asp-all-route-data="@Model.GetRouteValuesWithout(nameof(Model.MinimumAmount))" aria-label="Remover valor mínimo" title="Remover valor mínimo">×</a></span>
+        }
+        @if (Model.Filters.MaximumAmount.HasValue)
+        {
+            <span class="receipt-chip">Máximo: @Model.Filters.MaximumAmount.Value.ToString("C") <a asp-all-route-data="@Model.GetRouteValuesWithout(nameof(Model.MaximumAmount))" aria-label="Remover valor máximo" title="Remover valor máximo">×</a></span>
+        }
+        @if (Model.Filters.Sort != "recent")
+        {
+            <span class="receipt-chip">Ordenação: @Model.Filters.Sort <a asp-all-route-data="@Model.GetRouteValuesWithout(nameof(Model.Sort))" aria-label="Remover ordenação" title="Remover ordenação">×</a></span>
+        }
+    </div>
 
     @if (Model.Receipts.Count == 0)
     {
-        <section class="of-finance-empty"><h2>Nenhum recibo encontrado</h2><p>Revise os filtros ou emita um novo recibo.</p></section>
+        <section class="of-finance-empty" role="status">
+            <svg class="of-icon" aria-hidden="true"><use href="#of-icon-empty" /></svg>
+            <h2>Nenhum recibo encontrado</h2>
+            <p>Revise os filtros ou emita um novo recibo.</p>
+            <a class="of-button of-button--primary" asp-page="Create">Emitir recibo</a>
+        </section>
     }
     else
     {
-        <div class="receipt-list">
+        <div class="receipt-table-wrap">
+            <table class="receipt-table">
+                <thead><tr><th>Recibo</th><th>Cliente e origem</th><th>Valor</th><th>Pagamento</th><th>Situação</th></tr></thead>
+                <tbody>
+                @foreach (var receipt in Model.Receipts)
+                {
+                    <tr>
+                        <td><a asp-page="Details" asp-route-id="@receipt.Id"><strong>@receipt.Number</strong><small>@receipt.IssuedAt.ToLocalTime().ToString("dd/MM/yyyy")</small></a></td>
+                        <td><strong>@receipt.ClientName</strong><small>@receipt.OriginLabel</small></td>
+                        <td><strong>@receipt.Amount.ToString("C")</strong></td>
+                        <td>@receipt.PaymentMethodLabel</td>
+                        <td><span class="receipt-status receipt-status--@receipt.StatusTone">@receipt.StatusLabel</span></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="receipt-cards">
             @foreach (var receipt in Model.Receipts)
             {
-                <a asp-page="Details" asp-route-id="@receipt.Id">
-                    <strong>@receipt.Number</strong>
+                <a class="receipt-card" asp-page="Details" asp-route-id="@receipt.Id">
+                    <span><strong>@receipt.Number</strong><em class="receipt-status receipt-status--@receipt.StatusTone">@receipt.StatusLabel</em></span>
+                    <strong class="receipt-card__amount">@receipt.Amount.ToString("C")</strong>
                     <span>@receipt.ClientName · @receipt.OriginLabel</span>
-                    <span>@receipt.Amount.ToString("C")</span>
-                    <span>@receipt.PaymentMethodLabel · @receipt.IssuedAt.ToLocalTime().ToString("dd/MM/yyyy")</span>
-                    <em>@receipt.StatusLabel</em>
+                    <small>@receipt.PaymentMethodLabel · @receipt.IssuedAt.ToLocalTime().ToString("dd/MM/yyyy")</small>
                 </a>
             }
         </div>
+
         <nav class="of-pagination" aria-label="Paginação de recibos">
-            @if (Model.PageNumber > 1)
+            @if (Model.HasPreviousPage)
             {
-                <a asp-all-route-data="@Model.GetRouteValues(Model.PageNumber - 1)">Anterior</a>
+                <a asp-all-route-data="@Model.GetRouteValues(Model.PreviousPage)" rel="prev">
+                    <svg class="of-icon" aria-hidden="true"><use href="#of-icon-chevron-left" /></svg><span>Anterior</span>
+                </a>
             }
-            <span>Página @Model.PageNumber de @Model.TotalPages</span>
-            @if (Model.PageNumber < Model.TotalPages)
+            <span class="of-pagination__status"><strong>@Model.PageNumber</strong><span>Página @Model.PageNumber de @Model.TotalPages · @Model.Result.Total recibos</span></span>
+            @if (Model.HasNextPage)
             {
-                <a asp-all-route-data="@Model.GetRouteValues(Model.PageNumber + 1)">Próxima</a>
+                <a asp-all-route-data="@Model.GetRouteValues(Model.NextPage)" rel="next">
+                    <span>Próxima</span><svg class="of-icon" aria-hidden="true"><use href="#of-icon-chevron-right" /></svg>
+                </a>
             }
         </nav>
     }
