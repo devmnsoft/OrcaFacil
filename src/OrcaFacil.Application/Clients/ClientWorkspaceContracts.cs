@@ -27,6 +27,9 @@ public interface IClientWorkspaceService
 {
     Task<ClientWorkspaceResult> ListAsync(ClientWorkspaceQuery query, CancellationToken ct = default);
     Task<ClientWorkspaceDetails?> GetAsync(Guid clientId, CancellationToken ct = default);
+    Task<ClientWorkspaceDetails?> GetDetailsAsync(Guid clientId, CancellationToken ct = default);
+    Task<ClientSaveResult> CreateAsync(Client input, bool allowPossibleDuplicate = false, CancellationToken ct = default);
+    Task<ClientSaveResult> UpdateAsync(Guid clientId, Client input, bool allowPossibleDuplicate = false, CancellationToken ct = default);
     Task<ClientSaveResult> SaveAsync(Client input, bool allowPossibleDuplicate = false, CancellationToken ct = default);
     Task<ClientSaveResult> ToggleFavoriteAsync(Guid clientId, CancellationToken ct = default);
     Task<ClientSaveResult> SetActiveAsync(Guid clientId, bool active, CancellationToken ct = default);

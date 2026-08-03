@@ -14,7 +14,7 @@ public sealed class CreateModel(IClientWorkspaceService workspace) : PageModel
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
         if (!ModelState.IsValid) return Page();
-        var result = await workspace.SaveAsync(Input, false, ct);
+        var result = await workspace.CreateAsync(Input, false, ct);
         if (result.Code == ClientResultCode.Success) { TempData["Success"] = "Cliente salvo com sucesso."; return RedirectToPage("Details", new { id = result.ClientId }); }
         ModelState.AddModelError(string.Empty, result.Message ?? "Não foi possível salvar o cliente.");
         return Page();
