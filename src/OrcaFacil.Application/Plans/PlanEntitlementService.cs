@@ -12,6 +12,6 @@ public class PlanEntitlementService
     public Task<bool> CanRemoveWatermarkAsync(Guid userId, PlanType plan, SubscriptionStatus status, CancellationToken ct = default) => Task.FromResult(IsProActive(plan, status));
     public Task<bool> CanUseAdvancedTemplatesAsync(Guid userId, PlanType plan, SubscriptionStatus status, CancellationToken ct = default) => Task.FromResult(IsProActive(plan, status));
     public Task<PlanEntitlementsDto> GetCurrentEntitlementsAsync(Guid userId, PlanType plan, SubscriptionStatus status, CancellationToken ct = default) => Task.FromResult(new PlanEntitlementsDto(IsProActive(plan,status), IsProActive(plan,status) ? null : FreeDocumentLimit, IsProActive(plan,status) ? null : FreePdfLimit, IsProActive(plan,status)));
-    private static bool IsProActive(PlanType plan, SubscriptionStatus status) => plan == PlanType.Pro && (status == SubscriptionStatus.Active || status == SubscriptionStatus.Trial || status == SubscriptionStatus.ManualRelease);
+    private static bool IsProActive(PlanType plan, SubscriptionStatus status) => plan != PlanType.Free && (status == SubscriptionStatus.Active || status == SubscriptionStatus.Trial || status == SubscriptionStatus.ManualRelease);
 }
 public record PlanEntitlementsDto(bool ProBenefitsEnabled, int? MonthlyDocumentLimit, int? MonthlyPdfLimit, bool PublicApprovalEnabled);

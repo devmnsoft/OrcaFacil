@@ -58,6 +58,13 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
     public DbSet<ManualPayment> ManualPayments => Set<ManualPayment>();
     public DbSet<Receipt> Receipts => Set<Receipt>();
+    public DbSet<LegalDocument> LegalDocuments => Set<LegalDocument>();
+    public DbSet<LegalDocumentVersion> LegalDocumentVersions => Set<LegalDocumentVersion>();
+    public DbSet<LegalAcceptance> LegalAcceptances => Set<LegalAcceptance>();
+    public DbSet<CommunicationConsent> CommunicationConsents => Set<CommunicationConsent>();
+    public DbSet<DataSubjectRequest> DataSubjectRequests => Set<DataSubjectRequest>();
+    public DbSet<PrivacyVendor> PrivacyVendors => Set<PrivacyVendor>();
+    public DbSet<PrivacyProcessingActivity> PrivacyProcessingActivities => Set<PrivacyProcessingActivity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

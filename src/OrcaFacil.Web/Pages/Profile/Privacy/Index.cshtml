@@ -1,0 +1,15 @@
+@page
+@model OrcaFacil.Web.Pages.Profile.Privacy.IndexModel
+@{ ViewData["Title"] = "Central de Privacidade"; }
+@section Styles { <link rel="stylesheet" href="~/css/privacy-center.css" asp-append-version="true" /> }
+<header class="privacy-hero"><p class="of-eyebrow">LGPD</p><h1>Central de Privacidade</h1><p>Consulte seus registros e exerça seus direitos sem interromper o uso da conta.</p></header>
+@if (TempData["Success"] is string success) { <div class="alert alert-success" role="status">@success</div> }
+<div class="privacy-grid">
+<section class="of-card"><h2>Documentos aceitos</h2>@if(Model.Acceptances.Count == 0){<p>Nenhum aceite versionado registrado. Uma nova versão poderá exigir reaceite.</p>}else{<ul>@foreach(var item in Model.Acceptances){<li>@item.AcceptanceSource · @item.AcceptedAt.ToLocalTime().ToString("g")</li>}</ul>}</section>
+<section class="of-card"><h2>Comunicações opcionais</h2>@if(Model.Consents.Count == 0){<p>Nenhum consentimento opcional ativo.</p>}@foreach(var consent in Model.Consents){<div class="consent-row"><span>@consent.Channel · @consent.Purpose</span><strong>@(consent.Granted ? "Ativo" : "Revogado")</strong>@if(consent.Granted){<form method="post" asp-page-handler="RevokeMarketing"><input type="hidden" name="consentId" value="@consent.Id"/><button class="btn btn-outline-danger">Revogar</button></form>}</div>}</section>
+<section class="of-card privacy-request"><h2>Exercer um direito</h2><form method="post" asp-page-handler="Request"><label asp-for="RequestType">Tipo</label><select asp-for="RequestType" asp-items="Html.GetEnumSelectList<OrcaFacil.Domain.Entities.DataSubjectRequestType>()"></select><label asp-for="Description">Descrição</label><textarea asp-for="Description" rows="5" maxlength="4000" required></textarea><span asp-validation-for="Description"></span><p>Seus dados serão preservados enquanto avaliamos obrigações legais e de retenção.</p><button class="btn btn-primary">Enviar solicitação</button></form></section>
+<section class="of-card"><h2>Solicitações</h2>@if(Model.Requests.Count == 0){<p>Você ainda não realizou solicitações.</p>}else{<ul>@foreach(var request in Model.Requests){<li><strong>@request.Type</strong> · @request.Status · protocolo @request.CorrelationId.ToString("N")</li>}</ul>}</section>
+<section class="of-card"><h2>Fornecedores aprovados</h2>@if(Model.Vendors.Count == 0){<p>Nenhum fornecedor foi publicado sem validação administrativa.</p>}else{<ul>@foreach(var vendor in Model.Vendors){<li><a href="@vendor.PrivacyUrl" rel="noopener noreferrer">@vendor.Name</a> — @vendor.Purpose</li>}</ul>}</section>
+<section class="of-card"><h2>Canal de privacidade</h2><p>Fale com <a href="mailto:@Model.PrivacyContactEmail">@Model.PrivacyContactEmail</a>. O protocolo permite acompanhar o prazo estimado de resposta.</p></section>
+</div>
+@section Scripts { <script type="module" src="~/js/privacy-center.js" asp-append-version="true"></script> }

@@ -9,6 +9,7 @@ using OrcaFacil.Application.WorkOrders;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
 
+using OrcaFacil.Domain.Plans;
 namespace OrcaFacil.Persistence.Services;
 
 /// <summary>Transactional application boundary for the quote-to-cash journey.</summary>
@@ -37,7 +38,7 @@ public sealed class CommercialJourneyService(
     {
         var correlation = CorrelationId;
         await currentAccount.EnsureAccountAccessAsync(ct);
-        var plan = await plans.CanUseAsync(AccountId, "public_link.enabled", ct);
+        var plan = await plans.CanUseAsync(AccountId, PlanFeatureCodes.PublicApprovalEnabled, ct);
         if (!plan.IsAllowed)
             return PublicQuote(false, QuoteLifecycleCode.PlanLimitReached, plan.UserMessage, correlation);
 
@@ -159,7 +160,7 @@ public sealed class CommercialJourneyService(
 
     public async Task<WorkOrderResult> ConvertToWorkOrderAsync(Guid documentId, CancellationToken ct = default)
     {
-        var correlation = CorrelationId; var allowed = await plans.CanUseAsync(AccountId, "work_orders.enabled", ct);
+        var correlation = CorrelationId; var allowed = await plans.CanUseAsync(AccountId, PlanFeatureCodes.WorkOrdersEnabled, ct);
         if (!allowed.IsAllowed) return Work(false, allowed.InternalReason, allowed.UserMessage, null, null, correlation);
         await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         var document = await OwnedDocument(documentId, ct);

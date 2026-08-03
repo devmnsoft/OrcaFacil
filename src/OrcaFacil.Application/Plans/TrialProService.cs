@@ -29,11 +29,11 @@ public sealed class TrialProService
         if (user is null || user.IsDeleted) return Result.Fail("Usuário não encontrado.");
 
         var subscription = _subscriptions.Query().SingleOrDefault(x => x.UserId == userId && !x.IsDeleted)
-            ?? new Subscription { UserId = userId, Provider = "Manual", Plan = PlanType.Pro };
+            ?? new Subscription { UserId = userId, Provider = "Manual", Plan = PlanType.Professional };
         if (subscription.Id != Guid.Empty && subscription.TrialUsed) return Result.Fail("Trial Pro já utilizado.");
 
         var now = DateTime.UtcNow;
-        subscription.Plan = PlanType.Pro;
+        subscription.Plan = PlanType.Professional;
         subscription.Status = SubscriptionStatus.Trial;
         subscription.TrialStartedAt = now;
         subscription.TrialEndsAt = now.AddDays(Math.Max(1, _options.TrialProDays));
@@ -42,7 +42,7 @@ public sealed class TrialProService
         subscription.StartedAt ??= now;
         subscription.ExpiresAt = subscription.TrialEndsAt;
         subscription.Touch();
-        user.Plan = PlanType.Pro;
+        user.Plan = PlanType.Professional;
         user.Touch();
 
         if (!_subscriptions.Query().Any(x => x.Id == subscription.Id)) await _subscriptions.AddAsync(subscription, ct);
