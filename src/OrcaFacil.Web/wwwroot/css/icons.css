@@ -15,6 +15,6 @@
 .of-icon--lg { width: var(--of-icon-lg); height: var(--of-icon-lg); }
 .of-icon--xl { width: var(--of-icon-xl); height: var(--of-icon-xl); }
 .of-icon--display { width: var(--of-icon-display); height: var(--of-icon-display); }
-.of-icon--success { color: var(--of-color-success, #14805e); }
-.of-icon--warning { color: var(--of-color-warning, #a86100); }
-.of-icon--danger { color: var(--of-color-danger, #c33b4a); }
+.of-icon--success { color: var(--of-success, #14805e); }
+.of-icon--warning { color: var(--of-warning, #a86100); }
+.of-icon--danger { color: var(--of-danger, #c33b4a); }

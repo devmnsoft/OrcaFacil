@@ -1,7 +1,7 @@
 label,.form-label { display: inline-block; margin-bottom: .35rem; color: var(--of-text); font-weight: 650; }
 input,select,textarea,.form-control,.form-select { width: 100%; min-height: 44px; padding: .65rem .75rem; border: 1px solid var(--of-border-strong); border-radius: var(--of-radius-sm); background: white; color: var(--of-text); }
 textarea { min-height: 7rem; resize: vertical; }
-input:disabled,select:disabled,textarea:disabled { background: var(--of-subtle); color: var(--of-disabled); cursor: not-allowed; }
+input:disabled,select:disabled,textarea:disabled { background: var(--of-disabled-background); color: var(--of-disabled-text); cursor: not-allowed; }
 .field-validation-error,.text-danger { color: var(--of-danger); font-size: var(--of-text-sm); }
 .form-text { color: var(--of-text-secondary); font-size: var(--of-text-sm); }
 button,.btn { min-height: 44px; }

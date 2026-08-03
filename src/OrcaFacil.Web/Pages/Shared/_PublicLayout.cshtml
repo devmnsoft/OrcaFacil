@@ -1,53 +1,39 @@
 <!doctype html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>@ViewData["Title"] - OrçaFácil</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>@ViewData["Title"] · OrçaFácil</title>
+  <meta name="description" content="Orçamentos, clientes, serviços e recibos organizados em um só lugar." />
+  <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+  <link rel="stylesheet" href="~/css/icons.css" asp-append-version="true" />
+  <link rel="stylesheet" href="~/css/base.css" asp-append-version="true" />
+  <link rel="stylesheet" href="~/css/surfaces.css" asp-append-version="true" />
+  <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+  <link rel="stylesheet" href="~/css/forms.css" asp-append-version="true" />
   <link rel="stylesheet" href="~/css/overlays.css" asp-append-version="true" />
   <link rel="stylesheet" href="~/css/feedback.css" asp-append-version="true" />
+  <link rel="stylesheet" href="~/css/public.css" asp-append-version="true" />
+  <link rel="stylesheet" href="~/css/responsive.css" asp-append-version="true" />
   @await RenderSectionAsync("Styles", false)
 </head>
 <body class="of-public">
   <partial name="Partials/_IconSprite" />
-  <nav class="navbar navbar-expand-lg of-public-nav" aria-label="Navegação institucional">
-    <div class="container">
-      <a class="of-brand text-decoration-none" asp-page="/Index" aria-label="OrçaFácil, um produto MNSOFT">
-        <img src="/img/brand/orcafacil-wordmark-light.svg" width="190" alt="OrçaFácil — um produto MNSOFT" />
-      </a>
-      <button class="navbar-toggler bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#publicMenu" aria-controls="publicMenu" aria-expanded="false" aria-label="Abrir menu"><span class="navbar-toggler-icon"></span></button>
-      <div class="collapse navbar-collapse" id="publicMenu">
-        <div class="navbar-nav ms-auto align-items-lg-center gap-lg-2 mt-3 mt-lg-0">
-          <a class="nav-link" href="/#como-funciona">Como funciona</a>
-          <a class="nav-link" href="/#recursos">Recursos</a>
-          <a class="nav-link" asp-page="/Precos">Preços</a>
-          <a class="nav-link" asp-page="/Support/Index">Fale com a MNSOFT</a>
-          <a class="btn btn-outline-light" asp-page="/Auth/Login">Entrar</a>
-          <a class="btn btn-success" asp-page="/Auth/Register">Começar grátis</a>
-        </div>
+  <a class="of-skip-link" href="#main-content">Ir para o conteúdo</a>
+  <header class="of-public-header">
+    <nav class="of-public-nav of-container" aria-label="Navegação institucional">
+      <a class="of-public-brand" asp-page="/Index" aria-label="OrçaFácil, página inicial"><img src="~/img/brand/orcafacil-wordmark-light.svg" width="190" height="42" alt="OrçaFácil — um produto MNSOFT" /></a>
+      <button class="of-public-menu-button" type="button" data-public-menu-button aria-controls="public-menu" aria-expanded="false"><svg class="of-icon" aria-hidden="true"><use href="#of-icon-menu" /></svg><span>Menu</span></button>
+      <div class="of-public-menu" id="public-menu" data-public-menu>
+        <a href="/#como-funciona">Como funciona</a><a href="/#recursos">Recursos</a><a asp-page="/Precos">Preços</a><a asp-page="/Support/Index">Suporte</a>
+        <a class="of-button of-button-secondary of-button-on-dark" asp-page="/Auth/Login">Entrar</a><a class="of-button of-button-primary" asp-page="/Auth/Register">Começar grátis</a>
       </div>
-    </div>
-  </nav>
-  <main><partial name="Partials/_ToastHost" />@RenderBody()</main>
-  <footer class="of-public-footer">
-    <div class="container">
-      <div class="row g-4 align-items-start">
-        <div class="col-lg-4"><a class="of-brand text-decoration-none mb-3" asp-page="/Index"><img src="/img/brand/orcafacil-wordmark-light.svg" width="190" alt="OrçaFácil — um produto MNSOFT" /></a><p>Orçamentos e recibos profissionais em PDF para autônomos, MEIs e prestadores de serviço.</p></div>
-        <div class="col-lg-4"><h2 class="h6">Navegação</h2><nav class="of-footer-links" aria-label="Links do rodapé"><a asp-page="/Index">Início</a><a href="/#como-funciona">Como funciona</a><a href="/#recursos">Recursos</a><a asp-page="/Precos">Preços</a><a asp-page="/Support/Index">Suporte</a><a asp-page="/Auth/Register">Criar conta</a></nav></div>
-        <div class="col-lg-4"><h2 class="h6">MNSOFT</h2><partial name="Partials/_MnsoftBrand" /><p class="mt-3 mb-1">CNPJ: 18.160.057/0001-13</p><p class="mb-1"><a href="mailto:comercial@mnsoft.com.br">comercial@mnsoft.com.br</a></p><p>Um produto MNSOFT.</p></div>
-      </div>
-      <div class="of-footer-bottom">© @DateTime.UtcNow.Year OrçaFácil. Todos os direitos reservados.</div>
-    </div>
-  </footer>
+    </nav>
+  </header>
+  <main id="main-content"><partial name="Partials/_ToastHost" />@RenderBody()</main>
+  <footer class="of-public-footer"><div class="of-container of-public-footer-grid"><div><img src="~/img/brand/orcafacil-wordmark-light.svg" width="190" height="42" alt="OrçaFácil — um produto MNSOFT" /><p>Seu trabalho organizado, do orçamento ao recibo.</p></div><nav aria-label="Links do rodapé"><strong>OrçaFácil</strong><a href="/#como-funciona">Como funciona</a><a href="/#recursos">Recursos</a><a asp-page="/Precos">Preços</a></nav><div><strong>Atendimento MNSOFT</strong><a href="mailto:comercial@mnsoft.com.br">comercial@mnsoft.com.br</a><span>CNPJ 18.160.057/0001-13</span></div></div><div class="of-container of-footer-bottom">© @DateTime.UtcNow.Year OrçaFácil. Todos os direitos reservados.</div></footer>
   <partial name="Partials/_OverlayHost" />
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="~/js/app.js" asp-append-version="true"></script>
+  <script type="module" src="~/js/public.js" asp-append-version="true"></script>
   <script type="module" src="~/js/ui/feedback.js" asp-append-version="true"></script>
   @await RenderSectionAsync("Scripts", false)
 </body>
