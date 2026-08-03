@@ -18,6 +18,15 @@
   --of-text: #172033;
   --of-text-secondary: #617083;
   --of-text-inverse: #f8fbff;
+  --of-text-inverse-muted: #c9d6e4;
+  --of-disabled-background: #e4eaf1;
+  --of-disabled-text: #526174;
+  --of-input-background: #ffffff;
+  --of-input-border: #b7c4d2;
+  --of-input-border-hover: #7d90a5;
+  --of-input-placeholder: #68778a;
+  --of-selection: #cddcff;
+  --of-skeleton: #dfe7f0;
   --of-border: #dde5ee;
   --of-border-strong: #b7c4d2;
   --of-focus: #246bfe;
