@@ -20,13 +20,31 @@ public sealed record ClientTagResult(ClientResultCode Code, Guid? TagId = null, 
 public sealed record ClientNoteResult(ClientResultCode Code, Guid? NoteId = null, string? Message = null);
 public sealed record DuplicateClientCandidate(Guid Id, string Name, string MatchReason);
 public sealed record ClientContactInput(string Name, ClientContactType ContactType, string Value, string? Label, bool IsPrimary, bool ReceivesQuotes, bool ReceivesReceipts);
-public sealed record ClientWorkspaceDetails(Client Client, IReadOnlyList<ClientContact> Contacts,
-    IReadOnlyList<ClientTagSummary> Tags, IReadOnlyList<ClientNote> Notes);
+public sealed record ClientProfileSummary(Guid Id, PersonType PersonType, BrazilianDocumentType? DocumentType,
+    string MaskedDocument, string Name, string? LegalName, string? TradeName, string? City, string? Address,
+    bool IsActive, bool IsFavorite, string? PreferredContactChannel, DateTime? LastInteractionAt,
+    DateTime? NextFollowUpAt, DateTime CreatedAt, DateTime? UpdatedAt, uint Version);
+public sealed record ClientContactSummary(Guid Id, string Name, ClientContactType ContactType, string Value,
+    string? Label, bool IsPrimary, bool ReceivesQuotes, bool ReceivesReceipts, bool IsActive, int SortOrder);
+public sealed record ClientNoteSummary(Guid Id, string Content, bool IsPinned, Guid CreatedByUserId,
+    DateTime CreatedAt, DateTime? UpdatedAt);
+public sealed record ClientCommercialSummary(int TotalQuotes, int OpenQuotes, int ApprovedQuotes,
+    int RejectedQuotes, decimal TotalQuotedAmount, decimal TotalApprovedAmount, decimal ApprovalRate,
+    int ActiveWorkOrders, DateTime? LastQuoteAt, DateTime? NextFollowUpAt);
+public sealed record ClientFinancialSummary(decimal ExpectedAmount, decimal ActivePaymentsAmount,
+    decimal ReversedPaymentsAmount, decimal OutstandingBalance, int PaymentsCount, int ReceiptsCount,
+    int CancelledReceiptsCount, DateTime? LastPaymentAt);
+public sealed record ClientOpenAction(string Code, int Priority, string Title, string Description,
+    DateTime? DueAt, string ActionPage, IReadOnlyDictionary<string, string> ActionRouteValues,
+    string IconName, string Tone);
+public sealed record ClientWorkspaceDetails(ClientProfileSummary Client, IReadOnlyList<ClientContactSummary> Contacts,
+    IReadOnlyList<ClientTagSummary> Tags, IReadOnlyList<ClientNoteSummary> Notes,
+    ClientCommercialSummary Commercial, ClientFinancialSummary Financial,
+    IReadOnlyList<ClientOpenAction> OpenActions);
 
 public interface IClientWorkspaceService
 {
     Task<ClientWorkspaceResult> ListAsync(ClientWorkspaceQuery query, CancellationToken ct = default);
-    Task<ClientWorkspaceDetails?> GetAsync(Guid clientId, CancellationToken ct = default);
     Task<ClientWorkspaceDetails?> GetDetailsAsync(Guid clientId, CancellationToken ct = default);
     Task<ClientSaveResult> CreateAsync(Client input, bool allowPossibleDuplicate = false, CancellationToken ct = default);
     Task<ClientSaveResult> UpdateAsync(Guid clientId, Client input, bool allowPossibleDuplicate = false, CancellationToken ct = default);

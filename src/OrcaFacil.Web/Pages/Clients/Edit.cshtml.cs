@@ -18,7 +18,23 @@ public sealed class EditModel(IClientWorkspaceService workspace) : PageModel
         if (details is null)
             return NotFound();
 
-        Input = details.Client;
+        var client = details.Client;
+        Input = new Client
+        {
+            Id = client.Id,
+            PersonType = client.PersonType,
+            DocumentType = client.DocumentType,
+            Name = client.Name,
+            LegalName = client.LegalName,
+            TradeName = client.TradeName,
+            City = client.City,
+            Address = client.Address,
+            IsActive = client.IsActive,
+            IsFavorite = client.IsFavorite,
+            PreferredContactChannel = client.PreferredContactChannel,
+            NextFollowUpAt = client.NextFollowUpAt,
+            Version = client.Version
+        };
         return Page();
     }
 
