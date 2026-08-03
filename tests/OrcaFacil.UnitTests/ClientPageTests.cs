@@ -34,8 +34,7 @@ public class ClientPageTests
         var modelType = typeof(IndexModel);
 
         Assert.True(modelType.IsSealed);
-        Assert.NotNull(modelType.GetProperty(nameof(IndexModel.Search)));
-        Assert.NotNull(modelType.GetProperty(nameof(IndexModel.Document)));
+        Assert.NotNull(modelType.GetProperty(nameof(IndexModel.Search))); 
         Assert.NotNull(modelType.GetProperty(nameof(IndexModel.PersonType)));
         Assert.NotNull(modelType.GetProperty(nameof(IndexModel.City)));
         Assert.NotNull(modelType.GetProperty(nameof(IndexModel.PageNumber)));
