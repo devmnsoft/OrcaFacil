@@ -42,7 +42,7 @@ if (wizard) {
     installmentCount: num(field('installmentCount')) || null, depositAmount: num(field('depositAmount')), pixInformation: field('pixInformation')?.value || null,
     warrantyText: field('warrantyText')?.value || null, conditionsText: field('conditionsText')?.value || null,
     templateCode: wizard.querySelector('input[name="presentation"]:checked')?.value || 'essential', discount: num(wizard.querySelector('[data-general-discount]')),
-    items: rows().map((row, sortOrder) => ({ serviceCatalogItemId: null, description: row.querySelector('[data-item-description]').value, unit: row.querySelector('[data-item-unit]').value, quantity: num(row.querySelector('[data-item-quantity]')), unitPrice: num(row.querySelector('[data-item-price]')), discount: num(row.querySelector('[data-item-discount]')), notes: null, sortOrder })),
+    items: rows().map((row, sortOrder) => ({ serviceCatalogItemId: row.dataset.serviceId || null, description: row.querySelector('[data-item-description]').value, unit: row.querySelector('[data-item-unit]').value, quantity: num(row.querySelector('[data-item-quantity]')), unitPrice: num(row.querySelector('[data-item-price]')), discount: num(row.querySelector('[data-item-discount]')), notes: null, sortOrder })),
     rowVersion, idempotencyKey: crypto.randomUUID()
   });
   const save = async (finalize = false) => {
@@ -68,7 +68,7 @@ if (wizard) {
     if (currentStep === 1 && !rows().some(x => x.querySelector('[data-item-description]').value.trim())) { rows()[0].querySelector('[data-item-description]').setCustomValidity('Adicione ao menos um serviço.'); rows()[0].querySelector('[data-item-description]').reportValidity(); return false; }
     return true;
   };
-  const addItem = (description = '') => { const row = rows()[0].cloneNode(true); row.querySelectorAll('input').forEach(x => x.value = x.matches('[data-item-quantity]') ? '1' : ''); row.querySelector('[data-item-description]').value = description; itemHost.append(row); rename(); update(); scheduleSave(); };
+  const addItem = (description = '', service = null) => { const row = rows()[0].cloneNode(true); row.querySelectorAll('input').forEach(x => x.value = x.matches('[data-item-quantity]') ? '1' : ''); row.querySelector('[data-item-description]').value = description; if (service) { row.dataset.serviceId = service.id; row.querySelector('[data-item-price]').value = service.price; row.querySelector('[data-item-unit]').value = service.unit; } itemHost.append(row); rename(); update(); scheduleSave(); };
   next.addEventListener('click', () => { if (valid()) go(currentStep + 1); }); previous.addEventListener('click', () => go(currentStep - 1));
   steps.forEach(x => x.addEventListener('click', () => { const target = Number(x.dataset.stepTarget); if (target <= currentStep || valid()) go(target); }));
   wizard.querySelector('[data-item-add]').addEventListener('click', () => addItem()); wizard.querySelectorAll('[data-service-example]').forEach(x => x.addEventListener('click', () => addItem(x.dataset.serviceExample)));
@@ -81,5 +81,25 @@ if (wizard) {
   finish.addEventListener('click', async () => { if (valid()) await save(true); });
   wizard.querySelectorAll('[data-initial-unit]').forEach(x => { x.value = x.dataset.initialUnit || 'serviço'; });
   wizard.querySelectorAll('[data-initial-value]').forEach(x => { if (x.dataset.initialValue) x.value = x.dataset.initialValue; });
+
+  const serviceSearch = wizard.querySelector('[data-service-search]');
+  const serviceResults = wizard.querySelector('[data-service-results]');
+  let serviceTimer;
+  serviceSearch?.addEventListener('input', () => {
+    clearTimeout(serviceTimer);
+    serviceTimer = setTimeout(async () => {
+      const query = serviceSearch.value.trim();
+      if (query.length < 2) { serviceResults.replaceChildren(); return; }
+      serviceResults.setAttribute('aria-busy', 'true');
+      const response = await fetch(`/Internal/Services/Search?q=${encodeURIComponent(query)}&limit=8`);
+      const data = response.ok ? await response.json() : { results: [] };
+      serviceResults.replaceChildren(...data.results.map(service => {
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'of-service-result';
+        button.textContent = `${service.name} · ${money.format(service.price)}`;
+        button.addEventListener('click', () => addItem(service.description || service.name, service)); return button;
+      }));
+      serviceResults.setAttribute('aria-busy', 'false');
+    }, 250);
+  });
   rename(); update(); go(currentStep);
 }

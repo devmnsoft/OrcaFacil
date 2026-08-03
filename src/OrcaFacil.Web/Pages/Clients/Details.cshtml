@@ -2,35 +2,53 @@
 @model OrcaFacil.Web.Pages.Clients.DetailsModel
 @using OrcaFacil.Domain.Enums
 @{
-    ViewData["Title"] = "Detalhes do cliente";
-    var c = Model.Client!;
+    ViewData["Title"] = "Cliente 360";
+    ViewData["Section"] = "Comercial";
+    var client = Model.Details.Client;
+    var primary = Model.Details.Contacts.FirstOrDefault(contact => contact.IsPrimary && contact.IsActive);
 }
-<header class="of-page-header">
-    <div>
-        <p class="of-eyebrow"><i class="bi bi-people me-2"></i>Cliente 360°</p>
-        <h1>@c.Name</h1>
-        <p>@(c.PersonType == PersonType.Company ? "Pessoa Jurídica" : "Pessoa Física") • @Model.MaskedDocument</p>
+
+<header class="client-page-head client-hero">
+    <div class="client-identity">
+        <span class="client-avatar">@client.Name[..1].ToUpperInvariant()</span>
+        <div><p class="of-eyebrow">Cliente 360</p><h1>@client.Name</h1><p>@(client.PersonType == PersonType.Company ? "PJ" : "PF") · @Model.MaskedDocument · @(client.City ?? "Cidade não informada")</p></div>
     </div>
-    <div class="d-flex flex-wrap gap-2">
-        <a class="btn btn-primary" asp-page="/Documents/CreateBudget" asp-route-clientId="@c.Id"><i class="bi bi-file-earmark-plus me-2"></i>Criar orçamento para este cliente</a>
-        <a class="btn btn-success" asp-page="/Documents/CreateReceipt" asp-route-clientId="@c.Id"><i class="bi bi-receipt me-2"></i>Criar recibo para este cliente</a>
-        <a class="btn btn-outline-primary" asp-page="/Clients/Edit" asp-route-id="@c.Id"><i class="bi bi-pencil me-2"></i>Editar</a>
+    <div class="client-head-actions">
+        <a class="client-button primary" asp-page="/Documents/CreateBudget" asp-route-clientId="@client.Id">Novo orçamento</a>
+        @if (primary?.ContactType == ClientContactType.WhatsApp) { <a class="client-button secondary" href="https://wa.me/@primary.Value" rel="noopener">WhatsApp</a> }
+        @if (primary?.ContactType == ClientContactType.Email) { <a class="client-button secondary" href="mailto:@primary.Value">E-mail</a> }
+        <a class="client-button secondary" asp-page="/Clients/Edit" asp-route-id="@client.Id">Editar</a>
     </div>
 </header>
 
-<section class="row g-3 mb-3">
-    <div class="col-md-3"><div class="of-card h-100"><span class="text-muted">Orçamentos</span><strong class="d-block h4">@Model.Budgets.Count</strong><small>@Model.TotalBudgetAmount.ToString("C") no total</small></div></div>
-    <div class="col-md-3"><div class="of-card h-100"><span class="text-muted">Aprovado</span><strong class="d-block h4">@Model.TotalApprovedAmount.ToString("C")</strong><small>Valor total aprovado</small></div></div>
-    <div class="col-md-3"><div class="of-card h-100"><span class="text-muted">Recibos</span><strong class="d-block h4">@Model.Receipts.Count</strong><small>Documentos emitidos</small></div></div>
-    <div class="col-md-3"><div class="of-card h-100"><span class="text-muted">Último contato</span><strong class="d-block h5">@Model.LastContactAt?.ToString("dd/MM/yyyy")</strong><small>@(Model.LastDocument?.Number ?? "Sem documentos")</small></div></div>
+<section class="client-summary" aria-label="Resumo do cliente">
+    <div><span>Status</span><strong>@(client.IsActive ? "Ativo" : "Inativo")</strong></div>
+    <div><span>Favorito</span><strong>@(client.IsFavorite ? "Sim" : "Não")</strong></div>
+    <div><span>Canal preferido</span><strong>@(client.PreferredContactChannel ?? "Não definido")</strong></div>
+    <div><span>Última atividade</span><strong>@(client.LastInteractionAt?.ToString("dd/MM/yyyy") ?? "Sem atividade")</strong></div>
+    <div><span>Próximo acompanhamento</span><strong>@(client.NextFollowUpAt?.ToString("dd/MM/yyyy") ?? "Não agendado")</strong></div>
 </section>
 
-<section class="of-card mb-3">
-    <div class="d-flex flex-wrap gap-2 mb-3"><span class="badge text-bg-primary">@(c.CreatedAt >= DateTime.UtcNow.AddDays(-30) ? "Novo" : "Recorrente")</span><span class="badge text-bg-warning text-dark">Prioridade</span>@if (c.UpdatedAt.HasValue && c.UpdatedAt.Value < DateTime.UtcNow.AddDays(-180)){<span class="badge text-bg-secondary">Inativo</span>}</div>
-    <dl class="row mb-0"><dt class="col-sm-3">Razão social</dt><dd class="col-sm-9">@c.LegalName</dd><dt class="col-sm-3">Nome fantasia</dt><dd class="col-sm-9">@c.TradeName</dd><dt class="col-sm-3">E-mail</dt><dd class="col-sm-9">@c.Email</dd><dt class="col-sm-3">Telefone</dt><dd class="col-sm-9">@c.Phone</dd><dt class="col-sm-3">Cidade</dt><dd class="col-sm-9">@c.City</dd><dt class="col-sm-3">Endereço</dt><dd class="col-sm-9">@c.Address</dd><dt class="col-sm-3">Histórico de interações</dt><dd class="col-sm-9">@c.Notes</dd></dl>
-</section>
+<div class="client-tags">@foreach (var tag in Model.Details.Tags) { <span data-color="@tag.ColorToken">@tag.Name</span> }</div>
 
-<div class="row g-3">
-    <section class="col-lg-6"><div class="of-card h-100"><h2 class="h5">Orçamentos do cliente</h2><partial name="_ClientDocumentList" model="Model.Budgets" /></div></section>
-    <section class="col-lg-6"><div class="of-card h-100"><h2 class="h5">Recibos do cliente</h2><partial name="_ClientDocumentList" model="Model.Receipts" /></div></section>
-</div>
+<nav class="client-tabs" aria-label="Áreas do cliente">
+    <a href="#summary">Resumo</a><a href="#contacts">Contatos</a><a href="#budgets">Orçamentos</a><a href="#orders">Ordens</a><a href="#payments">Pagamentos</a><a href="#receipts">Recibos</a><a href="#activities">Atividades</a><a href="#notes">Observações</a>
+</nav>
+
+<main class="client-workspace">
+    <section id="summary" class="client-panel"><h2>Resumo</h2><dl><dt>Contato principal</dt><dd>@(primary?.Value ?? "Não definido")</dd><dt>Endereço</dt><dd>@(client.Address ?? "Não informado")</dd></dl></section>
+    <section id="contacts" class="client-panel"><h2>Contatos</h2>
+        @if (Model.Details.Contacts.Count == 0) { <p class="client-empty-copy">Nenhum contato cadastrado.</p> }
+        @foreach (var contact in Model.Details.Contacts) { <article class="client-record"><div><strong>@contact.Name</strong><p>@contact.ContactType · @contact.Value</p><small>@(contact.IsPrimary ? "Principal · " : "")@(contact.ReceivesQuotes ? "Recebe orçamentos · " : "")@(contact.ReceivesReceipts ? "Recebe recibos" : "")</small></div><form method="post" asp-page-handler="RemoveContact"><input type="hidden" name="contactId" value="@contact.Id" /><button class="client-button danger" type="submit" disabled="@(contact.IsPrimary && contact.IsActive)">Remover</button></form></article> }
+        <form method="post" asp-page-handler="Contact" class="client-inline-form"><label><span>Nome</span><input asp-for="Contact.Name" required /></label><label><span>Tipo</span><select asp-for="Contact.ContactType" asp-items="Html.GetEnumSelectList<ClientContactType>()"></select></label><label><span>Contato</span><input asp-for="Contact.Value" required /></label><label><input asp-for="Contact.IsPrimary" /> Principal</label><label><input asp-for="Contact.ReceivesQuotes" /> Orçamentos</label><label><input asp-for="Contact.ReceivesReceipts" /> Recibos</label><button class="client-button primary" type="submit">Adicionar contato</button></form>
+    </section>
+    @foreach (var area in new[] { ("budgets", "Orçamentos"), ("orders", "Ordens"), ("payments", "Pagamentos"), ("receipts", "Recibos"), ("activities", "Atividades") }) { <section id="@area.Item1" class="client-panel"><h2>@area.Item2</h2><p class="client-empty-copy">Nenhum registro nesta página.</p></section> }
+    <section id="notes" class="client-panel"><h2>Tags e observações</h2>
+        <form method="post" asp-page-handler="Tag" class="client-inline-form"><label><span>Nova tag</span><input asp-for="TagName" required maxlength="60" /></label><label><span>Cor</span><select asp-for="TagColor"><option>neutral</option><option>blue</option><option>green</option><option>amber</option><option>red</option><option>purple</option><option>cyan</option></select></label><button class="client-button primary">Atribuir tag</button></form>
+        <div class="client-tag-editor">@foreach (var tag in Model.Details.Tags) { <form method="post" asp-page-handler="RemoveTag"><input type="hidden" name="tagId" value="@tag.Id" /><span data-color="@tag.ColorToken">@tag.Name</span><button type="submit">Remover</button></form> }</div>
+        <p><strong>Visível somente para a sua equipe.</strong></p>
+        <form method="post" asp-page-handler="Note" class="client-inline-form"><label><span>Observação interna</span><textarea asp-for="NoteContent" required maxlength="4000"></textarea></label><label><input asp-for="NotePinned" /> Fixar</label><button class="client-button primary">Salvar observação</button></form>
+        @if (Model.Details.Notes.Count == 0) { <p class="client-empty-copy">Nenhuma observação interna.</p> }
+        @foreach (var note in Model.Details.Notes) { <article class="client-record"><div><strong>@(note.IsPinned ? "Fixada" : "Observação")</strong><p>@note.Content</p><small>@note.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small></div><div><form method="post" asp-page-handler="PinNote"><input type="hidden" name="noteId" value="@note.Id" /><button class="client-button secondary">@(note.IsPinned ? "Desafixar" : "Fixar")</button></form><form method="post" asp-page-handler="DeleteNote"><input type="hidden" name="noteId" value="@note.Id" /><button class="client-button danger">Excluir</button></form></div></article> }
+    </section>
+</main>

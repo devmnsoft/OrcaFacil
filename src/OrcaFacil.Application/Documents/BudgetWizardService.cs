@@ -22,12 +22,13 @@ public sealed class BudgetWizardService
     private readonly IRepository<Document> _documents;
     private readonly IRepository<DocumentItem> _items;
     private readonly IRepository<Client> _clients;
+    private readonly IRepository<ServiceCatalogItem> _services;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IDocumentNumberService _numbers;
 
-    public BudgetWizardService(IRepository<Document> documents, IRepository<DocumentItem> items, IRepository<Client> clients,
+    public BudgetWizardService(IRepository<Document> documents, IRepository<DocumentItem> items, IRepository<Client> clients, IRepository<ServiceCatalogItem> services,
         IUnitOfWork unitOfWork, IDocumentNumberService numbers)
-    { _documents = documents; _items = items; _clients = clients; _unitOfWork = unitOfWork; _numbers = numbers; }
+    { _documents = documents; _items = items; _clients = clients; _services = services; _unitOfWork = unitOfWork; _numbers = numbers; }
 
     public async Task<BudgetWizardViewModel> OpenAsync(Guid userId, Guid? accountId, Guid? documentId, Guid? clientId, CancellationToken ct)
     {
@@ -69,8 +70,11 @@ public sealed class BudgetWizardService
         document.TemplateSnapshot = JsonSerializer.Serialize(new { Code = document.TemplateCode, SavedAt = DateTime.UtcNow });
         document.Discount = Math.Max(0, request.Discount);
         foreach (var old in _items.Query().Where(x => x.DocumentId == document.Id).ToList()) _items.Remove(old);
-        document.Items = request.Items.Where(x => !string.IsNullOrWhiteSpace(x.Description)).Take(100).Select((x, index) => new DocumentItem
-        { DocumentId = document.Id, ServiceCatalogItemId = x.ServiceCatalogItemId, Description = x.Description.Trim(), Unit = Clean(x.Unit, 40) ?? "serviço", Quantity = Math.Max(0, x.Quantity), UnitPrice = Math.Max(0, x.UnitPrice), Discount = Math.Max(0, x.Discount), Notes = Clean(x.Notes, 1000), SortOrder = index }).ToList();
+        document.Items = request.Items.Where(x => !string.IsNullOrWhiteSpace(x.Description)).Take(100).Select((x, index) =>
+        {
+            var service = x.ServiceCatalogItemId.HasValue ? _services.Query().SingleOrDefault(s => s.Id == x.ServiceCatalogItemId && s.AccountId == accountId && s.IsActive && !s.IsDeleted) : null;
+            return new DocumentItem { DocumentId = document.Id, ServiceCatalogItemId = service?.Id, Description = service?.Description ?? x.Description.Trim(), Unit = service?.UnitCode ?? Clean(x.Unit, 40) ?? "serviço", Quantity = Math.Max(0, x.Quantity), UnitPrice = service?.StandardPrice ?? Math.Max(0, x.UnitPrice), EstimatedCostSnapshot = service?.EstimatedCost ?? 0, DurationMinutesSnapshot = service?.SuggestedDurationMinutes, Discount = Math.Max(0, x.Discount), Notes = Clean(x.Notes, 1000), SortOrder = index };
+        }).ToList();
         document.CalculateTotals();
         document.LastAutosavedAt = DateTime.UtcNow;
         document.LastAutosaveKey = Clean(request.IdempotencyKey, 80);

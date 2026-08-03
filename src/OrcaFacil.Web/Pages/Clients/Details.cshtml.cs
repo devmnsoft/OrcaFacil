@@ -1,57 +1,64 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using OrcaFacil.Application.Abstractions;
-using OrcaFacil.Domain.Entities;
+using OrcaFacil.Application.Clients;
 using OrcaFacil.Domain.Enums;
-using OrcaFacil.Persistence;
 
 namespace OrcaFacil.Web.Pages.Clients;
 
 [Authorize]
-public sealed class DetailsModel : PageModel
+public sealed class DetailsModel(IClientWorkspaceService workspace) : PageModel
 {
-    private readonly ICurrentUserService _current;
-    private readonly OrcaFacilDbContext _db;
+    public ClientWorkspaceDetails Details { get; private set; } = null!;
+    public string MaskedDocument => BrazilianDocument.Mask(Details.Client.DocumentType, Details.Client.DocumentNumber);
 
-    public DetailsModel(OrcaFacilDbContext db, ICurrentUserService current)
+    [BindProperty] public ClientContactInput Contact { get; set; } = new("", ClientContactType.Email, "", null, false, false, false);
+    [BindProperty] public string TagName { get; set; } = "";
+    [BindProperty] public string TagColor { get; set; } = "neutral";
+    [BindProperty] public string NoteContent { get; set; } = "";
+    [BindProperty] public bool NotePinned { get; set; }
+
+    public async Task<IActionResult> OnGetAsync(Guid id, CancellationToken ct) => await Load(id, ct) ? Page() : NotFound();
+
+    public async Task<IActionResult> OnPostContactAsync(Guid id, CancellationToken ct)
     {
-        _db = db;
-        _current = current;
+        var result = await workspace.AddContactAsync(id, Contact, ct);
+        if (result.Code != ClientResultCode.Success) TempData["Error"] = result.Message ?? "Não foi possível adicionar o contato.";
+        return RedirectToPage(new { id, tab = "contacts" });
     }
 
-    public Client? Client { get; private set; }
-    public IReadOnlyList<ClientDocumentDto> Budgets { get; private set; } = Array.Empty<ClientDocumentDto>();
-    public IReadOnlyList<ClientDocumentDto> Receipts { get; private set; } = Array.Empty<ClientDocumentDto>();
-    public decimal TotalBudgetAmount { get; private set; }
-    public decimal TotalApprovedAmount { get; private set; }
-    public ClientDocumentDto? LastDocument { get; private set; }
-    public DateTime? LastContactAt { get; private set; }
-    public string MaskedDocument => BrazilianDocument.Mask(Client?.DocumentType, Client?.DocumentNumber);
-
-    public async Task<IActionResult> OnGetAsync(Guid id, CancellationToken ct)
+    public async Task<IActionResult> OnPostRemoveContactAsync(Guid id, Guid contactId, CancellationToken ct)
     {
-        Client = await _db.Clients.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id && x.UserId == _current.UserId && !x.IsDeleted, ct);
-        if (Client is null) return NotFound();
-
-        var documentNumber = BrazilianDocument.Normalize(Client.DocumentNumber);
-        var documentsQuery = _db.Documents.AsNoTracking().Where(d => d.UserId == _current.UserId && !d.IsDeleted &&
-            (d.ClientName == Client.Name || (!string.IsNullOrWhiteSpace(documentNumber) && d.ClientDocument == documentNumber)));
-
-        var documents = await documentsQuery
-            .OrderByDescending(d => d.IssueDate)
-            .Select(d => new ClientDocumentDto(d.Id, d.Type, d.Number, d.Status, d.Total, d.IssueDate, d.ClientDecision))
-            .ToListAsync(ct);
-
-        Budgets = documents.Where(d => d.Type == DocumentType.Budget).ToList();
-        Receipts = documents.Where(d => d.Type == DocumentType.Receipt).ToList();
-        TotalBudgetAmount = Budgets.Sum(d => d.Total);
-        TotalApprovedAmount = Budgets.Where(d => d.ClientDecision == ClientDecision.Approved).Sum(d => d.Total);
-        LastDocument = documents.FirstOrDefault();
-        LastContactAt = LastDocument?.IssueDate ?? Client.UpdatedAt ?? Client.CreatedAt;
-        return Page();
+        var result = await workspace.RemoveContactAsync(id, contactId, ct);
+        if (result.Code != ClientResultCode.Success) TempData["Error"] = result.Message ?? "Não foi possível remover o contato.";
+        return RedirectToPage(new { id, tab = "contacts" });
     }
+
+    public async Task<IActionResult> OnPostTagAsync(Guid id, CancellationToken ct)
+    {
+        var result = await workspace.CreateAndAssignTagAsync(id, TagName, TagColor, ct);
+        if (result.Code != ClientResultCode.Success) TempData["Error"] = result.Message ?? "Não foi possível atribuir a tag.";
+        return RedirectToPage(new { id, tab = "notes" });
+    }
+
+    public async Task<IActionResult> OnPostRemoveTagAsync(Guid id, Guid tagId, CancellationToken ct)
+    {
+        await workspace.RemoveTagAsync(id, tagId, ct);
+        return RedirectToPage(new { id, tab = "notes" });
+    }
+
+    public async Task<IActionResult> OnPostNoteAsync(Guid id, CancellationToken ct)
+    {
+        var result = await workspace.AddNoteAsync(id, NoteContent, NotePinned, ct);
+        if (result.Code != ClientResultCode.Success) TempData["Error"] = result.Message ?? "Não foi possível salvar a observação.";
+        return RedirectToPage(new { id, tab = "notes" });
+    }
+
+    public async Task<IActionResult> OnPostPinNoteAsync(Guid id, Guid noteId, CancellationToken ct)
+    { await workspace.ToggleNotePinAsync(id, noteId, ct); return RedirectToPage(new { id, tab = "notes" }); }
+    public async Task<IActionResult> OnPostDeleteNoteAsync(Guid id, Guid noteId, CancellationToken ct)
+    { await workspace.DeleteNoteAsync(id, noteId, ct); return RedirectToPage(new { id, tab = "notes" }); }
+
+    private async Task<bool> Load(Guid id, CancellationToken ct)
+    { var details = await workspace.GetAsync(id, ct); if (details is null) return false; Details = details; return true; }
 }
-
-public sealed record ClientDocumentDto(Guid Id, DocumentType Type, string Number, string Status, decimal Total, DateTime IssueDate, ClientDecision ClientDecision);
