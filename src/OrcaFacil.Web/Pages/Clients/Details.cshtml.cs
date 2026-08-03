@@ -10,7 +10,7 @@ namespace OrcaFacil.Web.Pages.Clients;
 public sealed class DetailsModel(IClientWorkspaceService workspace) : PageModel
 {
     public ClientWorkspaceDetails Details { get; private set; } = null!;
-    public string MaskedDocument => BrazilianDocument.Mask(Details.Client.DocumentType, Details.Client.DocumentNumber);
+    public string MaskedDocument => Details.Client.MaskedDocument;
 
     [BindProperty] public ClientContactInput Contact { get; set; } = new("", ClientContactType.Email, "", null, false, false, false);
     [BindProperty] public string TagName { get; set; } = "";
@@ -60,5 +60,5 @@ public sealed class DetailsModel(IClientWorkspaceService workspace) : PageModel
     { await workspace.DeleteNoteAsync(id, noteId, ct); return RedirectToPage(new { id, tab = "notes" }); }
 
     private async Task<bool> Load(Guid id, CancellationToken ct)
-    { var details = await workspace.GetAsync(id, ct); if (details is null) return false; Details = details; return true; }
+    { var details = await workspace.GetDetailsAsync(id, ct); if (details is null) return false; Details = details; return true; }
 }

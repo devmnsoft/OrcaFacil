@@ -10,23 +10,29 @@ public sealed class ClientWorkspaceService(OrcaFacilDbContext db, ICurrentAccoun
     private static readonly HashSet<string> Colors = ["neutral", "blue", "green", "amber", "red", "purple", "cyan"];
     private Guid? AccountId => current.AccountId;
 
-    public async Task<ClientWorkspaceDetails?> GetAsync(Guid clientId, CancellationToken ct = default)
+    public async Task<ClientWorkspaceDetails?> GetDetailsAsync(Guid clientId, CancellationToken ct = default)
     {
         if (AccountId is not Guid accountId) return null;
         var client = await db.Clients.AsNoTracking().SingleOrDefaultAsync(x => x.Id == clientId && x.AccountId == accountId && !x.IsDeleted, ct);
         if (client is null) return null;
-        var contacts = await db.ClientContacts.AsNoTracking().Where(x => x.AccountId == accountId && x.ClientId == clientId && !x.IsDeleted).OrderByDescending(x => x.IsPrimary).ThenBy(x => x.SortOrder).Take(50).ToListAsync(ct);
+        var contacts = await db.ClientContacts.AsNoTracking().Where(x => x.AccountId == accountId && x.ClientId == clientId && !x.IsDeleted).OrderByDescending(x => x.IsPrimary).ThenBy(x => x.SortOrder)
+            .Select(x => new ClientContactSummary(x.Id, x.Name, x.ContactType, x.Value, x.Label, x.IsPrimary, x.ReceivesQuotes, x.ReceivesReceipts, x.IsActive, x.SortOrder)).Take(50).ToListAsync(ct);
         var tags = await (from assignment in db.ClientTagAssignments.AsNoTracking()
             join tag in db.ClientTags.AsNoTracking() on assignment.ClientTagId equals tag.Id
             where assignment.AccountId == accountId && assignment.ClientId == clientId && !tag.IsDeleted
             orderby tag.Name
             select new ClientTagSummary(tag.Id, tag.Name, tag.ColorToken)).Take(30).ToListAsync(ct);
-        var notes = await db.ClientNotes.AsNoTracking().Where(x => x.AccountId == accountId && x.ClientId == clientId && !x.IsDeleted).OrderByDescending(x => x.IsPinned).ThenByDescending(x => x.CreatedAt).Take(50).ToListAsync(ct);
-        return new ClientWorkspaceDetails(client, contacts, tags, notes);
+        var notes = await db.ClientNotes.AsNoTracking().Where(x => x.AccountId == accountId && x.ClientId == clientId && !x.IsDeleted).OrderByDescending(x => x.IsPinned).ThenByDescending(x => x.CreatedAt)
+            .Select(x => new ClientNoteSummary(x.Id, x.Content, x.IsPinned, x.CreatedByUserId, x.CreatedAt, x.UpdatedAt)).Take(50).ToListAsync(ct);
+        var profile = new ClientProfileSummary(client.Id, client.PersonType, client.DocumentType,
+            BrazilianDocument.Mask(client.DocumentType, client.DocumentNumber), client.Name, client.LegalName,
+            client.TradeName, client.City, client.Address, client.IsActive, client.IsFavorite,
+            client.PreferredContactChannel, client.LastInteractionAt, client.NextFollowUpAt,
+            client.CreatedAt, client.UpdatedAt, client.Version);
+        return new ClientWorkspaceDetails(profile, contacts, tags, notes,
+            new(0, 0, 0, 0, 0, 0, 0, 0, null, client.NextFollowUpAt),
+            new(0, 0, 0, 0, 0, 0, 0, null), []);
     }
-
-    public Task<ClientWorkspaceDetails?> GetDetailsAsync(Guid clientId, CancellationToken ct = default) =>
-        GetAsync(clientId, ct);
 
     public async Task<ClientWorkspaceResult> ListAsync(ClientWorkspaceQuery request, CancellationToken ct = default)
     {
