@@ -6,9 +6,9 @@ using OrcaFacil.Domain.Entities;
 
 namespace OrcaFacil.Web.Pages.Services;
 [Authorize]
-public sealed class IndexModel(IServiceCatalogApplicationService catalog) : PageModel
+public sealed class IndexModel(IServiceCatalogApplicationService catalog, IServiceUnitCatalog units) : PageModel
 {
-    public static IReadOnlyDictionary<string,string> Units { get; } = ServiceFormModel.Units;
+    public IReadOnlyList<ServiceUnitOption> UnitOptions { get; private set; } = units.GetAll();
     [BindProperty(SupportsGet=true)] public string? Search { get; set; }
     [BindProperty(SupportsGet=true)] public string? Unit { get; set; }
     [BindProperty(SupportsGet=true)] public string Status { get; set; } = "active";

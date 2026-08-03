@@ -1,61 +1,24 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using OrcaFacil.Application.Abstractions;
-using OrcaFacil.Domain.Entities;
+using OrcaFacil.Application.Receipts;
 using OrcaFacil.Domain.Enums;
-using OrcaFacil.Persistence;
+using OrcaFacil.Web.ViewModels.Receipts;
 
 namespace OrcaFacil.Web.Pages.Receipts;
-
 [Authorize]
-public sealed class IndexModel(OrcaFacilDbContext db, ICurrentAccountService account) : PageModel
+public sealed class IndexModel(IReceiptQueryService receipts) : PageModel
 {
-    public IReadOnlyList<Receipt> Receipts { get; private set; } = [];
-    public int TotalItems { get; private set; }
-    public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalItems / (double)PageSize));
-
-    [BindProperty(SupportsGet = true)] public DateTime? From { get; set; }
-    [BindProperty(SupportsGet = true)] public DateTime? To { get; set; }
-    [BindProperty(SupportsGet = true)] public Guid? ClientId { get; set; }
-    [BindProperty(SupportsGet = true)] public string? PaymentMethod { get; set; }
-    [BindProperty(SupportsGet = true)] public ReceiptOriginType? OriginType { get; set; }
-    [BindProperty(SupportsGet = true)] public string? Status { get; set; }
-    [BindProperty(SupportsGet = true)] public decimal? MinimumAmount { get; set; }
-    [BindProperty(SupportsGet = true)] public decimal? MaximumAmount { get; set; }
-    [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
-    [BindProperty(SupportsGet = true)] public int PageSize { get; set; } = 25;
-
-    public async Task OnGetAsync(CancellationToken ct)
-    {
-        PageNumber = Math.Max(1, PageNumber);
-        PageSize = Math.Clamp(PageSize, 10, 100);
-        var query = db.Receipts.AsNoTracking()
-            .Where(receipt => receipt.AccountId == account.AccountId && !receipt.IsDeleted);
-
-        if (From.HasValue) query = query.Where(receipt => receipt.IssuedAt >= From.Value);
-        if (To.HasValue) query = query.Where(receipt => receipt.IssuedAt < To.Value.AddDays(1));
-        if (ClientId.HasValue) query = query.Where(receipt => receipt.ClientId == ClientId.Value);
-        if (OriginType.HasValue) query = query.Where(receipt => receipt.OriginType == OriginType.Value);
-        if (MinimumAmount.HasValue) query = query.Where(receipt => receipt.Amount >= MinimumAmount.Value);
-        if (MaximumAmount.HasValue) query = query.Where(receipt => receipt.Amount <= MaximumAmount.Value);
-        if (!string.IsNullOrWhiteSpace(PaymentMethod) && PaymentMethodCodes.TryParse(PaymentMethod, out var method))
-        {
-            var canonical = method.ToCode();
-            var legacyLabel = method.ToLabel();
-            query = query.Where(receipt => receipt.PaymentMethod == canonical || receipt.PaymentMethod == legacyLabel);
-        }
-        if (string.Equals(Status, "cancelled", StringComparison.OrdinalIgnoreCase))
-            query = query.Where(receipt => receipt.CancelledAt != null);
-        else if (string.Equals(Status, "active", StringComparison.OrdinalIgnoreCase))
-            query = query.Where(receipt => receipt.CancelledAt == null);
-
-        TotalItems = await query.CountAsync(ct);
-        if (PageNumber > TotalPages) PageNumber = TotalPages;
-        Receipts = await query.OrderByDescending(receipt => receipt.IssuedAt)
-            .Skip((PageNumber - 1) * PageSize)
-            .Take(PageSize)
-            .ToListAsync(ct);
-    }
+    [BindProperty(SupportsGet=true)] public DateTime? From { get; set; } [BindProperty(SupportsGet=true)] public DateTime? To { get; set; }
+    [BindProperty(SupportsGet=true)] public Guid? ClientId { get; set; } [BindProperty(SupportsGet=true)] public string? PaymentMethod { get; set; }
+    [BindProperty(SupportsGet=true)] public ReceiptOriginType? OriginType { get; set; } [BindProperty(SupportsGet=true)] public string? Status { get; set; }
+    [BindProperty(SupportsGet=true)] public decimal? MinimumAmount { get; set; } [BindProperty(SupportsGet=true)] public decimal? MaximumAmount { get; set; }
+    [BindProperty(SupportsGet=true)] public string Sort { get; set; } = "recent"; [BindProperty(SupportsGet=true)] public int PageNumber { get; set; } = 1;
+    [BindProperty(SupportsGet=true)] public int PageSize { get; set; } = 25;
+    public ReceiptIndexFilterState Filters { get; private set; } = new(); public ReceiptListResult Result { get; private set; } = new([],0,1,25,1,0,0,0,0);
+    public IReadOnlyList<ReceiptListItem> Receipts => Result.Items; public int TotalPages => Result.TotalPages;
+    public async Task<IActionResult> OnGetAsync(CancellationToken ct) { Filters = new(){From=From,To=To,ClientId=ClientId,PaymentMethod=PaymentMethod,OriginType=OriginType,Status=Status,MinimumAmount=MinimumAmount,MaximumAmount=MaximumAmount,Sort=Sort,PageNumber=Math.Max(1,PageNumber),PageSize=Math.Clamp(PageSize,10,100)}; var result=await receipts.ListAsync(new(From,To,ClientId,PaymentMethod,OriginType,Status,MinimumAmount,MaximumAmount,Sort,Filters.PageNumber,Filters.PageSize),ct); if(result is null)return Forbid(); Result=result;PageNumber=result.Page;PageSize=result.PageSize;Filters=Filters.WithPage(result.Page);return Page(); }
+    public IReadOnlyDictionary<string,string> GetRouteValues(int pageNumber) { var values=new Dictionary<string,string>{{"PageNumber",Math.Max(1,pageNumber).ToString(CultureInfo.InvariantCulture)},{"PageSize",Filters.PageSize.ToString(CultureInfo.InvariantCulture)},{"Sort",Filters.Sort}}; Add("From",Filters.From?.ToString("yyyy-MM-dd"));Add("To",Filters.To?.ToString("yyyy-MM-dd"));Add("ClientId",Filters.ClientId?.ToString());Add("PaymentMethod",Filters.PaymentMethod);Add("OriginType",Filters.OriginType?.ToString());Add("Status",Filters.Status);Add("MinimumAmount",Filters.MinimumAmount?.ToString(CultureInfo.InvariantCulture));Add("MaximumAmount",Filters.MaximumAmount?.ToString(CultureInfo.InvariantCulture));return values; void Add(string key,string? value){if(!string.IsNullOrWhiteSpace(value))values[key]=value;} }
 }
+file static class ReceiptFilterExtensions { public static ReceiptIndexFilterState WithPage(this ReceiptIndexFilterState x,int page)=>new(){From=x.From,To=x.To,ClientId=x.ClientId,PaymentMethod=x.PaymentMethod,OriginType=x.OriginType,Status=x.Status,MinimumAmount=x.MinimumAmount,MaximumAmount=x.MaximumAmount,Sort=x.Sort,PageNumber=page,PageSize=x.PageSize}; }

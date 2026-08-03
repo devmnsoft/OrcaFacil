@@ -1,3 +1,10 @@
-using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Mvc; using Microsoft.AspNetCore.Mvc.RazorPages; using OrcaFacil.Application.Services;
+using Microsoft.AspNetCore.Authorization;using Microsoft.AspNetCore.Mvc;using Microsoft.AspNetCore.Mvc.RazorPages;using OrcaFacil.Application.Services;using OrcaFacil.Web.ViewModels.Services;
 namespace OrcaFacil.Web.Pages.Services;
-[Authorize] public sealed class CreateModel(IServiceCatalogApplicationService catalog):PageModel { [BindProperty] public ServiceFormModel Input{get;set;}=new(); public void OnGet(){} public async Task<IActionResult> OnPostAsync(CancellationToken ct){if(!ServiceFormModel.Units.ContainsKey(Input.UnitCode))ModelState.AddModelError("Input.UnitCode","Unidade inválida.");if(!ModelState.IsValid)return Page();var result=await catalog.CreateAsync(new(Input.Name,Input.Code,Input.Description,null,Input.UnitCode,Input.StandardPrice,Input.EstimatedCost,Input.SuggestedDurationMinutes,Input.InternalNotes,Input.IsFavorite,Input.IsActive),ct);if(result.Code!=ServiceCatalogResultCode.Success){ModelState.AddModelError("",result.Message??"Não foi possível salvar.");return Page();}TempData["Success"]="Serviço adicionado ao catálogo.";return RedirectToPage("Index");}}
+[Authorize] public sealed class CreateModel(IServiceCatalogApplicationService catalog,IServiceUnitCatalog units):PageModel
+{
+    [BindProperty] public ServiceEditorInput Input{get;set;}=new(); public ServiceEditorViewModel Editor{get;private set;}=new();
+    public void OnGet()=>Build();
+    public async Task<IActionResult> OnPostAsync(CancellationToken ct){if(!units.Contains(Input.UnitCode))ModelState.AddModelError("Input.UnitCode","Unidade inválida.");if(!ModelState.IsValid){Build();return Page();}var result=await catalog.CreateAsync(Map(),ct);if(result.Code!=ServiceCatalogResultCode.Success){ModelState.AddModelError("",result.Message??"Não foi possível salvar.");Build();return Page();}TempData["Success"]="Serviço adicionado ao catálogo.";return RedirectToPage("Index");}
+    private ServiceCatalogInput Map()=>new(Input.Name,Input.Code,Input.Description,Input.CategoryId,Input.UnitCode,Input.StandardPrice,Input.EstimatedCost,Input.SuggestedDurationMinutes,Input.InternalNotes,Input.IsFavorite,Input.IsActive);
+    private void Build()=>Editor=new(){Input=Input,UnitOptions=units.GetAll()};
+}

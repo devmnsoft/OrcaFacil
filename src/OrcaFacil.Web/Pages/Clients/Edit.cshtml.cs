@@ -1,65 +1,8 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using OrcaFacil.Application.Clients;
-using OrcaFacil.Domain.Entities;
-
+using Microsoft.AspNetCore.Authorization;using Microsoft.AspNetCore.Mvc;using Microsoft.AspNetCore.Mvc.RazorPages;using OrcaFacil.Application.Clients;using OrcaFacil.Web.ViewModels.Clients;
 namespace OrcaFacil.Web.Pages.Clients;
-
-[Authorize]
-public sealed class EditModel(IClientWorkspaceService workspace) : PageModel
+[Authorize]public sealed class EditModel(IClientWorkspaceService workspace):PageModel
 {
-    [BindProperty]
-    public Client Input { get; set; } = new();
-
-    public async Task<IActionResult> OnGetAsync(Guid id, CancellationToken ct)
-    {
-        var details = await workspace.GetDetailsAsync(id, ct);
-        if (details is null)
-            return NotFound();
-
-        var client = details.Client;
-        Input = new Client
-        {
-            Id = client.Id,
-            PersonType = client.PersonType,
-            DocumentType = client.DocumentType,
-            Name = client.Name,
-            LegalName = client.LegalName,
-            TradeName = client.TradeName,
-            City = client.City,
-            Address = client.Address,
-            IsActive = client.IsActive,
-            IsFavorite = client.IsFavorite,
-            PreferredContactChannel = client.PreferredContactChannel,
-            NextFollowUpAt = client.NextFollowUpAt,
-            Version = client.Version
-        };
-        return Page();
-    }
-
-    public async Task<IActionResult> OnPostAsync(Guid id, CancellationToken ct)
-    {
-        if (!ModelState.IsValid)
-            return Page();
-
-        var result = await workspace.UpdateAsync(id, Input, false, ct);
-        if (result.Code == ClientResultCode.ClientNotFound)
-            return NotFound();
-        if (result.Code == ClientResultCode.AccessDenied)
-            return Forbid();
-        if (!result.Succeeded())
-        {
-            ModelState.AddModelError(string.Empty, result.Message ?? "Não foi possível salvar o cliente.");
-            return Page();
-        }
-
-        TempData["Success"] = "Cliente salvo com sucesso.";
-        return RedirectToPage("/Clients/Details", new { id });
-    }
-}
-
-internal static class ClientSaveResultExtensions
-{
-    public static bool Succeeded(this ClientSaveResult result) => result.Code == ClientResultCode.Success;
+ [BindProperty]public ClientEditorInput Input{get;set;}=new();public Guid ClientId{get;private set;}
+ public async Task<IActionResult> OnGetAsync(Guid id,CancellationToken ct){var d=await workspace.GetDetailsAsync(id,ct);if(d is null)return NotFound();ClientId=id;var x=d.Client;Input=new(){PersonType=x.PersonType,DocumentType=x.DocumentType,Name=x.Name,LegalName=x.LegalName,TradeName=x.TradeName,City=x.City,Address=x.Address,IsActive=x.IsActive,IsFavorite=x.IsFavorite,PreferredContactChannel=x.PreferredContactChannel,NextFollowUpAt=x.NextFollowUpAt,Version=x.Version};return Page();}
+ public async Task<IActionResult> OnPostAsync(Guid id,CancellationToken ct){ClientId=id;if(!ModelState.IsValid)return Page();var i=Input;var r=await workspace.UpdateAsync(new(id,i.PersonType,i.DocumentType,i.DocumentNumber,i.Name,i.LegalName,i.TradeName,i.Email,i.Phone,i.City,i.Address,i.InternalNotes,i.PreferredContactChannel,i.NextFollowUpAt,i.IsFavorite,i.IsActive,i.Version,i.AllowPossibleDuplicate),ct);if(r.Code==ClientResultCode.ClientNotFound)return NotFound();if(r.Code==ClientResultCode.AccessDenied)return Forbid();if(r.Code!=ClientResultCode.Success){ModelState.AddModelError("",r.Message??"Não foi possível salvar o cliente.");return Page();}TempData["Success"]="Cliente salvo com sucesso.";return RedirectToPage("/Clients/Details",new{id});}
 }
