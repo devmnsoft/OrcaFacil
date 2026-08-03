@@ -15,8 +15,12 @@
     <link rel="stylesheet" href="~/css/base.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/overlays.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/feedback.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", false)
 </head>
 <body class="of-admin-body">
+    <partial name="/Pages/Shared/Partials/_IconSprite.cshtml" />
     <a class="of-skip-link" href="#admin-content">Ir para o conteúdo</a>
     <div class="of-admin-shell">
         <aside class="of-admin-sidebar">
@@ -46,7 +50,9 @@
             <main id="admin-content" class="of-admin-content" tabindex="-1"><partial name="/Pages/Shared/Partials/_ToastHost.cshtml" />@RenderBody()</main>
         </div>
     </div>
+    <partial name="/Pages/Shared/Partials/_OverlayHost.cshtml" />
     <script src="~/js/experience.js" asp-append-version="true"></script>
+    <script type="module" src="~/js/ui/feedback.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", false)
 </body>
 </html>

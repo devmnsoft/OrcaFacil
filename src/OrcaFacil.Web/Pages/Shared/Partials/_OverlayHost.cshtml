@@ -1,0 +1,23 @@
+<div class="of-overlay-host" data-overlay-host>
+    <div class="of-overlay" id="confirm-dialog" data-overlay="dialog" data-backdrop-close="false" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message">
+        <div class="of-dialog" tabindex="-1">
+            <div class="of-dialog__icon of-dialog__icon--danger"><svg class="of-icon" aria-hidden="true"><use href="#of-icon-warning" /></svg></div>
+            <div class="of-dialog__body">
+                <p class="of-eyebrow">Confirmação necessária</p>
+                <h2 id="confirm-dialog-title">Confirmar ação</h2>
+                <p id="confirm-dialog-message" data-confirm-message>Revise o impacto antes de continuar.</p>
+                <p class="of-dialog__preserved" data-confirm-impact hidden></p>
+            </div>
+            <div class="of-dialog__actions">
+                <button type="button" class="of-button of-button--secondary" data-overlay-close>Continuar aqui</button>
+                <button type="button" class="of-button of-button--danger" data-confirm-accept>Confirmar</button>
+            </div>
+        </div>
+    </div>
+    <div class="of-overlay" id="info-dialog" data-overlay="dialog" hidden role="dialog" aria-modal="true" aria-labelledby="info-dialog-title">
+        <div class="of-dialog" tabindex="-1">
+            <div class="of-dialog__body"><p class="of-eyebrow">Informação</p><h2 id="info-dialog-title" data-info-title>Importante</h2><p data-info-message></p></div>
+            <div class="of-dialog__actions"><button type="button" class="of-button of-button--primary" data-overlay-close>Entendi</button></div>
+        </div>
+    </div>
+</div>

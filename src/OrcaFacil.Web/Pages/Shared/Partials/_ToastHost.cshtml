@@ -1,14 +1,12 @@
 @using OrcaFacil.Web.Extensions
 @{ var toasts = TempData.ReadToasts(); }
-<div class="toast-container position-fixed top-0 end-0 p-3" id="toastHost" data-toast-host aria-live="polite" aria-atomic="true">
+<div class="of-toast-host" id="toastHost" data-toast-host aria-live="polite" aria-atomic="false" aria-label="Notificações">
 @foreach (var toast in toasts)
 {
-  <div class="toast of-toast of-toast-@toast.Type" role="@(toast.Type == "danger" ? "alert" : "status")" data-bs-delay="5200">
-    <div class="toast-header">
-      <i class="bi @toast.IconCss me-2" aria-hidden="true"></i><strong class="me-auto">@toast.Title</strong>
-      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Fechar"></button>
-    </div>
-    <div class="toast-body">@toast.Message</div>
+  <div class="of-toast of-toast--@toast.Type" role="@(toast.Type == "danger" ? "alert" : "status")" data-toast data-toast-type="@toast.Type">
+    <svg class="of-icon" aria-hidden="true"><use href="#of-icon-@(toast.Type == "danger" ? "danger" : toast.Type == "warning" ? "warning" : "success")" /></svg>
+    <div class="of-toast__content"><strong>@toast.Title</strong><p>@toast.Message</p></div>
+    <button type="button" class="of-toast__close" data-toast-close aria-label="Fechar notificação" title="Fechar"><svg class="of-icon" aria-hidden="true"><use href="#of-icon-close" /></svg></button>
   </div>
 }
 </div>
