@@ -19,6 +19,12 @@ public sealed record ClientContactResult(ClientResultCode Code, Guid? ContactId 
 public sealed record ClientTagResult(ClientResultCode Code, Guid? TagId = null, string? Message = null);
 public sealed record ClientNoteResult(ClientResultCode Code, Guid? NoteId = null, string? Message = null);
 public sealed record DuplicateClientCandidate(Guid Id, string Name, string MatchReason);
+public sealed record CreateClientRequest(PersonType PersonType, BrazilianDocumentType? DocumentType, string? DocumentNumber, string Name,
+    string? LegalName, string? TradeName, string? Email, string? Phone, string? City, string? Address, string? InternalNotes,
+    string? PreferredContactChannel, DateTime? NextFollowUpAt, bool IsFavorite, bool IsActive, bool AllowPossibleDuplicate);
+public sealed record UpdateClientRequest(Guid ClientId, PersonType PersonType, BrazilianDocumentType? DocumentType, string? DocumentNumber, string Name,
+    string? LegalName, string? TradeName, string? Email, string? Phone, string? City, string? Address, string? InternalNotes,
+    string? PreferredContactChannel, DateTime? NextFollowUpAt, bool IsFavorite, bool IsActive, uint ExpectedVersion, bool AllowPossibleDuplicate);
 public sealed record ClientContactInput(string Name, ClientContactType ContactType, string Value, string? Label, bool IsPrimary, bool ReceivesQuotes, bool ReceivesReceipts);
 public sealed record ClientProfileSummary(Guid Id, PersonType PersonType, BrazilianDocumentType? DocumentType,
     string MaskedDocument, string Name, string? LegalName, string? TradeName, string? City, string? Address,
@@ -47,7 +53,9 @@ public interface IClientWorkspaceService
     Task<ClientWorkspaceResult> ListAsync(ClientWorkspaceQuery query, CancellationToken ct = default);
     Task<ClientWorkspaceDetails?> GetDetailsAsync(Guid clientId, CancellationToken ct = default);
     Task<ClientSaveResult> CreateAsync(Client input, bool allowPossibleDuplicate = false, CancellationToken ct = default);
+    Task<ClientSaveResult> CreateAsync(CreateClientRequest request, CancellationToken ct = default);
     Task<ClientSaveResult> UpdateAsync(Guid clientId, Client input, bool allowPossibleDuplicate = false, CancellationToken ct = default);
+    Task<ClientSaveResult> UpdateAsync(UpdateClientRequest request, CancellationToken ct = default);
     Task<ClientSaveResult> SaveAsync(Client input, bool allowPossibleDuplicate = false, CancellationToken ct = default);
     Task<ClientSaveResult> ToggleFavoriteAsync(Guid clientId, CancellationToken ct = default);
     Task<ClientSaveResult> SetActiveAsync(Guid clientId, bool active, CancellationToken ct = default);

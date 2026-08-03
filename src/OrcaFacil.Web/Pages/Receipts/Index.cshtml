@@ -30,6 +30,7 @@
                 <option value="other">Outro</option>
             </select>
         </label>
+        <label>Ordenação<select asp-for="Sort"><option value="recent">Mais recentes</option><option value="oldest">Mais antigos</option><option value="amount_desc">Maior valor</option><option value="amount_asc">Menor valor</option><option value="client">Cliente</option></select></label>
         <label>Valor mínimo <input asp-for="MinimumAmount" type="number" min="0" step="0.01" /></label>
         <label>Valor máximo <input asp-for="MaximumAmount" type="number" min="0" step="0.01" /></label>
         <label>
@@ -55,22 +56,22 @@
             {
                 <a asp-page="Details" asp-route-id="@receipt.Id">
                     <strong>@receipt.Number</strong>
-                    <span>@receipt.OriginType</span>
+                    <span>@receipt.ClientName · @receipt.OriginLabel</span>
                     <span>@receipt.Amount.ToString("C")</span>
-                    <span>@PaymentMethodCodes.ToDisplayLabel(receipt.PaymentMethod) · @receipt.IssuedAt.ToLocalTime().ToString("dd/MM/yyyy")</span>
-                    <em>@(receipt.CancelledAt.HasValue ? "Cancelado" : receipt.LastSharedAt.HasValue ? "Compartilhado" : "Emitido")</em>
+                    <span>@receipt.PaymentMethodLabel · @receipt.IssuedAt.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                    <em>@receipt.StatusLabel</em>
                 </a>
             }
         </div>
         <nav class="of-pagination" aria-label="Paginação de recibos">
             @if (Model.PageNumber > 1)
             {
-                <a asp-all-route-data="@Context.Request.Query.ToDictionary(item => item.Key, item => item.Value.ToString())" asp-route-PageNumber="@(Model.PageNumber - 1)">Anterior</a>
+                <a asp-all-route-data="@Model.GetRouteValues(Model.PageNumber - 1)">Anterior</a>
             }
             <span>Página @Model.PageNumber de @Model.TotalPages</span>
             @if (Model.PageNumber < Model.TotalPages)
             {
-                <a asp-all-route-data="@Context.Request.Query.ToDictionary(item => item.Key, item => item.Value.ToString())" asp-route-PageNumber="@(Model.PageNumber + 1)">Próxima</a>
+                <a asp-all-route-data="@Model.GetRouteValues(Model.PageNumber + 1)">Próxima</a>
             }
         </nav>
     }

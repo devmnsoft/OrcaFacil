@@ -68,6 +68,9 @@ public sealed class ClientWorkspaceService(OrcaFacilDbContext db, ICurrentAccoun
         input.AccountId = accountId; input.UserId = current.UserId; db.Clients.Add(input); await db.SaveChangesAsync(ct); return new(ClientResultCode.Success, input.Id);
     }
 
+    public Task<ClientSaveResult> CreateAsync(CreateClientRequest r, CancellationToken ct = default) => CreateAsync(new Client { PersonType=r.PersonType,DocumentType=r.DocumentType,DocumentNumber=r.DocumentNumber,Name=r.Name,LegalName=r.LegalName,TradeName=r.TradeName,Email=r.Email,Phone=r.Phone,City=r.City,Address=r.Address,InternalNotes=r.InternalNotes,PreferredContactChannel=r.PreferredContactChannel,NextFollowUpAt=r.NextFollowUpAt,IsFavorite=r.IsFavorite,IsActive=r.IsActive },r.AllowPossibleDuplicate,ct);
+    public Task<ClientSaveResult> UpdateAsync(UpdateClientRequest r, CancellationToken ct = default) => UpdateAsync(r.ClientId,new Client { PersonType=r.PersonType,DocumentType=r.DocumentType,DocumentNumber=r.DocumentNumber,Name=r.Name,LegalName=r.LegalName,TradeName=r.TradeName,Email=r.Email,Phone=r.Phone,City=r.City,Address=r.Address,InternalNotes=r.InternalNotes,PreferredContactChannel=r.PreferredContactChannel,NextFollowUpAt=r.NextFollowUpAt,IsFavorite=r.IsFavorite,IsActive=r.IsActive,Version=r.ExpectedVersion },r.AllowPossibleDuplicate,ct);
+
     public async Task<ClientSaveResult> UpdateAsync(Guid clientId, Client input, bool allowPossibleDuplicate = false, CancellationToken ct = default)
     {
         if (AccountId is not Guid accountId)

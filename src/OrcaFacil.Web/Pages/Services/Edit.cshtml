@@ -16,8 +16,7 @@
 
 <form method="post" class="commercial-editor">
     @Html.AntiForgeryToken()
-    <input asp-for="Id" type="hidden" />
-    <input asp-for="Version" type="hidden" />
+    <input asp-for="Input.Version" type="hidden" />
 
     <div asp-validation-summary="ModelOnly"
          class="of-form-errors"
@@ -25,7 +24,7 @@
     </div>
 
     <main>
-        <partial name="_Form" model="Model.Input" />
+        <partial name="_Form" model="Model.Editor" />
 
         <section class="commercial-form-block">
             <label>

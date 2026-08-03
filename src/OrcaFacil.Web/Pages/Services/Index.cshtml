@@ -10,7 +10,7 @@
 </section>
 <form method="get" class="commercial-filters" data-catalog-filters>
     <label><span>Buscar</span><input asp-for="Search" type="search" placeholder="Nome, código ou descrição" /></label>
-    <label><span>Unidade</span><select asp-for="Unit"><option value="">Todas</option>@foreach(var unit in IndexModel.Units){<option value="@unit.Key">@unit.Value</option>}</select></label>
+    <label><span>Unidade</span><select asp-for="Unit"><option value="">Todas</option>@foreach(var unit in Model.UnitOptions){<option value="@unit.Code">@unit.Label</option>}</select></label>
     <label><span>Situação</span><select asp-for="Status"><option value="active">Ativos</option><option value="all">Todos</option><option value="inactive">Inativos</option></select></label>
     <button class="of-button" type="submit">Filtrar</button>
 </form>

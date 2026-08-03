@@ -2,7 +2,7 @@
 @model OrcaFacil.Web.Pages.Clients.EditModel
 @{ ViewData["Title"] = "Editar cliente"; ViewData["Section"] = "Comercial"; }
 <header class="client-page-head"><div><p class="of-eyebrow">Clientes</p><h1>Editar cliente</h1><p>Atualize identificação, contatos, endereço e relacionamento.</p></div></header>
-<form method="post" class="client-editor" data-client-editor>@Html.AntiForgeryToken()<input asp-for="Input.Id" type="hidden" /><input asp-for="Input.Version" type="hidden" /><div asp-validation-summary="ModelOnly" class="of-form-errors" role="alert"></div><partial name="_Editor" model="Model.Input" /><footer><a class="client-button secondary" asp-page="Details" asp-route-id="@Model.Input.Id">Cancelar</a><button class="client-button primary" type="submit">Salvar alterações</button></footer></form>
+<form method="post" class="client-editor" data-client-editor>@Html.AntiForgeryToken()<input asp-for="Input.Version" type="hidden" /><div asp-validation-summary="ModelOnly" class="of-form-errors" role="alert"></div><partial name="_Editor" model="Model.Input" /><footer><a class="client-button secondary" asp-page="Details" asp-route-id="@Model.ClientId">Cancelar</a><button class="client-button primary" type="submit">Salvar alterações</button></footer></form>
 @section Scripts
 {
     <script type="module" src="~/js/client-editor.js" asp-append-version="true"></script>
