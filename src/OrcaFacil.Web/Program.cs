@@ -102,6 +102,7 @@ builder.Services.AddScoped<ICommercialJourneyService>(sp => sp.GetRequiredServic
 builder.Services.AddScoped<IManualPaymentRegistrationService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IReceiptApplicationService, ReceiptApplicationService>();
 builder.Services.AddScoped<IClientWorkspaceService, ClientWorkspaceService>();
+builder.Services.AddScoped<OrcaFacil.Application.Services.IServiceCatalogApplicationService, ServiceCatalogApplicationService>();
 builder.Services.AddScoped<IDocumentNumberService, DocumentNumberService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<PlanLimitService>();
@@ -242,6 +243,17 @@ app.MapGet("/Internal/Search", async Task<IResult> (string? q, int? limit, IGlob
     if (string.IsNullOrWhiteSpace(q) || q.Trim().Length < 2)
         return Results.BadRequest(new { message = "Digite ao menos dois caracteres." });
     return Results.Ok(new { results = await search.SearchAsync(q, limit ?? 12, ct) });
+}).RequireAuthorization();
+app.MapGet("/Internal/Services/Search", async Task<IResult> (string? q, Guid? categoryId, bool? favorite, bool? recent, bool? mostUsed, int? limit, ICurrentAccountService account, OrcaFacilDbContext db, CancellationToken ct) =>
+{
+    if (account.AccountId is not Guid accountId) return Results.Forbid();
+    var query = db.ServiceCatalogItems.AsNoTracking().Where(x => x.AccountId == accountId && x.IsActive && !x.IsDeleted);
+    if (!string.IsNullOrWhiteSpace(q)) { var term = $"%{q.Trim()}%"; query = query.Where(x => EF.Functions.ILike(x.Name, term) || (x.Description != null && EF.Functions.ILike(x.Description, term))); }
+    if (categoryId.HasValue) query = query.Where(x => x.CategoryId == categoryId);
+    if (favorite == true) query = query.Where(x => x.IsFavorite);
+    query = mostUsed == true ? query.OrderByDescending(x => x.UseCount) : recent == true ? query.OrderByDescending(x => x.LastUsedAt) : query.OrderByDescending(x => x.IsFavorite).ThenBy(x => x.Name);
+    var results = await query.Take(Math.Clamp(limit ?? 12, 1, 50)).Select(x => new { x.Id, x.Name, x.Description, x.CategoryId, unit = x.UnitCode, price = x.StandardPrice, durationMinutes = x.SuggestedDurationMinutes, estimatedCost = x.EstimatedCost, margin = x.StandardPrice - x.EstimatedCost }).ToListAsync(ct);
+    return Results.Ok(new { results });
 }).RequireAuthorization();
 app.MapGet("/Internal/Accounts", async Task<IResult> (HttpContext context, IAccountSwitcherService switcher, CancellationToken ct) =>
 {

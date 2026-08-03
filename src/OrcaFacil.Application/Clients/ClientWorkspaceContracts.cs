@@ -20,10 +20,13 @@ public sealed record ClientTagResult(ClientResultCode Code, Guid? TagId = null, 
 public sealed record ClientNoteResult(ClientResultCode Code, Guid? NoteId = null, string? Message = null);
 public sealed record DuplicateClientCandidate(Guid Id, string Name, string MatchReason);
 public sealed record ClientContactInput(string Name, ClientContactType ContactType, string Value, string? Label, bool IsPrimary, bool ReceivesQuotes, bool ReceivesReceipts);
+public sealed record ClientWorkspaceDetails(Client Client, IReadOnlyList<ClientContact> Contacts,
+    IReadOnlyList<ClientTagSummary> Tags, IReadOnlyList<ClientNote> Notes);
 
 public interface IClientWorkspaceService
 {
     Task<ClientWorkspaceResult> ListAsync(ClientWorkspaceQuery query, CancellationToken ct = default);
+    Task<ClientWorkspaceDetails?> GetAsync(Guid clientId, CancellationToken ct = default);
     Task<ClientSaveResult> SaveAsync(Client input, bool allowPossibleDuplicate = false, CancellationToken ct = default);
     Task<ClientSaveResult> ToggleFavoriteAsync(Guid clientId, CancellationToken ct = default);
     Task<ClientSaveResult> SetActiveAsync(Guid clientId, bool active, CancellationToken ct = default);

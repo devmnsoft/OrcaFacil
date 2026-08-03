@@ -1,4 +1,48 @@
 @page
 @model OrcaFacil.Web.Pages.Services.CreateModel
-@{ViewData["Title"]="Novo serviço";ViewData["Section"]="Comercial";}
-<header class="commercial-header"><div><p class="of-eyebrow">Catálogo</p><h1>Novo serviço</h1><p>Defina o padrão reutilizável. O preço poderá ser ajustado em cada proposta.</p></div></header><form method="post" class="commercial-editor"><main><partial name="_Form" model="Model.Input" /></main><aside class="commercial-preview"><h2>Como aparecerá no orçamento</h2><strong data-preview-name>@(Model.Input.Name.Length>0?Model.Input.Name:"Nome do serviço")</strong><p data-preview-description>@(Model.Input.Description??"Descrição comercial do serviço.")</p><span data-preview-price>@Model.Input.StandardPrice.ToString("C")</span></aside><footer><a class="of-button" asp-page="Index">Cancelar</a><button class="of-button of-button--primary" type="submit">Salvar serviço</button></footer></form>@section Scripts{<script type="module" src="~/js/service-catalog.js" asp-append-version="true"></script>}
+
+@{
+    ViewData["Title"] = "Novo serviço";
+    ViewData["Section"] = "Comercial";
+}
+
+<header class="commercial-header">
+    <div>
+        <p class="of-eyebrow">Catálogo</p>
+        <h1>Novo serviço</h1>
+        <p>Defina o padrão reutilizável. O preço poderá ser ajustado em cada proposta.</p>
+    </div>
+</header>
+
+<form method="post" class="commercial-editor">
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly"
+         class="of-form-errors"
+         role="alert">
+    </div>
+
+    <main>
+        <partial name="_Form" model="Model.Input" />
+    </main>
+
+    <aside class="commercial-preview">
+        <h2>Como aparecerá no orçamento</h2>
+        <strong data-preview-name>@(Model.Input.Name.Length > 0 ? Model.Input.Name : "Nome do serviço")</strong>
+        <p data-preview-description>@(Model.Input.Description ?? "Descrição comercial do serviço.")</p>
+        <span data-preview-price>@Model.Input.StandardPrice.ToString("C")</span>
+    </aside>
+
+    <footer>
+        <a class="of-button" asp-page="Index">Cancelar</a>
+        <button class="of-button of-button--primary" type="submit">Salvar serviço</button>
+    </footer>
+</form>
+
+@section Scripts
+{
+    <script type="module"
+            src="~/js/service-catalog.js"
+            asp-append-version="true">
+    </script>
+}

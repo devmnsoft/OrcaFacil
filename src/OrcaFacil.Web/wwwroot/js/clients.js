@@ -8,3 +8,10 @@ document.addEventListener('click', event => {
 dialog?.addEventListener('close', () => trigger?.focus());
 dialog?.addEventListener('cancel', () => trigger?.focus());
 dialog?.querySelector('[data-delete-form]')?.addEventListener('submit', event => { const button = event.submitter; if (button?.disabled) event.preventDefault(); else if (button) { button.disabled = true; button.textContent = 'Removendo…'; } });
+
+document.querySelectorAll('[data-client-action-form]').forEach(form => form.addEventListener('submit', event => {
+  const button = event.submitter;
+  if (!button || button.disabled) return;
+  button.disabled = true;
+  button.setAttribute('aria-busy', 'true');
+}));

@@ -1,3 +1,22 @@
-using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Mvc; using Microsoft.AspNetCore.Mvc.RazorPages; using OrcaFacil.Application.Abstractions; using OrcaFacil.Domain.Entities; using OrcaFacil.Domain.Enums; using OrcaFacil.Persistence;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using OrcaFacil.Application.Clients;
+using OrcaFacil.Domain.Entities;
+
 namespace OrcaFacil.Web.Pages.Clients;
-[Authorize] public class CreateModel:PageModel{private readonly OrcaFacilDbContext _db; private readonly ICurrentUserService _current; public CreateModel(OrcaFacilDbContext db,ICurrentUserService current){_db=db;_current=current;} [BindProperty] public Client Input{get;set;}=new(); public void OnGet(){} public async Task<IActionResult> OnPostAsync(CancellationToken ct){Input.UserId=_current.UserId; try{Input.NormalizeAndValidate();}catch(Exception ex){ModelState.AddModelError("Input.DocumentNumber",ex.Message);return Page();} _db.Clients.Add(Input); await _db.SaveChangesAsync(ct); TempData["Success"]="Cliente salvo com sucesso."; return RedirectToPage("/Clients/Index");}}
+
+[Authorize]
+public sealed class CreateModel(IClientWorkspaceService workspace) : PageModel
+{
+    [BindProperty] public Client Input { get; set; } = new();
+    public void OnGet() { }
+    public async Task<IActionResult> OnPostAsync(CancellationToken ct)
+    {
+        if (!ModelState.IsValid) return Page();
+        var result = await workspace.SaveAsync(Input, false, ct);
+        if (result.Code == ClientResultCode.Success) { TempData["Success"] = "Cliente salvo com sucesso."; return RedirectToPage("Details", new { id = result.ClientId }); }
+        ModelState.AddModelError(string.Empty, result.Message ?? "Não foi possível salvar o cliente.");
+        return Page();
+    }
+}

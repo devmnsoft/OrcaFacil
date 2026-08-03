@@ -42,6 +42,10 @@
 
             <section class="of-wizard-panel" data-step="1" aria-labelledby="wizard-items-title" hidden>
                 <div class="of-wizard-intro"><span class="of-wizard-number">02</span><div><p class="of-eyebrow">Serviços</p><h2 id="wizard-items-title">O que você vai entregar?</h2><p>Descreva cada resultado, ajuste quantidade, preço e desconto. O total é atualizado na hora.</p></div></div>
+                <div class="of-service-catalog-search">
+                    <label class="of-field"><span>Buscar no catálogo</span><input type="search" data-service-search placeholder="Nome ou descrição" autocomplete="off" /></label>
+                    <div data-service-results aria-live="polite"></div>
+                </div>
                 <div class="of-service-examples" aria-label="Exemplos de serviços">
                     @foreach (var example in new[] { "Consultoria por hora", "Instalação elétrica", "Manutenção preventiva", "Limpeza pós-obra" }) { <button type="button" data-service-example="@example">+ @example</button> }
                 </div>

@@ -3,7 +3,7 @@
 @{ ViewData["Title"] = "Catálogo de serviços"; ViewData["Section"] = "Comercial"; }
 <header class="commercial-header">
     <div><p class="of-eyebrow">Catálogo</p><h1>Catálogo de serviços</h1><p>@Model.Items.Count serviço(s) encontrado(s). Reutilize preços e preserve cada proposta.</p></div>
-    <a class="of-button of-button--primary" asp-page="Create"><partial name="Partials/_Icon" model='new IconViewModel("plus", "sm")' /> Novo serviço</a>
+    <a class="of-button" asp-page="Categories">Categorias</a><a class="of-button of-button--primary" asp-page="Create"><partial name="Partials/_Icon" model='new IconViewModel("plus", "sm")' /> Novo serviço</a>
 </header>
 <section class="commercial-metrics" aria-label="Indicadores">
     <article><span>Ativos</span><strong>@Model.ActiveCount</strong></article><article><span>Favoritos</span><strong>@Model.FavoriteCount</strong></article><article><span>Mais utilizados</span><strong>@Model.UsedCount</strong></article><article><span>Inativos</span><strong>@Model.InactiveCount</strong></article>
@@ -14,7 +14,8 @@
     <label><span>Situação</span><select asp-for="Status"><option value="active">Ativos</option><option value="all">Todos</option><option value="inactive">Inativos</option></select></label>
     <button class="of-button" type="submit">Filtrar</button>
 </form>
-@if (Model.Items.Count == 0) { <section class="commercial-empty"><partial name="Partials/_Icon" model='new IconViewModel("service", "lg")' /><h2>Seu catálogo começa aqui</h2><p>Cadastre serviços recorrentes para montar orçamentos com mais velocidade.</p><a class="of-button of-button--primary" asp-page="Create">Cadastrar serviço</a></section> }
+@if (Model.Items.Count == 0) { <section class="commercial-empty"><partial name="Partials/_Icon" model='new IconViewModel("service", "lg")' /><h2>Seu catálogo começa aqui</h2><p>Cadastre serviços recorrentes para montar orçamentos com mais velocidade.</p><a class="of-button" asp-page="Categories">Categorias</a><a class="of-button of-button--primary" asp-page="Create">Cadastrar serviço</a></section> }
 else {
 <div class="service-grid">@foreach(var item in Model.Items){<article class="service-card"><header><span class="service-icon"><partial name="Partials/_Icon" model='new IconViewModel("service")' /></span><div><small>@(item.Code ?? "Sem código")</small><h2><a asp-page="Details" asp-route-id="@item.Id">@item.Name</a></h2></div></header><p>@(item.Description ?? "Sem descrição comercial.")</p><dl><div><dt>Preço</dt><dd>@item.StandardPrice.ToString("C")</dd></div><div><dt>Custo</dt><dd>@item.EstimatedCost.ToString("C")</dd></div><div><dt>Margem</dt><dd class="@(item.Margin < 0 ? "is-negative" : null)">@item.Margin.ToString("C")</dd></div></dl><footer><span class="of-status">@(item.IsActive ? "Ativo" : "Inativo")</span><form method="post" asp-page-handler="Favorite" asp-route-id="@item.Id"><button type="submit" class="of-icon-button" aria-label="@(item.IsFavorite ? "Desfavoritar" : "Favoritar")"><partial name="Partials/_Icon" model='new IconViewModel("favorite", "sm")' /></button></form><a class="of-button" asp-page="Edit" asp-route-id="@item.Id">Editar</a></footer></article>}</div>}
+<nav class="commercial-pagination" aria-label="Paginação"><a asp-route-pageNumber="@(Math.Max(1, Model.PageNumber - 1))" asp-route-search="@Model.Search" asp-route-unit="@Model.Unit" asp-route-status="@Model.Status">Anterior</a><span>Página @Model.PageNumber</span><a asp-route-pageNumber="@(Model.PageNumber + 1)" asp-route-search="@Model.Search" asp-route-unit="@Model.Unit" asp-route-status="@Model.Status">Próxima</a></nav>
 @section Scripts { <script type="module" src="~/js/service-catalog.js" asp-append-version="true"></script> }
