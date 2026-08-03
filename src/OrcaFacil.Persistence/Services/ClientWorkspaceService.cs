@@ -25,6 +25,9 @@ public sealed class ClientWorkspaceService(OrcaFacilDbContext db, ICurrentAccoun
         return new ClientWorkspaceDetails(client, contacts, tags, notes);
     }
 
+    public Task<ClientWorkspaceDetails?> GetDetailsAsync(Guid clientId, CancellationToken ct = default) =>
+        GetAsync(clientId, ct);
+
     public async Task<ClientWorkspaceResult> ListAsync(ClientWorkspaceQuery request, CancellationToken ct = default)
     {
         if (AccountId is not Guid accountId) return new(ClientResultCode.AccountRequired, [], 0, 0, 0, 0, 0, 1, request.PageSize);
@@ -45,7 +48,10 @@ public sealed class ClientWorkspaceService(OrcaFacilDbContext db, ICurrentAccoun
         return new(ClientResultCode.Success, items, total, await all.CountAsync(x => x.IsActive, ct), await all.CountAsync(x => x.IsFavorite, ct), await all.CountAsync(x => x.CreatedAt >= DateTime.UtcNow.AddDays(-30), ct), await all.CountAsync(x => x.Email == null && x.Phone == null, ct), page, pageSize);
     }
 
-    public async Task<ClientSaveResult> SaveAsync(Client input, bool allowPossibleDuplicate = false, CancellationToken ct = default)
+    public Task<ClientSaveResult> SaveAsync(Client input, bool allowPossibleDuplicate = false, CancellationToken ct = default) =>
+        CreateAsync(input, allowPossibleDuplicate, ct);
+
+    public async Task<ClientSaveResult> CreateAsync(Client input, bool allowPossibleDuplicate = false, CancellationToken ct = default)
     {
         if (AccountId is not Guid accountId) return new(ClientResultCode.AccountRequired, Message: "Selecione uma conta.");
         if (string.IsNullOrWhiteSpace(input.Name)) return new(ClientResultCode.InvalidInput, Message: "Informe o nome do cliente.");
@@ -55,7 +61,103 @@ public sealed class ClientWorkspaceService(OrcaFacilDbContext db, ICurrentAccoun
         if (duplicates.Count > 0 && !allowPossibleDuplicate) return new(ClientResultCode.PossibleDuplicate, Candidates: duplicates, Message: "Encontramos clientes parecidos.");
         input.AccountId = accountId; input.UserId = current.UserId; db.Clients.Add(input); await db.SaveChangesAsync(ct); return new(ClientResultCode.Success, input.Id);
     }
-    public async Task<IReadOnlyList<DuplicateClientCandidate>> FindDuplicatesAsync(Client input, CancellationToken ct = default) { if (AccountId is not Guid accountId) return []; var document = BrazilianDocument.Normalize(input.DocumentNumber); var name = input.Name.Trim().ToUpper(); return await db.Clients.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted && x.Id != input.Id && ((!string.IsNullOrEmpty(document) && x.DocumentNumber == document) || x.Name.ToUpper() == name || (!string.IsNullOrWhiteSpace(input.Email) && x.Email == input.Email) || (!string.IsNullOrWhiteSpace(input.Phone) && x.Phone == input.Phone))).Select(x => new DuplicateClientCandidate(x.Id, x.Name, x.DocumentNumber == document ? "Documento idêntico" : x.Email == input.Email ? "E-mail igual" : x.Phone == input.Phone ? "Telefone igual" : "Nome semelhante")).Take(5).ToListAsync(ct); }
+
+    public async Task<ClientSaveResult> UpdateAsync(Guid clientId, Client input, bool allowPossibleDuplicate = false, CancellationToken ct = default)
+    {
+        if (AccountId is not Guid accountId)
+            return new(ClientResultCode.AccountRequired, Message: "Selecione uma conta.");
+
+        var client = await db.Clients.SingleOrDefaultAsync(
+            x => x.Id == clientId && x.AccountId == accountId && !x.IsDeleted,
+            ct);
+        if (client is null)
+            return new(ClientResultCode.ClientNotFound);
+
+        try
+        {
+            input.NormalizeAndValidate();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new(ClientResultCode.InvalidInput, Message: ex.Message);
+        }
+
+        var duplicates = await FindDuplicatesAsync(input, clientId, ct);
+        var exact = duplicates.FirstOrDefault(x => x.MatchReason == "Documento idêntico");
+        if (exact is not null)
+            return new(ClientResultCode.DuplicateDocument, exact.Id, "CPF/CNPJ já cadastrado.", duplicates);
+        if (duplicates.Count > 0 && !allowPossibleDuplicate)
+            return new(ClientResultCode.PossibleDuplicate, clientId, "Encontramos clientes parecidos.", duplicates);
+
+        client.PersonType = input.PersonType;
+        client.DocumentType = input.DocumentType;
+        client.DocumentNumber = input.DocumentNumber;
+        client.Name = input.Name.Trim();
+        client.LegalName = input.LegalName?.Trim();
+        client.TradeName = input.TradeName?.Trim();
+        client.Email = input.Email?.Trim();
+        client.Phone = input.Phone?.Trim();
+        client.City = input.City?.Trim();
+        client.Address = input.Address?.Trim();
+        client.Notes = input.Notes?.Trim();
+        client.InternalNotes = input.InternalNotes?.Trim();
+        client.PreferredContactChannel = input.PreferredContactChannel;
+        client.NextFollowUpAt = input.NextFollowUpAt;
+        client.IsFavorite = input.IsFavorite;
+        client.IsActive = input.IsActive;
+        client.Touch();
+
+        db.Entry(client).Property(x => x.Version).OriginalValue = input.Version;
+        try
+        {
+            await db.SaveChangesAsync(ct);
+            return new(ClientResultCode.Success, clientId);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new(ClientResultCode.ConcurrencyConflict, clientId,
+                "Este cliente foi alterado por outra pessoa. Recarregue a página antes de salvar novamente.");
+        }
+    }
+
+    public async Task<IReadOnlyList<DuplicateClientCandidate>> FindDuplicatesAsync(Client input, CancellationToken ct = default)
+    {
+        return await FindDuplicatesAsync(input, input.Id, ct);
+    }
+
+    private async Task<IReadOnlyList<DuplicateClientCandidate>> FindDuplicatesAsync(
+        Client input,
+        Guid excludedClientId,
+        CancellationToken ct)
+    {
+        if (AccountId is not Guid accountId)
+            return [];
+
+        var document = BrazilianDocument.Normalize(input.DocumentNumber);
+        var email = input.Email?.Trim();
+        var phone = input.Phone?.Trim();
+        var name = input.Name.Trim().ToUpper();
+        return await db.Clients.AsNoTracking()
+            .Where(x => x.AccountId == accountId && !x.IsDeleted && x.Id != excludedClientId &&
+                ((!string.IsNullOrEmpty(document) && x.DocumentNumber == document) ||
+                 x.Name.ToUpper() == name ||
+                 (!string.IsNullOrWhiteSpace(email) && x.Email == email) ||
+                 (!string.IsNullOrWhiteSpace(phone) && x.Phone == phone)))
+            .OrderBy(x => x.Name)
+            .ThenBy(x => x.Id)
+            .Select(x => new DuplicateClientCandidate(
+                x.Id,
+                x.Name,
+                !string.IsNullOrEmpty(document) && x.DocumentNumber == document
+                    ? "Documento idêntico"
+                    : x.Email == email
+                        ? "E-mail igual"
+                        : x.Phone == phone
+                            ? "Telefone igual"
+                            : "Nome semelhante"))
+            .Take(5)
+            .ToListAsync(ct);
+    }
     public async Task<ClientSaveResult> ToggleFavoriteAsync(Guid id, CancellationToken ct = default) { var c = await Client(id, ct); if (c is null) return new(ClientResultCode.ClientNotFound); c.IsFavorite = !c.IsFavorite; c.Touch(); await db.SaveChangesAsync(ct); return new(ClientResultCode.Success, id); }
     public async Task<ClientSaveResult> SetActiveAsync(Guid id, bool active, CancellationToken ct = default) { var c = await Client(id, ct); if (c is null) return new(ClientResultCode.ClientNotFound); c.IsActive = active; c.Touch(); await db.SaveChangesAsync(ct); return new(ClientResultCode.Success, id); }
     public async Task<ClientSaveResult> DeleteAsync(Guid id, CancellationToken ct = default) { var c = await Client(id, ct); if (c is null) return new(ClientResultCode.ClientNotFound); c.MarkAsDeleted(); await db.SaveChangesAsync(ct); return new(ClientResultCode.Success, id); }

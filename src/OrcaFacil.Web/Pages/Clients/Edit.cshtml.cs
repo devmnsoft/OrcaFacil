@@ -1,3 +1,49 @@
-using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Mvc; using Microsoft.AspNetCore.Mvc.RazorPages; using Microsoft.EntityFrameworkCore; using OrcaFacil.Application.Abstractions; using OrcaFacil.Domain.Entities; using OrcaFacil.Persistence;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using OrcaFacil.Application.Clients;
+using OrcaFacil.Domain.Entities;
+
 namespace OrcaFacil.Web.Pages.Clients;
-[Authorize] public class EditModel:PageModel{private readonly OrcaFacilDbContext _db; private readonly ICurrentUserService _current; public EditModel(OrcaFacilDbContext db,ICurrentUserService current, OrcaFacil.Application.Abstractions.ICurrentAccountService account){_db=db;_current=current;} [BindProperty] public Client Input{get;set;}=new(); public async Task<IActionResult> OnGetAsync(Guid id,CancellationToken ct){Input=await _db.Clients.SingleOrDefaultAsync(x=>x.Id==id&&x.AccountId==account.AccountId&&!x.IsDeleted,ct)??new(); return Input.Id==Guid.Empty?NotFound():Page();} public async Task<IActionResult> OnPostAsync(Guid id,CancellationToken ct){var client=await _db.Clients.SingleOrDefaultAsync(x=>x.Id==id&&x.AccountId==account.AccountId&&!x.IsDeleted,ct); if(client is null)return NotFound(); client.PersonType=Input.PersonType;client.DocumentNumber=Input.DocumentNumber;client.Name=Input.Name;client.LegalName=Input.LegalName;client.TradeName=Input.TradeName;client.Email=Input.Email;client.Phone=Input.Phone;client.City=Input.City;client.Address=Input.Address;client.Notes=Input.Notes;client.IsFavorite=Input.IsFavorite;client.IsActive=Input.IsActive;client.PreferredContactChannel=Input.PreferredContactChannel;client.NextFollowUpAt=Input.NextFollowUpAt;client.InternalNotes=Input.InternalNotes; try{client.NormalizeAndValidate();}catch(Exception ex){ModelState.AddModelError("Input.DocumentNumber",ex.Message);return Page();} await _db.SaveChangesAsync(ct); TempData["Success"]="Cliente salvo com sucesso."; return RedirectToPage("/Clients/Details",new{id});}}
+
+[Authorize]
+public sealed class EditModel(IClientWorkspaceService workspace) : PageModel
+{
+    [BindProperty]
+    public Client Input { get; set; } = new();
+
+    public async Task<IActionResult> OnGetAsync(Guid id, CancellationToken ct)
+    {
+        var details = await workspace.GetDetailsAsync(id, ct);
+        if (details is null)
+            return NotFound();
+
+        Input = details.Client;
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostAsync(Guid id, CancellationToken ct)
+    {
+        if (!ModelState.IsValid)
+            return Page();
+
+        var result = await workspace.UpdateAsync(id, Input, false, ct);
+        if (result.Code == ClientResultCode.ClientNotFound)
+            return NotFound();
+        if (result.Code == ClientResultCode.AccessDenied)
+            return Forbid();
+        if (!result.Succeeded())
+        {
+            ModelState.AddModelError(string.Empty, result.Message ?? "Não foi possível salvar o cliente.");
+            return Page();
+        }
+
+        TempData["Success"] = "Cliente salvo com sucesso.";
+        return RedirectToPage("/Clients/Details", new { id });
+    }
+}
+
+internal static class ClientSaveResultExtensions
+{
+    public static bool Succeeded(this ClientSaveResult result) => result.Code == ClientResultCode.Success;
+}
