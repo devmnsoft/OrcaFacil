@@ -24,6 +24,9 @@ public class UserAccountConfiguration : IEntityTypeConfiguration<UserAccount>
         builder.Property(x => x.LastLoginAt).HasColumnName("last_login_at");
         builder.Property(x => x.LastSeenAt).HasColumnName("last_seen_at");
         builder.Property(x => x.SessionVersion).HasColumnName("session_version").HasDefaultValue(1);
+        builder.Property(x => x.PasswordResetReason).HasMaxLength(500);
+        builder.HasCheckConstraint("ck_users_role", "role IN ('User','Admin','SuperAdmin')");
+        builder.HasCheckConstraint("ck_users_plan", "plan IN ('Free','Professional','Business')");
         builder.HasIndex(x => x.Email).IsUnique();
     }
 }

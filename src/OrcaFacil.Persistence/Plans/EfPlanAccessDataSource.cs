@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Plans;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
+using OrcaFacil.Domain.Plans;
 
 namespace OrcaFacil.Persistence.Plans;
 
@@ -67,14 +68,14 @@ public sealed class EfPlanAccessDataSource(OrcaFacilDbContext db) : IPlanAccessD
         var period = periodStartUtc.ToString("yyyy-MM");
         return featureCode switch
         {
-            "clients.active_limit" => await db.Clients.CountAsync(x => x.AccountId == accountId && !x.IsDeleted, ct),
-            "services.active_limit" => await db.ActivityEvents.CountAsync(x => x.AccountId == accountId && !x.IsDeleted &&
+            PlanFeatureCodes.ClientsActiveLimit => await db.Clients.CountAsync(x => x.AccountId == accountId && !x.IsDeleted, ct),
+            PlanFeatureCodes.ServicesActiveLimit => await db.ActivityEvents.CountAsync(x => x.AccountId == accountId && !x.IsDeleted &&
                 x.EntityType == "ServiceCatalogItem" && x.Action == "ServiceActivated" && x.Result == "Success", ct),
             "documents.monthly_limit" => await db.Documents.CountAsync(x => x.AccountId == accountId && !x.IsDeleted &&
                 x.CreatedAt >= periodStartUtc && x.CreatedAt < periodEndUtc, ct),
-            "pdf.monthly_limit" => await db.UserUsage.Where(x => x.AccountId == accountId && !x.IsDeleted &&
+            PlanFeatureCodes.PdfMonthlyLimit => await db.UserUsage.Where(x => x.AccountId == accountId && !x.IsDeleted &&
                 x.Period == period).SumAsync(x => x.PdfGenerated, ct),
-            "team.members_limit" => await db.AccountMembers.CountAsync(x => x.AccountId == accountId && !x.IsDeleted &&
+            PlanFeatureCodes.TeamMembersLimit => await db.AccountMembers.CountAsync(x => x.AccountId == accountId && !x.IsDeleted &&
                 x.Status == AccountMemberStatus.Active, ct),
             "public_approval.monthly_limit" => await (from quote in db.PublicQuotes
                                                        join document in db.Documents on quote.DocumentId equals document.Id

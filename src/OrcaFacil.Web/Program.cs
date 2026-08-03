@@ -110,6 +110,7 @@ builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<PlanLimitService>();
 builder.Services.AddScoped<PlanEntitlementService>();
 builder.Services.AddScoped<IPlanAccessService, PlanAccessService>();
+builder.Services.AddSingleton<IPlanFeatureReadinessService, PlanFeatureReadinessService>();
 builder.Services.AddScoped<IPlanAccessDataSource, EfPlanAccessDataSource>();
 builder.Services.AddScoped<TrialProService>();
 builder.Services.Configure<PlanOptions>(builder.Configuration.GetSection("Plans"));

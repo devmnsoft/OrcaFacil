@@ -26,7 +26,7 @@ public class SuperAdminDashboardQueries
             ActiveUsers = await users.CountAsync(x => x.IsActive && !x.IsBlocked, ct),
             BlockedUsers = await users.CountAsync(x => x.IsBlocked, ct),
             FreeUsers = await users.CountAsync(x => x.Plan == PlanType.Free, ct),
-            ProUsers = await users.CountAsync(x => x.Plan == PlanType.Pro, ct),
+            ProUsers = await users.CountAsync(x => x.Plan == PlanType.Professional, ct),
             PastDueUsers = await subscriptions.CountAsync(x => x.Status == SubscriptionStatus.PastDue, ct),
             SuspendedUsers = await subscriptions.CountAsync(x => x.Status == SubscriptionStatus.Suspended, ct),
             TotalClients = await clients.CountAsync(ct),
