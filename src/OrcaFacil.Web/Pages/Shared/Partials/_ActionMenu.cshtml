@@ -1,0 +1,2 @@
+@model OrcaFacil.Web.ViewModels.ActionMenuViewModel
+<details class="of-action-menu"><summary class="of-button">@Model.Label</summary><div role="menu">@foreach(var item in Model.Items.Where(x=>!x.Destructive)){<a role="menuitem" asp-page="@item.Page">@item.Text</a>}@foreach(var item in Model.Items.Where(x=>x.Destructive)){<a role="menuitem" class="is-destructive" asp-page="@item.Page">@item.Text</a>}</div></details>

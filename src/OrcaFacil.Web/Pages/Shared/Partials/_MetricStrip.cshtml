@@ -1,0 +1,4 @@
+@model OrcaFacil.Web.ViewModels.MetricStripViewModel
+<section class="of-metric-strip" aria-label="@Model.AccessibleLabel">
+@foreach (var item in Model.Items.Take(6)) { <article>@if(item.IconName is not null){<partial name="Partials/_Icon" model='new IconViewModel(item.IconName, "sm", Decorative: true)' />}<span>@item.Label</span><strong>@item.Value</strong>@if(item.Detail is not null){<small>@item.Detail</small>}</article> }
+</section>

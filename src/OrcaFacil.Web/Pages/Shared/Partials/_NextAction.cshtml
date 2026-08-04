@@ -1,0 +1,2 @@
+@model OrcaFacil.Web.ViewModels.NextActionViewModel
+<aside class="of-next-action" aria-labelledby="next-action-title"><span><partial name="Partials/_Icon" model='new IconViewModel(Model.IconName, "md", Decorative: true)' /></span><div><p>Próxima ação recomendada</p><h2 id="next-action-title">@Model.Title</h2><span>@Model.Reason</span></div><a class="of-button of-button--primary" asp-page="@Model.ActionPage">@Model.ActionText</a></aside>

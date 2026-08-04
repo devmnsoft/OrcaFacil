@@ -1,0 +1,13 @@
+@model OrcaFacil.Web.ViewModels.PageIntroViewModel
+@{ if (!string.IsNullOrWhiteSpace(Model.HelpCode)) { ViewData["HelpCode"] = Model.HelpCode; } }
+<header class="of-page-intro">
+  <div class="of-page-intro__identity">
+    <span class="of-page-intro__icon"><partial name="Partials/_Icon" model='new IconViewModel(Model.IconName, "lg", Decorative: true)' /></span>
+    <div><p class="of-eyebrow">@Model.Eyebrow</p><h1>@Model.Title</h1><p>@Model.Description</p></div>
+  </div>
+  <div class="of-page-intro__actions">
+    @if (Model.SecondaryActions is not null) { foreach (var action in Model.SecondaryActions) { <a class="of-button" asp-page="@action.Page">@if(action.IconName is not null){<partial name="Partials/_Icon" model='new IconViewModel(action.IconName, "sm", Decorative: true)' />}@action.Text</a> } }
+    @if (!string.IsNullOrWhiteSpace(Model.PrimaryActionText) && !string.IsNullOrWhiteSpace(Model.PrimaryActionPage)) { <a class="of-button of-button--primary" asp-page="@Model.PrimaryActionPage">@Model.PrimaryActionText</a> }
+  </div>
+  @if (!string.IsNullOrWhiteSpace(Model.WhatThisPageDoes) || !string.IsNullOrWhiteSpace(Model.NextStepText)) { <div class="of-page-intro__orientation"><p><strong>O que esta área faz</strong><span>@Model.WhatThisPageDoes</span></p><p><strong>Próximo passo</strong><span>@Model.NextStepText</span></p></div> }
+</header>
