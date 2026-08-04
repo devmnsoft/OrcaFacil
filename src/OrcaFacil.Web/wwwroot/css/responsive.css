@@ -28,3 +28,11 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }
+html, body { max-width: 100%; overflow-x: clip; }
+img, svg, video { max-width: 100%; }
+dialog { max-width: min(92vw, 720px); max-height: 90vh; overflow: auto; }
+@media (max-width: 480px) {
+  .of-form-actions, .of-page-actions { align-items: stretch; flex-direction: column; }
+  .of-form-actions > *, .of-page-actions > * { width: 100%; justify-content: center; }
+  .of-inline-field { align-items: stretch; flex-direction: column; }
+}

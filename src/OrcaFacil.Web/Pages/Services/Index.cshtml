@@ -5,6 +5,7 @@
     <div><p class="of-eyebrow">Catálogo</p><h1>Catálogo de serviços</h1><p>@Model.Items.Count serviço(s) encontrado(s). Reutilize preços e preserve cada proposta.</p></div>
     <a class="of-button" asp-page="Categories">Categorias</a><a class="of-button of-button--primary" asp-page="Create"><partial name="Partials/_Icon" model='new IconViewModel("plus", "sm")' /> Novo serviço</a>
 </header>
+<partial name="Partials/_ContextGuide" model='new ContextGuideViewModel("Mantenha preços consistentes","Reutilizar serviços para montar propostas com rapidez.","Descrição, unidade, preço, custo e categoria.","Selecione o serviço ao criar seu próximo orçamento.","Custos e margens são internos; revise reajustes antes de salvar.")' />
 <section class="commercial-metrics" aria-label="Indicadores">
     <article><span>Ativos</span><strong>@Model.ActiveCount</strong></article><article><span>Favoritos</span><strong>@Model.FavoriteCount</strong></article><article><span>Mais utilizados</span><strong>@Model.UsedCount</strong></article><article><span>Inativos</span><strong>@Model.InactiveCount</strong></article>
 </section>

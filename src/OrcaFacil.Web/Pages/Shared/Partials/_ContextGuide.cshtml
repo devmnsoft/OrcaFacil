@@ -1,0 +1,5 @@
+@model OrcaFacil.Web.ViewModels.ContextGuideViewModel
+<aside class="of-context-guide" aria-labelledby="context-guide-title">
+  <div><partial name="Partials/_Icon" model='new IconViewModel("information", "md", Decorative: true)' /><div><span>O que esta área faz</span><h2 id="context-guide-title">@Model.Title</h2></div></div>
+  <dl><div><dt>Para que serve</dt><dd>@Model.Purpose</dd></div><div><dt>O que fica salvo</dt><dd>@Model.Saved</dd></div><div><dt>O que acontece depois</dt><dd>@Model.Next</dd></div><div><dt>Tenha atenção</dt><dd>@Model.Care</dd></div></dl>
+</aside>

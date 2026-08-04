@@ -7,6 +7,7 @@
  <div><p class="of-eyebrow">Commercial Workspace 360</p><h1>Clientes</h1><p>Relacionamentos, oportunidades e próximos passos em um único lugar.</p></div>
  <div class="client-head-actions"><button type="button" class="client-button secondary" data-help-open data-help-code="clients">Como usar</button><a class="client-button primary" asp-page="/Clients/Create">Novo cliente</a></div>
 </header>
+<partial name="Partials/_ContextGuide" model='new ContextGuideViewModel("Construa relacionamentos com contexto","Reutilizar dados de pessoas e empresas em toda a jornada.","Contatos, documentos, tags e histórico comercial.","Use o cadastro em uma nova proposta ou ordem.","Evite duplicidades e mantenha o contato principal atualizado.")' />
 
 <section class="client-metrics" aria-label="Indicadores de clientes">
  <article><span>Ativos</span><strong>@Model.Result.Active</strong></article><article><span>Favoritos</span><strong>@Model.Result.Favorites</strong></article><article><span>Novos em 30 dias</span><strong>@Model.Result.NewThisMonth</strong></article><article><span>Cadastro incompleto</span><strong>@Model.Result.Incomplete</strong></article>
