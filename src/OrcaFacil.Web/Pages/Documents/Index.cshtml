@@ -1,7 +1,50 @@
 @page
 @model OrcaFacil.Web.Pages.Documents.IndexModel
-@{ViewData["Title"]="Orçamentos"; ViewData["Section"]="Comercial";}
+@{ ViewData["Title"]="Orçamentos"; ViewData["Section"]="Comercial"; }
 <partial name="Partials/_PageIntro" model='new PageIntroViewModel("Propostas comerciais", "Orçamentos", "Crie, envie e acompanhe propostas profissionais sem perder o próximo passo.", "quote", "Novo orçamento", "/Documents/CreateBudget", HelpCode: "quotes", WhatThisPageDoes: "Organiza propostas por cliente, validade e situação comercial.", NextStepText: "Crie uma proposta ou retome uma negociação pendente.")' />
 <partial name="Partials/_ContextGuide" model='new ContextGuideViewModel("Conduza cada proposta até uma decisão", "Preparar e acompanhar valores e condições enviados ao cliente.", "Itens, versões, validade, compartilhamentos e atividades.", "Uma proposta aprovada pode originar uma ordem de serviço.", "Recibos e pagamentos ficam na Central Financeira.")' />
-<section class="of-panel"><h2>Encontre uma proposta</h2><div class="of-form-grid"><div class="of-field"><label for="filterClient">Cliente ou proposta</label><input id="filterClient" class="of-field-control" type="search" placeholder="Nome do cliente ou número"/></div><div class="of-field"><label for="filterStatus">Situação</label><select id="filterStatus" class="of-field-control"><option>Todos</option><option>Rascunho</option><option>Enviado</option><option>Em negociação</option><option>Aprovado</option><option>Encerrado</option></select></div><div class="of-field"><label for="filterPeriod">Período</label><select id="filterPeriod" class="of-field-control"><option>Todos</option><option>Este mês</option><option>Últimos 90 dias</option></select></div></div></section>
-@if(Model.Documents.Count==0){<partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Você ainda não criou propostas", Text="Comece com um orçamento simples e envie para seu cliente em PDF.", ActionText="Criar primeiro orçamento", ActionPage="/Documents/CreateBudget", Icon="quote", HelpText="Os dados ficam salvos para você revisar antes do envio." }' />}else{<partial name="_DocumentTable" model="Model.Documents" />}
+
+<nav class="of-tabs" aria-label="Situações do orçamento">
+    <a asp-page="./Index" class="@(string.IsNullOrEmpty(Model.Status) ? "is-active" : null)">Todos</a>
+    @foreach (var tab in new[] { ("Draft", "Rascunhos"), ("Issued", "Prontos"), ("Sent", "Enviados"), ("Viewed", "Visualizados"), ("InNegotiation", "Negociação"), ("Approved", "Aprovados"), ("Rejected", "Recusados"), ("Expired", "Expirados") })
+    { <a asp-page="./Index" asp-route-status="@tab.Item1" class="@(Model.Status == tab.Item1 ? "is-active" : null)">@tab.Item2</a> }
+</nav>
+
+<section class="of-panel" aria-labelledby="quoteFilters">
+    <h2 id="quoteFilters">Encontre uma proposta</h2>
+    <form method="get" class="of-form-grid">
+        <div asp-validation-summary="ModelOnly" class="of-validation-summary"></div>
+        <input type="hidden" asp-for="Status" />
+        <div class="of-field"><label asp-for="Search">Cliente ou proposta</label><input asp-for="Search" class="of-field-control" type="search" placeholder="Nome do cliente ou número" /></div>
+        <div class="of-field"><label asp-for="From">De</label><input asp-for="From" class="of-field-control" type="date" /></div>
+        <div class="of-field"><label asp-for="To">Até</label><input asp-for="To" class="of-field-control" type="date" /></div>
+        <div class="of-field"><label asp-for="Minimum">Valor mínimo</label><input asp-for="Minimum" class="of-field-control" inputmode="decimal" /><span asp-validation-for="Minimum"></span></div>
+        <div class="of-field"><label asp-for="Maximum">Valor máximo</label><input asp-for="Maximum" class="of-field-control" inputmode="decimal" /><span asp-validation-for="Maximum"></span></div>
+        <div class="of-field"><label asp-for="Sort">Ordenar</label><select asp-for="Sort" class="of-field-control"><option value="newest">Mais recentes</option><option value="oldest">Mais antigos</option><option value="value-desc">Maior valor</option><option value="value-asc">Menor valor</option><option value="validity">Validade</option></select></div>
+        <div class="of-field"><button class="of-btn of-btn-primary" type="submit">Aplicar filtros</button></div>
+    </form>
+</section>
+
+@if (Model.Quotes.Items.Count == 0)
+{ <partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Nenhuma proposta corresponde aos filtros", Text="Ajuste os filtros ou crie um orçamento para iniciar uma nova oportunidade.", ActionText="Criar orçamento", ActionPage="/Documents/CreateBudget", Icon="quote", HelpText="Recibos são organizados separadamente na Central Financeira." }' /> }
+else
+{
+    <div class="of-data-list">
+    @foreach (var quote in Model.Quotes.Items)
+    {
+        <article class="of-data-card">
+            <div><strong>@quote.Number</strong><p>@quote.ClientName</p></div>
+            <partial name="Partials/_StatusBadge" model='new StatusBadgeViewModel { Text = quote.Status, CssClass = quote.Status.ToLowerInvariant() }' />
+            <div><strong>@quote.Total.ToString("C")</strong><p>Validade: @(quote.ValidUntil?.ToString("dd/MM/yyyy") ?? "não definida")</p></div>
+            <a class="of-btn of-btn-secondary" asp-page="@quote.NextAction.Page" asp-route-id="@quote.Id">@quote.NextAction.Title</a>
+        </article>
+    }
+    </div>
+    @if (Model.Quotes.TotalPages > 1)
+    {
+        <nav class="of-pagination" aria-label="Paginação"><span>Página @Model.Quotes.Page de @Model.Quotes.TotalPages</span>
+        @if (Model.Quotes.Page > 1) { <a asp-route-currentPage="@(Model.Quotes.Page - 1)" asp-route-search="@Model.Search" asp-route-status="@Model.Status">Anterior</a> }
+        @if (Model.Quotes.Page < Model.Quotes.TotalPages) { <a asp-route-currentPage="@(Model.Quotes.Page + 1)" asp-route-search="@Model.Search" asp-route-status="@Model.Status">Próxima</a> }
+        </nav>
+    }
+}
