@@ -103,6 +103,7 @@ builder.Services.AddScoped<IManualPaymentRegistrationService>(sp => sp.GetRequir
 builder.Services.AddScoped<IReceiptApplicationService, ReceiptApplicationService>();
 builder.Services.AddScoped<IReceiptQueryService, ReceiptQueryService>();
 builder.Services.AddScoped<IClientWorkspaceService, ClientWorkspaceService>();
+builder.Services.AddScoped<IQuoteWorkspaceService, QuoteWorkspaceService>();
 builder.Services.AddScoped<OrcaFacil.Application.Services.IServiceCatalogApplicationService, ServiceCatalogApplicationService>();
 builder.Services.AddSingleton<OrcaFacil.Application.Services.IServiceUnitCatalog, OrcaFacil.Application.Services.ServiceUnitCatalog>();
 builder.Services.AddScoped<IDocumentNumberService, DocumentNumberService>();
