@@ -14,6 +14,7 @@
         </div>
         <a class="of-button of-button--primary" asp-page="Create">Novo recibo</a>
     </header>
+<partial name="Partials/_ContextGuide" model='new ContextGuideViewModel("Emita comprovantes para o cliente","Gerar um comprovante a partir de um valor recebido.","Cliente, pagamento de origem, valor e histórico do recibo.","Compartilhe o documento e mantenha o vínculo financeiro.","Recibo não confirma uma transação bancária; confira o pagamento de origem.")' />
 
     <section class="receipt-summary" aria-label="Resumo dos recibos filtrados">
         <article><span>Emitidos</span><strong>@Model.Result.IssuedCount</strong></article>
