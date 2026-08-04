@@ -1,2 +1,7 @@
 @model OrcaFacil.Web.ViewModels.Components.EmptyStateViewModel
-<div class="of-empty"><div class="of-empty-icon"><i class="bi @Model.Icon" aria-hidden="true"></i></div><h2 class="h4">@Model.Title</h2><p>@Model.Text</p>@if(!string.IsNullOrWhiteSpace(Model.ActionText)&&!string.IsNullOrWhiteSpace(Model.ActionPage)){<a class="btn btn-primary" asp-page="@Model.ActionPage">@Model.ActionText</a>}</div>
+<section class="of-empty-state" aria-labelledby="empty-state-title">
+  <span class="of-empty-state__icon"><partial name="Partials/_Icon" model='new IconViewModel(Model.Icon, "lg", Decorative: true)' /></span>
+  <h2 id="empty-state-title">@Model.Title</h2><p>@Model.Text</p>
+  @if(!string.IsNullOrWhiteSpace(Model.ActionText)&&!string.IsNullOrWhiteSpace(Model.ActionPage)){<a class="of-button of-button--primary" asp-page="@Model.ActionPage">@Model.ActionText</a>}
+  @if(!string.IsNullOrWhiteSpace(Model.HelpText)){<small>@Model.HelpText</small>}
+</section>

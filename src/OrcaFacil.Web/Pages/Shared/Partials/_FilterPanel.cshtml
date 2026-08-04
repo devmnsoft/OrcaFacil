@@ -1,0 +1,6 @@
+@model OrcaFacil.Web.ViewModels.FilterPanelViewModel
+<section class="of-filter-panel" data-filter-panel aria-labelledby="filter-panel-title">
+  <header><h2 id="filter-panel-title">@Model.Title</h2><button type="button" class="of-button" data-filter-toggle aria-expanded="false">Mostrar filtros</button></header>
+  <div class="of-filter-panel__content"><slot></slot></div>
+  @if(Model.ActiveFilters?.Count > 0){<div class="of-filter-chips" aria-label="Filtros ativos">@foreach(var chip in Model.ActiveFilters){<a href="@chip.RemoveUrl">@chip.Label <span aria-hidden="true">×</span><span class="sr-only">Remover filtro</span></a>}</div>}
+</section>

@@ -106,7 +106,7 @@
     <div class="of-section-heading"><div><p class="of-eyebrow">Continuidade</p><h2 id="recent-title">Documentos recentes</h2></div><a asp-page="/Documents/Index">Ver todos</a></div>
     @if (dashboard.LatestDocuments.Count == 0)
     {
-        <partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Seu primeiro documento começa aqui", Text="Crie um orçamento para apresentar serviços, valores, condições e prazo da proposta.", ActionText="Criar orçamento", ActionPage="/Documents/CreateBudget", Icon="bi-file-earmark-plus" }' />
+        <partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Seu primeiro documento começa aqui", Text="Crie um orçamento para apresentar serviços, valores, condições e prazo da proposta.", ActionText="Criar orçamento", ActionPage="/Documents/CreateBudget", Icon="quote" }' />
     }
     else
     {
