@@ -14,9 +14,9 @@
 </section>
 
 <form method="get" class="client-filters" aria-label="Filtros de clientes">
- <label class="client-search"><span>Busca geral</span><input asp-for="Search" type="search" placeholder="Nome, documento, contato ou tag" /></label>
+ <label class="client-search"><span>Busca geral</span><input asp-for="Search" type="search" /></label>
  <label><span>Tipo</span><select asp-for="PersonType"><option value="">PF e PJ</option><option value="Individual">Pessoa física</option><option value="Company">Pessoa jurídica</option></select></label>
- <label><span>Cidade</span><input asp-for="City" placeholder="Todas" /></label>
+ <label><span>Cidade</span><input asp-for="City" /></label>
  <label><span>Situação</span><select asp-for="Active"><option value="">Todos</option><option value="true">Ativos</option><option value="false">Inativos</option></select></label>
  <label><span>Ordenar</span><select asp-for="Sort"><option value="name">Nome A–Z</option><option value="recent">Mais recentes</option><option value="activity">Última atividade</option><option value="name_desc">Nome Z–A</option></select></label>
  <button class="client-button primary" type="submit">Aplicar</button>@if(Model.HasFilters){<a class="client-clear" asp-page="/Clients/Index">Limpar</a>}

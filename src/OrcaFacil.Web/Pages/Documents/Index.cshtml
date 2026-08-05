@@ -15,7 +15,7 @@
     <form method="get" class="of-form-grid">
         <div asp-validation-summary="ModelOnly" class="of-validation-summary"></div>
         <input type="hidden" asp-for="Status" />
-        <div class="of-field"><label asp-for="Search">Cliente ou proposta</label><input asp-for="Search" class="of-field-control" type="search" placeholder="Nome do cliente ou número" /></div>
+        <div class="of-field"><label asp-for="Search">Cliente ou proposta</label><input asp-for="Search" class="of-field-control" type="search" /></div>
         <div class="of-field"><label asp-for="From">De</label><input asp-for="From" class="of-field-control" type="date" /></div>
         <div class="of-field"><label asp-for="To">Até</label><input asp-for="To" class="of-field-control" type="date" /></div>
         <div class="of-field"><label asp-for="Minimum">Valor mínimo</label><input asp-for="Minimum" class="of-field-control" inputmode="decimal" /><span asp-validation-for="Minimum"></span></div>

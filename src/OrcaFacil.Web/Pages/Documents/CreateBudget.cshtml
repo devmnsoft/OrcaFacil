@@ -34,16 +34,16 @@
         <div class="of-wizard-main">
             <section class="of-wizard-panel is-active" data-step="0" aria-labelledby="wizard-client-title">
                 <div class="of-wizard-intro"><span class="of-wizard-number">01</span><div><p class="of-eyebrow">Cliente</p><h2 id="wizard-client-title">Quem receberá esta proposta?</h2><p>Localize um cadastro ou informe o nome. Os dados atuais serão copiados para esta versão do orçamento.</p></div></div>
-                <label class="of-field"><span>Buscar cliente cadastrado</span><input type="search" data-client-search placeholder="Nome, documento ou cidade" autocomplete="off" /><small>A seleção vincula o cadastro e congela os dados atuais nesta proposta.</small></label>
+                <label class="of-field"><span>Buscar cliente cadastrado</span><input type="search" data-client-search autocomplete="off" /><small>A seleção vincula o cadastro e congela os dados atuais nesta proposta.</small></label>
                 <div class="of-client-choices" data-client-choices>@foreach (var client in Model.Clients) { <button type="button" data-client-option data-client-id="@client.Id" data-client-name="@client.Name" data-search="@($"{client.Name} {client.Document} {client.City}".ToLowerInvariant())" class="@(client.Id == Model.Draft.ClientId ? "is-selected" : null)"><span><strong>@client.Name</strong><small>@(client.City ?? "Cidade não informada") · @(client.Phone ?? client.Email ?? "Contato não informado")</small></span><span>Selecionar</span></button> }</div>
                 <input type="hidden" data-client-id value="@Model.Draft.ClientId" /><input type="hidden" data-client-name value="@Model.Draft.ClientName" />
-                <div class="of-inline-callout"><svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-client" /></svg><div><strong>Cliente novo?</strong><span>Abra o cadastro completo sem perder este fluxo.</span></div><a asp-page="/Clients/Create" asp-route-returnUrl="/Documents/CreateBudget">Cadastrar cliente</a></div>
+                <div class="of-inline-callout"><partial name="Partials/_Icon" model='new IconViewModel("client", "sm", Decorative: true)' /><div><strong>Cliente novo?</strong><span>Abra o cadastro completo sem perder este fluxo.</span></div><a asp-page="/Clients/Create" asp-route-returnUrl="/Documents/CreateBudget">Cadastrar cliente</a></div>
             </section>
 
             <section class="of-wizard-panel" data-step="1" aria-labelledby="wizard-items-title" hidden>
                 <div class="of-wizard-intro"><span class="of-wizard-number">02</span><div><p class="of-eyebrow">Serviços</p><h2 id="wizard-items-title">O que você vai entregar?</h2><p>Descreva cada resultado, ajuste quantidade, preço e desconto. O total é atualizado na hora.</p></div></div>
                 <div class="of-service-catalog-search">
-                    <label class="of-field"><span>Buscar no catálogo</span><input type="search" data-service-search placeholder="Nome ou descrição" autocomplete="off" /></label>
+                    <label class="of-field"><span>Buscar no catálogo</span><input type="search" data-service-search autocomplete="off" /></label>
                     <div data-service-results aria-live="polite"></div>
                 </div>
                 <div class="of-service-examples" aria-label="Exemplos de serviços">
@@ -54,7 +54,7 @@
                     {
                         <article class="of-budget-item" data-budget-item>
                             <span class="of-drag-handle" title="Reordenar" aria-hidden="true">⋮⋮</span>
-                            <label class="of-field of-item-description"><span>Serviço ou produto</span><input name="Input.Items[@i].Description" value="@(Model.Draft.Items.Count > i ? Model.Draft.Items[i].Description : "")" placeholder="Descreva o resultado para o cliente" data-item-description /></label>
+                            <label class="of-field of-item-description"><span>Serviço ou produto</span><input name="Input.Items[@i].Description" value="@(Model.Draft.Items.Count > i ? Model.Draft.Items[i].Description : "")" data-item-description /></label>
                             <label class="of-field"><span>Quantidade</span><input name="Input.Items[@i].Quantity" value="@(Model.Draft.Items.Count > i ? Model.Draft.Items[i].Quantity : 1)" type="number" min="0.01" step="0.01" inputmode="decimal" data-item-quantity /></label>
                             <label class="of-field"><span>Unidade</span><select data-item-unit data-initial-unit="@(Model.Draft.Items.Count > i ? Model.Draft.Items[i].Unit : "serviço")"><option>serviço</option><option>hora</option><option>dia</option><option>unidade</option><option>m²</option></select></label>
                             <label class="of-field"><span>Preço unitário</span><input name="Input.Items[@i].UnitPrice" value="@(Model.Draft.Items.Count > i ? Model.Draft.Items[i].UnitPrice : 0)" type="number" min="0" step="0.01" inputmode="decimal" data-item-price /></label>
@@ -69,7 +69,7 @@
             <section class="of-wizard-panel" data-step="2" aria-labelledby="wizard-conditions-title" hidden>
                 <div class="of-wizard-intro"><span class="of-wizard-number">03</span><div><p class="of-eyebrow">Condições</p><h2 id="wizard-conditions-title">Combine os detalhes antes de começar</h2><p>Informações objetivas evitam dúvidas e protegem a relação comercial.</p></div></div>
                 <div class="of-condition-groups">
-                    <fieldset><legend>Prazo</legend><label class="of-field"><span>Validade da proposta</span><input type="date" data-field="validUntil" value="@Model.Draft.ValidUntil?.ToString("yyyy-MM-dd")" required /></label><label class="of-field"><span>Início previsto</span><input type="date" data-field="expectedStartAt" value="@Model.Draft.ExpectedStartAt?.ToString("yyyy-MM-dd")" /></label><label class="of-field"><span>Duração estimada</span><input data-field="estimatedDuration" value="@Model.Draft.EstimatedDuration" placeholder="Ex.: 3 dias úteis" /></label></fieldset>
+                    <fieldset><legend>Prazo</legend><label class="of-field"><span>Validade da proposta</span><input type="date" data-field="validUntil" value="@Model.Draft.ValidUntil?.ToString("yyyy-MM-dd")" required /></label><label class="of-field"><span>Início previsto</span><input type="date" data-field="expectedStartAt" value="@Model.Draft.ExpectedStartAt?.ToString("yyyy-MM-dd")" /></label><label class="of-field"><span>Duração estimada</span><input data-field="estimatedDuration" value="@Model.Draft.EstimatedDuration" /></label></fieldset>
                     <fieldset><legend>Pagamento</legend><label class="of-field"><span>Método preferencial</span><select data-field="paymentMethod" data-initial-value="@Model.Draft.PaymentMethod"><option>Pix</option><option>Transferência</option><option>Dinheiro</option><option>Cartão</option></select></label><label class="of-field"><span>Parcelas</span><input type="number" min="1" max="24" data-field="installmentCount" value="@(Model.Draft.InstallmentCount ?? 1)" /></label><label class="of-field"><span>Sinal</span><input type="number" min="0" step="0.01" data-field="depositAmount" value="@Model.Draft.DepositAmount" /></label><label class="of-field"><span>Chave ou instrução Pix</span><input data-field="pixInformation" value="@Model.Draft.PixInformation" /></label></fieldset>
                 </div>
                 <details class="of-progressive-fields"><summary>Adicionar garantia e condições</summary><label class="of-field"><span>Garantia</span><textarea data-field="warrantyText" rows="3">@Model.Draft.WarrantyText</textarea></label><label class="of-field"><span>Condições adicionais</span><textarea data-field="conditionsText" rows="5">@Model.Draft.ConditionsText</textarea></label></details>
@@ -90,7 +90,7 @@
                 <div class="of-review-sheet">
                     <div><small>Cliente</small><strong data-review-client>Não informado</strong></div><div><small>Modelo</small><strong data-review-template>Essencial</strong></div><div><small>Itens</small><strong data-review-items>0 serviços</strong></div><div><small>Total</small><strong data-review-total>R$ 0,00</strong></div>
                 </div>
-                <div class="of-inline-callout is-success"><svg class="of-icon" aria-hidden="true"><use href="/img/icons/orcafacil-icons.svg#icon-success" /></svg><div><strong>Você mantém o controle</strong><span>Depois de finalizar, a próxima ação será compartilhar. Nenhum e-mail ou mensagem será disparado agora.</span></div></div>
+                <div class="of-inline-callout is-success"><partial name="Partials/_Icon" model='new IconViewModel("success", "sm", Decorative: true, Tone: "success")' /><div><strong>Você mantém o controle</strong><span>Depois de finalizar, a próxima ação será compartilhar. Nenhum e-mail ou mensagem será disparado agora.</span></div></div>
             </section>
 
             <footer class="of-wizard-actions"><button class="of-button-secondary" type="button" data-step-previous hidden>Voltar</button><span></span><a asp-page="/Documents/Index">Cancelar</a><button class="of-button-primary" type="button" data-step-next>Continuar</button><button class="of-button-primary" type="button" data-finish hidden>Finalizar orçamento</button></footer>
