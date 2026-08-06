@@ -1,5 +1,6 @@
 @page
 @model OrcaFacil.Web.Pages.Subscription.IndexModel
+@section Styles { <link rel="stylesheet" href="~/css/billing.css" asp-append-version="true" /> }
 @{ViewData["Title"]="Meu plano";var p=Model.Plan;}
 <header class="of-page-heading"><p class="of-eyebrow">Plano e acesso</p><h1>Entenda o que está disponível agora</h1><p>Planos controlam acesso e capacidade. Eles não apagam os dados.</p></header>
 <partial name="Partials/_ContextGuide" model='new ContextGuideViewModel("Escolha a capacidade da sua operação","Entender benefícios, limites e situação do plano.","Preferências de plano e dados necessários à cobrança.","Benefícios mudam sem apagar seus dados comerciais.","Revise valores e periodicidade antes de contratar ou regularizar.")' />

@@ -1,0 +1,8 @@
+.of-execution-grid { display: grid; gap: var(--of-space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); }
+.of-execution-card { display: grid; gap: var(--of-space-3); padding: var(--of-space-5); border: 1px solid var(--of-border); border-radius: var(--of-radius); background: var(--of-surface); }
+.of-execution-meta { display: flex; flex-wrap: wrap; gap: var(--of-space-2) var(--of-space-5); color: var(--of-text-secondary); }
+.of-schedule-list { display:grid; gap:var(--of-space-3); }
+.of-schedule-list article { display:grid; grid-template-columns:7rem minmax(0,1fr) auto; align-items:center; gap:var(--of-space-5); padding:var(--of-space-4); border-bottom:1px solid var(--of-border); }
+.of-schedule-list time span,.of-schedule-list p { display:block; margin:.25rem 0 0; color:var(--of-text-secondary); }
+.of-schedule-list h3 { margin:.35rem 0 0; }
+@media(max-width:40rem){.of-schedule-list article{grid-template-columns:1fr;gap:var(--of-space-3)}.of-schedule-list article>a{width:100%;text-align:center}}

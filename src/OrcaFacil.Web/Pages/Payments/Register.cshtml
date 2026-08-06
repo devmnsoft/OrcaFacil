@@ -1,5 +1,6 @@
 @page "{id:guid}"
 @model OrcaFacil.Web.Pages.Payments.RegisterModel
+@section Styles { <link rel="stylesheet" href="~/css/billing.css" asp-append-version="true" /> }
 @{ ViewData["Title"] = "Registrar pagamento"; }
 <header class="of-page-header"><div><p class="of-eyebrow">Recebimento</p><h1>Registrar pagamento</h1><p>Pagamento registrado manualmente. Isto não representa confirmação bancária.</p></div></header>
 <form method="post" class="of-card"><div asp-validation-summary="All" class="text-danger"></div><label asp-for="Input.Amount" class="form-label">Valor recebido</label><input asp-for="Input.Amount" class="form-control mb-3"/><label asp-for="Input.PaymentMethod" class="form-label">Forma de pagamento</label><select asp-for="Input.PaymentMethod" class="form-select mb-3"><option>Pix</option><option>Dinheiro</option><option>Transferência</option><option>Cartão</option><option>Boleto</option><option>Outro</option></select><label asp-for="Input.PaidAt" class="form-label">Recebido em</label><input asp-for="Input.PaidAt" class="form-control mb-3"/><label asp-for="Input.Notes" class="form-label">Observação</label><textarea asp-for="Input.Notes" class="form-control mb-3"></textarea><button class="btn btn-success">Registrar pagamento</button></form>

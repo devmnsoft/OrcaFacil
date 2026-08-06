@@ -1,5 +1,6 @@
 @page
 @model OrcaFacil.Web.Pages.Payments.IndexModel
+@section Styles { <link rel="stylesheet" href="~/css/billing.css" asp-append-version="true" /> }
 @using OrcaFacil.Domain.Enums
 @{
     ViewData["Title"] = "Central financeira";
@@ -12,7 +13,7 @@
             <h1>Central financeira</h1>
             <p>Pagamento é o registro interno de valor recebido. Recibo é o comprovante emitido para o cliente.</p>
         </div>
-        <a class="of-button of-button--primary" asp-page="/Receipts/Create">Registrar pagamento</a>
+        <a class="of-button of-button--primary" asp-page="/Payments/Register">Registrar pagamento</a>
     </header>
 <partial name="Partials/_ContextGuide" model='new ContextGuideViewModel("Registre valores recebidos","Manter um controle interno do que sua empresa recebeu.","Valor, método, data, origem e responsável pelo registro.","Você pode emitir um recibo para o cliente.","Pagamento registrado manualmente. A informação não representa confirmação automática do banco, cartão ou operadora.")' />
 

@@ -1,5 +1,6 @@
 @page
 @model OrcaFacil.Web.Pages.Receipts.IndexModel
+@section Styles { <link rel="stylesheet" href="~/css/billing.css" asp-append-version="true" /> }
 @using OrcaFacil.Domain.Enums
 @{
     ViewData["Title"] = "Recibos";
@@ -10,7 +11,7 @@
         <div>
             <p class="of-eyebrow">Financeiro</p>
             <h1>Recibos</h1>
-            <p>Acompanhe valores recebidos, compartilhamentos e cancelamentos.</p>
+            <p>Recibo é o comprovante emitido para o cliente. Acompanhe emissões, compartilhamentos e cancelamentos.</p>
         </div>
         <a class="of-button of-button--primary" asp-page="Create">Novo recibo</a>
     </header>
