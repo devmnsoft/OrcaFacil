@@ -1,0 +1,6 @@
+@page
+@model OrcaFacil.Web.Pages.Onboarding.BudgetModel
+@{ViewData["Title"]="Primeiro orçamento";}
+@section Styles {<link rel="stylesheet" href="~/css/onboarding.css" asp-append-version="true" />}
+<div class="onboarding-shell"><main class="onboarding-card"><partial name="_Progress" model="4"/><header class="page-intro"><span class="eyebrow">Etapa 5 de 5</span><h1>Monte seu primeiro orçamento.</h1><p>Vamos abrir o editor real com seu cliente selecionado e seu catálogo disponível. O total será recalculado no servidor.</p></header><div class="budget-ready"><strong>Seu rascunho está pronto para começar</strong><p>Adicione o serviço, ajuste a quantidade e revise antes de finalizar. A prévia não consome geração de PDF.</p></div><div class="onboarding-actions"><form method="post" data-onboarding-form><button class="primary" data-submit-text="Abrindo editor…">Montar orçamento</button></form><form method="post" asp-page-handler="Done"><button class="secondary">Concluir configuração</button></form></div></main><aside class="context-guide"><strong>Próximo resultado</strong><div class="document-preview"><small>ORÇAMENTO</small><b>Cliente + serviço</b><hr><span>Total calculado com segurança</span></div></aside></div>
+@section Scripts {<script type="module" src="~/js/onboarding.js" asp-append-version="true"></script>}

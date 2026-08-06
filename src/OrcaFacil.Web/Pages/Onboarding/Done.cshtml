@@ -1,0 +1,5 @@
+@page
+@model OrcaFacil.Web.Pages.Onboarding.DoneModel
+@{ViewData["Title"]="Espaço pronto";}
+@section Styles {<link rel="stylesheet" href="~/css/onboarding.css" asp-append-version="true" />}
+<main class="onboarding-card done"><span class="success-mark" aria-hidden="true">✓</span><p class="eyebrow">Configuração concluída</p><h1>Seu espaço está pronto para criar propostas com mais rapidez.</h1><p>Continue de onde parou ou explore as próximas ações.</p><div class="next-actions"><a class="primary" asp-page="/Documents/Index">Ver orçamentos</a><a asp-page="/Documents/CreateBudget">Criar novo orçamento</a><a asp-page="/Services/Create">Cadastrar mais serviços</a><a asp-page="/Dashboard/Index">Ir para o dashboard</a></div></main>

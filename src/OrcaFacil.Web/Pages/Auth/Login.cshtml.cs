@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,8 @@ public class LoginModel : PageModel
     private readonly AuthService _authService;
     private readonly ILogger<LoginModel> _logger;
     private readonly IUserSignInService _signIn;
-    public LoginModel(AuthService authService, ILogger<LoginModel> logger, IUserSignInService signIn) { _authService = authService; _logger = logger; _signIn = signIn; }
+    private readonly OrcaFacil.Persistence.OrcaFacilDbContext _db;
+    public LoginModel(AuthService authService, ILogger<LoginModel> logger, IUserSignInService signIn, OrcaFacil.Persistence.OrcaFacilDbContext db) { _authService = authService; _logger = logger; _signIn = signIn; _db = db; }
     [BindProperty] public InputModel Input { get; set; } = new();
     public record InputModel { [Required, EmailAddress] public string Email { get; set; } = string.Empty; [Required] public string Password { get; set; } = string.Empty; }
     public IActionResult OnGet() => User.Identity?.IsAuthenticated == true ? RedirectToPage("/Dashboard/Index") : Page();
@@ -27,7 +29,8 @@ public class LoginModel : PageModel
             if (!result.Succeeded || result.Value is null) { ModelState.AddModelError(string.Empty, result.Error ?? "Não foi possível entrar."); TempData.Error(result.Error ?? "Não foi possível entrar."); _logger.LogWarning("USER_LOGIN_FAILED_WEB CorrelationId {CorrelationId}", HttpContext.TraceIdentifier); return Page(); }
             await _signIn.SignInAsync(HttpContext, result.Value, cancellationToken: ct);
             TempData.Success("Login realizado com sucesso.");
-            return RedirectToPage("/Dashboard/Index");
+            var configured = await _db.AccountOnboardingStates.AsNoTracking().AnyAsync(x => x.UserId == result.Value.Id && x.CompletedAt != null && !x.IsDeleted, ct);
+            return RedirectToPage(configured ? "/Dashboard/Index" : "/Onboarding/Index");
         }
         catch (Exception ex) when (ex.IsPostgresInvalidPassword())
         {

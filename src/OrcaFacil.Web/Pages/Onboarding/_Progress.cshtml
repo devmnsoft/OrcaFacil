@@ -1,0 +1,2 @@
+@model int
+<nav class="onboarding-progress" aria-label="Progresso da configuração"><progress value="@Model" max="5">@Model de 5</progress><ol><li class="@(Model>=1?"done":"active")">Negócio</li><li class="@(Model>=2?"done":"")">Documento</li><li class="@(Model>=3?"done":"")">Cliente</li><li class="@(Model>=4?"done":"")">Serviço</li><li class="@(Model>=5?"done":"")">Orçamento</li></ol></nav>
