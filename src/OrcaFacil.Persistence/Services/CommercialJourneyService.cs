@@ -186,15 +186,34 @@ public sealed class CommercialJourneyService(
 
     public async Task<PaymentRegistrationResult> RegisterAsync(ManualPaymentRequest request, CancellationToken ct = default)
     {
-        var correlation = CorrelationId; if (request.Amount <= 0 || string.IsNullOrWhiteSpace(request.IdempotencyKey)) return Pay(false, "Invalid", "Informe valor e chave de idempotência válidos.", null, null, correlation);
+        var correlation = CorrelationId;
+        await currentAccount.EnsureAccountAccessAsync(ct);
+        var allowed = await plans.CanUseAsync(AccountId, PlanFeatureCodes.ManualPaymentsEnabled, ct);
+        if (!allowed.IsAllowed) return Pay(false, allowed.InternalReason, allowed.UserMessage, null, null, correlation);
+        if (request.Amount <= 0 || string.IsNullOrWhiteSpace(request.IdempotencyKey))
+            return Pay(false, "Invalid", "Informe valor e chave de idempotência válidos.", null, null, correlation);
+        if (!PaymentMethodCodes.TryParse(request.PaymentMethod, out var method))
+            return Pay(false, "InvalidPaymentMethod", "Escolha uma forma de pagamento válida.", null, null, correlation);
+        if (request.PaidAt.ToUniversalTime() > DateTime.UtcNow.AddMinutes(5))
+            return Pay(false, "InvalidPaidAt", "A data do recebimento não pode estar no futuro.", null, null, correlation);
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         var order = await db.WorkOrders.SingleOrDefaultAsync(x => x.Id == request.WorkOrderId && x.AccountId == AccountId && !x.IsDeleted, ct);
         if (order is null) return Pay(false, "NotFound", "Ordem não encontrada.", null, null, correlation);
         var existing = await db.ManualPayments.SingleOrDefaultAsync(x => x.AccountId == AccountId && x.IdempotencyKey == request.IdempotencyKey, ct);
         if (existing is not null) return Pay(true, "IdempotentReplay", "Pagamento já registrado.", existing.Id, "Registered", correlation);
+        var paid = await db.ManualPayments.Where(x => x.AccountId == AccountId && x.WorkOrderId == order.Id && !x.IsDeleted && x.Status == FinancialRecordStatus.Active)
+            .SumAsync(x => (decimal?)x.Amount, ct) ?? 0m;
+        var balance = Math.Max(0m, order.TotalSnapshot - paid);
+        if (balance == 0m) return Pay(false, "AlreadyPaid", "Esta ordem já está totalmente paga.", null, "Paid", correlation);
+        if (request.Amount > balance) return Pay(false, "AmountExceedsBalance", $"O valor informado supera o saldo de {balance:C}.", null, "Partial", correlation);
         var payment = new ManualPayment { AccountId = AccountId, WorkOrderId = order.Id, DocumentId = order.SourceDocumentId, ClientId = order.ClientId,
-            Amount = request.Amount, PaymentMethod = Clean(request.PaymentMethod, 40) ?? "Outro", PaidAt = request.PaidAt.ToUniversalTime(), Notes = Clean(request.Notes, 1000), RegisteredByUserId = currentUser.UserId, IdempotencyKey = request.IdempotencyKey };
-        db.ManualPayments.Add(payment); order.PaymentReceived = true; order.PaymentMethod = payment.PaymentMethod; AddEvent("PaymentRegistered", order.Id, "Pagamento registrado manualmente.");
-        await db.SaveChangesAsync(ct); return Pay(true, "Registered", "Pagamento registrado manualmente.", payment.Id, "Registered", correlation);
+            Amount = request.Amount, PaymentMethod = method.ToCode(), PaidAt = request.PaidAt.ToUniversalTime(), Notes = Clean(request.Notes, 1000), RegisteredByUserId = currentUser.UserId, IdempotencyKey = request.IdempotencyKey };
+        db.ManualPayments.Add(payment);
+        var remaining = balance - request.Amount;
+        order.PaymentReceived = remaining == 0m; order.PaymentMethod = payment.PaymentMethod;
+        AddEvent("PaymentRegistered", order.Id, remaining == 0m ? "Pagamento total registrado manualmente." : "Pagamento parcial registrado manualmente.");
+        await db.SaveChangesAsync(ct); await transaction.CommitAsync(ct);
+        return Pay(true, remaining == 0m ? "Registered" : "PartiallyPaid", "Pagamento registrado manualmente.", payment.Id, remaining == 0m ? "Paid" : "Partial", correlation);
     }
 
     public async Task<ReceiptGenerationResult> GenerateReceiptAsync(Guid paymentId, CancellationToken ct = default)

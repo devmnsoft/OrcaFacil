@@ -97,11 +97,28 @@ public sealed class ReceiptApplicationService(
     public async Task<bool> ReversePaymentAsync(Guid paymentId, string reason, CancellationToken ct = default)
     {
         if (currentAccount.AccountId is not Guid accountId || string.IsNullOrWhiteSpace(reason)) return false;
+        await currentAccount.EnsureAccountAccessAsync(ct);
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
         var payment = await db.ManualPayments.SingleOrDefaultAsync(x => x.Id == paymentId && x.AccountId == accountId && !x.IsDeleted, ct);
         if (payment is null || payment.Status == FinancialRecordStatus.Reversed) return false;
         payment.Status = FinancialRecordStatus.Reversed; payment.ReversedAt = DateTime.UtcNow;
         payment.ReversedByUserId = currentAccount.UserId; payment.ReversalReason = reason.Trim(); payment.Touch();
-        await db.SaveChangesAsync(ct); return true;
+        if (payment.WorkOrderId is Guid workOrderId)
+        {
+            var order = await db.WorkOrders.SingleOrDefaultAsync(x => x.Id == workOrderId && x.AccountId == accountId && !x.IsDeleted, ct);
+            if (order is not null)
+            {
+                var remainingActive = await db.ManualPayments.Where(x => x.AccountId == accountId && x.WorkOrderId == workOrderId &&
+                    x.Id != payment.Id && !x.IsDeleted && x.Status == FinancialRecordStatus.Active).SumAsync(x => (decimal?)x.Amount, ct) ?? 0m;
+                order.PaymentReceived = remainingActive >= order.TotalSnapshot;
+            }
+        }
+        db.ActivityEvents.Add(new ActivityEvent { AccountId = accountId, ActorUserId = currentAccount.UserId,
+            Action = "PaymentReversed", EntityType = "ManualPayment", EntityId = payment.Id,
+            Summary = "Estorno lógico de pagamento registrado." });
+        await db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+        return true;
     }
 
     private static CreateReceiptResult Failure(CreateReceiptCode code, string message, string correlationId) =>
