@@ -111,5 +111,6 @@
 
 <div class="of-dashboard-lower">
     <partial name="_PlanUsageSummary" model="usage" />
-    <section class="of-guidance"><div><p class="of-eyebrow">Guia inicial</p><h2>Prepare seu espaço no seu ritmo</h2><p>Complete os dados, cadastre um cliente e transforme a oportunidade em documento.</p></div><a asp-page="/Onboarding/Index">Continuar guia</a><a asp-page="/Discover">Conhecer recursos</a></section>
+    @if (Model.Onboarding is { IsCompleted: false } onboarding) { <section class="of-card onboarding-dashboard"><div><p class="of-eyebrow">@onboarding.CompletedSteps de @onboarding.TotalSteps etapas</p><h2>Concluir configuração</h2><p>@onboarding.NextAction.Description</p><progress value="@onboarding.CompletedSteps" max="@onboarding.TotalSteps">@onboarding.CompletedSteps de @onboarding.TotalSteps</progress></div><a class="of-button of-button-primary" href="@onboarding.NextAction.Page">@onboarding.NextAction.Title</a></section> }
+<section class="of-guidance"><div><p class="of-eyebrow">Guia inicial</p><h2>Prepare seu espaço no seu ritmo</h2><p>Complete os dados, cadastre um cliente e transforme a oportunidade em documento.</p></div><a asp-page="/Onboarding/Index">Continuar guia</a><a asp-page="/Discover">Conhecer recursos</a></section>
 </div>

@@ -65,6 +65,7 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<DataSubjectRequest> DataSubjectRequests => Set<DataSubjectRequest>();
     public DbSet<PrivacyVendor> PrivacyVendors => Set<PrivacyVendor>();
     public DbSet<PrivacyProcessingActivity> PrivacyProcessingActivities => Set<PrivacyProcessingActivity>();
+    public DbSet<AccountOnboardingState> AccountOnboardingStates => Set<AccountOnboardingState>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
