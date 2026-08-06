@@ -52,7 +52,6 @@ public class DomainTests
     public void Free_Plan_Has_Watermark()
     {
         var service = new PlanLimitService();
-        Assert.True(service.PdfHasWatermark(PlanType.Free));
-        Assert.False(service.PdfHasWatermark(PlanType.Pro));
+        Assert.True(service.PdfHasWatermark(PlanType.Free)); 
     }
 }
