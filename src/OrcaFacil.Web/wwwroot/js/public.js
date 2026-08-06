@@ -1,18 +1,39 @@
 const button = document.querySelector('[data-public-menu-button]');
 const menu = document.querySelector('[data-public-menu]');
 if (button && menu) {
-  const close = () => { button.setAttribute('aria-expanded', 'false'); menu.classList.remove('is-open'); };
+  const isOpen = () => button.getAttribute('aria-expanded') === 'true';
+  const close = (restoreFocus = false) => {
+    if (!isOpen()) return;
+    button.setAttribute('aria-expanded', 'false');
+    button.setAttribute('aria-label', 'Abrir menu de navegação');
+    menu.classList.remove('is-open');
+    if (restoreFocus) button.focus();
+  };
   button.addEventListener('click', () => {
-    const open = button.getAttribute('aria-expanded') !== 'true';
+    const open = !isOpen();
     button.setAttribute('aria-expanded', String(open));
+    button.setAttribute('aria-label', open ? 'Fechar menu de navegação' : 'Abrir menu de navegação');
     menu.classList.toggle('is-open', open);
+    if (open) menu.querySelector('a')?.focus();
   });
   menu.addEventListener('click', event => { if (event.target.closest('a')) close(); });
-  document.addEventListener('keydown', event => { if (event.key === 'Escape') { close(); button.focus(); } });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') close(true); });
   document.addEventListener('pointerdown', event => {
-    if (!menu.contains(event.target) && !button.contains(event.target)) close();
+    if (isOpen() && !menu.contains(event.target) && !button.contains(event.target)) close();
   });
+  window.addEventListener('resize', () => { if (window.innerWidth > 980) close(); });
 }
+
+document.querySelectorAll('a[href^="/#"], a[href^="#"]').forEach(link => {
+  link.addEventListener('click', event => {
+    const id = new URL(link.href, window.location.href).hash;
+    const target = document.querySelector(id);
+    if (!target || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    event.preventDefault();
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    history.pushState(null, '', id);
+  });
+});
 
 document.querySelectorAll('[data-password-toggle]').forEach(toggle => {
   const input = toggle.closest('.of-password-field')?.querySelector('input');
@@ -25,9 +46,7 @@ document.querySelectorAll('[data-password-toggle]').forEach(toggle => {
     input.focus();
   });
   const warning = input.closest('.of-field')?.querySelector('[data-caps-lock]');
-  input.addEventListener('keyup', event => {
-    if (warning) warning.hidden = !event.getModifierState('CapsLock');
-  });
+  input.addEventListener('keyup', event => { if (warning) warning.hidden = !event.getModifierState('CapsLock'); });
 });
 
 const summary = document.querySelector('[data-focus-first-error] .of-form-summary:not(:empty)');
