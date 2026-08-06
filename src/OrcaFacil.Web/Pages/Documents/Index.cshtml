@@ -1,5 +1,6 @@
 @page
 @model OrcaFacil.Web.Pages.Documents.IndexModel
+@section Styles { <link rel="stylesheet" href="~/css/documents.css" asp-append-version="true" /> }
 @{ ViewData["Title"]="Orçamentos"; ViewData["Section"]="Comercial"; }
 <partial name="Partials/_PageIntro" model='new PageIntroViewModel("Propostas comerciais", "Orçamentos", "Crie, envie e acompanhe propostas profissionais sem perder o próximo passo.", "quote", "Novo orçamento", "/Documents/CreateBudget", HelpCode: "quotes", WhatThisPageDoes: "Organiza propostas por cliente, validade e situação comercial.", NextStepText: "Crie uma proposta ou retome uma negociação pendente.")' />
 <partial name="Partials/_ContextGuide" model='new ContextGuideViewModel("Conduza cada proposta até uma decisão", "Preparar e acompanhar valores e condições enviados ao cliente.", "Itens, versões, validade, compartilhamentos e atividades.", "Uma proposta aprovada pode originar uma ordem de serviço.", "Recibos e pagamentos ficam na Central Financeira.")' />

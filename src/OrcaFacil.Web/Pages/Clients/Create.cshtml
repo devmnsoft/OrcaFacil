@@ -1,5 +1,6 @@
 @page
 @model OrcaFacil.Web.Pages.Clients.CreateModel
+@section Styles { <link rel="stylesheet" href="~/css/clients.css" asp-append-version="true" /> }
 @{ ViewData["Title"] = "Novo cliente"; ViewData["Section"] = "Comercial"; }
 <header class="client-page-head"><div><p class="of-eyebrow">Clientes</p><h1>Novo cliente</h1><p>Construa um cadastro completo em cinco etapas.</p></div></header>
 <form method="post" class="client-editor" data-client-editor>@Html.AntiForgeryToken()<div asp-validation-summary="ModelOnly" class="of-form-errors" role="alert"></div><partial name="_Editor" model="Model.Input" /><footer><a class="client-button secondary" asp-page="Index">Cancelar</a><button class="client-button primary" type="submit">Salvar cliente</button></footer></form>

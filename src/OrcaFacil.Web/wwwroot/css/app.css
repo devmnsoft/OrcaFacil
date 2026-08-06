@@ -1,3 +1,5 @@
+/* Compatibility entry point for legacy deployments only. Runtime layouts load
+   the scoped modules directly; do not add product styles to this file. */
 @import url('./tokens.css');
 @import url('./base.css');
 @import url('./surfaces.css');
