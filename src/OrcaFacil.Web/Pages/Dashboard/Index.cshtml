@@ -1,5 +1,6 @@
 @page
 @model OrcaFacil.Web.Pages.Dashboard.IndexModel
+@section Styles { <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" /> }
 @using OrcaFacil.Web.ViewModels
 @{
     ViewData["Title"] = "Visão geral";
@@ -16,23 +17,17 @@
         experience.PlanDueAt,
         experience.PlanRecommendation);
 }
-<section class="of-dashboard-hero" aria-labelledby="welcome-title">
-    <div class="of-hero-copy">
-        <p class="of-eyebrow">Seu comando comercial</p>
-        <h1 id="welcome-title">Olá, @experience.FirstName. Vamos organizar o próximo trabalho?</h1>
-        <p>Crie propostas, acompanhe respostas e transforme aprovações em serviços.</p>
-        <div class="of-hero-actions">
-            <a class="of-button-primary" asp-page="/Documents/CreateBudget">Criar novo orçamento</a>
-            <a class="of-button-secondary" asp-page="/Documents/Index">Continuar de onde parei</a>
-        </div>
-        <dl class="of-day-summary">
-            <div><dt>Propostas</dt><dd>@dashboard.TotalBudgets</dd></div>
-            <div><dt>Em documentos</dt><dd>@dashboard.BudgetTotal.ToString("C")</dd></div>
-            <div><dt>Plano atual</dt><dd>@planName</dd></div>
-        </dl>
+<header class="of-workbench-intro" aria-labelledby="welcome-title">
+    <div>
+        <p class="of-eyebrow">Central de trabalho</p>
+        <h1 id="welcome-title">Olá, @experience.FirstName.</h1>
+        <p>Veja o que pede atenção e avance no próximo trabalho.</p>
     </div>
-    <div class="of-hero-visual"><partial name="Partials/_ProductDashboardPreview" /></div>
-</section>
+    <div class="of-workbench-actions">
+        <a class="of-button-secondary" asp-page="/Documents/Index">Ver propostas</a>
+        <a class="of-button-primary" asp-page="/Documents/CreateBudget"><partial name="Partials/_Icon" model='new IconViewModel("plus", "sm", Decorative: true)' /> Novo orçamento</a>
+    </div>
+</header>
 
 @if (experience.NextAction is { } next)
 {

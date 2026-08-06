@@ -1,5 +1,6 @@
 @page
 @model OrcaFacil.Web.Pages.Payments.IndexModel
+@section Styles { <link rel="stylesheet" href="~/css/billing.css" asp-append-version="true" /> }
 @using OrcaFacil.Domain.Enums
 @{
     ViewData["Title"] = "Central financeira";
@@ -10,23 +11,23 @@
         <div>
             <p class="of-eyebrow">Financeiro</p>
             <h1>Central financeira</h1>
-            <p>Acompanhe os recebimentos registrados pela equipe na conta ativa.</p>
+            <p>Pagamento é o registro interno de valor recebido. Recibo é o comprovante emitido para o cliente.</p>
         </div>
-        <a class="of-button of-button--primary" asp-page="/Receipts/Create">Registrar pagamento</a>
+        <a class="of-button of-button--primary" asp-page="/Payments/Register">Registrar pagamento</a>
     </header>
 <partial name="Partials/_ContextGuide" model='new ContextGuideViewModel("Registre valores recebidos","Manter um controle interno do que sua empresa recebeu.","Valor, método, data, origem e responsável pelo registro.","Você pode emitir um recibo para o cliente.","Pagamento registrado manualmente. A informação não representa confirmação automática do banco, cartão ou operadora.")' />
 
     <section class="of-finance-summary" aria-label="Resumo financeiro">
         <article>
-            <small>Total ativo registrado</small>
+            <small>Total recebido</small>
             <strong>@Model.TotalReceived.ToString("C")</strong>
         </article>
         <article>
-            <small>Registros ativos</small>
+            <small>Pagamentos sem recibo</small>
             <strong>@Model.ActivePayments</strong>
         </article>
         <article>
-            <small>Estornos</small>
+            <small>Recibos emitidos</small>
             <strong>@Model.ReversedPayments</strong>
         </article>
     </section>
@@ -35,7 +36,7 @@
     {
         <section class="of-finance-empty">
             <h2>Nenhum pagamento registrado</h2>
-            <p>Registre o primeiro recebimento para iniciar o histórico financeiro.</p>
+            <p>Quando receber um valor, registre aqui para acompanhar saldo e emitir recibo.</p>
             <a class="of-button of-button--primary" asp-page="/Receipts/Create">Registrar pagamento</a>
         </section>
     }

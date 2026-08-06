@@ -1,11 +1,11 @@
 @model OrcaFacil.Web.ViewModels.Services.ServiceEditorViewModel
 <section class="commercial-form-block">
-<label><span>Nome</span><input asp-for="Input.Name" required maxlength="180" /></label>
+<label><span>Nome <small>obrigatório</small></span><input asp-for="Input.Name" required maxlength="180" aria-describedby="service-name-help" /><small id="service-name-help">Como o serviço aparecerá nas propostas.</small><span asp-validation-for="Input.Name"></span></label>
 <label><span>Código</span><input asp-for="Input.Code" maxlength="40" /></label>
 <label><span>Descrição</span><textarea asp-for="Input.Description" maxlength="1200"></textarea></label>
 <label><span>Unidade</span><select asp-for="Input.UnitCode">@foreach(var unit in Model.UnitOptions){<option value="@unit.Code">@unit.Label</option>}</select></label>
-<label><span>Preço padrão</span><input asp-for="Input.StandardPrice" type="number" min="0" step="0.01" /></label>
-<label><span>Custo estimado</span><input asp-for="Input.EstimatedCost" type="number" min="0" step="0.01" /></label>
+<label><span>Preço padrão</span><input asp-for="Input.StandardPrice" type="number" min="0" step="0.01" /><small>Valor sugerido ao adicionar o serviço.</small><span asp-validation-for="Input.StandardPrice"></span></label>
+<label><span>Custo interno</span><input asp-for="Input.EstimatedCost" type="number" min="0" step="0.01" aria-describedby="service-cost-help" /><small id="service-cost-help">Visível somente para sua empresa; usado para estimar a margem.</small><span asp-validation-for="Input.EstimatedCost"></span></label>
 <label><span>Duração sugerida</span><input asp-for="Input.SuggestedDurationMinutes" type="number" min="1" /></label>
 <label><span>Notas internas</span><textarea asp-for="Input.InternalNotes" maxlength="2000"></textarea></label>
 <label><input asp-for="Input.IsFavorite" /> Favorito</label><label><input asp-for="Input.IsActive" /> Ativo</label>

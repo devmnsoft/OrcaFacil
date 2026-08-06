@@ -1,5 +1,34 @@
 @page "{id:guid}"
 @model OrcaFacil.Web.Pages.Payments.RegisterModel
+@section Styles { <link rel="stylesheet" href="~/css/billing.css" asp-append-version="true" /> }
 @{ ViewData["Title"] = "Registrar pagamento"; }
-<header class="of-page-header"><div><p class="of-eyebrow">Recebimento</p><h1>Registrar pagamento</h1><p>Pagamento registrado manualmente. Isto não representa confirmação bancária.</p></div></header>
-<form method="post" class="of-card"><div asp-validation-summary="All" class="text-danger"></div><label asp-for="Input.Amount" class="form-label">Valor recebido</label><input asp-for="Input.Amount" class="form-control mb-3"/><label asp-for="Input.PaymentMethod" class="form-label">Forma de pagamento</label><select asp-for="Input.PaymentMethod" class="form-select mb-3"><option>Pix</option><option>Dinheiro</option><option>Transferência</option><option>Cartão</option><option>Boleto</option><option>Outro</option></select><label asp-for="Input.PaidAt" class="form-label">Recebido em</label><input asp-for="Input.PaidAt" class="form-control mb-3"/><label asp-for="Input.Notes" class="form-label">Observação</label><textarea asp-for="Input.Notes" class="form-control mb-3"></textarea><button class="btn btn-success">Registrar pagamento</button></form>
+<main class="of-finance-page">
+    <header class="of-finance-header">
+        <div><p class="of-eyebrow">Recebimento</p><h1>Registrar pagamento</h1><p>Ordem @Model.WorkOrder?.Number</p></div>
+    </header>
+    <section class="of-finance-summary" aria-label="Resumo financeiro da ordem">
+        <article><span>Total da ordem</span><strong>@Model.WorkOrder?.TotalSnapshot.ToString("C")</strong></article>
+        <article><span>Já recebido</span><strong>@Model.PaidAmount.ToString("C")</strong></article>
+        <article><span>Saldo em aberto</span><strong>@Model.Balance.ToString("C")</strong></article>
+    </section>
+    <form method="post" class="payment-register-form" data-payment-form novalidate>
+        <input asp-for="Input.IdempotencyKey" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="receipt-errors" tabindex="-1" data-validation-summary></div>
+        <p class="receipt-manual-notice"><strong>Pagamento registrado manualmente.</strong> A informação não representa confirmação automática do banco, cartão ou operadora.</p>
+        <label asp-for="Input.Amount">Valor recebido</label>
+        <input asp-for="Input.Amount" inputmode="decimal" min="0.01" max="@Model.Balance" step="0.01" aria-describedby="amount-help" />
+        <small id="amount-help">Você pode registrar um pagamento parcial de até @Model.Balance.ToString("C").</small>
+        <span asp-validation-for="Input.Amount"></span>
+        <label asp-for="Input.PaymentMethod">Forma de pagamento</label>
+        <select asp-for="Input.PaymentMethod"><option>Pix</option><option>Dinheiro</option><option>Transferência</option><option>Cartão</option><option>Boleto</option><option>Outro</option></select>
+        <span asp-validation-for="Input.PaymentMethod"></span>
+        <label asp-for="Input.PaidAt">Recebido em</label>
+        <input asp-for="Input.PaidAt" />
+        <span asp-validation-for="Input.PaidAt"></span>
+        <label asp-for="Input.Notes">Observação</label>
+        <textarea asp-for="Input.Notes" rows="4" maxlength="1000"></textarea>
+        <span asp-validation-for="Input.Notes"></span>
+        <button class="receipt-submit" type="submit">Registrar pagamento</button>
+    </form>
+</main>
+@section Scripts { <script type="module" src="~/js/payment-register.js" asp-append-version="true"></script> }

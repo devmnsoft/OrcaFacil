@@ -1,5 +1,6 @@
 @page
 @model OrcaFacil.Web.Pages.Services.IndexModel
+@section Styles { <link rel="stylesheet" href="~/css/services.css" asp-append-version="true" /> }
 @{ ViewData["Title"] = "Catálogo de serviços"; ViewData["Section"] = "Comercial"; }
 <header class="commercial-header">
     <div><p class="of-eyebrow">Catálogo</p><h1>Catálogo de serviços</h1><p>@Model.Items.Count serviço(s) encontrado(s). Reutilize preços e preserve cada proposta.</p></div>
@@ -10,7 +11,7 @@
     <article><span>Ativos</span><strong>@Model.ActiveCount</strong></article><article><span>Favoritos</span><strong>@Model.FavoriteCount</strong></article><article><span>Mais utilizados</span><strong>@Model.UsedCount</strong></article><article><span>Inativos</span><strong>@Model.InactiveCount</strong></article>
 </section>
 <form method="get" class="commercial-filters" data-catalog-filters>
-    <label><span>Buscar</span><input asp-for="Search" type="search" placeholder="Nome, código ou descrição" /></label>
+    <label><span>Buscar</span><input asp-for="Search" type="search" /></label>
     <label><span>Unidade</span><select asp-for="Unit"><option value="">Todas</option>@foreach(var unit in Model.UnitOptions){<option value="@unit.Code">@unit.Label</option>}</select></label>
     <label><span>Situação</span><select asp-for="Status"><option value="active">Ativos</option><option value="all">Todos</option><option value="inactive">Inativos</option></select></label>
     <button class="of-button" type="submit">Filtrar</button>

@@ -1,5 +1,6 @@
 @page
 @model OrcaFacil.Web.Pages.Documents.IndexModel
+@section Styles { <link rel="stylesheet" href="~/css/documents.css" asp-append-version="true" /> }
 @{ ViewData["Title"]="Orçamentos"; ViewData["Section"]="Comercial"; }
 <partial name="Partials/_PageIntro" model='new PageIntroViewModel("Propostas comerciais", "Orçamentos", "Crie, envie e acompanhe propostas profissionais sem perder o próximo passo.", "quote", "Novo orçamento", "/Documents/CreateBudget", HelpCode: "quotes", WhatThisPageDoes: "Organiza propostas por cliente, validade e situação comercial.", NextStepText: "Crie uma proposta ou retome uma negociação pendente.")' />
 <partial name="Partials/_ContextGuide" model='new ContextGuideViewModel("Conduza cada proposta até uma decisão", "Preparar e acompanhar valores e condições enviados ao cliente.", "Itens, versões, validade, compartilhamentos e atividades.", "Uma proposta aprovada pode originar uma ordem de serviço.", "Recibos e pagamentos ficam na Central Financeira.")' />
@@ -15,7 +16,7 @@
     <form method="get" class="of-form-grid">
         <div asp-validation-summary="ModelOnly" class="of-validation-summary"></div>
         <input type="hidden" asp-for="Status" />
-        <div class="of-field"><label asp-for="Search">Cliente ou proposta</label><input asp-for="Search" class="of-field-control" type="search" placeholder="Nome do cliente ou número" /></div>
+        <div class="of-field"><label asp-for="Search">Cliente ou proposta</label><input asp-for="Search" class="of-field-control" type="search" /></div>
         <div class="of-field"><label asp-for="From">De</label><input asp-for="From" class="of-field-control" type="date" /></div>
         <div class="of-field"><label asp-for="To">Até</label><input asp-for="To" class="of-field-control" type="date" /></div>
         <div class="of-field"><label asp-for="Minimum">Valor mínimo</label><input asp-for="Minimum" class="of-field-control" inputmode="decimal" /><span asp-validation-for="Minimum"></span></div>
