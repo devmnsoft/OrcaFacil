@@ -4,7 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>@ViewData["Title"] · OrçaFácil</title>
-  <meta name="description" content="Orçamentos, clientes, serviços e recibos organizados em um só lugar." />
+  <meta name="description" content="Crie orçamentos, organize clientes, acompanhe aprovações, registre pagamentos e emita recibos profissionais." />
+  <meta name="theme-color" content="#0B1F33" />
   <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
   <link rel="stylesheet" href="~/css/icons.css" asp-append-version="true" />
   <link rel="stylesheet" href="~/css/base.css" asp-append-version="true" />
@@ -17,21 +18,40 @@
   <link rel="stylesheet" href="~/css/responsive.css" asp-append-version="true" />
   @await RenderSectionAsync("Styles", false)
 </head>
-<body class="of-public">
+<body class="of-public-shell">
   <partial name="Partials/_IconSprite" />
-  <a class="of-skip-link" href="#main-content">Ir para o conteúdo</a>
-  <header class="of-public-header">
-    <nav class="of-public-nav of-container" aria-label="Navegação institucional">
-      <a class="of-public-brand" asp-page="/Index" aria-label="OrçaFácil, página inicial"><img src="~/img/brand/orcafacil-wordmark-light.svg" width="190" height="42" alt="OrçaFácil — um produto MNSOFT" /></a>
-      <button class="of-public-menu-button" type="button" data-public-menu-button aria-controls="public-menu" aria-expanded="false"><svg class="of-icon" aria-hidden="true"><use href="#of-icon-menu" /></svg><span>Menu</span></button>
+  <a class="of-skip-link" href="#main-content">Ir para o conteúdo principal</a>
+  <header class="of-public-header" data-public-header>
+    <nav class="of-public-nav of-container" aria-label="Navegação principal">
+      <a class="of-public-brand" asp-page="/Index" aria-label="OrçaFácil, início">
+        <img src="~/img/brand/orcafacil-wordmark-light.svg" width="190" height="42" alt="OrçaFácil" />
+        <span>um produto <strong>MNSOFT</strong></span>
+      </a>
+      <button class="of-public-menu-button" type="button" data-public-menu-button aria-controls="public-menu" aria-expanded="false" aria-label="Abrir menu de navegação">
+        <svg class="of-icon of-menu-open" aria-hidden="true"><use href="#of-icon-menu" /></svg>
+        <svg class="of-icon of-menu-close" aria-hidden="true"><use href="#of-icon-close" /></svg><span>Menu</span>
+      </button>
       <div class="of-public-menu" id="public-menu" data-public-menu>
-        <a href="/#como-funciona">Como funciona</a><a href="/#recursos">Recursos</a><a asp-page="/Precos">Preços</a><a asp-page="/Support/Index">Suporte</a>
-        <a class="of-button of-button-secondary of-button-on-dark" asp-page="/Auth/Login">Entrar</a><a class="of-button of-button-primary" asp-page="/Auth/Register">Começar grátis</a>
+        <a href="/#como-funciona">Como funciona</a>
+        <a href="/#recursos">Recursos</a>
+        <a href="/#para-quem">Para quem é</a>
+        <a asp-page="/Precos">Preços</a>
+        <a asp-page="/Support/Index">Suporte</a>
+        <span class="of-public-menu-actions"><a class="of-button of-button-secondary of-button-on-dark" asp-page="/Auth/Login">Entrar</a><a class="of-button of-button-primary" asp-page="/Auth/Register">Começar grátis</a></span>
       </div>
     </nav>
   </header>
-  <main id="main-content"><partial name="Partials/_ToastHost" />@RenderBody()</main>
-  <footer class="of-public-footer"><div class="of-container of-public-footer-grid"><div><img src="~/img/brand/orcafacil-wordmark-light.svg" width="190" height="42" alt="OrçaFácil — um produto MNSOFT" /><p>Seu trabalho organizado, do orçamento ao recibo.</p></div><nav aria-label="Links do rodapé"><strong>OrçaFácil</strong><a href="/#como-funciona">Como funciona</a><a href="/#recursos">Recursos</a><a asp-page="/Precos">Preços</a></nav><div><strong>Atendimento MNSOFT</strong><a href="mailto:comercial@mnsoft.com.br">comercial@mnsoft.com.br</a><span>CNPJ 18.160.057/0001-13</span></div></div><div class="of-container of-footer-bottom">© @DateTime.UtcNow.Year OrçaFácil. Todos os direitos reservados.</div></footer>
+  <main id="main-content" tabindex="-1"><partial name="Partials/_ToastHost" />@RenderBody()</main>
+  <footer class="of-public-footer">
+    <div class="of-container of-public-footer-grid">
+      <div class="of-footer-brand"><img src="~/img/brand/orcafacil-wordmark-light.svg" width="190" height="42" alt="OrçaFácil" /><img src="~/img/brand/mnsoft-signature-light.svg" width="166" height="32" alt="Um produto MNSOFT" /><p>Orçamentos, clientes, serviços, pagamentos e recibos organizados para valorizar o seu trabalho.</p></div>
+      <nav aria-label="Produto"><strong>Produto</strong><a asp-page="/Index">Início</a><a href="/#como-funciona">Como funciona</a><a href="/#recursos">Recursos</a><a asp-page="/Precos">Preços</a></nav>
+      <nav aria-label="Conta e ajuda"><strong>Conta e ajuda</strong><a asp-page="/Auth/Login">Entrar</a><a asp-page="/Auth/Register">Criar conta</a><a asp-page="/Support/Index">Suporte</a></nav>
+      <nav aria-label="Informações legais"><strong>Legal</strong><a asp-page="/Termos">Termos de uso</a><a asp-page="/Privacidade">Privacidade</a></nav>
+      <div class="of-footer-contact"><strong>MNSOFT</strong><a href="mailto:comercial@mnsoft.com.br">comercial@mnsoft.com.br</a><span>CNPJ 18.160.057/0001-13</span><a class="of-button of-button-primary" asp-page="/Auth/Register">Criar conta grátis</a></div>
+    </div>
+    <div class="of-container of-footer-bottom"><span>© @DateTime.UtcNow.Year MNSOFT. Todos os direitos reservados.</span><span>OrçaFácil, feito para quem presta serviços.</span></div>
+  </footer>
   <partial name="Partials/_OverlayHost" />
   <script type="module" src="~/js/public.js" asp-append-version="true"></script>
   <script type="module" src="~/js/ui/feedback.js" asp-append-version="true"></script>
