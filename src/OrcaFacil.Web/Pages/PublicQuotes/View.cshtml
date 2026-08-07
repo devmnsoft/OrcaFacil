@@ -1,4 +1,59 @@
 @page "/p/{token}"
 @model OrcaFacil.Web.Pages.PublicQuotes.ViewModel
-@{ Layout="/Pages/Shared/_PublicQuoteLayout.cshtml"; ViewData["Title"]="Aprovação de orçamento"; var d=Model.Document; }
-<section class="of-section"><div class="container"><div class="of-public-card p-4 p-lg-5"><div class="of-public-quote-header mb-4"><div class="d-flex flex-column flex-lg-row align-items-center gap-3"><div><partial name="Partials/_MnsoftBrand" /><p class="of-eyebrow text-white-75">Orçamento para aprovação</p><h1>Orçamento @d?.Number</h1><p class="mb-0">Você recebeu um orçamento para conferência. Revise os itens, o valor total e escolha se deseja aprovar ou recusar.</p></div><img class="of-illustration" style="max-width:220px" src="/img/illustrations/public-approval.svg" alt="Aprovação pública" /></div></div><div class="row g-4"><div class="col-lg-8"><section class="of-card shadow-none"><h2 class="h5">Cliente</h2><p>@d?.ClientName</p><div class="table-responsive"><table class="table"><thead><tr><th>Item</th><th>Qtd.</th><th>Unitário</th><th>Total</th></tr></thead><tbody>@foreach(var i in d?.Items ?? Enumerable.Empty<OrcaFacil.Domain.Entities.DocumentItem>()){<tr><td>@i.Description</td><td>@i.Quantity</td><td>@i.UnitPrice.ToString("C")</td><td>@i.CalculateTotal().ToString("C")</td></tr>}</tbody></table></div><h2 class="h5 mt-4">Observações</h2><p>@(string.IsNullOrWhiteSpace(d?.Notes)?"Sem observações adicionais.":d?.Notes)</p></section></div><div class="col-lg-4"><div class="of-card shadow-none"><span class="of-badge">Total em destaque</span><strong class="display-6 text-success d-block">@d?.Total.ToString("C")</strong><p>Validade: @(d?.ValidUntil?.ToString("dd/MM/yyyy") ?? "não informada")</p><a class="btn btn-primary w-100" href="/Documents/Pdf/@d?.Id">Baixar PDF</a><button class="btn btn-success w-100 mt-2" data-bs-toggle="modal" data-bs-target="#approveModal">Aprovar orçamento</button><button class="btn btn-outline-danger w-100 mt-2" data-bs-toggle="modal" data-bs-target="#rejectModal">Recusar</button><p class="form-text mt-3">Este aceite é um registro simples de aprovação comercial. Ele não substitui assinatura digital certificada.</p></div></div></div></div></div></section><div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveTitle"><div class="modal-dialog"><form method="post" asp-page-handler="Approve" class="modal-content">@Html.AntiForgeryToken()<div class="modal-header"><h2 class="h5" id="approveTitle">Aprovar orçamento</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div><div class="modal-body"><p>Informe seu nome para registrar o aceite.</p><label class="form-label" asp-for="Input.Name">Nome</label><input asp-for="Input.Name" class="form-control"/><label class="form-label" asp-for="Input.Email">E-mail opcional</label><input asp-for="Input.Email" class="form-control"/><label class="form-label" asp-for="Input.Document">Documento opcional</label><input asp-for="Input.Document" class="form-control"/><label class="form-label" asp-for="Input.Note">Observação</label><textarea asp-for="Input.Note" class="form-control"></textarea><div class="form-check mt-3"><input asp-for="Input.AcceptedTerms" class="form-check-input" id="acceptedTerms"/><label class="form-check-label" for="acceptedTerms">Li e aprovo este orçamento nas condições apresentadas.</label></div></div><div class="modal-footer"><button class="btn btn-success">Confirmar aprovação</button></div></form></div></div><div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectTitle"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h2 class="h5" id="rejectTitle">Recusar orçamento</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div><div class="modal-body"><label class="form-label" for="rejectName">Nome</label><input id="rejectName" class="form-control"/><label class="form-label" for="rejectReason">Motivo</label><textarea id="rejectReason" class="form-control"></textarea><label class="form-label" for="rejectEmail">E-mail opcional</label><input id="rejectEmail" class="form-control" type="email"/></div><div class="modal-footer"><button class="btn btn-outline-danger" data-bs-dismiss="modal">Registrar recusa</button></div></div></div></div>
+@{ Layout = "/Pages/Shared/_PublicQuoteLayout.cshtml"; ViewData["Title"] = "Proposta comercial"; var q = Model.Quote; }
+
+<section class="public-quote-shell" aria-labelledby="quote-title">
+    @if (q is null)
+    {
+        <div class="public-quote-message" role="alert">
+            <p class="of-eyebrow">Acesso à proposta</p>
+            <h1 id="quote-title">Não foi possível abrir este orçamento</h1>
+            <p>@Model.LoadError</p>
+        </div>
+    }
+    else
+    {
+        <header class="public-quote-hero">
+            <div><p class="of-eyebrow">Proposta comercial</p><h1 id="quote-title">Orçamento @q.Snapshot.Quote.Number</h1>
+            <p>Preparado por <strong>@q.Snapshot.Issuer.Name</strong> para <strong>@q.Snapshot.Customer.Name</strong>.</p></div>
+            <div class="public-quote-total"><span>Total</span><strong>@q.Snapshot.Quote.Total.ToString("C")</strong></div>
+        </header>
+        <div class="public-quote-meta" aria-label="Dados do orçamento">
+            <span>Versão @q.Version</span><span>Emitido em @q.Snapshot.Quote.IssueDate.ToString("dd/MM/yyyy")</span>
+            <span>Válido até @(q.Snapshot.Quote.ValidUntil?.ToString("dd/MM/yyyy") ?? q.ExpiresAt.ToString("dd/MM/yyyy"))</span>
+        </div>
+        <section class="public-quote-card" aria-labelledby="items-title">
+            <h2 id="items-title">Serviços e valores</h2>
+            <div class="public-quote-table-wrap"><table class="public-quote-table"><thead><tr><th>Serviço</th><th>Qtd.</th><th>Valor unitário</th><th>Total</th></tr></thead>
+            <tbody>@foreach (var item in q.Snapshot.Items) { <tr><td data-label="Serviço">@item.Description</td><td data-label="Quantidade">@item.Quantity</td><td data-label="Valor unitário">@item.UnitPrice.ToString("C")</td><td data-label="Total">@item.Total.ToString("C")</td></tr> }</tbody></table></div>
+            @if (!string.IsNullOrWhiteSpace(q.Snapshot.Quote.Conditions)) { <h3>Condições</h3><p>@q.Snapshot.Quote.Conditions</p> }
+            @if (!string.IsNullOrWhiteSpace(q.Snapshot.Quote.Notes)) { <h3>Observações</h3><p>@q.Snapshot.Quote.Notes</p> }
+        </section>
+        @if (q.DecisionRegistered)
+        {
+            <div class="public-quote-message" role="status"><h2>Resposta registrada</h2><p>Obrigado. O emitente já recebeu sua decisão.</p></div>
+        }
+        else
+        {
+            <section class="public-quote-card" aria-labelledby="decision-title">
+                <h2 id="decision-title">Qual é sua decisão?</h2><p>Informe o responsável e escolha uma das ações abaixo.</p>
+                <div asp-validation-summary="ModelOnly" class="field-validation-error" tabindex="-1"></div>
+                <form method="post" class="public-decision-form" data-submit-once>
+                    <input asp-for="Input.IdempotencyKey" type="hidden" />
+                    <label asp-for="Input.Name">Nome do responsável</label><input asp-for="Input.Name" autocomplete="name" />
+                    <span asp-validation-for="Input.Name" class="field-validation-error"></span>
+                    <label asp-for="Input.Message">Mensagem ou motivo</label><textarea asp-for="Input.Message" rows="4" aria-describedby="message-help"></textarea>
+                    <small id="message-help">Obrigatória para solicitar alteração; opcional para aprovação ou recusa.</small>
+                    <span asp-validation-for="Input.Message" class="field-validation-error"></span>
+                    <div class="public-decision-actions">
+                        <button asp-page-handler="Approve" class="public-action public-action--approve">Aprovar orçamento</button>
+                        <button asp-page-handler="Change" class="public-action public-action--change">Solicitar alteração</button>
+                        <button asp-page-handler="Reject" class="public-action public-action--reject">Recusar</button>
+                    </div>
+                </form>
+            </section>
+        }
+        <p class="public-quote-legal">A aprovação registra um aceite comercial simples e não substitui assinatura digital certificada.</p>
+    }
+</section>
+@section Scripts { <script type="module" src="~/js/public-quote.js" asp-append-version="true"></script> }

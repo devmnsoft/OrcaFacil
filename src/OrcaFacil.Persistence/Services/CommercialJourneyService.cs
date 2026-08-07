@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Commercial;
+using OrcaFacil.Application.Common;
 using OrcaFacil.Application.Documents;
 using OrcaFacil.Application.Plans;
 using OrcaFacil.Application.WorkOrders;
@@ -17,7 +18,7 @@ public sealed class CommercialJourneyService(
     OrcaFacilDbContext db, ICurrentAccountService currentAccount, ICurrentUserService currentUser,
     IPlanAccessService plans, IDocumentSnapshotSerializer snapshots, IPublicDocumentTokenService tokens,
     IDocumentStatusTransitionService documentTransitions, IWorkOrderStatusTransitionService workOrderTransitions,
-    INumberToWordsService numberToWords, ITechnicalFingerprintService fingerprints) : ICommercialJourneyService, IManualPaymentRegistrationService
+    INumberToWordsService numberToWords, ITechnicalFingerprintService fingerprints) : ICommercialJourneyService, IManualPaymentRegistrationService, IPublicDocumentAccessService
 {
     private string CorrelationId => Guid.NewGuid().ToString("N");
     private Guid AccountId => currentAccount.AccountId ?? throw new InvalidOperationException("Conta ativa não selecionada.");
@@ -118,6 +119,48 @@ public sealed class CommercialJourneyService(
         await db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
         return PublicDecision(true, QuoteLifecycleCode.None, "Resposta registrada com segurança.", correlation, access, status, entity.Id);
+    }
+
+    public async Task<OperationResult<PublicQuoteView>> OpenAsync(string token, string remoteAddress, string userAgent, CancellationToken ct = default)
+    {
+        var correlation = CorrelationId;
+        if (string.IsNullOrWhiteSpace(token) || token.Length > 256)
+            return OperationResult<PublicQuoteView>.Failure("PublicLinkUnavailable", $"Link inválido. Referência: {correlation}.");
+
+        var hash = tokens.Hash(token);
+        var now = DateTime.UtcNow;
+        var access = await db.PublicDocumentAccesses.SingleOrDefaultAsync(x => x.TokenHash == hash && !x.IsDeleted, ct);
+        if (access is null)
+            return OperationResult<PublicQuoteView>.Failure("PublicLinkUnavailable", $"Link inválido. Referência: {correlation}.");
+        if (access.RevokedAt is not null || access.Status != PublicAccessStatus.Active)
+            return OperationResult<PublicQuoteView>.Failure("PublicLinkRevoked", "Este link foi revogado.");
+        if (access.ExpiresAt <= now)
+            return OperationResult<PublicQuoteView>.Failure("PublicLinkExpired", "Este link expirou.");
+
+        var revision = await db.DocumentRevisions.AsNoTracking().SingleOrDefaultAsync(x =>
+            x.Id == access.DocumentRevisionId && x.AccountId == access.AccountId && x.DocumentId == access.DocumentId, ct);
+        if (revision is null || !revision.IsCurrent)
+            return OperationResult<PublicQuoteView>.Failure("VersionOutdated", "Existe uma versão mais recente deste orçamento.");
+
+        DocumentSnapshot? snapshot;
+        try { snapshot = JsonSerializer.Deserialize<DocumentSnapshot>(revision.ProtectedSnapshot, new JsonSerializerOptions(JsonSerializerDefaults.Web)); }
+        catch (JsonException) { snapshot = null; }
+        if (snapshot is null)
+            return OperationResult<PublicQuoteView>.Failure("InvalidSnapshot", $"Não foi possível abrir este orçamento. Referência: {correlation}.");
+
+        access.LastViewedAt = now;
+        access.ViewCount++;
+        if (await db.Documents.SingleOrDefaultAsync(x => x.Id == access.DocumentId && x.AccountId == access.AccountId && !x.IsDeleted, ct) is { } document
+            && ParseDocumentStatus(document, out var status) && status == DocumentStatus.Sent)
+            SetDocumentStatus(document, DocumentStatus.Viewed);
+        db.ActivityEvents.Add(new ActivityEvent { AccountId = access.AccountId, ActorUserId = null, Action = "QuoteViewed",
+            EntityType = "CommercialJourney", EntityId = access.DocumentId, Summary = "Orçamento visualizado pelo link seguro." });
+        await db.SaveChangesAsync(ct);
+
+        var decided = await db.PublicDocumentDecisions.AsNoTracking().AnyAsync(x =>
+            x.AccountId == access.AccountId && x.DocumentRevisionId == access.DocumentRevisionId, ct);
+        return OperationResult<PublicQuoteView>.Success(new(access.Id, access.DocumentId, revision.VersionNumber,
+            access.ExpiresAt, snapshot, decided), "Orçamento carregado.");
     }
 
     private async Task<RevisionResult> CreateOrReuseRevisionCoreAsync(Guid documentId, string templateCode, string correlation, CancellationToken ct)

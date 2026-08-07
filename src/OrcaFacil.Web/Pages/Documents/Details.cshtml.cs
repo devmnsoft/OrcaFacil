@@ -42,6 +42,8 @@ public sealed class DetailsModel(OrcaFacilDbContext db, ICurrentAccountService a
         if (!await OwnsAsync(id, ct)) return NotFound();
         var result = await journey.CreatePublicAccessAsync(id, TimeSpan.FromDays(30), ct);
         TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
+        if (result.Succeeded && !string.IsNullOrWhiteSpace(result.PublicToken))
+            TempData["PublicLink"] = Url.PageLink("/PublicQuotes/View", values: new { token = result.PublicToken });
         return RedirectToPage(new { id });
     }
 

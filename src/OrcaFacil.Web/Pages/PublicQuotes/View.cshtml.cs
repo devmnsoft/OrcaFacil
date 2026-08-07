@@ -1,2 +1,51 @@
-using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Mvc; using Microsoft.AspNetCore.Mvc.RazorPages; using Microsoft.EntityFrameworkCore; using OrcaFacil.Application.Documents; using OrcaFacil.Domain.Entities; using OrcaFacil.Persistence;
-namespace OrcaFacil.Web.Pages.PublicQuotes; [AllowAnonymous] public class ViewModel:PageModel{private readonly OrcaFacilDbContext _db; private readonly DocumentService _service; public PublicQuote? Quote{get;private set;} public Document? Document{get;private set;} [BindProperty] public ApprovePublicQuoteCommand Input{get;set;}=new("","","","","",false,""); public ViewModel(OrcaFacilDbContext db,DocumentService service){_db=db;_service=service;} public async Task<IActionResult> OnGetAsync(string token,CancellationToken ct){Quote=await _db.PublicQuotes.SingleOrDefaultAsync(q=>q.Token==token&&q.PublicEnabled,ct); if(Quote is null)return NotFound(); Quote.ViewCount++; Quote.LastAccessAt=DateTime.UtcNow; await _db.SaveChangesAsync(ct); Document=await _db.Documents.Include(d=>d.Items).SingleAsync(d=>d.Id==Quote.DocumentId,ct); Input=Input with{Token=token}; return Page();} public async Task<IActionResult> OnPostApproveAsync(string token,CancellationToken ct){var r=await _service.ApproveAsync(Input with{Token=token,AcceptedTerms=true,UserAgent=Request.Headers.UserAgent.ToString()},ct); TempData["Success"]=r.Succeeded?"Orçamento aprovado.":r.Error; return RedirectToPage(new{token});}}
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using OrcaFacil.Application.Commercial;
+using OrcaFacil.Application.Documents;
+using OrcaFacil.Domain.Enums;
+
+namespace OrcaFacil.Web.Pages.PublicQuotes;
+
+[AllowAnonymous]
+public sealed class ViewModel(IPublicDocumentAccessService access, ICommercialJourneyService journey) : PageModel
+{
+    public PublicQuoteView? Quote { get; private set; }
+    public string? LoadError { get; private set; }
+
+    [BindProperty]
+    public DecisionInput Input { get; set; } = new();
+
+    public async Task<IActionResult> OnGetAsync(string token, CancellationToken ct)
+    {
+        var result = await access.OpenAsync(token, HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            Request.Headers.UserAgent.ToString(), ct);
+        if (!result.Succeeded) { LoadError = result.Message; return Page(); }
+        Quote = result.Value;
+        return Page();
+    }
+
+    public Task<IActionResult> OnPostApproveAsync(string token, CancellationToken ct) => Decide(token, PublicDocumentDecisionType.Approved, ct);
+    public Task<IActionResult> OnPostChangeAsync(string token, CancellationToken ct) => Decide(token, PublicDocumentDecisionType.ChangeRequested, ct);
+    public Task<IActionResult> OnPostRejectAsync(string token, CancellationToken ct) => Decide(token, PublicDocumentDecisionType.Rejected, ct);
+
+    private async Task<IActionResult> Decide(string token, PublicDocumentDecisionType decision, CancellationToken ct)
+    {
+        if (decision == PublicDocumentDecisionType.ChangeRequested && string.IsNullOrWhiteSpace(Input.Message))
+            ModelState.AddModelError(nameof(Input.Message), "Conte o que precisa ser alterado.");
+        if (!ModelState.IsValid) { await OnGetAsync(token, ct); return Page(); }
+        var result = await journey.DecideAsync(token, decision, Input.Name, null, Input.Message,
+            string.IsNullOrWhiteSpace(Input.IdempotencyKey) ? Guid.NewGuid().ToString("N") : Input.IdempotencyKey,
+            HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown", Request.Headers.UserAgent.ToString(), ct);
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
+        return RedirectToPage(new { token });
+    }
+
+    public sealed class DecisionInput
+    {
+        [Required(ErrorMessage = "Informe o nome do responsável."), StringLength(180)] public string Name { get; set; } = string.Empty;
+        [StringLength(1000)] public string? Message { get; set; }
+        public string IdempotencyKey { get; set; } = Guid.NewGuid().ToString("N");
+    }
+}
