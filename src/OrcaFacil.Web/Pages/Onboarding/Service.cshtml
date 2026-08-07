@@ -1,6 +1,87 @@
 @page
 @model OrcaFacil.Web.Pages.Onboarding.ServiceModel
-@{ViewData["Title"]="Adicione um serviço";}
-@section Styles {<link rel="stylesheet" href="~/css/onboarding.css" asp-append-version="true" />}
-<div class="onboarding-shell"><main class="onboarding-card"><partial name="_Progress" model="3"/><header class="page-intro"><span class="eyebrow">Etapa 4 de 5</span><h1>Adicione um serviço</h1><p>Crie um item reutilizável para preencher propostas com mais rapidez.</p></header><form method="post" data-onboarding-form novalidate><div asp-validation-summary="ModelOnly" class="validation-summary" role="alert" aria-live="assertive"></div><div class="field-grid"><div class="field"><label asp-for="Input.Name">Nome do serviço</label><input asp-for="Input.Name" data-preview-source="service" /><span asp-validation-for="Input.Name"></span></div><div class="field"><label asp-for="Input.Category">Categoria (opcional)</label><input asp-for="Input.Category"  /><span asp-validation-for="Input.Category"></span></div><div class="field"><label asp-for="Input.Unit">Unidade</label><select asp-for="Input.Unit" ><option value="service">Serviço</option><option value="hour">Hora</option><option value="unit">Unidade</option></select><span asp-validation-for="Input.Unit"></span></div><div class="field"><label asp-for="Input.Price">Preço</label><input asp-for="Input.Price" inputmode="decimal" data-money data-preview-source="price" /><span asp-validation-for="Input.Price"></span></div><div class="field"><label asp-for="Input.Cost">Custo interno (opcional)</label><input asp-for="Input.Cost" inputmode="decimal" data-money data-cost /><span asp-validation-for="Input.Cost"></span></div><div class="field"><label asp-for="Input.DurationMinutes">Duração em minutos (opcional)</label><input asp-for="Input.DurationMinutes" type="number" /><span asp-validation-for="Input.DurationMinutes"></span></div><div class="field"><label asp-for="Input.Description">Descrição</label><textarea asp-for="Input.Description" rows="3"></textarea><span asp-validation-for="Input.Description"></span></div></div><div class="onboarding-actions"><button class="primary" type="submit" data-submit-text="Salvando…">Salvar e continuar</button><button class="secondary" type="submit" asp-page-handler="Skip" formnovalidate>Fazer depois</button></div></form></main><aside class="context-guide"><strong>Prévia do resultado</strong><div class="document-preview" data-preview><b data-preview-target="service">Instalação de rede Wi-Fi</b><span data-preview-target="price">R$ 850,00</span><p data-margin-warning aria-live="polite"></p></div><p>Você poderá revisar tudo antes de finalizar.</p></aside></div>
-@section Scripts {<partial name="_ValidationScriptsPartial"/><script type="module" src="~/js/onboarding.js" asp-append-version="true"></script>}
+@{
+    ViewData["Title"] = "Adicione um serviço";
+}
+@section Styles
+{
+    <link rel="stylesheet" href="~/css/onboarding.css" asp-append-version="true" />
+}
+<div class="of-onboarding-shell">
+<main class="of-onboarding-panel">
+<partial name="_Progress" model="3"/>
+<header class="of-onboarding-step">
+<span class="of-onboarding-eyebrow">Etapa 4 de 5</span>
+<h1>Adicione um serviço</h1>
+<p>Crie um item reutilizável para preencher propostas com mais rapidez.</p>
+</header>
+<form method="post" data-onboarding-form novalidate>
+<div asp-validation-summary="ModelOnly" class="of-onboarding-summary" role="alert" aria-live="assertive"></div>
+<div class="of-onboarding-field-grid">
+<div class="of-onboarding-field">
+<label asp-for="Input.Name">Nome do serviço</label>
+<input asp-for="Input.Name" data-preview-source="service" / aria-describedby="Input_Name-help Input_Name-error">
+<small id="Input_Name-help" class="of-onboarding-help">Preencha com dados que você usa no atendimento.</small>
+<span id="Input_Name-error" asp-validation-for="Input.Name"></span>
+</div>
+<div class="of-onboarding-field">
+<label asp-for="Input.Category">Categoria (opcional)</label>
+<input asp-for="Input.Category"  / aria-describedby="Input_Category-help Input_Category-error">
+<small id="Input_Category-help" class="of-onboarding-help">Preencha com dados que você usa no atendimento.</small>
+<span id="Input_Category-error" asp-validation-for="Input.Category"></span>
+</div>
+<div class="of-onboarding-field">
+<label asp-for="Input.Unit">Unidade</label>
+<select asp-for="Input.Unit"  aria-describedby="Input_Unit-help Input_Unit-error">
+<option value="service">Serviço</option>
+<option value="hour">Hora</option>
+<option value="unit">Unidade</option>
+</select>
+<small id="Input_Unit-help" class="of-onboarding-help">Preencha com dados que você usa no atendimento.</small>
+<span id="Input_Unit-error" asp-validation-for="Input.Unit"></span>
+</div>
+<div class="of-onboarding-field">
+<label asp-for="Input.Price">Preço</label>
+<input asp-for="Input.Price" inputmode="decimal" data-money data-preview-source="price" / aria-describedby="Input_Price-help Input_Price-error">
+<small id="Input_Price-help" class="of-onboarding-help">Preencha com dados que você usa no atendimento.</small>
+<span id="Input_Price-error" asp-validation-for="Input.Price"></span>
+</div>
+<div class="of-onboarding-field">
+<label asp-for="Input.Cost">Custo interno (opcional)</label>
+<input asp-for="Input.Cost" inputmode="decimal" data-money data-cost / aria-describedby="Input_Cost-help Input_Cost-error">
+<small id="Input_Cost-help" class="of-onboarding-help">Preencha com dados que você usa no atendimento.</small>
+<span id="Input_Cost-error" asp-validation-for="Input.Cost"></span>
+</div>
+<div class="of-onboarding-field">
+<label asp-for="Input.DurationMinutes">Duração em minutos (opcional)</label>
+<input asp-for="Input.DurationMinutes" type="number" / aria-describedby="Input_DurationMinutes-help Input_DurationMinutes-error">
+<small id="Input_DurationMinutes-help" class="of-onboarding-help">Preencha com dados que você usa no atendimento.</small>
+<span id="Input_DurationMinutes-error" asp-validation-for="Input.DurationMinutes"></span>
+</div>
+<div class="of-onboarding-field">
+<label asp-for="Input.Description">Descrição</label>
+<textarea asp-for="Input.Description" rows="3" aria-describedby="Input_Description-help Input_Description-error"></textarea>
+<small id="Input_Description-help" class="of-onboarding-help">Preencha com dados que você usa no atendimento.</small>
+<span id="Input_Description-error" asp-validation-for="Input.Description"></span>
+</div>
+</div>
+<div class="of-onboarding-actions">
+<button class="of-onboarding-button of-onboarding-button--primary" type="submit" data-submit-text="Salvando…">Salvar e continuar</button>
+<button class="of-onboarding-button of-onboarding-button--secondary" type="submit" asp-page-handler="Skip" formnovalidate>Fazer depois</button>
+</div>
+</form>
+</main>
+<aside class="of-onboarding-aside">
+<div class="of-onboarding-brand" aria-label="OrçaFácil, uma solução MNSOFT">OrçaFácil <small>por MNSOFT</small></div>
+<strong>Prévia do resultado</strong>
+<div class="of-onboarding-document-preview" data-preview><b data-preview-target="service">Instalação de rede Wi-Fi</b>
+<span data-preview-target="price">R$ 850,00</span>
+<p data-margin-warning aria-live="polite"></p>
+</div>
+<p>Você poderá revisar tudo antes de finalizar.</p>
+</aside>
+</div>
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial"/><script type="module" src="~/js/onboarding.js" asp-append-version="true"></script>
+}

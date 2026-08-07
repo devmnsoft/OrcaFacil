@@ -111,6 +111,23 @@
 
 <div class="of-dashboard-lower">
     <partial name="_PlanUsageSummary" model="usage" />
-    @if (Model.Onboarding is { IsCompleted: false } onboarding) { <section class="of-card onboarding-dashboard"><div><p class="of-eyebrow">@onboarding.CompletedSteps de @onboarding.TotalSteps etapas</p><h2>Concluir configuração</h2><p>@onboarding.NextAction.Description</p><progress value="@onboarding.CompletedSteps" max="@onboarding.TotalSteps">@onboarding.CompletedSteps de @onboarding.TotalSteps</progress></div><a class="of-button of-button-primary" href="@onboarding.NextAction.Page">@onboarding.NextAction.Title</a></section> }
-<section class="of-guidance"><div><p class="of-eyebrow">Guia inicial</p><h2>Prepare seu espaço no seu ritmo</h2><p>Complete os dados, cadastre um cliente e transforme a oportunidade em documento.</p></div><a asp-page="/Onboarding/Index">Continuar guia</a><a asp-page="/Discover">Conhecer recursos</a></section>
+    @if (Model.Onboarding is { IsCompleted: false } onboarding)
+    {
+        <section class="of-card onboarding-dashboard" aria-labelledby="onboarding-title">
+            <div>
+                <p class="of-eyebrow">@onboarding.CompletedSteps de @onboarding.TotalSteps etapas</p>
+                <h2 id="onboarding-title">Continue sua configuração</h2>
+                <p>@onboarding.NextAction.Description O objetivo é deixar tudo pronto para criar seu primeiro orçamento.</p>
+                <progress value="@onboarding.CompletedSteps" max="@onboarding.TotalSteps" aria-label="Progresso da configuração">@onboarding.CompletedSteps de @onboarding.TotalSteps</progress>
+            </div>
+            <a class="of-button of-button-primary" href="@onboarding.NextAction.Page">Continuar</a>
+        </section>
+    }
+    else if (dashboard.TotalBudgets == 0)
+    {
+        <section class="of-guidance" aria-labelledby="first-budget-title">
+            <div><p class="of-eyebrow">Seu próximo resultado</p><h2 id="first-budget-title">Crie seu primeiro orçamento</h2><p>Transforme seus dados, cliente e serviço em uma proposta profissional.</p></div>
+            <a asp-page="/Documents/CreateBudget">Criar orçamento</a>
+        </section>
+    }
 </div>

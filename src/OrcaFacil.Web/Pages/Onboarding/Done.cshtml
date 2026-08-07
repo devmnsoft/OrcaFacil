@@ -1,5 +1,32 @@
 @page
 @model OrcaFacil.Web.Pages.Onboarding.DoneModel
-@{ViewData["Title"]="Espaço pronto";}
-@section Styles {<link rel="stylesheet" href="~/css/onboarding.css" asp-append-version="true" />}
-<main class="onboarding-card done"><span class="success-mark" aria-hidden="true">✓</span><p class="eyebrow">Configuração concluída</p><h1>Seu espaço está pronto para criar propostas com mais rapidez.</h1><p>Continue de onde parou ou explore as próximas ações.</p><div class="next-actions"><a class="primary" asp-page="/Documents/Index">Ver orçamentos</a><a asp-page="/Documents/CreateBudget">Criar novo orçamento</a><a asp-page="/Services/Create">Cadastrar mais serviços</a><a asp-page="/Dashboard/Index">Ir para o dashboard</a></div></main>
+@{
+    ViewData["Title"] = "Espaço pronto";
+}
+@section Styles
+{
+    <link rel="stylesheet" href="~/css/onboarding.css" asp-append-version="true" />
+}
+<div class="of-onboarding-shell">
+    <main class="of-onboarding-panel of-onboarding-success" aria-labelledby="done-title">
+        <span class="of-onboarding-success__mark" aria-hidden="true">✓</span>
+        <p class="of-onboarding-eyebrow">Configuração concluída</p>
+        <h1 id="done-title">Seu espaço está pronto para criar propostas com mais rapidez.</h1>
+        <p>Continue de onde parou ou explore as próximas ações.</p>
+        <div class="of-onboarding-actions">
+            <a class="of-onboarding-button of-onboarding-button--primary" asp-page="/Documents/Index">Ver orçamentos</a>
+            <a asp-page="/Documents/CreateBudget">Criar novo orçamento</a>
+            <a asp-page="/Services/Create">Cadastrar mais serviços</a>
+            <a asp-page="/Dashboard/Index">Ir para o dashboard</a>
+        </div>
+    </main>
+    <aside class="of-onboarding-aside">
+        <div class="of-onboarding-brand" aria-label="OrçaFácil, uma solução MNSOFT">OrçaFácil <small>por MNSOFT</small></div>
+        <strong>Seu primeiro resultado</strong>
+        <div class="of-onboarding-document-preview">
+            <small>ORÇAMENTO</small>
+            <b>Pronto para apresentar</b>
+            <span>Dados organizados em um documento profissional.</span>
+        </div>
+    </aside>
+</div>

@@ -1,6 +1,85 @@
 @page
 @model OrcaFacil.Web.Pages.Onboarding.ClientModel
-@{ViewData["Title"]="Cadastre seu primeiro cliente";}
-@section Styles {<link rel="stylesheet" href="~/css/onboarding.css" asp-append-version="true" />}
-<div class="onboarding-shell"><main class="onboarding-card"><partial name="_Progress" model="2"/><header class="page-intro"><span class="eyebrow">Etapa 3 de 5</span><h1>Cadastre seu primeiro cliente</h1><p>Ao selecionar um cliente, os dados entram na proposta sem redigitação.</p></header><form method="post" data-onboarding-form novalidate><div asp-validation-summary="ModelOnly" class="validation-summary" role="alert" aria-live="assertive"></div><div class="field-grid"><div class="field"><label asp-for="Input.Name">Nome do cliente</label><input asp-for="Input.Name" autocomplete="name" data-preview-source="client" /><span asp-validation-for="Input.Name"></span></div><div class="field"><label asp-for="Input.PersonType">Tipo</label><select asp-for="Input.PersonType" data-person-type><option value="0">Pessoa física</option><option value="1">Pessoa jurídica</option></select><span asp-validation-for="Input.PersonType"></span></div><div class="field"><label asp-for="Input.Document">CPF ou CNPJ (opcional)</label><input asp-for="Input.Document" inputmode="numeric" data-document /><span asp-validation-for="Input.Document"></span></div><div class="field"><label asp-for="Input.Phone">Telefone (opcional)</label><input asp-for="Input.Phone" inputmode="tel" data-phone /><span asp-validation-for="Input.Phone"></span></div><div class="field"><label asp-for="Input.WhatsApp">WhatsApp (opcional)</label><input asp-for="Input.WhatsApp" inputmode="tel" data-phone /><span asp-validation-for="Input.WhatsApp"></span></div><div class="field"><label asp-for="Input.Email">E-mail (opcional)</label><input asp-for="Input.Email" type="email" /><span asp-validation-for="Input.Email"></span></div><div class="field"><label asp-for="Input.City">Cidade (opcional)</label><input asp-for="Input.City"  /><span asp-validation-for="Input.City"></span></div></div><div class="onboarding-actions"><button class="primary" type="submit" data-submit-text="Salvando…">Salvar e continuar</button><button class="secondary" type="submit" asp-page-handler="Skip" formnovalidate>Fazer depois</button></div></form></main><aside class="context-guide"><strong>Prévia do resultado</strong><div class="document-preview" data-preview><small>Preparado para</small><b data-preview-target="client">Seu cliente</b></div><p>Você poderá revisar tudo antes de finalizar.</p></aside></div>
-@section Scripts {<partial name="_ValidationScriptsPartial"/><script type="module" src="~/js/onboarding.js" asp-append-version="true"></script>}
+@{
+    ViewData["Title"] = "Cadastre seu primeiro cliente";
+}
+@section Styles
+{
+    <link rel="stylesheet" href="~/css/onboarding.css" asp-append-version="true" />
+}
+<div class="of-onboarding-shell">
+<main class="of-onboarding-panel">
+<partial name="_Progress" model="2"/>
+<header class="of-onboarding-step">
+<span class="of-onboarding-eyebrow">Etapa 3 de 5</span>
+<h1>Cadastre seu primeiro cliente</h1>
+<p>Ao selecionar um cliente, os dados entram na proposta sem redigitação.</p>
+</header>
+<form method="post" data-onboarding-form novalidate>
+<div asp-validation-summary="ModelOnly" class="of-onboarding-summary" role="alert" aria-live="assertive"></div>
+<div class="of-onboarding-field-grid">
+<div class="of-onboarding-field">
+<label asp-for="Input.Name">Nome do cliente</label>
+<input asp-for="Input.Name" autocomplete="name" data-preview-source="client" / aria-describedby="Input_Name-help Input_Name-error">
+<small id="Input_Name-help" class="of-onboarding-help">Preencha com dados que você usa no atendimento.</small>
+<span id="Input_Name-error" asp-validation-for="Input.Name"></span>
+</div>
+<div class="of-onboarding-field">
+<label asp-for="Input.PersonType">Tipo</label>
+<select asp-for="Input.PersonType" data-person-type aria-describedby="Input_PersonType-help Input_PersonType-error">
+<option value="0">Pessoa física</option>
+<option value="1">Pessoa jurídica</option>
+</select>
+<small id="Input_PersonType-help" class="of-onboarding-help">Preencha com dados que você usa no atendimento.</small>
+<span id="Input_PersonType-error" asp-validation-for="Input.PersonType"></span>
+</div>
+<div class="of-onboarding-field">
+<label asp-for="Input.Document">CPF ou CNPJ (opcional)</label>
+<input asp-for="Input.Document" inputmode="numeric" data-document / aria-describedby="Input_Document-help Input_Document-error">
+<small id="Input_Document-help" class="of-onboarding-help">Preencha com dados que você usa no atendimento.</small>
+<span id="Input_Document-error" asp-validation-for="Input.Document"></span>
+</div>
+<div class="of-onboarding-field">
+<label asp-for="Input.Phone">Telefone (opcional)</label>
+<input asp-for="Input.Phone" inputmode="tel" data-phone / aria-describedby="Input_Phone-help Input_Phone-error">
+<small id="Input_Phone-help" class="of-onboarding-help">Preencha com dados que você usa no atendimento.</small>
+<span id="Input_Phone-error" asp-validation-for="Input.Phone"></span>
+</div>
+<div class="of-onboarding-field">
+<label asp-for="Input.WhatsApp">WhatsApp (opcional)</label>
+<input asp-for="Input.WhatsApp" inputmode="tel" data-phone / aria-describedby="Input_WhatsApp-help Input_WhatsApp-error">
+<small id="Input_WhatsApp-help" class="of-onboarding-help">Preencha com dados que você usa no atendimento.</small>
+<span id="Input_WhatsApp-error" asp-validation-for="Input.WhatsApp"></span>
+</div>
+<div class="of-onboarding-field">
+<label asp-for="Input.Email">E-mail (opcional)</label>
+<input asp-for="Input.Email" type="email" / aria-describedby="Input_Email-help Input_Email-error">
+<small id="Input_Email-help" class="of-onboarding-help">Preencha com dados que você usa no atendimento.</small>
+<span id="Input_Email-error" asp-validation-for="Input.Email"></span>
+</div>
+<div class="of-onboarding-field">
+<label asp-for="Input.City">Cidade (opcional)</label>
+<input asp-for="Input.City"  / aria-describedby="Input_City-help Input_City-error">
+<small id="Input_City-help" class="of-onboarding-help">Preencha com dados que você usa no atendimento.</small>
+<span id="Input_City-error" asp-validation-for="Input.City"></span>
+</div>
+</div>
+<div class="of-onboarding-actions">
+<button class="of-onboarding-button of-onboarding-button--primary" type="submit" data-submit-text="Salvando…">Salvar e continuar</button>
+<button class="of-onboarding-button of-onboarding-button--secondary" type="submit" asp-page-handler="Skip" formnovalidate>Fazer depois</button>
+</div>
+</form>
+</main>
+<aside class="of-onboarding-aside">
+<div class="of-onboarding-brand" aria-label="OrçaFácil, uma solução MNSOFT">OrçaFácil <small>por MNSOFT</small></div>
+<strong>Prévia do resultado</strong>
+<div class="of-onboarding-document-preview" data-preview>
+<small>Preparado para</small>
+<b data-preview-target="client">Seu cliente</b></div>
+<p>Você poderá revisar tudo antes de finalizar.</p>
+</aside>
+</div>
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial"/><script type="module" src="~/js/onboarding.js" asp-append-version="true"></script>
+}
