@@ -1,6 +1,50 @@
 @page
 @model OrcaFacil.Web.Pages.Onboarding.IndexModel
-@{ViewData["Title"]="Primeiros passos";}
-@section Styles {<link rel="stylesheet" href="~/css/onboarding.css" asp-append-version="true" />}
-<div class="onboarding-shell"><main class="onboarding-card onboarding-welcome"><div class="page-intro"><span class="eyebrow">Seu primeiro resultado em cerca de 5 minutos</span><h1>Vamos preparar seu primeiro orçamento.</h1><p>Em poucos passos, você configura os dados do seu negócio, cadastra um serviço e monta uma proposta com aparência profissional.</p></div><partial name="_Progress" model="Model.State.CompletedSteps"/><ul class="welcome-checklist"><li>Dados do negócio</li><li>Identidade dos documentos</li><li>Primeiro cliente</li><li>Primeiro serviço</li><li>Primeiro orçamento</li></ul><div class="onboarding-actions"><form method="post" asp-page-handler="Begin" data-onboarding-form><button class="primary" type="submit" data-submit-text="Preparando…">Começar configuração</button></form><form method="post" asp-page-handler="Skip"><button class="secondary" type="submit">Pular por enquanto</button></form></div></main><aside class="context-guide"><strong>Você está no controle</strong><p>Cliente e serviço podem ser cadastrados depois. Os dados obrigatórios garantem um documento profissional.</p><span>OrçaFácil · MNSOFT</span></aside></div>
-@section Scripts {<script type="module" src="~/js/onboarding.js" asp-append-version="true"></script>}
+@{
+    ViewData["Title"] = "Primeiros passos";
+}
+@section Styles
+{
+    <link rel="stylesheet" href="~/css/onboarding.css" asp-append-version="true" />
+}
+<div class="of-onboarding-shell">
+<main class="of-onboarding-panel of-onboarding-stage">
+<div class="of-onboarding-step">
+<span class="of-onboarding-eyebrow">Seu primeiro resultado em cerca de 5 minutos</span>
+<h1>Vamos preparar seu primeiro orçamento.</h1>
+<p>Em poucos passos, você configura os dados do seu negócio, cadastra um serviço e monta uma proposta com aparência profissional.</p>
+</div>
+<partial name="_Progress" model="Model.State.CompletedSteps"/>
+<ul class="of-onboarding-checklist">
+<li>Dados do negócio</li>
+<li>Identidade dos documentos</li>
+<li>Primeiro cliente</li>
+<li>Primeiro serviço</li>
+<li>Primeiro orçamento</li>
+</ul>
+<div class="of-onboarding-actions">
+<form method="post" asp-page-handler="Begin" data-onboarding-form>
+<button class="of-onboarding-button of-onboarding-button--primary" type="submit" data-submit-text="Preparando…">Começar configuração</button>
+</form>
+<form method="post" asp-page-handler="Skip">
+<button class="of-onboarding-button of-onboarding-button--secondary" type="submit" aria-describedby="skip-help">Pular por enquanto</button>
+<small id="skip-help" class="of-onboarding-help">Você poderá retomar esta configuração pelo dashboard.</small>
+</form>
+</div>
+</main>
+<aside class="of-onboarding-aside">
+<div class="of-onboarding-brand" aria-label="OrçaFácil, uma solução MNSOFT">OrçaFácil <small>por MNSOFT</small></div>
+<strong>Você está no controle</strong>
+<div class="of-onboarding-document-preview">
+<small>ORÇAMENTO</small>
+<b>Sua proposta profissional</b>
+<span>Identidade, cliente, serviço e total com leitura clara.</span>
+</div>
+<p>Cliente e serviço podem ser cadastrados depois. Os dados obrigatórios garantem um documento profissional.</p>
+<span>OrçaFácil · MNSOFT</span>
+</aside>
+</div>
+@section Scripts
+{
+    <script type="module" src="~/js/onboarding.js" asp-append-version="true"></script>
+}

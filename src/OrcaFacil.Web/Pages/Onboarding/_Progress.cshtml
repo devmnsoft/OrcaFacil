@@ -1,2 +1,15 @@
 @model int
-<nav class="onboarding-progress" aria-label="Progresso da configuração"><progress value="@Model" max="5">@Model de 5</progress><ol><li class="@(Model>=1?"done":"active")">Negócio</li><li class="@(Model>=2?"done":"")">Documento</li><li class="@(Model>=3?"done":"")">Cliente</li><li class="@(Model>=4?"done":"")">Serviço</li><li class="@(Model>=5?"done":"")">Orçamento</li></ol></nav>
+<nav class="of-onboarding-progress" aria-label="Progresso da configuração">
+    <div class="of-onboarding-progress__status">
+        <span>Etapa @Model de 5</span>
+        <strong>@(Model * 20)% concluído</strong>
+    </div>
+    <progress value="@Model" max="5" aria-label="@Model de 5 etapas concluídas">@Model de 5</progress>
+    <ol class="of-onboarding-checklist">
+        <li class="@(Model >= 1 ? "is-complete" : "is-current")">Dados do negócio</li>
+        <li class="@(Model >= 2 ? "is-complete" : "")">Identidade</li>
+        <li class="@(Model >= 3 ? "is-complete" : "")">Cliente</li>
+        <li class="@(Model >= 4 ? "is-complete" : "")">Serviço</li>
+        <li class="@(Model >= 5 ? "is-complete" : "")">Orçamento</li>
+    </ol>
+</nav>
