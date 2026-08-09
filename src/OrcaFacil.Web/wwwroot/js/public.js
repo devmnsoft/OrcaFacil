@@ -28,9 +28,12 @@ const publicHeader = document.querySelector('[data-public-header]');
 const syncHeader = () => publicHeader?.classList.toggle('is-scrolled', window.scrollY > 12);
 window.addEventListener('scroll', syncHeader, { passive: true }); syncHeader();
 
-document.querySelectorAll('a[href^="/#"], a[href^="#"]').forEach(link => {
+document.querySelectorAll('a[href*="#"]').forEach(link => {
   link.addEventListener('click', event => {
-    const id = new URL(link.href, window.location.href).hash;
+    const destination = new URL(link.href, window.location.href);
+    if (destination.origin !== window.location.origin || destination.pathname !== window.location.pathname) return;
+    const id = destination.hash;
+    if (!id) return;
     const target = document.querySelector(id);
     if (!target || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     event.preventDefault();
