@@ -1,105 +1,43 @@
 # Arquitetura do OrçaFácil
 
-## Visão geral
-O OrçaFácil é uma aplicação SaaS freemium essencialmente estática, escrita em JavaScript puro com módulos ES, Bootstrap 5, Firebase Authentication, Firestore, Hosting e geração de PDF no navegador.
+## Plataforma atual
 
-## Formas de execução
-- **Node local**: `npm start` executa `server.js`, um servidor `node:http` sem Fastify, servindo `public` por padrão e expondo `/health`.
-- **IIS/static**: recomendado apontar o Physical Path para `public`. A raiz contém apenas uma orientação/redirecionamento para `public/index.html`.
-- **Firebase Hosting**: `firebase.json` mantém `public` como pasta pública e rewrite para `/index.html`.
-- **Firebase Emulators**: portas padronizadas para Auth, Firestore, Functions, Hosting e Emulator UI.
+O OrçaFácil é um SaaS multi-tenant em **.NET 10**, com interface autenticada em **ASP.NET Core Razor Pages** e APIs HTTP no projeto `OrcaFacil.Api`. A aplicação principal é renderizada no servidor e usa JavaScript progressivo apenas para interações locais. PostgreSQL é a fonte de verdade; a implementação legada estática/Firebase permanece no repositório somente para compatibilidade durante a migração e não descreve a arquitetura principal.
 
-## Estrutura de pastas
-- `public/js/core`: configuração, ambiente, bootstrap e rotas.
-- `public/js/domain`: modelos de domínio.
-- `public/js/services`: integrações, regras de negócio, PDF, logger, auditoria, chatbot e admin.
-- `public/js/repositories`: acesso a dados Firebase/localStorage.
-- `public/js/ui`: componentes de tela.
-- `public/js/utils`: utilitários puros, validações, erros e action guard.
+## Camadas e dependências
 
-## Fluxo de inicialização
-`app.js` chama `bootstrapApp`, que detecta o ambiente, bloqueia `file://` com mensagem amigável, registra logs de boot e inicia os serviços existentes.
+- `OrcaFacil.Domain`: entidades, enums, value objects e invariantes sem dependência da Web.
+- `OrcaFacil.Application`: casos de uso, contratos de serviços, comandos, validação e read models. Define as fronteiras consumidas pela Web.
+- `OrcaFacil.Persistence`: EF Core/Npgsql, consultas Dapper, repositórios e serviços transacionais que implementam as fronteiras da Application.
+- `OrcaFacil.Infrastructure`: integrações externas, e-mail, pagamentos, logging e geração de PDF com QuestPDF.
+- `OrcaFacil.Web`: Razor Pages, composição de ViewModels, autenticação por cookie e assets do design system.
+- `OrcaFacil.Api`: endpoints para integrações e fluxos públicos.
+- `OrcaFacil.Shared`: contratos técnicos compartilhados estritamente necessários.
 
-## Fluxo de autenticação
-O app tenta usar Firebase Authentication quando disponível; o modo demonstração continua usando localStorage para permitir validação sem conta real.
+O fluxo esperado é `Razor Page → Application service/query → Persistence/Infrastructure → PostgreSQL`. PageModels não devem implementar regras comerciais nem consultar dados sem o escopo da conta.
 
-## Fluxo de documentos e PDF
-Documentos são coletados pela UI, validados, numerados, salvos via service/repository e enviados ao gerador PDF. O plano Free mantém marca no PDF; o Pro remove a marca.
+## Isolamento multi-tenant e segurança
 
-## Fluxo de logs e chatbot
-O logger grava no console, no Firestore quando logado e no localStorage em modo demo, sem interromper o app caso a persistência falhe. O chatbot local continua isolado da inicialização crítica.
+`ICurrentAccountService` resolve a conta ativa e valida a associação do usuário. Consultas comerciais filtram simultaneamente pelo identificador da entidade e por `AccountId`; GUIDs isolados nunca são tratados como autorização. Soft delete também é respeitado. Links públicos usam tokens aleatórios cujo valor bruto é devolvido somente na criação; apenas o hash é persistido. Decisões preservam a revisão, evidências técnicas e idempotência sem expor hashes ou segredos nos read models.
 
-## Padrões de try/catch e action guard
-Ações críticas devem usar `withTryCatch`, `withButtonLoading`, `preventDoubleClick` e `rateLimit` em `public/js/utils/action-guard.js` para impedir duplo clique, spam e erros sem feedback.
+## Jornada comercial
 
-## Evolução segura
-Migrar funcionalidades gradualmente das telas grandes para módulos menores; manter compatibilidade de exports existentes; criar testes de regras/functions antes de endurecer segurança; nunca remover login, demo, Firestore, PDF, histórico, chatbot, logger, admin ou compatibilidade estática sem etapa dedicada.
+O agregado de leitura comercial conecta documento, itens, revisões, acesso público, visualizações, decisão do cliente, eventos, ordem de serviço, agenda, pagamentos e recibos. `ICommercialWorkspaceQueryService` prepara o workspace e o pipeline sem espalhar consultas pela camada Web.
 
-## Arquitetura comercial e billing
+As mutações passam por `ICommercialJourneyService`: criação/reuso de revisão, link seguro, decisão pública, conversão idempotente para ordem de serviço, agendamento, início, conclusão, pagamento manual e recibo. Operações críticas usam transações e checagem da conta. `ActivityEvent` fornece a timeline verificável; a UI nunca fabrica acontecimentos.
 
-### Estruturas Firestore
+## Documentos e PDF
 
-- `adminSettings/plans`: configuração global dos planos Free/Pro.
-- `users/{uid}/billing/subscription`: assinatura corrente, status, ciclo, datas e IDs externos.
-- `users/{uid}/billing/payments/{paymentId}`: histórico de pagamentos Mercado Pago.
-- `paymentWebhooks/{webhookId}`: registro idempotente e sanitizado de webhooks recebidos.
+Orçamentos e recibos mantêm itens e totais no domínio. Revisões guardam snapshots imutáveis e hash de integridade. A geração de PDFs ocorre no servidor por meio de `IPdfService`, implementado com QuestPDF, mantendo layout e dados consistentes com a versão registrada.
 
-### Fluxo de checkout
+## Design system e experiência Web
 
-1. Usuário autenticado abre **Minha assinatura** e escolhe ciclo mensal/anual.
-2. Front-end chama `createCheckoutPreference` sem enviar preço confiável.
-3. Cloud Function valida usuário, bloqueio, plano/ciclo e busca preço no servidor.
-4. Function cria preferência Mercado Pago, grava assinatura/payment `pending` e retorna URL de checkout.
+O design system nativo usa tokens e componentes `of-*` em `tokens.css`, `components.css`, `forms.css`, `feedback.css` e folhas de domínio. A UI autenticada não depende de Bootstrap nem de CDN visual. Razor preserva HTML semântico, foco visível, contraste AA, estados vazios e responsividade mobile-first. Scripts em `wwwroot/js` não contêm autorização ou regra comercial.
 
-### Fluxo de webhook e ativação Pro
+## Persistência e evolução de esquema
 
-1. Mercado Pago chama `mercadoPagoWebhook`.
-2. Function registra webhook sanitizado e consulta o pagamento real na API Mercado Pago.
-3. Status `approved` atualiza payment, assinatura `active`, `users/{uid}.plan = "pro"` e auditoria.
-4. Status não aprovado registra histórico e eventos, mas não altera o plano para Pro.
-5. Processamento duplicado de pagamento aprovado é ignorado com idempotência.
+EF Core 10 com Npgsql mapeia o schema PostgreSQL `orcafacil`. Alterações persistentes exigem migration compatível, atualização do script integral em `database`, preservação dos dados e validação de índices e constraints. Dapper é reservado a consultas de leitura bem delimitadas.
 
-### Expiração e administração
+## CI e qualidade
 
-`checkExpiredSubscriptions` roda diariamente e rebaixa assinaturas vencidas para Free. O super_admin consulta assinaturas, pagamentos, webhooks e pode ativar, renovar, cancelar ou voltar usuários para Free com auditoria.
-
-## CI/CD, release e operação
-
-- Ambientes: local, homologação por Firebase Preview/projeto futuro e produção no projeto `orcafacil-b771c`.
-- Build: `npm run build:prod` gera `dist`, aplica minificação/ofuscação disponível e cria `dist/version.json`.
-- CI: PR/push na `main` rodam validações e publicam artifact `orcafacil-dist`.
-- Deploy: produção é manual via workflow `deploy-production.yml`, com opções separadas para Hosting, Firestore Rules e Functions.
-- Rollback: Firebase Hosting pode usar releases/rollback; IIS restaura backup da pasta `dist` anterior.
-- Monitoramento pós-release: verificar `systemErrors`, `systemLogs`, Telegram, usuários novos, pagamentos, uso Firestore/Auth e evento `SYSTEM_RELEASE_DEPLOYED`.
-
-## Fluxo de aprovação pública
-
-1. O prestador gera um token seguro para um orçamento e o app grava `publicQuotes/{token}` com snapshot mínimo de emitente, cliente, documento, decisão e timeline.
-2. `aprovar.html` carrega apenas `publicQuotes/{token}`. Links inválidos, expirados ou desativados exibem estado próprio.
-3. A visualização incrementa `viewCount`, atualiza `lastAccessAt`, move status para `visualizado` quando aplicável e adiciona evento de timeline.
-4. A aprovação/recusa atualiza `decision`, `document.status`, status legado, evidência e timeline. A sincronização com o documento interno pode ser feita ao abrir o painel do prestador ou por Cloud Function futura.
-5. Orçamentos aprovados podem ser convertidos em recibo, preservando origem no recibo e destino no orçamento.
-
-O modelo de status comercial fica em `public/js/domain/document-status.model.js`, separando status de orçamento e recibo, labels, badges e regras de transição.
-
-## Fluxos de observabilidade
-
-### Fluxo do logger
-
-`public/js/services/logger.service.js` cria o log padronizado, sanitiza metadados, aplica deduplicação e escolhe o destino: console local, buffer em memória antes do login, `localStorage` no modo demo ou Firestore quando há usuário autenticado. `flushPendingLogs()` é chamado após `setUserContext(user)` e associa `uid`, e-mail, nome e role aos registros pendentes recentes.
-
-### Fluxo de auditoria
-
-`logger.audit(...)` grava ações relevantes em `auditLogs` somente com usuário autenticado ou em armazenamento local no demo. Antes do login os registros ficam no buffer e sempre devem conter resumo do documento/entidade, evitando snapshots completos desnecessários.
-
-### Fluxo de erro global
-
-Handlers globais convertem `window.error` e `unhandledrejection` em eventos `APP_CRITICAL_ERROR`/`UNHANDLED_REJECTION`, persistindo `systemErrors` quando permitido. `permission-denied` nunca chama o próprio logger novamente, evitando loop.
-
-### Fluxo do painel de saúde
-
-`AdminService.runSystemHealthCheck()` agrega Auth, Firestore, Logger, Telegram Queue, LocalStorage, versão, último erro crítico, erros 24h, usuários ativos e PDFs do dia. A UI de Admin Geral renderiza esses dados na aba **Saúde**.
-
-### Fluxo do Telegram
-
-O logger não envia Telegram diretamente. Eventos notificáveis usam `telegram-notification.service.js`, que cria documentos `pending` em `telegramQueue` quando habilitado e autenticado. A Cloud Function é responsável por enviar a mensagem e atualizar o status.
+O workflow instala .NET 10 e Node, restaura, compila em Release e executa os testes. Gates adicionais validam sintaxe e módulos JavaScript, dependências legadas na UI autenticada, contraste, Razor, SQL e colisões de contratos/test types. Auditoria de pacotes (`dotnet list package --vulnerable`) faz parte da preparação de release. Produção deve ser promovida somente com todos os gates verdes.

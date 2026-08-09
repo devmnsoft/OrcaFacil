@@ -99,6 +99,7 @@ builder.Services.AddSingleton<ITechnicalFingerprintService>(_ => new OrcaFacil.P
         ?? throw new InvalidOperationException("Security:TechnicalFingerprintPepper não configurado.")));
 builder.Services.AddScoped<CommercialJourneyService>();
 builder.Services.AddScoped<ICommercialJourneyService>(sp => sp.GetRequiredService<CommercialJourneyService>());
+builder.Services.AddScoped<ICommercialWorkspaceQueryService, CommercialWorkspaceQueryService>();
 builder.Services.AddScoped<IPublicDocumentAccessService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IManualPaymentRegistrationService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IReceiptApplicationService, ReceiptApplicationService>();
