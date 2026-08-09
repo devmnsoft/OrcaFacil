@@ -35,6 +35,10 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.Property(x => x.RowVersion).IsConcurrencyToken();
         builder.Property(x => x.LastAutosaveKey).HasMaxLength(80);
         builder.Property(x => x.Notes).HasColumnName("notes").HasMaxLength(4000);
+        builder.Property(x => x.NextFollowUpAt).HasColumnName("next_follow_up_at");
+        builder.Property(x => x.LastFollowUpAt).HasColumnName("last_follow_up_at");
+        builder.Property(x => x.FollowUpStatus).HasColumnName("follow_up_status").HasConversion<string>().HasMaxLength(24);
+        builder.Property(x => x.FollowUpNote).HasColumnName("follow_up_note").HasMaxLength(1000);
         builder.Property(x => x.Subtotal).HasColumnName("subtotal").HasPrecision(18, 2);
         builder.Property(x => x.Discount).HasColumnName("discount").HasPrecision(18, 2);
         builder.Property(x => x.Total).HasColumnName("total").HasPrecision(18, 2);
@@ -55,5 +59,6 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.HasIndex(x => x.CreatedAt);
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => new { x.AccountId, x.Status, x.LastAutosavedAt });
+        builder.HasIndex(x => new { x.AccountId, x.NextFollowUpAt });
     }
 }

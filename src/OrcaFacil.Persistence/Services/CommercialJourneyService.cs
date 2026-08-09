@@ -275,6 +275,43 @@ public sealed class CommercialJourneyService(
         return ReceiptResult(true, "Issued", "Recibo gerado.", receipt.Id, "Issued", correlation);
     }
 
+    public Task<CommercialResult> ScheduleFollowUpAsync(FollowUpRequest request, CancellationToken ct = default) =>
+        SaveFollowUpAsync(request, FollowUpStatus.Scheduled, "FOLLOW_UP_SCHEDULED", "Retorno agendado.", ct);
+
+    public Task<CommercialResult> SnoozeFollowUpAsync(FollowUpRequest request, CancellationToken ct = default) =>
+        SaveFollowUpAsync(request, FollowUpStatus.Snoozed, "FOLLOW_UP_SNOOZED", "Retorno adiado.", ct);
+
+    public async Task<CommercialResult> CompleteFollowUpAsync(Guid documentId, string? note, CancellationToken ct = default)
+    {
+        await currentAccount.EnsureAccountAccessAsync(ct);
+        var document = await OwnedDocument(documentId, ct);
+        if (document is null) return FollowUpResult(false, "NotFound", "Orçamento não encontrado.", null);
+        document.LastFollowUpAt = DateTime.UtcNow;
+        document.NextFollowUpAt = null;
+        document.FollowUpStatus = FollowUpStatus.Completed;
+        document.FollowUpNote = Clean(note, 1000);
+        document.Touch();
+        AddEvent("FOLLOW_UP_COMPLETED", document.Id, document.FollowUpNote ?? "Acompanhamento concluído.");
+        await db.SaveChangesAsync(ct);
+        return FollowUpResult(true, "Completed", "Acompanhamento concluído.", document.Id);
+    }
+
+    private async Task<CommercialResult> SaveFollowUpAsync(FollowUpRequest request, FollowUpStatus status, string action, string message, CancellationToken ct)
+    {
+        await currentAccount.EnsureAccountAccessAsync(ct);
+        if (request.NextFollowUpAt is null || request.NextFollowUpAt <= DateTime.UtcNow)
+            return FollowUpResult(false, "InvalidDate", "Escolha uma data futura para o retorno.", request.DocumentId);
+        var document = await OwnedDocument(request.DocumentId, ct);
+        if (document is null) return FollowUpResult(false, "NotFound", "Orçamento não encontrado.", null);
+        document.NextFollowUpAt = request.NextFollowUpAt;
+        document.FollowUpStatus = status;
+        document.FollowUpNote = Clean(request.Note, 1000);
+        document.Touch();
+        AddEvent(action, document.Id, $"{message} {request.NextFollowUpAt.Value.ToLocalTime():dd/MM/yyyy HH:mm}.");
+        await db.SaveChangesAsync(ct);
+        return FollowUpResult(true, status.ToString(), message, document.Id);
+    }
+
     private async Task<WorkOrderResult> ChangeOrder(Guid id, WorkOrderStatus next, Func<WorkOrder, bool> mutate, string message, CancellationToken ct)
     {
         var correlation = CorrelationId; var order = await db.WorkOrders.SingleOrDefaultAsync(x => x.Id == id && x.AccountId == AccountId && !x.IsDeleted, ct);
@@ -315,4 +352,6 @@ public sealed class CommercialJourneyService(
     private static WorkOrderResult Work(bool ok,string code,string msg,Guid? id,string? status,string c)=>new(ok,code,msg,id,status,c,ok?"OpenWorkOrder":"Review",ok?"/WorkOrders/Details":null);
     private static PaymentRegistrationResult Pay(bool ok,string code,string msg,Guid? id,string? status,string c)=>new(ok,code,msg,id,status,c,ok?"GenerateReceipt":"Review",ok?"/Payments/Register":null);
     private static ReceiptGenerationResult ReceiptResult(bool ok,string code,string msg,Guid? id,string? status,string c)=>new(ok,code,msg,id,status,c,ok?"Download":"Review",ok?"/Receipts/Details":null);
+    private CommercialResult FollowUpResult(bool ok, string code, string message, Guid? id) =>
+        new(ok, code, message, id, null, CorrelationId, ok ? "OpenDocument" : "Review", ok ? "/Documents/Details" : null);
 }

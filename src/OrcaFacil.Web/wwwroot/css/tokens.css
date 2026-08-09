@@ -52,6 +52,13 @@
   --of-radius-lg: 22px;
   --of-shadow-sm: 0 1px 2px rgb(11 31 51 / 8%);
   --of-shadow-lg: 0 24px 60px rgb(11 31 51 / 16%);
+  --of-brand-gradient: linear-gradient(135deg, #246bfe 0%, #6654d9 100%);
+  --of-brand-glow: 0 0 48px rgb(36 107 254 / 24%);
+  --of-surface-elevated: #ffffff;
+  --of-surface-glass: rgb(255 255 255 / 82%);
+  --of-border-soft: rgb(23 32 51 / 10%);
+  --of-shadow-floating: 0 12px 32px rgb(11 31 51 / 12%);
+  --of-shadow-premium: 0 28px 72px rgb(11 31 51 / 18%);
   --of-sidebar-width: 272px;
   --of-sidebar-collapsed: 80px;
   --of-topbar-height: 72px;

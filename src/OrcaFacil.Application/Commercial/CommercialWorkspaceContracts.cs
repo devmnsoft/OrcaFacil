@@ -20,7 +20,8 @@ public sealed record CommercialDocumentWorkspaceView(Guid Id, string Type, strin
     bool IsExpired, bool HasChangeRequest, IReadOnlyList<CommercialWorkspaceItem> Items,
     IReadOnlyList<CommercialRevisionView> Revisions, ClientEngagementView? Engagement,
     IReadOnlyList<CommercialTimelineEvent> Timeline, CommercialWorkOrderView? WorkOrder,
-    CommercialNextAction NextAction);
+    CommercialNextAction NextAction, DateTime? NextFollowUpAt, DateTime? LastFollowUpAt,
+    FollowUpStatus FollowUpStatus, string? FollowUpNote);
 
 public sealed record CommercialPipelineCard(Guid DocumentId, string Number, string ClientName, decimal Total,
     DateTime CreatedAt, DateTime? LastInteractionAt, DateTime? ValidUntil, string Context);

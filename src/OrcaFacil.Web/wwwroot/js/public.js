@@ -24,6 +24,10 @@ if (button && menu) {
   window.addEventListener('resize', () => { if (window.innerWidth > 980) close(); });
 }
 
+const publicHeader = document.querySelector('[data-public-header]');
+const syncHeader = () => publicHeader?.classList.toggle('is-scrolled', window.scrollY > 12);
+window.addEventListener('scroll', syncHeader, { passive: true }); syncHeader();
+
 document.querySelectorAll('a[href^="/#"], a[href^="#"]').forEach(link => {
   link.addEventListener('click', event => {
     const id = new URL(link.href, window.location.href).hash;
