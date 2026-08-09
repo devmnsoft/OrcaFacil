@@ -1,6 +1,76 @@
 @page "{id:guid}"
 @model OrcaFacil.Web.Pages.Documents.DetailsModel
+@using OrcaFacil.Web.ViewModels
 @section Styles { <link rel="stylesheet" href="~/css/documents.css" asp-append-version="true" /> }
-@{var d=Model.Document; ViewData["Title"]=$"Documento {d?.Number}";}
-<header class="of-page-header"><div><p class="of-eyebrow">Detalhes</p><h1>@d?.Type @d?.Number</h1><p>Cliente, itens, totais, observações e ações do documento.</p></div><partial name="_StatusBadge" model="d?.Status" /></header>
-<div class="row g-4"><div class="col-lg-8"><section class="of-card"><h2 class="h4">Cliente</h2><p class="fs-5 mb-0">@d?.ClientName</p></section><section class="of-card mt-4"><h2 class="h4">Itens</h2><div class="table-responsive"><table class="table"><thead><tr><th>Descrição</th><th>Qtd.</th><th>Unitário</th><th>Desconto</th></tr></thead><tbody>@foreach(var i in d?.Items ?? Enumerable.Empty<OrcaFacil.Domain.Entities.DocumentItem>()){<tr><td>@i.Description</td><td>@i.Quantity</td><td>@i.UnitPrice.ToString("C")</td><td>@i.Discount.ToString("C")</td></tr>}</tbody></table></div></section><section class="of-card mt-4"><h2 class="h4">Observações</h2><p>@(string.IsNullOrWhiteSpace(d?.Notes)?"Sem observações.":d?.Notes)</p></section><section class="of-card mt-4"><h2 class="h4">Timeline</h2><ol class="mb-0"><li>Documento criado e registrado na auditoria.</li><li>Status atual: @d?.Status.</li></ol></section></div><aside class="col-lg-4"><div class="of-card"><p class="of-eyebrow">Total</p><strong class="display-6 text-success">@d?.Total.ToString("C")</strong><div class="d-grid gap-2 mt-4"><a class="btn btn-outline-primary" asp-page="/Documents/Edit" asp-route-id="@d?.Id">Editar</a><a class="btn btn-primary" href="/Documents/Pdf/@d?.Id">Gerar PDF</a><form method="post" asp-page-handler="Duplicate" asp-route-id="@d?.Id">@Html.AntiForgeryToken()<button class="btn btn-outline-secondary w-100">Duplicar</button></form><form method="post" asp-page-handler="PublicLink" asp-route-id="@d?.Id">@Html.AntiForgeryToken()<button class="btn btn-success w-100">Gerar link de aprovação</button></form>@if(TempData["PublicLink"] is string publicLink){<button class="btn btn-outline-primary" type="button" data-copy="@publicLink">Copiar novo link seguro</button>}<form method="post" asp-page-handler="Delete" asp-route-id="@d?.Id">@Html.AntiForgeryToken()<button class="btn btn-danger w-100" data-confirm="Excluir documento?">Excluir</button></form></div></div></aside></div>
+@{ var d = Model.Document; ViewData["Title"] = $"{d.Type} {d.Number}"; }
+
+@if (TempData["Success"] is string success) { <div class="of-feedback of-feedback-success" role="status">@success</div> }
+@if (TempData["Error"] is string error) { <div class="of-feedback of-feedback-error" role="alert">@error</div> }
+
+<main class="of-document-workspace">
+    <header class="of-document-hero">
+        <div class="of-document-hero-main">
+            <p class="of-eyebrow">Workspace comercial · @d.Type</p>
+            <div class="of-document-title"><h1>@d.Number</h1><span class="of-commercial-status" data-status="@d.Status">@d.Status</span></div>
+            <p class="of-document-client">@d.ClientName</p>
+            <div class="of-document-signals">
+                @if (d.IsExpired) { <span class="of-badge of-badge-danger">Validade encerrada</span> }
+                @if (d.HasChangeRequest) { <span class="of-badge of-badge-warning">Cliente pediu alteração</span> }
+                @if (d.WorkOrder is not null) { <span class="of-badge of-badge-success">OS @d.WorkOrder.Number vinculada</span> }
+            </div>
+        </div>
+        <div class="of-document-value"><span>Valor total</span><strong>@d.Total.ToString("C")</strong><small>Revisão @(d.CurrentRevision == 0 ? "a preparar" : $"{d.CurrentRevision}")</small></div>
+        <dl class="of-document-summary">
+            <div><dt>Criação</dt><dd>@d.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</dd></div>
+            <div><dt>Validade</dt><dd>@(d.ValidUntil?.ToLocalTime().ToString("dd/MM/yyyy") ?? "Não definida")</dd></div>
+            <div><dt>Origem</dt><dd>@d.Origin</dd></div>
+            <div><dt>Responsável</dt><dd>Equipe da conta</dd></div>
+        </dl>
+    </header>
+
+    <div class="of-document-layout">
+        <div class="of-document-content">
+            <section class="of-next-best-action" aria-labelledby="next-action-title">
+                <span class="of-next-best-action-icon"><partial name="Partials/_Icon" model='new IconViewModel(d.NextAction.Icon, Decorative: true)' /></span>
+                <div><p class="of-eyebrow">Próxima melhor ação</p><h2 id="next-action-title">@d.NextAction.Title</h2><p>@d.NextAction.Description</p></div>
+                @if (d.NextAction.Handler is not null) { <form method="post" asp-page-handler="@d.NextAction.Handler" asp-route-id="@d.Id"><button class="of-button-primary" type="submit">@d.NextAction.Label</button></form> }
+                else if (d.NextAction.Page is not null) { <a class="of-button-primary" asp-page="@d.NextAction.Page" asp-route-id="@d.NextAction.RouteId">@d.NextAction.Label</a> }
+            </section>
+
+            @if (d.HasChangeRequest && d.Engagement?.Comment is { Length: > 0 } changeComment)
+            { <aside class="of-change-request"><strong>Retorno do cliente</strong><p>@changeComment</p></aside> }
+
+            <section class="of-workspace-section of-document-items" aria-labelledby="items-title">
+                <div class="of-section-heading"><div><p class="of-eyebrow">Escopo comercial</p><h2 id="items-title">Itens do orçamento</h2></div><span>@d.Items.Count item(ns)</span></div>
+                <div class="of-document-items-table" role="table" aria-label="Itens do documento">
+                    <div class="of-document-item-head" role="row"><span>Descrição</span><span>Quantidade</span><span>Unitário</span><span>Desconto</span><span>Total</span></div>
+                    @foreach (var item in d.Items) { <article class="of-document-item" role="row"><strong data-label="Descrição">@item.Description</strong><span data-label="Quantidade">@item.Quantity</span><span data-label="Unitário">@item.UnitPrice.ToString("C")</span><span data-label="Desconto">@item.Discount.ToString("C")</span><strong data-label="Total">@item.Total.ToString("C")</strong></article> }
+                </div>
+                <dl class="of-total-summary"><div><dt>Subtotal</dt><dd>@d.Subtotal.ToString("C")</dd></div><div><dt>Desconto total</dt><dd>@d.Discount.ToString("C")</dd></div><div class="is-total"><dt>Total geral</dt><dd>@d.Total.ToString("C")</dd></div></dl>
+            </section>
+
+            @if (!string.IsNullOrWhiteSpace(d.Notes) || !string.IsNullOrWhiteSpace(d.Conditions))
+            { <section class="of-document-notes"><div><h2>Observações</h2><p>@(d.Notes ?? "Sem observações.")</p></div><div><h2>Condições comerciais</h2><p>@(d.Conditions ?? "Sem condições adicionais.")</p></div></section> }
+
+            <section class="of-workspace-section of-client-engagement" id="client-engagement" aria-labelledby="engagement-title">
+                <div class="of-section-heading"><div><p class="of-eyebrow">Jornada pública</p><h2 id="engagement-title">Interação com o cliente</h2></div>@if(d.Engagement is not null){<span class="of-badge">@d.Engagement.Status</span>}</div>
+                @if (d.Engagement is null) { <div class="of-inline-empty"><strong>Nenhum link compartilhado</strong><p>Quando um link seguro for criado, visualizações e decisões aparecerão aqui.</p></div> }
+                else { <dl class="of-engagement-grid"><div><dt>Criado em</dt><dd>@d.Engagement.CreatedAt.ToLocalTime().ToString("g")</dd></div><div><dt>Expira em</dt><dd>@d.Engagement.ExpiresAt.ToLocalTime().ToString("g")</dd></div><div><dt>Visualizações</dt><dd>@d.Engagement.ViewCount</dd></div><div><dt>Última visualização</dt><dd>@(d.Engagement.LastViewedAt?.ToLocalTime().ToString("g") ?? "Ainda não visualizado")</dd></div><div><dt>Decisão</dt><dd>@(d.Engagement.Decision ?? "Aguardando")</dd></div><div><dt>Informado por</dt><dd>@(d.Engagement.CustomerName ?? "—")</dd></div></dl>@if(!string.IsNullOrWhiteSpace(d.Engagement.Comment)){<blockquote>@d.Engagement.Comment</blockquote>} }
+            </section>
+
+            <section class="of-workspace-section" aria-labelledby="timeline-title"><div class="of-section-heading"><div><p class="of-eyebrow">Histórico verificável</p><h2 id="timeline-title">Timeline comercial</h2></div></div>
+                @if (d.Timeline.Count == 0) { <div class="of-inline-empty"><strong>Nenhuma interação registrada</strong><p>Eventos reais da jornada serão exibidos aqui.</p></div> }
+                else { <ol class="of-commercial-timeline">@foreach(var item in d.Timeline){<li data-tone="@item.Tone"><span class="of-timeline-icon"><partial name="Partials/_Icon" model='new IconViewModel(item.Icon, Decorative: true)' /></span><div><small>@item.Origin · <time datetime="@item.OccurredAt.ToString("O")">@item.OccurredAt.ToLocalTime().ToString("g")</time></small><h3>@item.Title</h3>@if(item.Description is not null){<p>@item.Description</p>}</div></li>}</ol> }
+            </section>
+        </div>
+
+        <aside class="of-command-rail" aria-label="Ações do documento">
+            @if (d.WorkOrder is not null) { <div class="of-command-order"><small>Operação vinculada</small><strong>Ordem de serviço @d.WorkOrder.Number</strong><a asp-page="/WorkOrders/Details" asp-route-id="@d.WorkOrder.Id">Abrir ordem de serviço</a></div> }
+            <section><p>Ação principal</p>@if(d.NextAction.Handler is not null){<form method="post" asp-page-handler="@d.NextAction.Handler" asp-route-id="@d.Id"><button class="of-button-primary" type="submit">@d.NextAction.Label</button></form>}else if(d.NextAction.Page is not null){<a class="of-button-primary" asp-page="@d.NextAction.Page" asp-route-id="@d.NextAction.RouteId">@d.NextAction.Label</a>}</section>
+            <section><p>Compartilhar</p><form method="post" asp-page-handler="PublicLink" asp-route-id="@d.Id"><button class="of-command-link" type="submit"><partial name="Partials/_Icon" model='new IconViewModel("link", "sm", Decorative: true)' /> Gerar link seguro</button></form><a class="of-command-link" href="/Documents/Pdf/@d.Id"><partial name="Partials/_Icon" model='new IconViewModel("document", "sm", Decorative: true)' /> Gerar PDF</a>@if(TempData["PublicLink"] is string publicLink){<button class="of-button-secondary" type="button" data-copy="@publicLink">Copiar novo link</button><small>O link só é exibido agora e não será recuperado depois.</small>}</section>
+            <section><p>Gerenciar</p><a class="of-command-link" asp-page="/Documents/Edit" asp-route-id="@d.Id">Editar orçamento</a><form method="post" asp-page-handler="Duplicate" asp-route-id="@d.Id"><button class="of-command-link" type="submit">Duplicar proposta</button></form>@if(d.HasChangeRequest){<form method="post" asp-page-handler="Revision" asp-route-id="@d.Id"><button class="of-command-link" type="submit">Criar nova versão</button></form>}</section>
+            <section class="of-command-danger"><p>Outras ações</p><form method="post" asp-page-handler="Delete" asp-route-id="@d.Id" data-confirm-form data-confirm-title="Excluir documento?" data-confirm-message="Esta ação remove o documento da área comercial."><button type="submit">Excluir documento</button></form></section>
+        </aside>
+    </div>
+</main>
+@section Scripts { <script type="module" src="~/js/commercial-workspace.js" asp-append-version="true"></script> }

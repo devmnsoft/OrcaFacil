@@ -66,13 +66,24 @@
                 <time>Agora</time><a asp-page="/Documents/CreateBudget">Começar</a>
             </article>
         }
-        else
+        else if (experience.Commercial.Attention.Count == 0)
         {
             <article class="of-attention-item is-clear">
                 <span class="of-attention-icon"><partial name="Partials/_Icon" model='new IconViewModel("success", Tone: "success")' /></span>
                 <div><small>Rotina · informativo</small><h3>Nenhuma pendência prioritária</h3><p>Seu espaço está organizado. Confira os documentos recentes.</p></div>
                 <time>Agora</time><a asp-page="/Documents/Index">Revisar</a>
             </article>
+        }
+        else
+        {
+            @foreach (var item in experience.Commercial.Attention)
+            {
+                <article class="of-attention-item is-warning">
+                    <span class="of-attention-icon"><partial name="Partials/_Icon" model='new IconViewModel("warning", Tone: "warning")' /></span>
+                    <div><small>Jornada comercial · @item.Severity</small><h3>@item.Title</h3><p>@item.Description</p></div>
+                    <time datetime="@item.OccurredAt.ToString("O")">@item.OccurredAt.ToLocalTime().ToString("dd/MM")</time><a asp-page="/Documents/Details" asp-route-id="@item.DocumentId">Resolver</a>
+                </article>
+            }
         }
     </div>
     <aside class="of-quick-actions" aria-labelledby="quick-title">
@@ -84,7 +95,7 @@
 
 <section aria-labelledby="pipeline-title">
     <div class="of-section-heading"><div><p class="of-eyebrow">Jornada comercial</p><h2 id="pipeline-title">Oportunidades em movimento</h2></div><a asp-page="/Documents/Index">Abrir orçamentos</a></div>
-    <partial name="Partials/_ProductPipelinePreview" />
+    <partial name="Partials/_ProductPipelinePreview" model="experience.Commercial" />
 </section>
 
 <section aria-labelledby="metrics-title">
@@ -95,6 +106,20 @@
         <article><span>Documentos no mês</span><strong>@dashboard.DocumentsThisMonth</strong><small>Orçamentos e recibos criados no período atual.</small></article>
         <article class="is-success"><span>Registrado em recibos</span><strong>@dashboard.ReceiptTotal.ToString("C")</strong><small>Valores informados por você no período.</small></article>
     </div>
+    @if (experience.Commercial.ApprovalRate is { } approvalRate)
+    {
+        <div class="of-commercial-metrics" aria-label="Indicadores de aprovação">
+            <span><small>Propostas visualizadas</small><strong>@experience.Commercial.Viewed</strong></span>
+            <span><small>Propostas aprovadas</small><strong>@experience.Commercial.Approved</strong></span>
+            <span><small>Valor aprovado</small><strong>@experience.Commercial.ApprovedValue.ToString("C")</strong></span>
+            <span><small>Taxa de aprovação</small><strong>@approvalRate.ToString("0.#")%</strong></span>
+            <span><small>Ticket médio aprovado</small><strong>@experience.Commercial.AverageTicket?.ToString("C")</strong></span>
+        </div>
+    }
+    else
+    {
+        <p class="of-metrics-empty">Ainda não há respostas suficientes para calcular taxa de aprovação e ticket médio.</p>
+    }
 </section>
 
 <section class="of-recent" aria-labelledby="recent-title">

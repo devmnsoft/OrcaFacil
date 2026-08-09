@@ -1,6 +1,7 @@
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.DTOs;
 using OrcaFacil.Application.Profile;
+using OrcaFacil.Application.Commercial;
 
 namespace OrcaFacil.Web.Services;
 
@@ -15,7 +16,8 @@ public sealed class DashboardExperienceService(
     IDashboardQueries dashboardQueries,
     ProfileService profiles,
     INextBestActionService nextBestAction,
-    IPlanExperienceService planExperience) : IDashboardExperienceService
+    IPlanExperienceService planExperience,
+    ICommercialWorkspaceQueryService commercialWorkspace) : IDashboardExperienceService
 {
     public async Task<DashboardExperienceViewModel> GetAsync(CancellationToken cancellationToken = default)
     {
@@ -23,7 +25,8 @@ public sealed class DashboardExperienceService(
         var profileTask = profiles.GetAsync(new(currentUser.UserId), cancellationToken);
         var actionTask = nextBestAction.GetAsync(cancellationToken);
         var planTask = planExperience.GetAsync(cancellationToken);
-        await Task.WhenAll(dashboardTask, profileTask, actionTask, planTask);
+        var commercialTask = commercialWorkspace.GetDashboardAsync(cancellationToken);
+        await Task.WhenAll(dashboardTask, profileTask, actionTask, planTask, commercialTask);
 
         var dashboard = await dashboardTask;
         var plan = await planTask;
@@ -43,7 +46,8 @@ public sealed class DashboardExperienceService(
             plan.Status,
             plan.DueAt is { } dueAt ? new DateTimeOffset(DateTime.SpecifyKind(dueAt, DateTimeKind.Utc)) : null,
             planUsage,
-            plan.ContextualRecommendation);
+            plan.ContextualRecommendation,
+            await commercialTask);
     }
 }
 
@@ -56,6 +60,7 @@ public sealed record DashboardExperienceViewModel(
     string PlanStatus,
     DateTimeOffset? PlanDueAt,
     IReadOnlyList<DashboardPlanUsage> PlanUsage,
-    string PlanRecommendation);
+    string PlanRecommendation,
+    CommercialDashboardView Commercial);
 
 public sealed record DashboardPlanUsage(string Label, int Used, int? Limit);

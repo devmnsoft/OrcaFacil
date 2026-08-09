@@ -1,8 +1,20 @@
-<div class="of-product-visual of-pipeline-preview" aria-label="Demonstração do pipeline comercial">
-    <header><span><i></i><strong>Pipeline</strong></span><small>Dados demonstrativos</small></header>
+@model OrcaFacil.Application.Commercial.CommercialDashboardView
+<div class="of-product-visual of-pipeline-preview" aria-label="Pipeline comercial da conta">
+    <header><span><i></i><strong>Pipeline</strong></span><small>Dados reais da conta</small></header>
     <div class="of-pipeline-columns">
-        <section><small>Enviados · 3</small><article><strong>Clínica Sorriso</strong><span>#0246 · R$ 3.280</span><em>Retorno hoje</em></article></section>
-        <section><small>Visualizados · 2</small><article><strong>Studio Aurora</strong><span>#0248 · R$ 5.900</span><em>Visto há 2h</em></article></section>
-        <section><small>Aprovados · 4</small><article><strong>Casa Lima</strong><span>#0244 · R$ 2.450</span><em>Converter em ordem</em></article></section>
+        @foreach (var column in Model.Pipeline)
+        {
+            <section>
+                <div class="of-pipeline-column-title"><strong>@column.Title</strong><span>@column.Count</span></div>
+                <small>@column.Total.ToString("C") em oportunidades</small>
+                @if (column.Cards.Count == 0) { <p class="of-pipeline-empty">Nenhuma proposta neste estágio.</p> }
+                @foreach (var card in column.Cards)
+                {
+                    <a class="of-pipeline-card" asp-page="/Documents/Details" asp-route-id="@card.DocumentId">
+                        <strong>@card.ClientName</strong><span>@card.Number · @card.Total.ToString("C")</span><em>@card.Context</em>
+                    </a>
+                }
+            </section>
+        }
     </div>
 </div>
