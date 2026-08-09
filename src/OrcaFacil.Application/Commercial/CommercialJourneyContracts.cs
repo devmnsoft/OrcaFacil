@@ -13,6 +13,7 @@ public sealed record ReceiptGenerationResult(bool Succeeded, string Code, string
     string CorrelationId, string? NextAction, string? RedirectPage) : CommercialResult(Succeeded, Code, Message, EntityId, CurrentStatus, CorrelationId, NextAction, RedirectPage);
 
 public sealed record ManualPaymentRequest(Guid WorkOrderId, decimal Amount, string PaymentMethod, DateTime PaidAt, string? Notes, string IdempotencyKey);
+public sealed record FollowUpRequest(Guid DocumentId, DateTime? NextFollowUpAt, string? Note);
 
 public interface IManualPaymentRegistrationService
 {
@@ -30,4 +31,7 @@ public interface ICommercialJourneyService
     Task<WorkOrderResult> StartAsync(Guid workOrderId, CancellationToken ct = default);
     Task<WorkOrderResult> CompleteAsync(Guid workOrderId, string? notes, CancellationToken ct = default);
     Task<ReceiptGenerationResult> GenerateReceiptAsync(Guid paymentId, CancellationToken ct = default);
+    Task<CommercialResult> ScheduleFollowUpAsync(FollowUpRequest request, CancellationToken ct = default);
+    Task<CommercialResult> SnoozeFollowUpAsync(FollowUpRequest request, CancellationToken ct = default);
+    Task<CommercialResult> CompleteFollowUpAsync(Guid documentId, string? note, CancellationToken ct = default);
 }

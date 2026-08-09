@@ -552,3 +552,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_work_orders_number ON orcafacil.work_orders
 CREATE UNIQUE INDEX IF NOT EXISTS ux_work_orders_revision ON orcafacil.work_orders(account_id,source_revision_id) WHERE source_revision_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS ix_work_orders_schedule ON orcafacil.work_orders(account_id,status,scheduled_start);
 CREATE INDEX IF NOT EXISTS ix_work_orders_assignee ON orcafacil.work_orders(account_id,assigned_user_id,scheduled_start);
+
+-- Follow-up comercial de orçamentos (2026-08-09)
+ALTER TABLE orcafacil.documents ADD COLUMN IF NOT EXISTS next_follow_up_at timestamptz;
+ALTER TABLE orcafacil.documents ADD COLUMN IF NOT EXISTS last_follow_up_at timestamptz;
+ALTER TABLE orcafacil.documents ADD COLUMN IF NOT EXISTS follow_up_status varchar(24) NOT NULL DEFAULT 'None';
+ALTER TABLE orcafacil.documents ADD COLUMN IF NOT EXISTS follow_up_note varchar(1000);
+CREATE INDEX IF NOT EXISTS ix_documents_account_id_next_follow_up_at ON orcafacil.documents(account_id, next_follow_up_at);

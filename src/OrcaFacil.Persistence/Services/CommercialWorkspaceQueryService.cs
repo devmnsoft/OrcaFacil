@@ -52,7 +52,8 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
             document.Items.Select(x => new CommercialWorkspaceItem(x.Id, x.Description, x.Quantity, x.UnitPrice, x.Discount,
                 x.Quantity * x.UnitPrice, x.CalculateTotal())).ToArray(),
             revisions.Select(x => new CommercialRevisionView(x.Id, x.VersionNumber, x.Status.ToString(), x.CreatedAt, x.IsCurrent)).ToArray(),
-            engagement, events.Select(MapEvent).ToArray(), orderView, next);
+            engagement, events.Select(MapEvent).ToArray(), orderView, next, document.NextFollowUpAt,
+            document.LastFollowUpAt, document.FollowUpStatus, document.FollowUpNote);
     }
 
     public async Task<CommercialDashboardView> GetDashboardAsync(CancellationToken ct = default)
@@ -77,7 +78,11 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         var attention = new List<CommercialAttentionItem>(); var now = DateTime.UtcNow;
         foreach (var d in docs) {
             var decision = decisions.Where(x => x.DocumentId == d.Id).OrderByDescending(x => x.CreatedAt).FirstOrDefault();
-            if (decision?.Decision == PublicDocumentDecisionType.ChangeRequested)
+            if (d.NextFollowUpAt is { } followUp && followUp < now)
+                attention.Add(new(d.Id, "critical", "Retorno atrasado", $"Orçamento {d.Number} · {d.ClientName}", followUp));
+            else if (d.NextFollowUpAt is { } today && today.Date == now.Date)
+                attention.Add(new(d.Id, "important", "Retorno hoje", $"Falar com {d.ClientName}", today));
+            else if (decision?.Decision == PublicDocumentDecisionType.ChangeRequested)
                 attention.Add(new(d.Id, "critical", "Cliente pediu alteração", decision.Comment ?? decision.ReasonCode ?? "Revise a proposta e crie uma nova versão.", decision.CreatedAt));
             else if (d.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase) && !orderDocIds.Contains(d.Id))
                 attention.Add(new(d.Id, "important", "Orçamento aprovado sem ordem de serviço", "Converta a aprovação em execução sem duplicar o trabalho.", decision?.CreatedAt ?? d.CreatedAt));
@@ -119,6 +124,9 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         "WorkOrderCreated" => new(e.Action, "Ordem de serviço criada", e.Summary, e.CreatedAt, "Equipe", "success", "work-order"),
         "PaymentRegistered" => new(e.Action, "Pagamento registrado", e.Summary, e.CreatedAt, "Equipe", "success", "payment"),
         "ReceiptGenerated" => new(e.Action, "Recibo emitido", e.Summary, e.CreatedAt, "Equipe", "success", "receipt"),
+        "FOLLOW_UP_SCHEDULED" => new(e.Action, "Retorno agendado", e.Summary, e.CreatedAt, "Equipe", "info", "calendar"),
+        "FOLLOW_UP_SNOOZED" => new(e.Action, "Retorno adiado", e.Summary, e.CreatedAt, "Equipe", "warning", "clock"),
+        "FOLLOW_UP_COMPLETED" => new(e.Action, "Acompanhamento concluído", e.Summary, e.CreatedAt, "Equipe", "success", "success"),
         _ => new(e.Action, e.Summary ?? e.Action, null, e.CreatedAt, e.ActorUserId is null ? "Sistema" : "Equipe", "neutral", "audit") };
     private static string Context(string code, DateTime last, DateTime? valid) {
         if (valid is { } date && date > DateTime.UtcNow && date <= DateTime.UtcNow.AddDays(1)) return "Validade vence amanhã";

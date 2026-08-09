@@ -11,3 +11,4 @@ public enum PublicDocumentDecisionType { Approved, Rejected, ChangeRequested }
 public enum WorkOrderStatus { Planned, Scheduled, InProgress, WaitingCustomer, WaitingMaterial, Completed, Cancelled }
 public enum FollowUpChannel { Phone, WhatsApp, Email, InPerson, Other }
 public enum FollowUpResult { NoResponse, RequestedTime, RequestedChange, Interested, NotInterested, VerballyApproved, Other }
+public enum FollowUpStatus { None, Scheduled, Completed, Snoozed }

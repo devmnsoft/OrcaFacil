@@ -36,6 +36,10 @@ public class Document : Entity
     public DateTime? LastAutosavedAt { get; set; }
     public string? LastAutosaveKey { get; set; }
     public string? Notes { get; set; }
+    public DateTime? NextFollowUpAt { get; set; }
+    public DateTime? LastFollowUpAt { get; set; }
+    public FollowUpStatus FollowUpStatus { get; set; } = FollowUpStatus.None;
+    public string? FollowUpNote { get; set; }
     public decimal Subtotal { get; private set; }
     public decimal Discount { get; set; }
     public decimal Total { get; private set; }

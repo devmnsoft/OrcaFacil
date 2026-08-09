@@ -30,8 +30,14 @@ public sealed class DetailsModel(ICommercialWorkspaceQueryService workspace, ICu
     {
         if (await workspace.GetAsync(id, ct) is null) return NotFound();
         var result = await documents.DuplicateAsync(new(account.UserId, id), ct);
-        TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
-        return result.Succeeded ? RedirectToPage("/Documents/Edit", new { id = result.Value }) : RedirectToPage(new { id });
+        if (!result.Succeeded || result.Value == Guid.Empty)
+        {
+            TempData["Error"] = result.Error ?? "Não foi possível duplicar o orçamento.";
+            return RedirectToPage(new { id });
+        }
+
+        TempData["Success"] = "Orçamento duplicado com sucesso.";
+        return RedirectToPage("/Documents/Edit", new { id = result.Value });
     }
 
     public async Task<IActionResult> OnPostPublicLinkAsync(Guid id, CancellationToken ct)
@@ -54,6 +60,27 @@ public sealed class DetailsModel(ICommercialWorkspaceQueryService workspace, ICu
     public async Task<IActionResult> OnPostRevisionAsync(Guid id, CancellationToken ct)
     {
         var result = await journey.CreateRevisionAsync(id, "essential", ct);
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostScheduleFollowUpAsync(Guid id, DateTime? nextFollowUpAt, string? followUpNote, CancellationToken ct)
+    {
+        var result = await journey.ScheduleFollowUpAsync(new(id, nextFollowUpAt, followUpNote), ct);
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostSnoozeFollowUpAsync(Guid id, DateTime? nextFollowUpAt, string? followUpNote, CancellationToken ct)
+    {
+        var result = await journey.SnoozeFollowUpAsync(new(id, nextFollowUpAt, followUpNote), ct);
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostCompleteFollowUpAsync(Guid id, string? followUpNote, CancellationToken ct)
+    {
+        var result = await journey.CompleteFollowUpAsync(id, followUpNote, ct);
         TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
         return RedirectToPage(new { id });
     }
