@@ -4,22 +4,539 @@ using OrcaFacil.Application.Common;
 using OrcaFacil.Application.Onboarding;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
+
 namespace OrcaFacil.Persistence.Services;
-public sealed class OnboardingApplicationService(OrcaFacilDbContext db, ICurrentAccountService current, IAuditService audit) : IOnboardingApplicationService
+
+public sealed class OnboardingApplicationService(
+    OrcaFacilDbContext db,
+    ICurrentAccountService current,
+    IAuditService audit) : IOnboardingApplicationService
 {
- async Task<(AccountOnboardingState? state, OperationResult? error)> Resolve(CancellationToken ct)
- { await current.EnsureAccountAccessAsync(ct); if(current.AccountId is not Guid accountId) return (null,OperationResult.Failure("access_denied","Não foi possível identificar seu espaço.")); var state=await db.AccountOnboardingStates.SingleOrDefaultAsync(x=>x.AccountId==accountId&&x.UserId==current.UserId&&!x.IsDeleted,ct); if(state is null){state=new(){AccountId=accountId,UserId=current.UserId};db.Add(state);await db.SaveChangesAsync(ct);} state.LastSeenAt=DateTime.UtcNow;return(state,null); }
- public async Task<OperationResult<OnboardingStateView>> GetAsync(CancellationToken ct=default){var(s,e)=await Resolve(ct);if(e is not null)return OperationResult<OnboardingStateView>.Failure(e.Code!,e.Message!);await db.SaveChangesAsync(ct);var client=await db.Clients.Where(x=>x.AccountId==s!.AccountId&&!x.IsDeleted).OrderBy(x=>x.CreatedAt).Select(x=>(Guid?)x.Id).FirstOrDefaultAsync(ct);var service=await db.ServiceCatalogItems.Where(x=>x.AccountId==s.AccountId&&!x.IsDeleted).OrderBy(x=>x.CreatedAt).Select(x=>(Guid?)x.Id).FirstOrDefaultAsync(ct);var completed=new[]{s.BusinessProfileCompletedAt,s.IssuerProfileCompletedAt,s.FirstClientCompletedAt,s.FirstServiceCompletedAt,s.FirstBudgetStartedAt}.Count(x=>x.HasValue);return OperationResult<OnboardingStateView>.Success(new(s.CurrentStep,completed,5,s.CompletedAt.HasValue,s.SkippedAt,Next(s.CurrentStep),client,service));}
- public async Task<OperationResult> BeginAsync(CancellationToken ct=default){var(s,e)=await Resolve(ct);if(e is not null)return e;if(s!.CompletedAt.HasValue)return OperationResult.Success();s.Advance(OnboardingStep.BusinessProfile);await db.SaveChangesAsync(ct);return OperationResult.Success();}
- public async Task<OperationResult> SkipAsync(OnboardingStep step,CancellationToken ct=default){if(step is OnboardingStep.BusinessProfile or OnboardingStep.DocumentIdentity)return OperationResult.Failure("required_step","Esta etapa prepara os dados obrigatórios do orçamento.");var(s,e)=await Resolve(ct);if(e is not null)return e;s!.Skip();s.Advance(step==OnboardingStep.Welcome?OnboardingStep.Welcome:(OnboardingStep)((int)step+1));await db.SaveChangesAsync(ct);return OperationResult.Success();}
- public async Task<OperationResult> SaveBusinessAsync(BusinessProfileInput i,CancellationToken ct=default){var errors=ValidateBusiness(i);if(errors.Count>0)return OperationResult.Failure("validation","Revise os campos destacados.",errors.ToArray());var(s,e)=await Resolve(ct);if(e is not null)return e;var account=await db.BusinessAccounts.SingleAsync(x=>x.Id==s!.AccountId&&!x.IsDeleted,ct);account.PersonType=i.PersonType;account.DisplayName=i.Name.Trim();account.DocumentType=i.PersonType==PersonType.Company?BrazilianDocumentType.CNPJ:BrazilianDocumentType.CPF;account.DocumentNumber=BrazilianDocument.Normalize(i.Document);account.Phone=Digits(i.Phone);account.Email=i.Email.Trim().ToLowerInvariant();account.Touch();var billing=await db.BillingCustomerProfiles.SingleOrDefaultAsync(x=>x.AccountId==account.Id&&!x.IsDeleted,ct);if(billing is not null){billing.Name=account.DisplayName;billing.PersonType=i.PersonType;billing.DocumentType=account.DocumentType;billing.DocumentNumber=account.DocumentNumber;billing.Phone=account.Phone;billing.Email=account.Email;billing.City=i.City.Trim();billing.State=i.State.Trim().ToUpperInvariant();billing.Touch();}s.BusinessProfileCompletedAt=DateTime.UtcNow;s.Advance(OnboardingStep.DocumentIdentity);await db.SaveChangesAsync(ct);await audit.RegisterAsync(current.UserId,"ONBOARDING_BUSINESS_COMPLETED",nameof(BusinessAccount),account.Id.ToString(),null,new{account.PersonType},null,ct,account.Id);return OperationResult.Success("Dados do negócio salvos.");}
- public async Task<OperationResult> SaveDocumentIdentityAsync(DocumentIdentityInput i,CancellationToken ct=default){var errors=new List<FieldError>();if(string.IsNullOrWhiteSpace(i.DisplayName))errors.Add(new("Input.DisplayName","Informe o nome exibido no orçamento."));if(!string.IsNullOrWhiteSpace(i.Email)&&!ValidEmail(i.Email))errors.Add(new("Input.Email","Informe um e-mail válido."));if(!string.IsNullOrWhiteSpace(i.Phone)&&Digits(i.Phone).Length<10)errors.Add(new("Input.Phone","Informe um telefone válido."));if(errors.Count>0)return OperationResult.Failure("validation","Revise os campos destacados.",errors.ToArray());var(s,e)=await Resolve(ct);if(e is not null)return e;var issuer=await db.IssuerProfiles.SingleOrDefaultAsync(x=>x.UserId==current.UserId&&!x.IsDeleted,ct)??new IssuerProfile{UserId=current.UserId};if(db.Entry(issuer).State==EntityState.Detached)db.Add(issuer);issuer.BusinessName=i.DisplayName.Trim();issuer.Phone=Digits(i.Phone);issuer.Email=i.Email?.Trim().ToLowerInvariant();issuer.City=i.City?.Trim();issuer.Address=i.Address?.Trim();issuer.PixKey=i.PixKey?.Trim();issuer.Touch();s!.IssuerProfileCompletedAt=DateTime.UtcNow;s.Advance(OnboardingStep.FirstClient);await db.SaveChangesAsync(ct);return OperationResult.Success("Identidade do documento salva.");}
- public async Task<OperationResult<Guid>> CreateClientAsync(FirstClientInput i,CancellationToken ct=default){var(s,e)=await Resolve(ct);if(e is not null)return OperationResult<Guid>.Failure(e.Code!,e.Message!);var errors=new List<FieldError>();if(string.IsNullOrWhiteSpace(i.Name))errors.Add(new("Input.Name","Informe o nome do cliente."));if(!string.IsNullOrWhiteSpace(i.Email)&&!ValidEmail(i.Email))errors.Add(new("Input.Email","Informe um e-mail válido."));var doc=BrazilianDocument.Normalize(i.Document);var type=i.PersonType==PersonType.Company?BrazilianDocumentType.CNPJ:BrazilianDocumentType.CPF;if(doc is not null&&!BrazilianDocument.HasValidCheckDigits(type,doc))errors.Add(new("Input.Document","Informe um CPF ou CNPJ válido."));if(errors.Count>0)return OperationResult<Guid>.Failure("validation","Revise os campos destacados.",errors.ToArray());if(await db.Clients.AnyAsync(x=>x.AccountId==s!.AccountId&&!x.IsDeleted&&(x.Name.ToLower()==i.Name.Trim().ToLower()||(doc!=null&&x.DocumentNumber==doc)),ct))return OperationResult<Guid>.Failure("duplicate","Este cliente já está cadastrado.",new("Input.Name","Use outro nome ou documento."));var client=new Client{AccountId=s!.AccountId,UserId=current.UserId,Name=i.Name.Trim(),PersonType=i.PersonType,DocumentType=type,DocumentNumber=doc,Phone=Digits(i.Phone),Email=i.Email?.Trim().ToLowerInvariant(),City=i.City?.Trim()};db.Add(client);if(!string.IsNullOrWhiteSpace(i.Phone))db.Add(new ClientContact{AccountId=s.AccountId,ClientId=client.Id,Name=client.Name,ContactType=ClientContactType.Phone,Value=Digits(i.Phone)!,IsPrimary=true,ReceivesQuotes=true});s.FirstClientCompletedAt=DateTime.UtcNow;s.Advance(OnboardingStep.FirstService);await db.SaveChangesAsync(ct);return OperationResult<Guid>.Success(client.Id);}
- public async Task<OperationResult<Guid>> CreateServiceAsync(FirstServiceInput i,CancellationToken ct=default){var(s,e)=await Resolve(ct);if(e is not null)return OperationResult<Guid>.Failure(e.Code!,e.Message!);var errors=new List<FieldError>();if(string.IsNullOrWhiteSpace(i.Name))errors.Add(new("Input.Name","Informe o nome do serviço."));if(string.IsNullOrWhiteSpace(i.Unit))errors.Add(new("Input.Unit","Informe a unidade."));if(i.Price<0)errors.Add(new("Input.Price","O preço não pode ser negativo."));if(i.Cost<0)errors.Add(new("Input.Cost","O custo não pode ser negativo."));if(errors.Count>0)return OperationResult<Guid>.Failure("validation","Revise os campos destacados.",errors.ToArray());if(await db.ServiceCatalogItems.AnyAsync(x=>x.AccountId==s!.AccountId&&!x.IsDeleted&&x.Name.ToLower()==i.Name.Trim().ToLower(),ct))return OperationResult<Guid>.Failure("duplicate","Este serviço já está cadastrado.",new("Input.Name","Escolha outro nome."));var item=new ServiceCatalogItem{AccountId=s!.AccountId,Name=i.Name.Trim(),Description=i.Description?.Trim(),UnitCode=i.Unit.Trim().ToLowerInvariant(),StandardPrice=i.Price,EstimatedCost=i.Cost??0,SuggestedDurationMinutes=i.DurationMinutes};db.Add(item);s.FirstServiceCompletedAt=DateTime.UtcNow;s.Advance(OnboardingStep.FirstBudget);await db.SaveChangesAsync(ct);return OperationResult<Guid>.Success(item.Id);}
- public async Task<OperationResult<Guid?>> StartBudgetAsync(CancellationToken ct=default){var(s,e)=await Resolve(ct);if(e is not null)return OperationResult<Guid?>.Failure(e.Code!,e.Message!);s!.FirstBudgetStartedAt??=DateTime.UtcNow;await db.SaveChangesAsync(ct);var client=await db.Clients.Where(x=>x.AccountId==s.AccountId&&!x.IsDeleted).OrderBy(x=>x.CreatedAt).Select(x=>(Guid?)x.Id).FirstOrDefaultAsync(ct);return OperationResult<Guid?>.Success(client);}
- public async Task<OperationResult> CompleteAsync(CancellationToken ct=default){var(s,e)=await Resolve(ct);if(e is not null)return e;if(s!.BusinessProfileCompletedAt is null||s.IssuerProfileCompletedAt is null)return OperationResult.Failure("required_step","Conclua os dados do negócio e do documento.");s.Complete();await db.SaveChangesAsync(ct);return OperationResult.Success();}
- static List<FieldError> ValidateBusiness(BusinessProfileInput i){var e=new List<FieldError>();if(string.IsNullOrWhiteSpace(i.Name))e.Add(new("Input.Name","Informe seu nome profissional."));var type=i.PersonType==PersonType.Company?BrazilianDocumentType.CNPJ:BrazilianDocumentType.CPF;if(!BrazilianDocument.HasValidCheckDigits(type,BrazilianDocument.Normalize(i.Document)))e.Add(new("Input.Document","Informe um CPF ou CNPJ válido."));if(!ValidEmail(i.Email))e.Add(new("Input.Email","Informe um e-mail válido."));if(Digits(i.Phone)?.Length<10)e.Add(new("Input.Phone","Informe um telefone válido."));if(i.State?.Trim().Length!=2)e.Add(new("Input.State","Informe uma UF válida."));return e;}
- static bool ValidEmail(string? value){try{return new System.Net.Mail.MailAddress(value??"").Address==(value??"").Trim();}catch{return false;}}
- static string? Digits(string? value)=>string.IsNullOrWhiteSpace(value)?null:new(value.Where(char.IsDigit).ToArray());
- static NextActionDescriptor Next(OnboardingStep s)=>s switch{OnboardingStep.Welcome=>new("begin","Começar configuração","Leva cerca de cinco minutos.","/Onboarding/Index"),OnboardingStep.BusinessProfile=>new("business","Dados do negócio","Prepare os dados básicos.","/Onboarding/Business"),OnboardingStep.DocumentIdentity=>new("identity","Identidade do documento","Defina como sua marca aparece.","/Onboarding/DocumentIdentity"),OnboardingStep.FirstClient=>new("client","Primeiro cliente","Cadastre ou pule com segurança.","/Onboarding/Client"),OnboardingStep.FirstService=>new("service","Primeiro serviço","Monte seu catálogo.","/Onboarding/Service"),OnboardingStep.FirstBudget=>new("budget","Primeiro orçamento","Revise e crie sua proposta.","/Onboarding/Budget"),_=>new("dashboard","Ir ao dashboard","Seu espaço está pronto.","/Dashboard/Index")};
+    private async Task<(AccountOnboardingState? State, OperationResult? Error)> Resolve(CancellationToken ct)
+    {
+        await current.EnsureAccountAccessAsync(ct);
+
+        if (current.AccountId is not Guid accountId)
+        {
+            return (null, OperationResult.Failure(
+                "access_denied",
+                "Não foi possível identificar seu espaço."));
+        }
+
+        var state = await db.AccountOnboardingStates.SingleOrDefaultAsync(
+            x => x.AccountId == accountId &&
+                 x.UserId == current.UserId &&
+                 !x.IsDeleted,
+            ct);
+
+        if (state is null)
+        {
+            state = new AccountOnboardingState
+            {
+                AccountId = accountId,
+                UserId = current.UserId
+            };
+            db.Add(state);
+            await db.SaveChangesAsync(ct);
+        }
+
+        state.LastSeenAt = DateTime.UtcNow;
+        return (state, null);
+    }
+
+    public async Task<OperationResult<OnboardingStateView>> GetAsync(CancellationToken ct = default)
+    {
+        var (state, error) = await Resolve(ct);
+        if (error is not null)
+        {
+            return OperationResult<OnboardingStateView>.Failure(error.Code!, error.Message!);
+        }
+
+        await db.SaveChangesAsync(ct);
+
+        var client = await db.Clients
+            .Where(x => x.AccountId == state!.AccountId && !x.IsDeleted)
+            .OrderBy(x => x.CreatedAt)
+            .Select(x => (Guid?)x.Id)
+            .FirstOrDefaultAsync(ct);
+        var service = await db.ServiceCatalogItems
+            .Where(x => x.AccountId == state.AccountId && !x.IsDeleted)
+            .OrderBy(x => x.CreatedAt)
+            .Select(x => (Guid?)x.Id)
+            .FirstOrDefaultAsync(ct);
+        var completed = new[]
+        {
+            state.BusinessProfileCompletedAt,
+            state.IssuerProfileCompletedAt,
+            state.FirstClientCompletedAt,
+            state.FirstServiceCompletedAt,
+            state.FirstBudgetStartedAt
+        }.Count(x => x.HasValue);
+
+        return OperationResult<OnboardingStateView>.Success(new OnboardingStateView(
+            state.CurrentStep,
+            completed,
+            5,
+            state.CompletedAt.HasValue,
+            state.SkippedAt,
+            Next(state.CurrentStep),
+            client,
+            service));
+    }
+
+    public async Task<OperationResult> BeginAsync(CancellationToken ct = default)
+    {
+        var (state, error) = await Resolve(ct);
+        if (error is not null)
+        {
+            return error;
+        }
+
+        if (state!.CompletedAt.HasValue)
+        {
+            return OperationResult.Success();
+        }
+
+        state.Advance(OnboardingStep.BusinessProfile);
+        await db.SaveChangesAsync(ct);
+        return OperationResult.Success();
+    }
+
+    public async Task<OperationResult> SkipAsync(OnboardingStep step, CancellationToken ct = default)
+    {
+        if (step is OnboardingStep.BusinessProfile or OnboardingStep.DocumentIdentity)
+        {
+            return OperationResult.Failure(
+                "required_step",
+                "Esta etapa prepara os dados obrigatórios do orçamento.");
+        }
+
+        var (state, error) = await Resolve(ct);
+        if (error is not null)
+        {
+            return error;
+        }
+
+        state!.Skip();
+        state.Advance(step == OnboardingStep.Welcome
+            ? OnboardingStep.Welcome
+            : (OnboardingStep)((int)step + 1));
+        await db.SaveChangesAsync(ct);
+        return OperationResult.Success();
+    }
+
+    public async Task<OperationResult> SaveBusinessAsync(
+        BusinessProfileInput input,
+        CancellationToken ct = default)
+    {
+        var errors = ValidateBusiness(input);
+        if (errors.Count > 0)
+        {
+            return OperationResult.Failure(
+                "validation",
+                "Revise os campos destacados.",
+                errors.ToArray());
+        }
+
+        var (state, error) = await Resolve(ct);
+        if (error is not null)
+        {
+            return error;
+        }
+
+        var account = await db.BusinessAccounts.SingleAsync(
+            x => x.Id == state!.AccountId && !x.IsDeleted,
+            ct);
+        account.PersonType = input.PersonType;
+        account.DisplayName = input.Name.Trim();
+        account.DocumentType = input.PersonType == PersonType.Company
+            ? BrazilianDocumentType.CNPJ
+            : BrazilianDocumentType.CPF;
+        account.DocumentNumber = BrazilianDocument.Normalize(input.Document);
+        account.Phone = Digits(input.Phone);
+        account.Email = input.Email.Trim().ToLowerInvariant();
+        account.Touch();
+
+        var billing = await db.BillingCustomerProfiles.SingleOrDefaultAsync(
+            x => x.AccountId == account.Id && !x.IsDeleted,
+            ct);
+        if (billing is not null)
+        {
+            billing.Name = account.DisplayName;
+            billing.PersonType = input.PersonType;
+            billing.DocumentType = account.DocumentType;
+            billing.DocumentNumber = account.DocumentNumber;
+            billing.Phone = account.Phone;
+            billing.Email = account.Email;
+            billing.City = input.City.Trim();
+            billing.State = input.State.Trim().ToUpperInvariant();
+            billing.Touch();
+        }
+
+        state.BusinessProfileCompletedAt = DateTime.UtcNow;
+        state.Advance(OnboardingStep.DocumentIdentity);
+        await db.SaveChangesAsync(ct);
+        await audit.RegisterAsync(
+            current.UserId,
+            "ONBOARDING_BUSINESS_COMPLETED",
+            nameof(BusinessAccount),
+            account.Id.ToString(),
+            null,
+            new { account.PersonType },
+            null,
+            ct,
+            account.Id);
+
+        return OperationResult.Success("Dados do negócio salvos.");
+    }
+
+    public async Task<OperationResult> SaveDocumentIdentityAsync(
+        DocumentIdentityInput input,
+        CancellationToken ct = default)
+    {
+        var errors = new List<FieldError>();
+        if (string.IsNullOrWhiteSpace(input.DisplayName))
+        {
+            errors.Add(new FieldError(
+                "Input.DisplayName",
+                "Informe o nome exibido no orçamento."));
+        }
+
+        if (!string.IsNullOrWhiteSpace(input.Email) && !ValidEmail(input.Email))
+        {
+            errors.Add(new FieldError("Input.Email", "Informe um e-mail válido."));
+        }
+
+        if (!string.IsNullOrWhiteSpace(input.Phone) && Digits(input.Phone)?.Length < 10)
+        {
+            errors.Add(new FieldError("Input.Phone", "Informe um telefone válido."));
+        }
+
+        if (errors.Count > 0)
+        {
+            return OperationResult.Failure(
+                "validation",
+                "Revise os campos destacados.",
+                errors.ToArray());
+        }
+
+        var (state, error) = await Resolve(ct);
+        if (error is not null)
+        {
+            return error;
+        }
+
+        var issuer = await db.IssuerProfiles.SingleOrDefaultAsync(
+            x => x.UserId == current.UserId && !x.IsDeleted,
+            ct) ?? new IssuerProfile { UserId = current.UserId };
+        if (db.Entry(issuer).State == EntityState.Detached)
+        {
+            db.Add(issuer);
+        }
+
+        issuer.BusinessName = input.DisplayName.Trim();
+        issuer.Phone = Digits(input.Phone);
+        issuer.Email = input.Email?.Trim().ToLowerInvariant();
+        issuer.City = input.City?.Trim();
+        issuer.Address = input.Address?.Trim();
+        issuer.PixKey = input.PixKey?.Trim();
+        issuer.Touch();
+
+        state!.IssuerProfileCompletedAt = DateTime.UtcNow;
+        state.Advance(OnboardingStep.FirstClient);
+        await db.SaveChangesAsync(ct);
+        return OperationResult.Success("Identidade do documento salva.");
+    }
+
+    public async Task<OperationResult<Guid>> CreateClientAsync(
+        FirstClientInput input,
+        CancellationToken ct = default)
+    {
+        var (state, error) = await Resolve(ct);
+        if (error is not null)
+        {
+            return OperationResult<Guid>.Failure(error.Code!, error.Message!);
+        }
+
+        var errors = new List<FieldError>();
+        if (string.IsNullOrWhiteSpace(input.Name))
+        {
+            errors.Add(new FieldError("Input.Name", "Informe o nome do cliente."));
+        }
+
+        if (!string.IsNullOrWhiteSpace(input.Email) && !ValidEmail(input.Email))
+        {
+            errors.Add(new FieldError("Input.Email", "Informe um e-mail válido."));
+        }
+
+        var document = BrazilianDocument.Normalize(input.Document);
+        var documentType = input.PersonType == PersonType.Company
+            ? BrazilianDocumentType.CNPJ
+            : BrazilianDocumentType.CPF;
+        if (document is not null && !BrazilianDocument.HasValidCheckDigits(documentType, document))
+        {
+            errors.Add(new FieldError("Input.Document", "Informe um CPF ou CNPJ válido."));
+        }
+
+        if (errors.Count > 0)
+        {
+            return OperationResult<Guid>.Failure(
+                "validation",
+                "Revise os campos destacados.",
+                errors.ToArray());
+        }
+
+        var normalizedName = input.Name.Trim();
+        var duplicate = await db.Clients.AnyAsync(
+            x => x.AccountId == state!.AccountId &&
+                 !x.IsDeleted &&
+                 (x.Name.ToLower() == normalizedName.ToLower() ||
+                  (document != null && x.DocumentNumber == document)),
+            ct);
+        if (duplicate)
+        {
+            return OperationResult<Guid>.Failure(
+                "duplicate",
+                "Este cliente já está cadastrado.",
+                new FieldError(
+                    "Input.Name",
+                    "Use outro nome ou documento."));
+        }
+
+        var client = new Client
+        {
+            AccountId = state!.AccountId,
+            UserId = current.UserId,
+            Name = normalizedName,
+            PersonType = input.PersonType,
+            DocumentType = documentType,
+            DocumentNumber = document,
+            Phone = Digits(input.Phone),
+            Email = input.Email?.Trim().ToLowerInvariant(),
+            City = input.City?.Trim()
+        };
+        db.Add(client);
+
+        if (!string.IsNullOrWhiteSpace(input.Phone))
+        {
+            db.Add(new ClientContact
+            {
+                AccountId = state.AccountId,
+                ClientId = client.Id,
+                Name = client.Name,
+                ContactType = ClientContactType.Phone,
+                Value = Digits(input.Phone)!,
+                IsPrimary = true,
+                ReceivesQuotes = true
+            });
+        }
+
+        state.FirstClientCompletedAt = DateTime.UtcNow;
+        state.Advance(OnboardingStep.FirstService);
+        await db.SaveChangesAsync(ct);
+        return OperationResult<Guid>.Success(client.Id);
+    }
+
+    public async Task<OperationResult<Guid>> CreateServiceAsync(
+        FirstServiceInput input,
+        CancellationToken ct = default)
+    {
+        var (state, error) = await Resolve(ct);
+        if (error is not null)
+        {
+            return OperationResult<Guid>.Failure(error.Code!, error.Message!);
+        }
+
+        var errors = new List<FieldError>();
+        if (string.IsNullOrWhiteSpace(input.Name))
+        {
+            errors.Add(new FieldError("Input.Name", "Informe o nome do serviço."));
+        }
+
+        if (string.IsNullOrWhiteSpace(input.Unit))
+        {
+            errors.Add(new FieldError("Input.Unit", "Informe a unidade."));
+        }
+
+        if (input.Price < 0)
+        {
+            errors.Add(new FieldError("Input.Price", "O preço não pode ser negativo."));
+        }
+
+        if (input.Cost is < 0)
+        {
+            errors.Add(new FieldError("Input.Cost", "O custo não pode ser negativo."));
+        }
+
+        if (errors.Count > 0)
+        {
+            return OperationResult<Guid>.Failure(
+                "validation",
+                "Revise os campos destacados.",
+                errors.ToArray());
+        }
+
+        var normalizedName = input.Name.Trim();
+        var duplicate = await db.ServiceCatalogItems.AnyAsync(
+            x => x.AccountId == state!.AccountId &&
+                 !x.IsDeleted &&
+                 x.Name.ToLower() == normalizedName.ToLower(),
+            ct);
+        if (duplicate)
+        {
+            return OperationResult<Guid>.Failure(
+                "duplicate",
+                "Este serviço já está cadastrado.",
+                new FieldError("Input.Name", "Escolha outro nome."));
+        }
+
+        var item = new ServiceCatalogItem
+        {
+            AccountId = state!.AccountId,
+            Name = normalizedName,
+            Description = input.Description?.Trim(),
+            UnitCode = input.Unit.Trim().ToLowerInvariant(),
+            StandardPrice = input.Price,
+            EstimatedCost = input.Cost ?? 0,
+            SuggestedDurationMinutes = input.DurationMinutes
+        };
+        db.Add(item);
+
+        state.FirstServiceCompletedAt = DateTime.UtcNow;
+        state.Advance(OnboardingStep.FirstBudget);
+        await db.SaveChangesAsync(ct);
+        return OperationResult<Guid>.Success(item.Id);
+    }
+
+    public async Task<OperationResult<Guid?>> StartBudgetAsync(CancellationToken ct = default)
+    {
+        var (state, error) = await Resolve(ct);
+        if (error is not null)
+        {
+            return OperationResult<Guid?>.Failure(error.Code!, error.Message!);
+        }
+
+        state!.FirstBudgetStartedAt ??= DateTime.UtcNow;
+        await db.SaveChangesAsync(ct);
+
+        var client = await db.Clients
+            .Where(x => x.AccountId == state.AccountId && !x.IsDeleted)
+            .OrderBy(x => x.CreatedAt)
+            .Select(x => (Guid?)x.Id)
+            .FirstOrDefaultAsync(ct);
+        return OperationResult<Guid?>.Success(client);
+    }
+
+    public async Task<OperationResult> CompleteAsync(CancellationToken ct = default)
+    {
+        var (state, error) = await Resolve(ct);
+        if (error is not null)
+        {
+            return error;
+        }
+
+        if (state!.BusinessProfileCompletedAt is null || state.IssuerProfileCompletedAt is null)
+        {
+            return OperationResult.Failure(
+                "required_step",
+                "Conclua os dados do negócio e do documento.");
+        }
+
+        state.Complete();
+        await db.SaveChangesAsync(ct);
+        return OperationResult.Success();
+    }
+
+    private static List<FieldError> ValidateBusiness(BusinessProfileInput input)
+    {
+        var errors = new List<FieldError>();
+        if (string.IsNullOrWhiteSpace(input.Name))
+        {
+            errors.Add(new FieldError("Input.Name", "Informe seu nome profissional."));
+        }
+
+        var documentType = input.PersonType == PersonType.Company
+            ? BrazilianDocumentType.CNPJ
+            : BrazilianDocumentType.CPF;
+        if (!BrazilianDocument.HasValidCheckDigits(
+                documentType,
+                BrazilianDocument.Normalize(input.Document)))
+        {
+            errors.Add(new FieldError("Input.Document", "Informe um CPF ou CNPJ válido."));
+        }
+
+        if (!ValidEmail(input.Email))
+        {
+            errors.Add(new FieldError("Input.Email", "Informe um e-mail válido."));
+        }
+
+        if (Digits(input.Phone)?.Length < 10)
+        {
+            errors.Add(new FieldError("Input.Phone", "Informe um telefone válido."));
+        }
+
+        if (input.State?.Trim().Length != 2)
+        {
+            errors.Add(new FieldError("Input.State", "Informe uma UF válida."));
+        }
+
+        return errors;
+    }
+
+    private static bool ValidEmail(string? value)
+    {
+        try
+        {
+            return new System.Net.Mail.MailAddress(value ?? string.Empty).Address ==
+                   (value ?? string.Empty).Trim();
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static string? Digits(string? value) =>
+        string.IsNullOrWhiteSpace(value)
+            ? null
+            : new string(value.Where(char.IsDigit).ToArray());
+
+    private static NextActionDescriptor Next(OnboardingStep step) => step switch
+    {
+        OnboardingStep.Welcome => new NextActionDescriptor(
+            "begin",
+            "Começar configuração",
+            "Leva cerca de cinco minutos.",
+            "/Onboarding/Index"),
+        OnboardingStep.BusinessProfile => new NextActionDescriptor(
+            "business",
+            "Dados do negócio",
+            "Prepare os dados básicos.",
+            "/Onboarding/Business"),
+        OnboardingStep.DocumentIdentity => new NextActionDescriptor(
+            "identity",
+            "Identidade do documento",
+            "Defina como sua marca aparece.",
+            "/Onboarding/DocumentIdentity"),
+        OnboardingStep.FirstClient => new NextActionDescriptor(
+            "client",
+            "Primeiro cliente",
+            "Cadastre ou pule com segurança.",
+            "/Onboarding/Client"),
+        OnboardingStep.FirstService => new NextActionDescriptor(
+            "service",
+            "Primeiro serviço",
+            "Monte seu catálogo.",
+            "/Onboarding/Service"),
+        OnboardingStep.FirstBudget => new NextActionDescriptor(
+            "budget",
+            "Primeiro orçamento",
+            "Revise e crie sua proposta.",
+            "/Onboarding/Budget"),
+        _ => new NextActionDescriptor(
+            "dashboard",
+            "Ir ao dashboard",
+            "Seu espaço está pronto.",
+            "/Dashboard/Index")
+    };
 }
