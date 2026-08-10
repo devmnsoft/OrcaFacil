@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <UserSecretsId>OrcaFacil-Web-Development</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
