@@ -2,6 +2,8 @@ namespace OrcaFacil.Shared;
 public sealed record Result(bool Succeeded, string? Error=null){ public static Result Ok()=>new(true); public static Result Fail(string e)=>new(false,e); }
 public sealed record Result<T>(bool Succeeded, T? Value, string? Error)
 {
+    public object? Message;
+
     public Result(bool succeeded) : this(succeeded, default, null) { }
     public Result(bool succeeded, string? error) : this(succeeded, default, error) { }
 
