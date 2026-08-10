@@ -1,4 +1,0 @@
-@page
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy = "SuperAdmin")]
-@{ ViewData["Title"] = "Usuários"; }
-<header class="of-page-header"><div><p class="of-eyebrow">Admin Geral</p><h1>Usuários</h1><p>Filtro por plano/status e ações administrativas de conta.</p></div></header><section class="of-card mb-4"><div class="of-admin-filter"><div class="col-md"><label class="form-label">Plano</label><select class="form-select"><option>Todos</option><option>Free</option><option>Pro</option></select></div><div class="col-md"><label class="form-label">Status</label><select class="form-select"><option>Todos</option><option>Ativo</option><option>Bloqueado</option></select></div></div></section><section class="of-empty"><div class="of-empty-icon">👥</div><h2 class="h5">Tabela profissional de usuários</h2><p>Ações previstas: bloquear, desbloquear, ativar Pro e voltar para Free mantendo auditoria.</p></section>

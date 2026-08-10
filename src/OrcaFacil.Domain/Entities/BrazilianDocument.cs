@@ -29,7 +29,7 @@ public static class BrazilianDocument
     {
         numbers = Normalize(numbers);
         if (string.IsNullOrWhiteSpace(numbers)) return "Não informado";
-        if (type == BrazilianDocumentType.CNPJ && numbers.Length == 14) return $"{numbers[..2]}.***.***/****-{numbers[12..]}";
+        if (type == BrazilianDocumentType.CNPJ && numbers.Length == 14) return $"**.***.***/****-{numbers[12..]}";
         if (numbers.Length == 11) return $"***.***.***-{numbers[9..]}";
         return "Documento mascarado";
     }
