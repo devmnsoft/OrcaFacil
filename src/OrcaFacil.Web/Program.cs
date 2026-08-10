@@ -94,13 +94,9 @@ builder.Services.AddScoped<IDocumentStatusTransitionService, DocumentStatusTrans
 builder.Services.AddSingleton<IPublicDocumentTokenService, PublicDocumentTokenService>();
 builder.Services.AddSingleton<IDocumentSnapshotSerializer, DocumentSnapshotSerializer>();
 builder.Services.AddScoped<IWorkOrderStatusTransitionService, WorkOrderStatusTransitionService>();
-var technicalFingerprintPepper = builder.Configuration["Security:TechnicalFingerprintPepper"];
-if (string.IsNullOrWhiteSpace(technicalFingerprintPepper))
-{
-    technicalFingerprintPepper = builder.Environment.IsEnvironment("Testing")
-        ? "orcafacil-testing-only-technical-fingerprint-pepper"
-        : throw new InvalidOperationException("Security:TechnicalFingerprintPepper não configurado.");
-}
+var technicalFingerprintPepper = TechnicalFingerprintPepperResolver.Resolve(
+    builder.Configuration,
+    builder.Environment.EnvironmentName);
 builder.Services.AddSingleton<ITechnicalFingerprintService>(
     _ => new OrcaFacil.Persistence.Services.TechnicalFingerprintService(technicalFingerprintPepper));
 builder.Services.AddScoped<CommercialJourneyService>();
