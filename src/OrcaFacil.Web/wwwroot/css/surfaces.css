@@ -2,3 +2,12 @@
 .of-section { padding: var(--of-space-5); }
 .of-section + .of-section { border-top: 1px solid var(--of-border); }
 .of-subtle { background: var(--of-subtle); border-radius: var(--of-radius); }
+.of-surface-page { background: var(--of-surface-page); color: var(--of-text); }
+.of-surface-light { background: var(--of-surface-light); color: var(--of-text); border-color: var(--of-border-soft); }
+.of-surface-soft { background: var(--of-surface-soft); color: var(--of-text); border-color: var(--of-border-soft); }
+.of-surface-dark { background: var(--of-surface-dark); color: var(--of-text-inverse); border-color: #314b65; }
+.of-surface-brand { background: var(--of-brand-gradient); color: #ffffff; border-color: #1c55ca; }
+.of-surface-success { background: var(--of-success-soft); color: #075f40; border-color: #9bd8c1; }
+.of-surface-warning { background: var(--of-warning-soft); color: #754200; border-color: #e7c486; }
+.of-surface-danger { background: var(--of-danger-soft); color: #8f1b12; border-color: #e7aaaa; }
+.of-surface-light.of-card,.of-surface-soft.of-card,.of-surface-dark.of-card,.of-surface-brand.of-card,.of-surface-success.of-card,.of-surface-warning.of-card,.of-surface-danger.of-card { border-style: solid; border-width: 1px; }

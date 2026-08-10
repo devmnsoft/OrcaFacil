@@ -506,7 +506,25 @@ CREATE INDEX IF NOT EXISTS ix_billing_invoices_status_due_at ON orcafacil.billin
 CREATE INDEX IF NOT EXISTS ix_activity_events_account_created ON orcafacil.activity_events(account_id,created_at);
 INSERT INTO orcafacil.plans (code,display_name,short_description,is_free,is_recommended,display_order) VALUES ('FREE','Grátis','Para começar a organizar seus documentos.',true,false,1),('PROFESSIONAL','Profissional','Para apresentar seu trabalho com mais profissionalismo.',false,true,2),('BUSINESS','Negócio','Para acompanhar clientes e trabalhar em equipe.',false,false,3) ON CONFLICT(code) DO UPDATE SET display_name=excluded.display_name,short_description=excluded.short_description;
 INSERT INTO orcafacil.roles(code,display_name,is_platform_role) VALUES ('SuperAdministrator','SuperAdministrador',true),('PlatformSupport','Suporte da plataforma',true),('PlatformFinance','Financeiro da plataforma',true),('PlatformAuditor','Auditoria da plataforma',true),('Owner','Titular',false),('Administrator','Administrador',false),('Collaborator','Colaborador',false),('Viewer','Leitor',false) ON CONFLICT(code) DO NOTHING;
-INSERT INTO orcafacil.permissions(code,display_name,is_platform_permission) SELECT code,code,false FROM unnest(ARRAY['account.view','account.edit','members.view','members.manage','clients.view','clients.create','clients.edit','clients.delete','documents.view','documents.create','documents.edit','documents.delete','pdf.generate','billing.view','billing.manage','reports.view','exports.create']) code ON CONFLICT(code) DO NOTHING;
+INSERT INTO orcafacil.permissions(code,display_name,is_platform_permission) SELECT code,code,false FROM unnest(ARRAY['account.view','account.edit','members.view','members.manage','clients.view','clients.create','clients.edit','clients.delete','documents.view','documents.create','documents.edit','documents.delete','pdf.generate','billing:view','billing:manage','reports.view','exports.create']) code ON CONFLICT(code) DO NOTHING;
+-- Compatibilidade idempotente: transfere vínculos antes de remover os slugs legados.
+INSERT INTO orcafacil.role_permissions(role_id, permission_id, created_at, updated_at, is_deleted)
+SELECT legacy_link.role_id, canonical.id, legacy_link.created_at, legacy_link.updated_at, legacy_link.is_deleted
+FROM orcafacil.role_permissions legacy_link
+JOIN orcafacil.permissions legacy ON legacy.id = legacy_link.permission_id
+JOIN orcafacil.permissions canonical
+  ON canonical.code = concat('billing', ':', split_part(legacy.code, '.', 2))
+WHERE legacy.code IN (concat('billing', '.', 'view'), concat('billing', '.', 'manage'))
+ON CONFLICT(role_id, permission_id) DO NOTHING;
+DELETE FROM orcafacil.role_permissions
+WHERE permission_id IN (
+    SELECT id FROM orcafacil.permissions
+    WHERE code IN (concat('billing', '.', 'view'), concat('billing', '.', 'manage'))
+);
+DELETE FROM orcafacil.permissions
+WHERE code IN (concat('billing', '.', 'view'), concat('billing', '.', 'manage'));
+
+
 
 -- Isolamento e sessões revogáveis (transição aditiva; UserId continua como autoria)
 ALTER TABLE orcafacil.documents ADD COLUMN IF NOT EXISTS client_id uuid REFERENCES orcafacil.clients(id) ON DELETE SET NULL;
