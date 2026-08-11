@@ -15,4 +15,12 @@ public sealed record DatabaseDiagnosticsDto(
     string? PostgreSqlVersion,
     string? Error,
     bool FreePlanExists = false,
-    bool PublishedFreeVersionExists = false);
+    bool PublishedFreeVersionExists = false,
+    IReadOnlyList<string>? MissingColumns = null,
+    IReadOnlyList<string>? MissingIndexes = null,
+    string? ConnectedUser = null,
+    string? SearchPath = null,
+    long LatencyMilliseconds = 0,
+    bool CanRead = false,
+    bool CanWrite = false,
+    IReadOnlyList<string>? AppliedMigrations = null);

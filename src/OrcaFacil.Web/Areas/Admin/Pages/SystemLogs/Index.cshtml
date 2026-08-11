@@ -1,0 +1,4 @@
+@page "/Admin/SystemLogs"
+@model OrcaFacil.Web.Areas.Admin.Pages.SystemLogs.IndexModel
+@{ViewData["Title"]="Logs do sistema";}
+<section class="page-shell"><h1>Logs do sistema</h1><p>Últimos 100 eventos. Tokens, senhas e strings de conexão nunca devem ser registrados.</p><div class="data-table-scroll"><table><thead><tr><th>Data (UTC)</th><th>Severidade</th><th>Categoria</th><th>Usuário</th><th>Mensagem</th><th>Detalhes técnicos</th></tr></thead><tbody>@foreach(var item in Model.Items){<tr><td>@item.CreatedAt.ToString("g")</td><td><span class="status-badge">@item.Level</span></td><td>@item.Category</td><td>@(item.User ?? "—")</td><td>@item.Message</td><td><details><summary>Ver detalhes</summary><pre>@item.TechnicalDetails</pre></details></td></tr>}</tbody></table></div></section>

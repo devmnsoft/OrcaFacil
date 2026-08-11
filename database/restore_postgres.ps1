@@ -1,0 +1,4 @@
+[CmdletBinding(SupportsShouldProcess)] param([string]$HostName='localhost',[int]$Port=5432,[Parameter(Mandatory)][string]$Database,[Parameter(Mandatory)][string]$User,[Parameter(Mandatory)][string]$File)
+$ErrorActionPreference='Stop'; if(!(Test-Path $File)){throw 'Arquivo de backup não encontrado.'}; $tool=(Get-Command pg_restore -ErrorAction SilentlyContinue); if(!$tool){throw 'pg_restore não encontrado no PATH.'}; if(!$PSCmdlet.ShouldProcess($Database,"Restaurar $File")){return}
+$secure=Read-Host 'Senha PostgreSQL' -AsSecureString;$ptr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+try{$env:PGPASSWORD=[Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr);& $tool.Source -h $HostName -p $Port -U $User -d $Database --no-owner --no-privileges $File;if($LASTEXITCODE){throw 'Restauração falhou.'};Write-Host 'Restauração concluída. Execute a página /Diagnostico.'}finally{$env:PGPASSWORD=$null;[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)}
