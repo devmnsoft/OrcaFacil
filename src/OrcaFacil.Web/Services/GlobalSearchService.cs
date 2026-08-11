@@ -66,7 +66,16 @@ public sealed class GlobalSearchService(ICurrentAccountService currentAccount, O
                 "/Receipts/Details/" + x.Id, "Abrir recibo"))
             .ToListAsync(cancellationToken) : [];
 
-        return clients.Concat(documents).Concat(orders).Concat(receipts)
+        var navigation = new[]
+        {
+            new GlobalSearchResult("Relatório", "Funil comercial", "Conversão e propostas por etapa", "Disponível", "chart", "/Reports/CommercialFunnel", "Abrir relatório"),
+            new GlobalSearchResult("Relatório", "Financeiro", "Recebimentos e saldos pendentes", "Disponível", "chart", "/Reports/Financial", "Abrir relatório"),
+            new GlobalSearchResult("Relatório", "Clientes", "Ranking e movimentação de clientes", "Disponível", "client", "/Reports/Clients", "Abrir relatório"),
+            new GlobalSearchResult("Relatório", "Serviços", "Uso, vendas e conversão", "Disponível", "service", "/Reports/Services", "Abrir relatório"),
+            new GlobalSearchResult("Alerta", "Alertas operacionais", "Ações prioritárias de hoje", "Disponível", "notification", "/Alerts", "Abrir alertas")
+        }.Where(x => x.Title.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Type.Contains(term, StringComparison.OrdinalIgnoreCase));
+
+        return navigation.Concat(clients).Concat(documents).Concat(orders).Concat(receipts)
             .Take(limit).ToArray();
     }
 }
