@@ -217,7 +217,13 @@ public sealed class CommercialJourneyService(
             ClientSnapshot = JsonSerializer.Serialize(new { document.ClientName, document.ClientEmail, document.ClientPhone }),
             ItemsSnapshot = JsonSerializer.Serialize(document.Items.Select(x => new { x.Description, x.Quantity, x.UnitPrice, x.Discount })),
             TotalSnapshot = revision.Total, Notes = document.Notes, CreatedByUserId = currentUser.UserId };
-        db.WorkOrders.Add(order); Transition(document, DocumentStatus.ConvertedToWorkOrder); AddEvent("WorkOrderCreated", order.Id, "Ordem de serviço criada.");
+        db.WorkOrders.Add(order);
+        var checklist = new[] { "Confirmar dados do cliente", "Preparar material", "Executar serviço", "Validar entrega", "Finalizar atendimento" };
+        db.WorkOrderChecklistItems.AddRange(checklist.Select((description, position) => new WorkOrderChecklistItem
+        {
+            AccountId = AccountId, WorkOrderId = order.Id, Description = description, Position = position + 1
+        }));
+        Transition(document, DocumentStatus.ConvertedToWorkOrder); AddEvent("WorkOrderCreated", order.Id, "Ordem de serviço criada com checklist operacional.");
         await db.SaveChangesAsync(ct); await transaction.CommitAsync(ct);
         return Work(true, "Created", "Ordem de serviço criada.", order.Id, order.Status.ToString(), correlation);
     }
