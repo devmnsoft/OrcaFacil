@@ -89,6 +89,18 @@ public sealed class WorkOrder : Entity
     public uint Version { get; set; }
 }
 
+public sealed class WorkOrderChecklistItem : Entity
+{
+    public Guid AccountId { get; set; }
+    public Guid WorkOrderId { get; set; }
+    public string Description { get; set; } = string.Empty;
+    public int Position { get; set; }
+    public bool IsCompleted { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public Guid? CompletedByUserId { get; set; }
+    public string? CompletionNote { get; set; }
+}
+
 public sealed class ManualPayment : Entity
 {
     public Guid AccountId { get; set; }

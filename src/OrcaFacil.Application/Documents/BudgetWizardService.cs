@@ -34,7 +34,7 @@ public sealed class BudgetWizardService
     { _documents = documents; _items = items; _clients = clients; _services = services; _templates = templates; _templateItems = templateItems; _unitOfWork = unitOfWork; _numbers = numbers; }
 
     public async Task<BudgetWizardViewModel> OpenAsync(Guid userId, Guid? accountId, Guid? documentId, Guid? clientId, CancellationToken ct,
-        Guid? serviceId = null, Guid? templateId = null)
+        IReadOnlyCollection<Guid>? serviceIds = null, Guid? templateId = null)
     {
         var document = documentId is null ? null : _documents.Query().SingleOrDefault(x => x.Id == documentId && x.UserId == userId && x.AccountId == accountId && !x.IsDeleted);
         if (document is null)
@@ -43,7 +43,7 @@ public sealed class BudgetWizardService
             document.IssueNumber(await _numbers.NextAsync(userId, DocumentType.Budget, ct));
             if (clientId.HasValue) ApplyClient(document, FindClient(userId, accountId, clientId.Value));
             await _documents.AddAsync(document, ct);
-            if (serviceId.HasValue)
+            foreach (var serviceId in (serviceIds ?? []).Distinct().Take(30))
             {
                 var service = _services.Query().SingleOrDefault(x => x.Id == serviceId && x.AccountId == accountId && x.IsActive && !x.IsDeleted);
                 if (service is not null) await _items.AddAsync(ToDocumentItem(document.Id, service), ct);

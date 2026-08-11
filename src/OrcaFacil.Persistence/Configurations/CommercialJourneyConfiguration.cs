@@ -69,6 +69,20 @@ public sealed class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
     }
 }
 
+public sealed class WorkOrderChecklistItemConfiguration : IEntityTypeConfiguration<WorkOrderChecklistItem>
+{
+    public void Configure(EntityTypeBuilder<WorkOrderChecklistItem> b)
+    {
+        b.ToTable("work_order_checklist_items"); b.ConfigureBase();
+        b.Property(x => x.Description).HasMaxLength(240).IsRequired();
+        b.Property(x => x.CompletionNote).HasMaxLength(1000);
+        b.HasIndex(x => new { x.AccountId, x.WorkOrderId, x.Position });
+        b.HasOne<BusinessAccount>().WithMany().HasForeignKey(x => x.AccountId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<WorkOrder>().WithMany().HasForeignKey(x => x.WorkOrderId).OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.CompletedByUserId).OnDelete(DeleteBehavior.SetNull);
+    }
+}
+
 public sealed class ManualPaymentConfiguration : IEntityTypeConfiguration<ManualPayment>
 {
     public void Configure(EntityTypeBuilder<ManualPayment> b)

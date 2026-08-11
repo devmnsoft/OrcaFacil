@@ -570,6 +570,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_work_orders_number ON orcafacil.work_orders
 CREATE UNIQUE INDEX IF NOT EXISTS ux_work_orders_revision ON orcafacil.work_orders(account_id,source_revision_id) WHERE source_revision_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS ix_work_orders_schedule ON orcafacil.work_orders(account_id,status,scheduled_start);
 CREATE INDEX IF NOT EXISTS ix_work_orders_assignee ON orcafacil.work_orders(account_id,assigned_user_id,scheduled_start);
+CREATE TABLE IF NOT EXISTS orcafacil.work_order_checklist_items (id uuid PRIMARY KEY, account_id uuid NOT NULL REFERENCES orcafacil.business_accounts(id) ON DELETE RESTRICT, work_order_id uuid NOT NULL REFERENCES orcafacil.work_orders(id) ON DELETE CASCADE, description varchar(240) NOT NULL, position integer NOT NULL, is_completed boolean NOT NULL DEFAULT false, completed_at timestamptz, completed_by_user_id uuid REFERENCES orcafacil.users(id) ON DELETE SET NULL, completion_note varchar(1000), created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE INDEX IF NOT EXISTS ix_work_order_checklist_items_account_order_position ON orcafacil.work_order_checklist_items(account_id,work_order_id,position);
 
 -- Follow-up comercial de orçamentos (2026-08-09)
 ALTER TABLE orcafacil.documents ADD COLUMN IF NOT EXISTS next_follow_up_at timestamptz;
