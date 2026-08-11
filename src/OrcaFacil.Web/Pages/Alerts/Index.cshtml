@@ -1,0 +1,6 @@
+@page "/Alerts"
+@model OrcaFacil.Web.Pages.Alerts.IndexModel
+@{ ViewData["Title"] = "Alertas operacionais"; }
+<header class="report-hero"><div><span class="eyebrow">ROTINA DE HOJE</span><h1>Central de alertas</h1><p>Prioridades geradas a partir dos dados reais da sua conta.</p></div></header>
+@if (Model.Items.Count == 0) { <section class="report-empty"><h2>Tudo em dia</h2><p>Nenhum alerta operacional foi identificado agora.</p></section> }
+<section class="operational-list">@foreach(var item in Model.Items){<article class="metric-card operational-card"><div><span>@item.Type · @item.Category · @item.CreatedAt.ToLocalTime().ToString("g")</span><h2>@item.Title</h2><p>@item.Message.Split(" [alert:")[0]</p><strong>@(item.IsRead ? "Resolvido" : "Aberto")</strong></div><div class="filter-actions"><a class="of-button-secondary" href="@item.ActionUrl">@item.ActionText</a>@if(!item.IsRead){<form method="post" asp-page-handler="Resolve"><input type="hidden" name="id" value="@item.Id"/><button class="of-button-primary">Resolver</button></form><form method="post" asp-page-handler="Ignore"><input type="hidden" name="id" value="@item.Id"/><button class="of-button-secondary">Ignorar</button></form>}</div></article>}</section>
