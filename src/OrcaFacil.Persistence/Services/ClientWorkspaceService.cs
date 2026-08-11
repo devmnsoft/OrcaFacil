@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Clients;
 using OrcaFacil.Domain.Entities;
+using OrcaFacil.Domain.Enums;
 
 namespace OrcaFacil.Persistence.Services;
 
@@ -29,10 +30,49 @@ public sealed class ClientWorkspaceService(OrcaFacilDbContext db, ICurrentAccoun
             client.TradeName, client.City, client.Address, client.IsActive, client.IsFavorite,
             client.PreferredContactChannel, client.LastInteractionAt, client.NextFollowUpAt,
             client.CreatedAt, client.UpdatedAt, client.Version);
+        var documents = await db.Documents.AsNoTracking().Where(x => x.AccountId == accountId && x.ClientId == clientId && !x.IsDeleted && x.Type == DocumentType.Budget)
+            .OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt).Take(30)
+            .Select(x => new ClientDocumentSummary(x.Id, x.Number, x.Status, x.Total, x.IssueDate, x.ClientDecision.ToString())).ToListAsync(ct);
+        var payments = await db.ManualPayments.AsNoTracking().Where(x => x.AccountId == accountId && x.ClientId == clientId && !x.IsDeleted)
+            .OrderByDescending(x => x.PaidAt).Take(30)
+            .Select(x => new ClientPaymentSummary(x.Id, x.Amount, x.PaymentMethod, x.PaidAt, x.Status.ToString())).ToListAsync(ct);
+        var receipts = await db.Receipts.AsNoTracking().Where(x => x.AccountId == accountId && x.ClientId == clientId && !x.IsDeleted)
+            .OrderByDescending(x => x.IssuedAt).Take(30)
+            .Select(x => new ClientReceiptSummary(x.Id, x.Number, x.Amount, x.IssuedAt, x.CancelledAt != null)).ToListAsync(ct);
+        var orders = await db.WorkOrders.AsNoTracking().Where(x => x.AccountId == accountId && x.ClientId == clientId && !x.IsDeleted)
+            .OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt).Take(30)
+            .Select(x => new ClientWorkOrderSummary(x.Id, x.Number, x.Title, x.Status.ToString(), x.TotalSnapshot, x.CreatedAt)).ToListAsync(ct);
+        var followUps = documents.Where(x => x.Status != "Draft").Join(
+            await db.Documents.AsNoTracking().Where(x => x.AccountId == accountId && x.ClientId == clientId && !x.IsDeleted && (x.NextFollowUpAt != null || x.LastFollowUpAt != null)).ToListAsync(ct),
+            x => x.Id, x => x.Id, (summary, document) => new ClientFollowUpSummary(document.Id, summary.Number, document.NextFollowUpAt, document.LastFollowUpAt, document.FollowUpStatus.ToString(), document.FollowUpNote))
+            .OrderBy(x => x.DueAt ?? DateTime.MaxValue).Take(20).ToList();
+        var totalQuoted = documents.Sum(x => x.Total);
+        var approved = documents.Where(x => x.Decision == ClientDecision.Approved.ToString()).ToList();
+        var activePayments = payments.Where(x => x.Status == FinancialRecordStatus.Active.ToString()).ToList();
+        var timeline = new List<ClientTimelineItem>
+        {
+            new("client", "Cliente criado", "Cadastro incluído na carteira comercial.", client.CreatedAt, client.Id, "neutral")
+        };
+        timeline.AddRange(documents.Select(x => new ClientTimelineItem("document", DocumentEventTitle(x), $"Orçamento {x.Number} · {x.Total:C}", x.Date, x.Id, x.Decision == "Approved" ? "success" : "brand")));
+        timeline.AddRange(payments.Select(x => new ClientTimelineItem("payment", "Pagamento registrado", $"{x.Amount:C} via {x.Method}", x.PaidAt, x.Id, "success")));
+        timeline.AddRange(receipts.Select(x => new ClientTimelineItem("receipt", "Recibo emitido", $"Recibo {x.Number} · {x.Amount:C}", x.IssuedAt, x.Id, "success")));
+        timeline.AddRange(orders.Select(x => new ClientTimelineItem("work-order", x.Status == WorkOrderStatus.Completed.ToString() ? "OS concluída" : "OS criada", $"{x.Number} · {x.Title}", x.CreatedAt, x.Id, "neutral")));
+        timeline.AddRange(followUps.Select(x => new ClientTimelineItem("follow-up", x.CompletedAt.HasValue ? "Follow-up concluído" : "Follow-up agendado", $"Orçamento {x.DocumentNumber}" + (string.IsNullOrWhiteSpace(x.Note) ? "" : $" · {x.Note}"), x.CompletedAt ?? x.DueAt!.Value, x.DocumentId, x.CompletedAt.HasValue ? "success" : "warning")));
+        var next = followUps.Where(x => x.DueAt.HasValue && !x.CompletedAt.HasValue).OrderBy(x => x.DueAt).FirstOrDefault();
+        var actions = next is null ? new List<ClientOpenAction>() : [new("follow-up", 1, next.DueAt!.Value < DateTime.UtcNow ? "Retorno atrasado" : "Próximo retorno", $"Orçamento {next.DocumentNumber}", next.DueAt, "/Documents/Details", new Dictionary<string,string>{{"id",next.DocumentId.ToString()}}, "calendar", next.DueAt!.Value < DateTime.UtcNow ? "danger" : "warning")];
         return new ClientWorkspaceDetails(profile, contacts, tags, notes,
-            new(0, 0, 0, 0, 0, 0, 0, 0, null, client.NextFollowUpAt),
-            new(0, 0, 0, 0, 0, 0, 0, null), []);
+            new(documents.Count, documents.Count(x => x.Decision == "Pending"), approved.Count, documents.Count(x => x.Decision == "Rejected"), totalQuoted, approved.Sum(x => x.Total), documents.Count == 0 ? 0 : approved.Count * 100m / documents.Count, orders.Count(x => x.Status != "Completed" && x.Status != "Cancelled"), documents.FirstOrDefault()?.Date, next?.DueAt),
+            new(totalQuoted, activePayments.Sum(x => x.Amount), payments.Where(x => x.Status == "Reversed").Sum(x => x.Amount), Math.Max(0, approved.Sum(x => x.Total) - activePayments.Sum(x => x.Amount)), payments.Count, receipts.Count, receipts.Count(x => x.Cancelled), payments.FirstOrDefault()?.PaidAt),
+            actions, documents, payments, receipts, orders, followUps, timeline.OrderByDescending(x => x.OccurredAt).Take(50).ToList());
     }
+
+    private static string DocumentEventTitle(ClientDocumentSummary document) => document.Decision switch
+    {
+        "Approved" => "Orçamento aprovado",
+        "Rejected" => "Orçamento recusado",
+        _ when document.Status == "Draft" => "Orçamento criado",
+        _ => "Orçamento enviado"
+    };
 
     public async Task<ClientWorkspaceResult> ListAsync(ClientWorkspaceQuery request, CancellationToken ct = default)
     {

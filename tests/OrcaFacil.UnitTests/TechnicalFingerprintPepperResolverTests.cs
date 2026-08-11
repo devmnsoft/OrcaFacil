@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using OrcaFacil.Web.Configuration;
+using Xunit;
 
 namespace OrcaFacil.UnitTests;
 

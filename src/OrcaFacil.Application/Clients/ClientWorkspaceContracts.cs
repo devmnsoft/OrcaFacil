@@ -43,10 +43,22 @@ public sealed record ClientFinancialSummary(decimal ExpectedAmount, decimal Acti
 public sealed record ClientOpenAction(string Code, int Priority, string Title, string Description,
     DateTime? DueAt, string ActionPage, IReadOnlyDictionary<string, string> ActionRouteValues,
     string IconName, string Tone);
+public sealed record ClientDocumentSummary(Guid Id, string Number, string Status, decimal Total, DateTime Date, string Decision);
+public sealed record ClientPaymentSummary(Guid Id, decimal Amount, string Method, DateTime PaidAt, string Status);
+public sealed record ClientReceiptSummary(Guid Id, string Number, decimal Amount, DateTime IssuedAt, bool Cancelled);
+public sealed record ClientWorkOrderSummary(Guid Id, string Number, string Title, string Status, decimal Total, DateTime CreatedAt);
+public sealed record ClientFollowUpSummary(Guid DocumentId, string DocumentNumber, DateTime? DueAt, DateTime? CompletedAt, string Status, string? Note);
+public sealed record ClientTimelineItem(string Type, string Title, string Description, DateTime OccurredAt, Guid? RelatedId, string Tone);
 public sealed record ClientWorkspaceDetails(ClientProfileSummary Client, IReadOnlyList<ClientContactSummary> Contacts,
     IReadOnlyList<ClientTagSummary> Tags, IReadOnlyList<ClientNoteSummary> Notes,
     ClientCommercialSummary Commercial, ClientFinancialSummary Financial,
-    IReadOnlyList<ClientOpenAction> OpenActions);
+    IReadOnlyList<ClientOpenAction> OpenActions,
+    IReadOnlyList<ClientDocumentSummary> Documents,
+    IReadOnlyList<ClientPaymentSummary> Payments,
+    IReadOnlyList<ClientReceiptSummary> Receipts,
+    IReadOnlyList<ClientWorkOrderSummary> WorkOrders,
+    IReadOnlyList<ClientFollowUpSummary> FollowUps,
+    IReadOnlyList<ClientTimelineItem> Timeline);
 
 public interface IClientWorkspaceService
 {
