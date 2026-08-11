@@ -28,14 +28,22 @@ const publicHeader = document.querySelector('[data-public-header]');
 const syncHeader = () => publicHeader?.classList.toggle('is-scrolled', window.scrollY > 12);
 window.addEventListener('scroll', syncHeader, { passive: true }); syncHeader();
 
+export function shouldHandleSmoothScroll(link) {
+  if (!(link instanceof HTMLAnchorElement)) return false;
+  const rawHref = link.getAttribute('href');
+  if (!rawHref || rawHref.startsWith('mailto:') || rawHref.startsWith('tel:')) return false;
+  const destination = new URL(link.href, window.location.href);
+  if (destination.origin !== window.location.origin || destination.pathname !== window.location.pathname || !destination.hash) return false;
+  try { return document.querySelector(destination.hash) !== null; } catch { return false; }
+}
+
 document.querySelectorAll('a[href*="#"]').forEach(link => {
   link.addEventListener('click', event => {
+    if (!shouldHandleSmoothScroll(link)) return;
     const destination = new URL(link.href, window.location.href);
-    if (destination.origin !== window.location.origin || destination.pathname !== window.location.pathname) return;
     const id = destination.hash;
-    if (!id) return;
     const target = document.querySelector(id);
-    if (!target || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     event.preventDefault();
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     history.pushState(null, '', id);

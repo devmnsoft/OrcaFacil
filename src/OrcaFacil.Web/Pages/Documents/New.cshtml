@@ -1,0 +1,58 @@
+@page
+@model OrcaFacil.Web.Pages.Documents.NewModel
+@section Styles { <link rel="stylesheet" href="~/css/documents.css" asp-append-version="true" /> }
+@{
+    ViewData["Title"] = "Novo orçamento assistido";
+    ViewData["Section"] = "Comercial";
+}
+
+<main class="of-budget-start">
+    <header class="of-budget-start-hero">
+        <div><p class="of-eyebrow">Novo orçamento assistido</p><h1>Como você quer começar?</h1><p>Escolha um ponto de partida. Você poderá revisar e editar tudo antes de salvar ou compartilhar.</p></div>
+        <span aria-hidden="true"><svg class="of-icon"><use href="#of-icon-quote" /></svg></span>
+    </header>
+
+    <section class="of-start-options" aria-label="Formas de iniciar o orçamento">
+        <a class="of-start-card is-featured" asp-page="/Documents/CreateBudget">
+            <span class="of-start-icon"><svg class="of-icon"><use href="#of-icon-plus" /></svg></span><span><strong>Orçamento em branco</strong><small>Comece do zero no editor guiado.</small></span><b>Começar</b>
+        </a>
+        <a class="of-start-card" href="#clientes">
+            <span class="of-start-icon"><svg class="of-icon"><use href="#of-icon-client" /></svg></span><span><strong>Usar cliente existente</strong><small>Busque por nome, telefone, documento ou e-mail.</small></span><b>Escolher</b>
+        </a>
+        <a class="of-start-card" href="#servicos">
+            <span class="of-start-icon"><svg class="of-icon"><use href="#of-icon-service" /></svg></span><span><strong>Usar serviço cadastrado</strong><small>Leve descrição e preço do catálogo, nunca o custo interno.</small></span><b>Escolher</b>
+        </a>
+        <a class="of-start-card" href="#modelos">
+            <span class="of-start-icon"><svg class="of-icon"><use href="#of-icon-quote" /></svg></span><span><strong>Usar modelo</strong><small>Copie os itens de um template sem alterar o original.</small></span><b>Escolher</b>
+        </a>
+        <a class="of-start-card @(Model.Drafts.Count == 0 ? "is-disabled" : null)" href="@(Model.Drafts.Count == 0 ? "#rascunhos" : "#rascunhos")" aria-disabled="@(Model.Drafts.Count == 0 ? "true" : null)">
+            <span class="of-start-icon"><svg class="of-icon"><use href="#of-icon-history" /></svg></span><span><strong>Continuar rascunho recente</strong><small>@(Model.Drafts.Count == 0 ? "Nenhum rascunho disponível agora." : "Retome de onde parou, com os dados preservados.")</small></span><b>Ver rascunhos</b>
+        </a>
+    </section>
+
+    <section class="of-start-picker" id="clientes">
+        <header><div><p class="of-eyebrow">Clientes</p><h2>Para quem é a proposta?</h2></div><a asp-page="/Clients/Create" asp-route-returnUrl="/Documents/New">Cadastrar primeiro cliente</a></header>
+        @if (Model.Clients.Count == 0) { <div class="of-start-empty"><strong>Você ainda não tem clientes cadastrados.</strong><p>Cadastre o cliente e volte para continuar.</p><a class="of-button-primary" asp-page="/Clients/Create" asp-route-returnUrl="/Documents/New">Cadastrar primeiro cliente</a></div> }
+        else { <label class="of-start-search"><span>Buscar cliente</span><input type="search" placeholder="Nome, telefone, documento ou e-mail" data-picker-search="clients" /></label><div class="of-picker-list" data-picker-list="clients">@foreach (var item in Model.Clients) { <a asp-page="/Documents/CreateBudget" asp-route-clientId="@item.Id" data-search="@item.SearchText"><span><strong>@item.Name</strong><small>@item.Detail</small></span><b>Usar cliente</b></a> }</div> }
+    </section>
+
+    <section class="of-start-picker" id="servicos">
+        <header><div><p class="of-eyebrow">Catálogo</p><h2>Qual serviço entra primeiro?</h2></div><a asp-page="/Services/Create">Criar serviço</a></header>
+        @if (Model.Services.Count == 0) { <div class="of-start-empty"><strong>Cadastre seu primeiro serviço.</strong><p>Depois, descrição e preço poderão entrar no orçamento em um clique.</p><a class="of-button-primary" asp-page="/Services/Create">Criar serviço</a></div> }
+        else { <label class="of-start-search"><span>Buscar serviço</span><input type="search" placeholder="Nome, código ou descrição" data-picker-search="services" /></label><div class="of-picker-list" data-picker-list="services">@foreach (var item in Model.Services) { <a asp-page="/Documents/CreateBudget" asp-route-serviceId="@item.Id" data-search="@item.SearchText"><span><strong>@item.Name</strong><small>@item.Unit · @item.Price.ToString("C")</small></span><b>Adicionar</b></a> }</div> }
+    </section>
+
+    <section class="of-start-picker" id="modelos">
+        <header><div><p class="of-eyebrow">Templates ativos</p><h2>Reaproveite uma estrutura pronta</h2></div><a asp-page="/Templates/Index">Ver modelos</a></header>
+        @if (Model.Templates.Count == 0) { <div class="of-start-empty"><strong>Nenhum modelo ativo.</strong><p>Você pode continuar em branco ou criar um modelo para reutilizar depois.</p><div><a class="of-button-primary" asp-page="/Documents/CreateBudget">Continuar em branco</a><a class="of-button-secondary" asp-page="/Templates/Index">Criar template</a></div></div> }
+        else { <div class="of-picker-list">@foreach (var item in Model.Templates) { <a asp-page="/Documents/CreateBudget" asp-route-templateId="@item.Id"><span><strong>@item.Title</strong><small>@item.Profession · @item.ItemCount item(ns)</small></span><b>Usar cópia</b></a> }</div> }
+    </section>
+
+    <section class="of-start-picker" id="rascunhos">
+        <header><div><p class="of-eyebrow">Até 5 mais recentes</p><h2>Continue de onde parou</h2></div></header>
+        @if (Model.Drafts.Count == 0) { <div class="of-start-empty"><strong>Nenhum rascunho recente.</strong><p>Quando você iniciar um orçamento, ele ficará disponível aqui.</p></div> }
+        else { <div class="of-picker-list">@foreach (var item in Model.Drafts) { <a asp-page="/Documents/CreateBudget" asp-route-id="@item.Id"><span><strong>@item.ClientName</strong><small>@item.Number · alterado @item.ChangedAt.ToString("dd/MM/yyyy HH:mm") · parcial @item.Total.ToString("C")</small></span><b>Continuar</b></a> }</div> }
+    </section>
+</main>
+
+@section Scripts { <script type="module" src="~/js/budget-start.js" asp-append-version="true"></script> }

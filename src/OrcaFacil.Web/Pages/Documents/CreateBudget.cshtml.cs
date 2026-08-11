@@ -21,9 +21,9 @@ public sealed class CreateBudgetModel : PageModel
     public BudgetWizardViewModel Draft { get; private set; } = default!;
     public IReadOnlyList<ClientChoice> Clients { get; private set; } = [];
 
-    public async Task OnGetAsync(Guid? id, Guid? clientId, CancellationToken ct)
+    public async Task OnGetAsync(Guid? id, Guid? clientId, Guid? serviceId, Guid? templateId, CancellationToken ct)
     {
-        Draft = await _wizard.OpenAsync(_current.UserId, _account.AccountId, id, clientId, ct);
+        Draft = await _wizard.OpenAsync(_current.UserId, _account.AccountId, id, clientId, ct, serviceId, templateId);
         await LoadClients(ct);
     }
 

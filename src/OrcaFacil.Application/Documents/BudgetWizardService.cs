@@ -23,14 +23,18 @@ public sealed class BudgetWizardService
     private readonly IRepository<DocumentItem> _items;
     private readonly IRepository<Client> _clients;
     private readonly IRepository<ServiceCatalogItem> _services;
+    private readonly IRepository<BudgetTemplate> _templates;
+    private readonly IRepository<BudgetTemplateItem> _templateItems;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IDocumentNumberService _numbers;
 
     public BudgetWizardService(IRepository<Document> documents, IRepository<DocumentItem> items, IRepository<Client> clients, IRepository<ServiceCatalogItem> services,
+        IRepository<BudgetTemplate> templates, IRepository<BudgetTemplateItem> templateItems,
         IUnitOfWork unitOfWork, IDocumentNumberService numbers)
-    { _documents = documents; _items = items; _clients = clients; _services = services; _unitOfWork = unitOfWork; _numbers = numbers; }
+    { _documents = documents; _items = items; _clients = clients; _services = services; _templates = templates; _templateItems = templateItems; _unitOfWork = unitOfWork; _numbers = numbers; }
 
-    public async Task<BudgetWizardViewModel> OpenAsync(Guid userId, Guid? accountId, Guid? documentId, Guid? clientId, CancellationToken ct)
+    public async Task<BudgetWizardViewModel> OpenAsync(Guid userId, Guid? accountId, Guid? documentId, Guid? clientId, CancellationToken ct,
+        Guid? serviceId = null, Guid? templateId = null)
     {
         var document = documentId is null ? null : _documents.Query().SingleOrDefault(x => x.Id == documentId && x.UserId == userId && x.AccountId == accountId && !x.IsDeleted);
         if (document is null)
@@ -39,10 +43,37 @@ public sealed class BudgetWizardService
             document.IssueNumber(await _numbers.NextAsync(userId, DocumentType.Budget, ct));
             if (clientId.HasValue) ApplyClient(document, FindClient(userId, accountId, clientId.Value));
             await _documents.AddAsync(document, ct);
+            if (serviceId.HasValue)
+            {
+                var service = _services.Query().SingleOrDefault(x => x.Id == serviceId && x.AccountId == accountId && x.IsActive && !x.IsDeleted);
+                if (service is not null) await _items.AddAsync(ToDocumentItem(document.Id, service), ct);
+            }
+            if (templateId.HasValue)
+            {
+                await InitializeFromTemplateAsync(document, userId, accountId, templateId.Value, ct);
+            }
             await _unitOfWork.SaveChangesAsync(ct);
         }
         return Map(document);
     }
+
+    private async Task InitializeFromTemplateAsync(Document document, Guid userId, Guid? accountId, Guid templateId, CancellationToken ct)
+    {
+        var template = _templates.Query().SingleOrDefault(x => x.Id == templateId && x.IsActive && !x.IsDeleted &&
+            (x.IsSystemTemplate || (x.AccountId == accountId && x.UserId == userId)));
+        if (template is null) return;
+        var templateItems = _templateItems.Query().Where(x => x.BudgetTemplateId == template.Id && !x.IsDeleted).OrderBy(x => x.SortOrder).Take(100).ToList();
+        foreach (var item in templateItems)
+            await _items.AddAsync(new DocumentItem { DocumentId = document.Id, Description = item.Description, Unit = item.Unit, Quantity = item.Quantity, UnitPrice = item.UnitPrice, SortOrder = item.SortOrder }, ct);
+        document.TemplateSnapshot = JsonSerializer.Serialize(new { template.Id, template.Title, CopiedAt = DateTime.UtcNow });
+    }
+
+    private static DocumentItem ToDocumentItem(Guid documentId, ServiceCatalogItem service) => new()
+    {
+        DocumentId = documentId, ServiceCatalogItemId = service.Id, Description = service.Description ?? service.Name,
+        Unit = service.UnitCode, Quantity = 1, UnitPrice = service.StandardPrice,
+        EstimatedCostSnapshot = service.EstimatedCost, DurationMinutesSnapshot = service.SuggestedDurationMinutes
+    };
 
     public async Task<BudgetDraftResult> SaveAsync(Guid userId, Guid? accountId, SaveBudgetDraftRequest request, CancellationToken ct)
     {
