@@ -25,7 +25,7 @@
     </div>
     <div class="of-workbench-actions">
         <a class="of-button-secondary" asp-page="/Documents/Index">Ver propostas</a>
-        <a class="of-button-primary" asp-page="/Documents/CreateBudget"><partial name="Partials/_Icon" model='new IconViewModel("plus", "sm", Decorative: true)' /> Novo orçamento</a>
+        <a class="of-button-primary" asp-page="/Documents/New"><partial name="Partials/_Icon" model='new IconViewModel("plus", "sm", Decorative: true)' /> Novo orçamento</a>
     </div>
 </header>
 
@@ -63,7 +63,7 @@
             <article class="of-attention-item is-opportunity">
                 <span class="of-attention-icon"><partial name="Partials/_Icon" model='new IconViewModel("quote")' /></span>
                 <div><small>Primeira venda · oportunidade</small><h3>Prepare sua primeira proposta</h3><p>Use o fluxo guiado para organizar cliente, serviços e condições.</p></div>
-                <time>Agora</time><a asp-page="/Documents/CreateBudget">Começar</a>
+                <time>Agora</time><a asp-page="/Documents/New">Começar</a>
             </article>
         }
         else if (experience.Commercial.Attention.Count == 0)
@@ -88,7 +88,7 @@
     </div>
     <aside class="of-quick-actions" aria-labelledby="quick-title">
         <p class="of-eyebrow">Atalhos</p><h2 id="quick-title">Crie com contexto</h2>
-        <a class="of-quick-primary" asp-page="/Documents/CreateBudget"><svg class="of-icon"><use href="#of-icon-quote" /></svg><span><strong>Novo orçamento</strong><small>Proposta pronta para enviar</small></span></a>
+        <a class="of-quick-primary" asp-page="/Documents/New"><svg class="of-icon"><use href="#of-icon-quote" /></svg><span><strong>Novo orçamento</strong><small>Proposta pronta para enviar</small></span></a>
         <div><a asp-page="/Documents/CreateReceipt">Novo recibo</a><a asp-page="/Clients/Create">Novo cliente</a><a asp-page="/Services/Index">Novo serviço</a></div>
     </aside>
 </section>
@@ -126,7 +126,7 @@
     <div class="of-section-heading"><div><p class="of-eyebrow">Continuidade</p><h2 id="recent-title">Documentos recentes</h2></div><a asp-page="/Documents/Index">Ver todos</a></div>
     @if (dashboard.LatestDocuments.Count == 0)
     {
-        <partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Seu primeiro documento começa aqui", Text="Crie um orçamento para apresentar serviços, valores, condições e prazo da proposta.", ActionText="Criar orçamento", ActionPage="/Documents/CreateBudget", Icon="quote" }' />
+        <partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Seu primeiro documento começa aqui", Text="Crie um orçamento para apresentar serviços, valores, condições e prazo da proposta.", ActionText="Criar orçamento", ActionPage="/Documents/New", Icon="quote" }' />
     }
     else
     {
@@ -152,7 +152,7 @@
     {
         <section class="of-guidance" aria-labelledby="first-budget-title">
             <div><p class="of-eyebrow">Seu próximo resultado</p><h2 id="first-budget-title">Crie seu primeiro orçamento</h2><p>Transforme seus dados, cliente e serviço em uma proposta profissional.</p></div>
-            <a asp-page="/Documents/CreateBudget">Criar orçamento</a>
+            <a asp-page="/Documents/New">Criar orçamento</a>
         </section>
     }
 </div>

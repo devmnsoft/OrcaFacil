@@ -50,7 +50,7 @@
                     </span>
                     <partial name="Partials/_Icon" model='new IconViewModel("chevron-down", "sm")' />
                 </button>
-                <a class="of-primary-create" asp-page="/Documents/CreateBudget" title="Novo orçamento">
+                <a class="of-primary-create" asp-page="/Documents/New" title="Novo orçamento assistido">
                     <svg class="of-icon" aria-hidden="true"><use href="#of-icon-quote" /></svg>
                     <span>Novo orçamento</span>
                 </a>
@@ -134,7 +134,7 @@
             <div class="of-sheet-panel">
                 <span class="of-sheet-handle" aria-hidden="true"></span><h2 id="action-title">O que você quer criar?</h2>
                 <p>Escolha o resultado que precisa agora.</p>
-                <a asp-page="/Documents/CreateBudget"><svg class="of-icon"><use href="#of-icon-quote" /></svg><span><strong>Novo orçamento</strong><small>Prepare uma proposta com serviços, valores e condições.</small></span><span class="of-plan-pill">@shell.EffectivePlanName</span></a>
+                <a asp-page="/Documents/New"><svg class="of-icon"><use href="#of-icon-quote" /></svg><span><strong>Novo orçamento</strong><small>Escolha cliente, serviço, modelo ou rascunho.</small></span><span class="of-plan-pill">@shell.EffectivePlanName</span></a>
                 <a asp-page="/Receipts/Create"><svg class="of-icon"><use href="#of-icon-receipt" /></svg><span><strong>Novo recibo</strong><small>Registre um valor recebido de forma organizada.</small></span><span class="of-plan-pill">@shell.EffectivePlanName</span></a>
                 <a asp-page="/Clients/Create"><svg class="of-icon"><use href="#of-icon-client" /></svg><span><strong>Novo cliente</strong><small>Salve dados para reutilizar nos documentos.</small></span><span class="of-plan-pill">@shell.EffectivePlanName</span></a>
                 <a asp-page="/Services/Index"><svg class="of-icon"><use href="#of-icon-service" /></svg><span><strong>Novo serviço</strong><small>Organize o catálogo usado nos seus orçamentos.</small></span><span class="of-plan-pill">Disponível</span></a>

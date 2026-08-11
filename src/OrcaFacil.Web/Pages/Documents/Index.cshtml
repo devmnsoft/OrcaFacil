@@ -2,7 +2,7 @@
 @model OrcaFacil.Web.Pages.Documents.IndexModel
 @section Styles { <link rel="stylesheet" href="~/css/documents.css" asp-append-version="true" /> }
 @{ ViewData["Title"]="Orçamentos"; ViewData["Section"]="Comercial"; }
-<partial name="Partials/_PageIntro" model='new PageIntroViewModel("Propostas comerciais", "Orçamentos", "Crie, envie e acompanhe propostas profissionais sem perder o próximo passo.", "quote", "Novo orçamento", "/Documents/CreateBudget", HelpCode: "quotes", WhatThisPageDoes: "Organiza propostas por cliente, validade e situação comercial.", NextStepText: "Crie uma proposta ou retome uma negociação pendente.")' />
+<partial name="Partials/_PageIntro" model='new PageIntroViewModel("Propostas comerciais", "Orçamentos", "Crie, envie e acompanhe propostas profissionais sem perder o próximo passo.", "quote", "Novo orçamento", "/Documents/New", HelpCode: "quotes", WhatThisPageDoes: "Organiza propostas por cliente, validade e situação comercial.", NextStepText: "Crie uma proposta ou retome uma negociação pendente.")' />
 <partial name="Partials/_ContextGuide" model='new ContextGuideViewModel("Conduza cada proposta até uma decisão", "Preparar e acompanhar valores e condições enviados ao cliente.", "Itens, versões, validade, compartilhamentos e atividades.", "Uma proposta aprovada pode originar uma ordem de serviço.", "Recibos e pagamentos ficam na Central Financeira.")' />
 
 <nav class="of-tabs" aria-label="Situações do orçamento">
@@ -27,7 +27,7 @@
 </section>
 
 @if (Model.Quotes.Items.Count == 0)
-{ <partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Nenhuma proposta corresponde aos filtros", Text="Ajuste os filtros ou crie um orçamento para iniciar uma nova oportunidade.", ActionText="Criar orçamento", ActionPage="/Documents/CreateBudget", Icon="quote", HelpText="Recibos são organizados separadamente na Central Financeira." }' /> }
+{ <partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Nenhuma proposta corresponde aos filtros", Text="Ajuste os filtros ou crie um orçamento para iniciar uma nova oportunidade.", ActionText="Criar orçamento", ActionPage="/Documents/New", Icon="quote", HelpText="Recibos são organizados separadamente na Central Financeira." }' /> }
 else
 {
     <div class="of-data-list">
