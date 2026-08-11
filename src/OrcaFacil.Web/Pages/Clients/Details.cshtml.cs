@@ -2,12 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OrcaFacil.Application.Clients;
+using OrcaFacil.Application.Commercial;
 using OrcaFacil.Domain.Enums;
 
 namespace OrcaFacil.Web.Pages.Clients;
 
 [Authorize]
-public sealed class DetailsModel(IClientWorkspaceService workspace) : PageModel
+public sealed class DetailsModel(IClientWorkspaceService workspace, ICommercialJourneyService journey) : PageModel
 {
     public ClientWorkspaceDetails Details { get; private set; } = null!;
     public string MaskedDocument => Details.Client.MaskedDocument;
@@ -58,6 +59,20 @@ public sealed class DetailsModel(IClientWorkspaceService workspace) : PageModel
     { await workspace.ToggleNotePinAsync(id, noteId, ct); return RedirectToPage(new { id, tab = "notes" }); }
     public async Task<IActionResult> OnPostDeleteNoteAsync(Guid id, Guid noteId, CancellationToken ct)
     { await workspace.DeleteNoteAsync(id, noteId, ct); return RedirectToPage(new { id, tab = "notes" }); }
+
+    public async Task<IActionResult> OnPostScheduleFollowUpAsync(Guid id, Guid documentId, DateTime? nextFollowUpAt, string? note, CancellationToken ct)
+    {
+        var result = await journey.ScheduleFollowUpAsync(new(documentId, nextFollowUpAt, note), ct);
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
+        return RedirectToPage(new { id, tab = "activities" });
+    }
+
+    public async Task<IActionResult> OnPostCompleteFollowUpAsync(Guid id, Guid documentId, string? note, CancellationToken ct)
+    {
+        var result = await journey.CompleteFollowUpAsync(documentId, note, ct);
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
+        return RedirectToPage(new { id, tab = "activities" });
+    }
 
     private async Task<bool> Load(Guid id, CancellationToken ct)
     { var details = await workspace.GetDetailsAsync(id, ct); if (details is null) return false; Details = details; return true; }

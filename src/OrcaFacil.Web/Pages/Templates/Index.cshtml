@@ -1,10 +1,10 @@
 @page
 @model OrcaFacil.Web.Pages.Templates.IndexModel
 @{ ViewData["Title"] = "Modelos"; }
-<header class="of-page-header"><div><p class="of-eyebrow">Modelos prontos</p><h1>Modelos por profissão</h1><p>Escolha sugestões de itens comuns, revise os valores e gere um orçamento profissional mais rápido.</p></div><a class="btn btn-primary" asp-page="/Documents/CreateBudget"><i class="bi bi-file-earmark-plus me-2"></i>Orçamento em branco</a></header>
+<header class="of-page-header"><div><p class="of-eyebrow">Modelos prontos</p><h1>Modelos por profissão</h1><p>Escolha sugestões de itens comuns, revise os valores e gere um orçamento profissional mais rápido.</p></div><a class="btn btn-primary" asp-page="/Documents/New"><i class="bi bi-file-earmark-plus me-2"></i>Orçamento em branco</a></header>
 <div class="row g-3">
 @foreach (var t in Model.Templates)
 {
-    <div class="col-md-6 col-xl-4"><article class="of-card h-100"><p class="of-eyebrow">@t.Profession</p><h2 class="h5">@t.Title</h2><p>@t.Description</p><ul>@foreach (var item in t.Items.OrderBy(i=>i.SortOrder).Take(3)){<li>@item.Description</li>}</ul><div class="d-grid gap-2"><a class="btn btn-primary" asp-page="/Documents/CreateBudget" asp-route-templateId="@t.Id"><i class="bi bi-magic me-2"></i>Usar este modelo</a><a class="btn btn-outline-primary" asp-page="/Templates/Details" asp-route-id="@t.Id">Ver detalhes</a></div></article></div>
+    <div class="col-md-6 col-xl-4"><article class="of-card h-100"><p class="of-eyebrow">@t.Profession</p><h2 class="h5">@t.Title</h2><p>@t.Description</p><ul>@foreach (var item in t.Items.OrderBy(i=>i.SortOrder).Take(3)){<li>@item.Description</li>}</ul><div class="d-grid gap-2"><a class="btn btn-primary" asp-page="/Documents/New" asp-route-templateId="@t.Id"><i class="bi bi-magic me-2"></i>Usar este modelo</a><a class="btn btn-outline-primary" asp-page="/Templates/Details" asp-route-id="@t.Id">Ver detalhes</a></div></article></div>
 }
 </div>
