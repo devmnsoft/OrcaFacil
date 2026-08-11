@@ -4,7 +4,7 @@
   <a class="of-button-primary" asp-route-handler="Export" asp-route-from="@Model.From?.ToString("yyyy-MM-dd")" asp-route-to="@Model.To?.ToString("yyyy-MM-dd")" asp-route-clientId="@Model.ClientId" asp-route-status="@Model.Status" asp-route-paymentMethod="@Model.PaymentMethod">Exportar CSV</a>
 </header>
 <details class="report-filters" open><summary>Filtros do relatório</summary>
- <form method="get" class="filter-grid"><label>De<input type="date" asp-for="From" /></label><label>Até<input type="date" asp-for="To" /></label><label>Status<input asp-for="Status" placeholder="Todos" /></label><label>Forma de pagamento<input asp-for="PaymentMethod" placeholder="Todas" /></label><div class="filter-actions"><a href="@Context.Request.Path" class="of-button-secondary">Limpar</a><button class="of-button-primary" type="submit">Aplicar filtros</button></div></form>
+ <form method="get" class="filter-grid"><div asp-validation-summary="ModelOnly" class="of-form-error" role="alert"></div><label>De<input type="date" asp-for="From" /></label><label>Até<input type="date" asp-for="To" /></label><label>Status<input asp-for="Status" placeholder="Todos" /></label><label>Forma de pagamento<input asp-for="PaymentMethod" placeholder="Todas" /></label><div class="filter-actions"><a href="@Context.Request.Path" class="of-button-secondary">Limpar</a><button class="of-button-primary" type="submit">Aplicar filtros</button></div></form>
 </details>
 <section class="metric-grid">
 @foreach (var metric in Model.Report.Metrics) { <article class="metric-card"><span>@metric.Label</span><strong>@(metric.Value < 0 ? "Dados insuficientes" : metric.IsMoney ? metric.Value.ToString("C") : $"{metric.Value:0.##}{metric.Suffix}")</strong></article> }

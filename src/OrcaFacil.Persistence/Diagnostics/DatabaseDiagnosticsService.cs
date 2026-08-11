@@ -79,7 +79,7 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
             var indexes = (await connection.QueryAsync<string>(new CommandDefinition("select indexname from pg_indexes where schemaname=@Schema", new { Schema = ExpectedSchema }, cancellationToken: ct))).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var missingIndexes = requiredIndexes.Where(x => !indexes.Contains(x)).ToArray();
             var appliedMigrations = existing.Contains("__EFMigrationsHistory")
-                ? (await connection.QueryAsync<string>(new CommandDefinition("select migration_id from orcafacil.\"__EFMigrationsHistory\" order by migration_id", cancellationToken: ct))).AsList()
+                ? (await connection.QueryAsync<string>(new CommandDefinition("select migration_id from orcafacil.\"__EFMigrationsHistory\" order by migration_id", cancellationToken: ct))).ToArray()
                 : Array.Empty<string>();
 
             var freePlan = missing.Length == 0 && await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
