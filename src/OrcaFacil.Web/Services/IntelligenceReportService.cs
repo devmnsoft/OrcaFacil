@@ -22,8 +22,10 @@ public interface IIntelligenceReportService
 public sealed class IntelligenceReportService(ICurrentAccountService account, OrcaFacilDbContext db) : IIntelligenceReportService
 {
     private Guid AccountId => account.AccountId ?? throw new UnauthorizedAccessException("Selecione uma conta para consultar relatórios.");
-    private DateTime From(ReportFilter f) => (f.From?.Date ?? DateTime.UtcNow.Date.AddMonths(-1)).ToUniversalTime();
-    private DateTime To(ReportFilter f) => (f.To?.Date.AddDays(1) ?? DateTime.UtcNow.Date.AddDays(1)).ToUniversalTime();
+    // The upper bound is exclusive so every instant of the selected final day is included,
+    // independently of the precision used by the database provider.
+    private static DateTime From(ReportFilter f) => DateTime.SpecifyKind(f.From?.Date ?? DateTime.UtcNow.Date.AddMonths(-1), DateTimeKind.Utc);
+    private static DateTime To(ReportFilter f) => DateTime.SpecifyKind(f.To?.Date.AddDays(1) ?? DateTime.UtcNow.Date.AddDays(1), DateTimeKind.Utc);
 
     public async Task<IntelligenceReport> CommercialFunnelAsync(ReportFilter f, CancellationToken ct)
     {
@@ -64,26 +66,61 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
         var clientQuery = db.Clients.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted);
         if (f.ClientId is { } clientId) clientQuery = clientQuery.Where(x => x.Id == clientId);
         var clients = await clientQuery.Select(x => new { x.Id, x.Name, x.IsActive, x.LastInteractionAt }).ToListAsync(ct);
-        var docs = await db.Documents.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted && x.ClientId != null && x.CreatedAt >= from && x.CreatedAt < to).Select(x => new { x.ClientId, x.Total, x.ClientDecision }).ToListAsync(ct);
-        var paid = await db.ManualPayments.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted && x.Status == FinancialRecordStatus.Active && x.PaidAt >= from && x.PaidAt < to).GroupBy(x => x.ClientId).Select(g => new { ClientId = g.Key, Total = g.Sum(x => x.Amount) }).ToDictionaryAsync(x => x.ClientId, x => x.Total, ct);
-        var rows = clients.Select(c => new ReportRow(c.Name, docs.Count(x => x.ClientId == c.Id), docs.Where(x => x.ClientId == c.Id).Sum(x => x.Total), docs.Where(x => x.ClientId == c.Id && x.ClientDecision == ClientDecision.Approved).Sum(x => x.Total), paid.GetValueOrDefault(c.Id), c.LastInteractionAt is null ? null : (decimal)(DateTime.UtcNow - c.LastInteractionAt.Value).TotalDays)).OrderByDescending(x => x.Proposed).ToArray();
+        var documentQuery = db.Documents.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted && x.ClientId != null && x.CreatedAt >= from && x.CreatedAt < to);
+        if (f.ClientId is { } documentClientId) documentQuery = documentQuery.Where(x => x.ClientId == documentClientId);
+        if (!string.IsNullOrWhiteSpace(f.Status)) documentQuery = documentQuery.Where(x => x.Status == f.Status);
+        var documentsByClient = await documentQuery.GroupBy(x => x.ClientId!.Value).Select(g => new
+        {
+            ClientId = g.Key,
+            Count = g.Count(),
+            Proposed = g.Sum(x => x.Total),
+            Approved = g.Where(x => x.ClientDecision == ClientDecision.Approved).Sum(x => x.Total)
+        }).ToDictionaryAsync(x => x.ClientId, ct);
+        var paymentQuery = db.ManualPayments.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted && x.Status == FinancialRecordStatus.Active && x.PaidAt >= from && x.PaidAt < to);
+        if (f.ClientId is { } paymentClientId) paymentQuery = paymentQuery.Where(x => x.ClientId == paymentClientId);
+        if (!string.IsNullOrWhiteSpace(f.PaymentMethod)) paymentQuery = paymentQuery.Where(x => x.PaymentMethod == f.PaymentMethod);
+        var paid = await paymentQuery.GroupBy(x => x.ClientId).Select(g => new { ClientId = g.Key, Total = g.Sum(x => x.Amount) }).ToDictionaryAsync(x => x.ClientId, x => x.Total, ct);
+        var rows = clients.Select(c =>
+        {
+            documentsByClient.TryGetValue(c.Id, out var activity);
+            return new ReportRow(c.Name, activity?.Count ?? 0, activity?.Proposed ?? 0, activity?.Approved ?? 0, paid.GetValueOrDefault(c.Id), c.LastInteractionAt is null ? null : (decimal)Math.Max(0, (DateTime.UtcNow - c.LastInteractionAt.Value).TotalDays));
+        }).OrderByDescending(x => x.Proposed).ToArray();
         return new("Clientes", [new("Cadastrados", clients.Count), new("Ativos", clients.Count(x => x.IsActive)), new("Sem movimentação (30 dias)", clients.Count(x => x.LastInteractionAt == null || x.LastInteractionAt < DateTime.UtcNow.AddDays(-30))), new("Com propostas aprovadas", rows.Count(x => x.Approved > 0))], rows);
     }
 
     public async Task<IntelligenceReport> ServicesAsync(ReportFilter f, CancellationToken ct)
     {
         var from = From(f); var to = To(f); var accountId = AccountId;
-        var services = await db.ServiceCatalogItems.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted).Select(x => new { x.Id, x.Name, x.EstimatedCost }).ToListAsync(ct);
-        var items = await (from item in db.DocumentItems.AsNoTracking() join doc in db.Documents.AsNoTracking() on item.DocumentId equals doc.Id where doc.AccountId == accountId && !doc.IsDeleted && !item.IsDeleted && doc.Type == DocumentType.Budget && doc.CreatedAt >= from && doc.CreatedAt < to select new { item.ServiceCatalogItemId, item.Quantity, item.UnitPrice, item.Discount, item.EstimatedCostSnapshot, doc.ClientDecision }).ToListAsync(ct);
-        var rows = services.Select(s => { var used = items.Where(x => x.ServiceCatalogItemId == s.Id).ToArray(); var total = used.Sum(x => Math.Max(0, x.Quantity * x.UnitPrice - x.Discount)); var approved = used.Where(x => x.ClientDecision == ClientDecision.Approved).Sum(x => Math.Max(0, x.Quantity * x.UnitPrice - x.Discount)); decimal? margin = used.Any(x => x.EstimatedCostSnapshot > 0) ? approved - used.Where(x => x.ClientDecision == ClientDecision.Approved).Sum(x => x.Quantity * x.EstimatedCostSnapshot) : null; return new ReportRow(s.Name, used.Length, total, approved, 0, margin); }).OrderByDescending(x => x.Approved).ToArray();
+        var services = await db.ServiceCatalogItems.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted).Select(x => new { x.Id, x.Name }).ToListAsync(ct);
+        var canViewMargin = account.AccountRoleCode is "Owner" or "Administrator";
+        var itemQuery = from item in db.DocumentItems.AsNoTracking()
+                        join doc in db.Documents.AsNoTracking() on item.DocumentId equals doc.Id
+                        where doc.AccountId == accountId && !doc.IsDeleted && !item.IsDeleted && doc.Type == DocumentType.Budget && doc.CreatedAt >= from && doc.CreatedAt < to
+                        select new { item.ServiceCatalogItemId, item.Quantity, item.UnitPrice, item.Discount, item.EstimatedCostSnapshot, doc.ClientId, doc.Status, doc.ClientDecision };
+        if (f.ClientId is { } clientId) itemQuery = itemQuery.Where(x => x.ClientId == clientId);
+        if (!string.IsNullOrWhiteSpace(f.Status)) itemQuery = itemQuery.Where(x => x.Status == f.Status);
+        var items = await itemQuery.ToListAsync(ct);
+        var itemsByService = items.Where(x => x.ServiceCatalogItemId.HasValue).ToLookup(x => x.ServiceCatalogItemId!.Value);
+        var rows = services.Select(s =>
+        {
+            var used = itemsByService[s.Id].ToArray();
+            var total = used.Sum(x => Math.Max(0, x.Quantity * x.UnitPrice - x.Discount));
+            var approvedItems = used.Where(x => x.ClientDecision == ClientDecision.Approved).ToArray();
+            var approved = approvedItems.Sum(x => Math.Max(0, x.Quantity * x.UnitPrice - x.Discount));
+            var hasCompleteCostData = approvedItems.Length > 0 && approvedItems.All(x => x.EstimatedCostSnapshot > 0);
+            decimal? margin = canViewMargin && hasCompleteCostData
+                ? approved - approvedItems.Sum(x => x.Quantity * x.EstimatedCostSnapshot)
+                : null;
+            return new ReportRow(s.Name, used.Length, total, approved, 0, margin);
+        }).OrderByDescending(x => x.Approved).ToArray();
         return new("Serviços", [new("Serviços cadastrados", services.Count), new("Nunca usados", rows.Count(x => x.Count == 0)), new("Valor vendido", rows.Sum(x => x.Approved), true), new("Itens em propostas", rows.Sum(x => x.Count))], rows);
     }
 
     private static string NormalizeStage(string status, ClientDecision decision) => decision == ClientDecision.Approved ? "Aprovado" : decision == ClientDecision.Rejected ? "Recusado" : status switch { "Draft" => "Rascunho", "Issued" => "Pronto", "Sent" => "Enviado", "Viewed" => "Visualizado", "Converted" => "Convertido em OS", "Expired" => "Expirado", _ => status };
     private static int StageOrder(string stage)
     {
-        string[] stages =
-        [
+        var stages = new[]
+        {
             "Rascunho",
             "Pronto",
             "Enviado",
@@ -93,7 +130,7 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
             "Recusado",
             "Expirado",
             "Convertido em OS"
-        ];
+        };
 
         var index = Array.IndexOf(stages, stage);
         return index >= 0 ? index : 99;
