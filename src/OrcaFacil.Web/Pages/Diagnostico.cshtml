@@ -2,7 +2,8 @@
 @model OrcaFacil.Web.Pages.DiagnosticoModel
 @using OrcaFacil.Persistence.Diagnostics
 @{ ViewData["Title"] = "Diagnóstico"; var db = Model.Database; }
-<h1>Diagnóstico</h1>
+<h1>Diagnóstico operacional</h1>
+<p>Status geral: <strong>@(db?.CanConnect == true && db.MissingTables.Count == 0 && (db.MissingColumns?.Count ?? 0) == 0 ? "Saudável" : "Ação necessária")</strong></p>
 <ul>
   <li>Ambiente: @Model.EnvironmentName</li>
   <li>Modo: @(Model.EnvironmentName == "Development" ? "Development" : "Production")</li>
@@ -10,8 +11,13 @@
   <li>Nome do banco: @db?.DatabaseName</li>
   <li>Schema: @DatabaseDiagnosticsService.ExpectedSchema (@(db?.SchemaExists == true ? "encontrado" : "não encontrado"))</li>
   <li>Tabelas ausentes: @(db?.MissingTables.Count ?? 0)</li>
+  <li>Colunas ausentes: @(db?.MissingColumns?.Count ?? 0)</li>
+  <li>Índices críticos ausentes: @(db?.MissingIndexes?.Count ?? 0)</li>
+  <li>Latência: @(db?.LatencyMilliseconds ?? 0) ms</li>
   <li>Arquivos estáticos: OK</li>
   <li>PDF service: configurado</li>
   <li>Autenticação: cookie auth configurada</li>
 </ul>
+@if (db?.CanConnect != true || db.MissingTables.Count > 0 || (db.MissingColumns?.Count ?? 0) > 0) { <div class="callout"><strong>Como corrigir</strong><p>Execute <code>psql -v ON_ERROR_STOP=1 -f database/script_completop.sql</code> com um usuário autorizado e atualize esta página.</p></div> }
+<details><summary>Ver detalhes técnicos</summary><dl><dt>PostgreSQL</dt><dd>@db?.PostgreSqlVersion</dd><dt>Usuário</dt><dd>@db?.ConnectedUser</dd><dt>search_path</dt><dd>@db?.SearchPath</dd><dt>Permissões</dt><dd>Leitura: @db?.CanRead; criação: @db?.CanWrite</dd><dt>Tabelas faltantes</dt><dd>@string.Join(", ", db?.MissingTables ?? [])</dd><dt>Colunas faltantes</dt><dd>@string.Join(", ", db?.MissingColumns ?? [])</dd></dl></details>
 @if (!string.IsNullOrWhiteSpace(db?.Error)) { <p class="text-danger">@db.Error</p> }

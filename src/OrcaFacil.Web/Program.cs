@@ -144,6 +144,7 @@ builder.Services.AddScoped<IPasswordResetTokenService, PasswordResetTokenService
 builder.Services.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
 builder.Services.AddScoped<IEmailSender, GmailSmtpEmailSender>();
 builder.Services.AddHostedService<EmailOutboxWorker>();
+builder.Services.AddHostedService<ProductionConfigurationValidator>();
 builder.Services.AddScoped<IPdfService, QuestPdfDocumentService>();
 builder.Services.AddScoped<INumberToWordsService, NumberToWordsPtBrService>();
 builder.Services.AddSingleton<IDatabaseDiagnosticsService, DatabaseDiagnosticsService>();
@@ -157,6 +158,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.SecurePolicy = builder.Environment.IsProduction()
+        ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
     options.LoginPath = "/Auth/Login";
     options.AccessDeniedPath = "/Auth/Login";
     options.Events.OnValidatePrincipal = async context =>
@@ -221,7 +224,21 @@ if (databaseConfigured) await SuperAdminSeeder.SeedAsync(app.Services);
 
 app.UseHttpsRedirection();
 app.UseMiddleware<CorrelationIdMiddleware>();
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        var headers = context.Response.Headers;
+        headers["X-Content-Type-Options"] = "nosniff";
+        headers["X-Frame-Options"] = "DENY";
+        headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+        return Task.CompletedTask;
+    });
+    await next();
+});
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseStatusCodePagesWithReExecute("/Error/{0}");
 app.UseMiddleware<DatabaseReadinessMiddleware>();
 app.UseSerilogRequestLogging();
 app.UseStaticFiles();

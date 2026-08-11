@@ -1,0 +1,4 @@
+@page "/Admin/Backup"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy="SuperAdmin")]
+@{ViewData["Title"]="Backup e restauração";}
+<section class="page-shell"><h1>Backup e restauração</h1><div class="callout"><strong>Operação fora do navegador</strong><p>Por segurança, o servidor web não recebe senha nem executa ferramentas PostgreSQL.</p></div><h2>Gerar backup</h2><code>powershell -File database/backup_postgres.ps1 -Database orcafacil -User orcafacil_user</code><h2>Restaurar</h2><code>powershell -File database/restore_postgres.ps1 -Database orcafacil -User orcafacil_user -File .\backup.dump</code><p>Os scripts solicitam a senha interativamente e validam o resultado.</p></section>

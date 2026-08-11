@@ -1,6 +1,7 @@
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
+using System.Diagnostics;
 using OrcaFacil.Application.Abstractions;
 
 namespace OrcaFacil.Persistence.Diagnostics;
@@ -43,7 +44,10 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
             databaseName = builder.Database;
 
             await using var connection = new NpgsqlConnection(connectionString);
+            var stopwatch = Stopwatch.StartNew();
             await connection.OpenAsync(ct);
+            await connection.ExecuteScalarAsync<int>(new CommandDefinition("select 1", cancellationToken: ct));
+            stopwatch.Stop();
 
             var schemaExists = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
                 "select exists(select 1 from information_schema.schemata where schema_name = @Schema)",
@@ -64,6 +68,19 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
 
             var version = await connection.ExecuteScalarAsync<string>(new CommandDefinition(
                 "select version()", cancellationToken: ct));
+            var connectedUser = await connection.ExecuteScalarAsync<string>(new CommandDefinition("select current_user", cancellationToken: ct));
+            var searchPath = await connection.ExecuteScalarAsync<string>(new CommandDefinition("show search_path", cancellationToken: ct));
+            var canRead = await connection.ExecuteScalarAsync<bool>(new CommandDefinition("select has_schema_privilege(current_user, @Schema, 'USAGE')", new { Schema = ExpectedSchema }, cancellationToken: ct));
+            var canWrite = await connection.ExecuteScalarAsync<bool>(new CommandDefinition("select has_schema_privilege(current_user, @Schema, 'CREATE')", new { Schema = ExpectedSchema }, cancellationToken: ct));
+            var requiredColumns = new[] { "documents.account_id", "clients.account_id", "users.session_version", "public_document_accesses.token_hash" };
+            var columns = (await connection.QueryAsync<string>(new CommandDefinition("select table_name || '.' || column_name from information_schema.columns where table_schema=@Schema", new { Schema = ExpectedSchema }, cancellationToken: ct))).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var missingColumns = requiredColumns.Where(x => !columns.Contains(x)).ToArray();
+            var requiredIndexes = new[] { "ix_documents_account_client", "ux_public_document_access_token_hash", "ix_work_orders_schedule" };
+            var indexes = (await connection.QueryAsync<string>(new CommandDefinition("select indexname from pg_indexes where schemaname=@Schema", new { Schema = ExpectedSchema }, cancellationToken: ct))).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var missingIndexes = requiredIndexes.Where(x => !indexes.Contains(x)).ToArray();
+            var appliedMigrations = existing.Contains("__EFMigrationsHistory")
+                ? (await connection.QueryAsync<string>(new CommandDefinition("select migration_id from orcafacil.\"__EFMigrationsHistory\" order by migration_id", cancellationToken: ct))).AsList()
+                : Array.Empty<string>();
 
             var freePlan = missing.Length == 0 && await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
                 "select exists(select 1 from orcafacil.plans where code='FREE' and is_active and not is_deleted)", cancellationToken: ct));
@@ -74,7 +91,8 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
                    and pv.valid_from <= now() and (pv.valid_until is null or pv.valid_until > now()))
                 """, cancellationToken: ct));
 
-            return new(true, schemaExists, existingTables, missing, databaseName, version, null, freePlan, publishedFreeVersion);
+            return new(true, schemaExists, existingTables, missing, databaseName, version, null, freePlan, publishedFreeVersion,
+                missingColumns, missingIndexes, connectedUser, searchPath, stopwatch.ElapsedMilliseconds, canRead, canWrite, appliedMigrations);
         }
         catch (Exception ex)
         {

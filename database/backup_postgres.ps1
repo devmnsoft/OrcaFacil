@@ -1,0 +1,5 @@
+[CmdletBinding()] param([string]$HostName='localhost',[int]$Port=5432,[Parameter(Mandatory)][string]$Database,[Parameter(Mandatory)][string]$User,[string]$OutputDirectory="$PSScriptRoot\backups")
+$ErrorActionPreference='Stop'; $tool=(Get-Command pg_dump -ErrorAction SilentlyContinue); if(!$tool){throw 'pg_dump não encontrado no PATH.'}
+New-Item $OutputDirectory -ItemType Directory -Force|Out-Null; $file=Join-Path $OutputDirectory ("{0}-{1}.dump" -f $Database,(Get-Date -Format 'yyyyMMdd-HHmmss'))
+$secure=Read-Host 'Senha PostgreSQL' -AsSecureString; $ptr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+try{$env:PGPASSWORD=[Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr); & $tool.Source -h $HostName -p $Port -U $User -d $Database -Fc -f $file; if($LASTEXITCODE -or !(Test-Path $file) -or (Get-Item $file).Length -eq 0){throw 'Backup não foi gerado corretamente.'}; Write-Host "Backup validado: $file"; Write-Host "Restaure com: pg_restore -h $HostName -p $Port -U $User -d NOVO_BANCO `"$file`""}finally{$env:PGPASSWORD=$null;[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)}

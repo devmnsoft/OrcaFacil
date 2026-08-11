@@ -1,0 +1,4 @@
+@page "/Error/{code:int}"
+@model OrcaFacil.Web.Pages.Error.StatusModel
+@{ViewData["Title"]=$"Erro {Model.Code}";}
+<section class="error-state" role="alert" aria-live="polite"><p class="eyebrow">Código @Model.Code</p><h1>@Model.Message</h1><p>Tente novamente ou informe o identificador <code>@Model.CorrelationId</code> ao suporte.</p><div class="button-row"><a class="action-button action-button--primary" href="/Dashboard">Voltar</a><a class="action-button action-button--secondary" href="/Support">Falar com o suporte</a></div></section>
