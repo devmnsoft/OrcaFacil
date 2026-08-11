@@ -119,6 +119,7 @@ builder.Services.AddScoped<PlanEntitlementService>();
 builder.Services.AddScoped<IPlanAccessService, PlanAccessService>();
 builder.Services.AddSingleton<IPlanFeatureReadinessService, PlanFeatureReadinessService>();
 builder.Services.AddScoped<IPlanAccessDataSource, EfPlanAccessDataSource>();
+builder.Services.AddScoped<IPlanCatalogService, EfPlanCatalogService>();
 builder.Services.AddScoped<TrialProService>();
 builder.Services.Configure<PlanOptions>(builder.Configuration.GetSection("Plans"));
 builder.Services.AddScoped<BillingStatusService>();
@@ -126,6 +127,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.Configure<MercadoPagoOptions>(builder.Configuration.GetSection("MercadoPago"));
 builder.Services.Configure<BillingOptions>(builder.Configuration.GetSection("Billing"));
 builder.Services.AddScoped<IPaymentGateway, MercadoPagoPaymentGateway>();
+builder.Services.AddScoped<ISubscriptionCheckoutService, SubscriptionCheckoutService>();
 builder.Services.AddScoped<UserUsageService>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
@@ -240,6 +242,8 @@ app.MapPost("/api/webhooks/mercadopago", async (HttpRequest request, OrcaFacil.A
     var body = await reader.ReadToEndAsync(ct);
     var headers = request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString());
     var result = await gateway.HandleWebhookAsync(body, headers, ct);
+    if (!result.Processed)
+        return Results.Unauthorized();
     if (!await db.MercadoPagoWebhookEvents.AnyAsync(x => x.EventKey == result.EventKey, ct))
     {
         db.MercadoPagoWebhookEvents.Add(new OrcaFacil.Domain.Entities.MercadoPagoWebhookEvent { EventKey = result.EventKey, ExternalPaymentId = result.ExternalPaymentId, RawJson = body, Processed = true, CorrelationId = OrcaFacil.Web.HttpContextTrace.Current(request.HttpContext) });
