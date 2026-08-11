@@ -56,6 +56,7 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<PublicDocumentDecision> PublicDocumentDecisions => Set<PublicDocumentDecision>();
     public DbSet<CommercialFollowUp> CommercialFollowUps => Set<CommercialFollowUp>();
     public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
+    public DbSet<WorkOrderChecklistItem> WorkOrderChecklistItems => Set<WorkOrderChecklistItem>();
     public DbSet<ManualPayment> ManualPayments => Set<ManualPayment>();
     public DbSet<Receipt> Receipts => Set<Receipt>();
     public DbSet<LegalDocument> LegalDocuments => Set<LegalDocument>();
