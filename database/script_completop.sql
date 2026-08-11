@@ -579,3 +579,15 @@ ALTER TABLE orcafacil.documents ADD COLUMN IF NOT EXISTS last_follow_up_at times
 ALTER TABLE orcafacil.documents ADD COLUMN IF NOT EXISTS follow_up_status varchar(24) NOT NULL DEFAULT 'None';
 ALTER TABLE orcafacil.documents ADD COLUMN IF NOT EXISTS follow_up_note varchar(1000);
 CREATE INDEX IF NOT EXISTS ix_documents_account_id_next_follow_up_at ON orcafacil.documents(account_id, next_follow_up_at);
+
+-- Captação de contatos comerciais pela Home (2026-08-11)
+CREATE TABLE IF NOT EXISTS orcafacil.commercial_leads (
+  id uuid PRIMARY KEY, name varchar(140) NOT NULL, company_name varchar(180), email varchar(254), phone varchar(40),
+  segment varchar(100), monthly_budget_volume integer, message varchar(1200), consent_accepted boolean NOT NULL,
+  source_page varchar(200) NOT NULL, status varchar(24) NOT NULL, converted_account_id uuid REFERENCES orcafacil.business_accounts(id) ON DELETE RESTRICT,
+  internal_notes varchar(3000), discard_reason varchar(500), created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false,
+  CONSTRAINT ck_commercial_leads_consent CHECK (consent_accepted = true),
+  CONSTRAINT ck_commercial_leads_contact CHECK (email IS NOT NULL OR phone IS NOT NULL)
+);
+CREATE INDEX IF NOT EXISTS ix_commercial_leads_email ON orcafacil.commercial_leads(email);
+CREATE INDEX IF NOT EXISTS ix_commercial_leads_status_created_at ON orcafacil.commercial_leads(status, created_at);

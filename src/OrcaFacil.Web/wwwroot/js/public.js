@@ -31,16 +31,20 @@ window.addEventListener('scroll', syncHeader, { passive: true }); syncHeader();
 export function shouldHandleSmoothScroll(link) {
   if (!(link instanceof HTMLAnchorElement)) return false;
   const rawHref = link.getAttribute('href');
-  if (!rawHref || rawHref.startsWith('mailto:') || rawHref.startsWith('tel:')) return false;
-  const destination = new URL(link.href, window.location.href);
-  if (destination.origin !== window.location.origin || destination.pathname !== window.location.pathname || !destination.hash) return false;
-  try { return document.querySelector(destination.hash) !== null; } catch { return false; }
+  if (!rawHref || /^(?:mailto|tel):/i.test(rawHref)) return false;
+  try {
+    const destination = new URL(rawHref, window.location.href);
+    if (!['http:', 'https:'].includes(destination.protocol) || destination.origin !== window.location.origin || !destination.hash) return false;
+    const canonicalPath = path => path.replace(/\/Index\/?$/i, '/').replace(/\/+$/, '') || '/';
+    if (canonicalPath(destination.pathname) !== canonicalPath(window.location.pathname)) return false;
+    return document.querySelector(destination.hash) !== null;
+  } catch { return false; }
 }
 
 document.querySelectorAll('a[href*="#"]').forEach(link => {
   link.addEventListener('click', event => {
     if (!shouldHandleSmoothScroll(link)) return;
-    const destination = new URL(link.href, window.location.href);
+    const destination = new URL(link.getAttribute('href'), window.location.href);
     const id = destination.hash;
     const target = document.querySelector(id);
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -62,6 +66,18 @@ document.querySelectorAll('[data-password-toggle]').forEach(toggle => {
   });
   const warning = input.closest('.of-field')?.querySelector('[data-caps-lock]');
   input.addEventListener('keyup', event => { if (warning) warning.hidden = !event.getModifierState('CapsLock'); });
+});
+
+document.querySelectorAll('[data-lead-form]').forEach(form => {
+  form.addEventListener('submit', event => {
+    if (form.dataset.submitting === 'true') { event.preventDefault(); return; }
+    if (!form.checkValidity()) return;
+    form.dataset.submitting = 'true';
+    const submit = form.querySelector('[data-submit-button]');
+    if (submit) submit.disabled = true;
+    form.querySelector('[data-submit-label]')?.setAttribute('hidden', '');
+    form.querySelector('[data-submit-loading]')?.removeAttribute('hidden');
+  });
 });
 
 const summary = document.querySelector('[data-focus-first-error] .of-form-summary:not(:empty)');

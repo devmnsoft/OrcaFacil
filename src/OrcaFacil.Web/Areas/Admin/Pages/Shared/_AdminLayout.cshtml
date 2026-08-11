@@ -48,7 +48,7 @@
         <div class="of-admin-stage">
             <header class="of-admin-topbar">
                 <div><nav aria-label="Breadcrumb"><span>Operação</span><span>/</span><span aria-current="page">@title</span></nav><strong>@title</strong></div>
-                <div><a href="/health/ready" class="of-health-pill"><span></span>Saúde</a><span class="of-admin-alert">@shell.CriticalAlertCount críticos</span><span class="of-topbar-avatar">@shell.SuperAdminName[..1].ToUpperInvariant()</span></div>
+                <div><a asp-area="Admin" asp-page="/Leads/Index" class="of-admin-alert">@shell.PendingSupportCount leads novos</a><a href="/health/ready" class="of-health-pill"><span></span>Saúde</a><span class="of-admin-alert">@shell.CriticalAlertCount críticos</span><span class="of-topbar-avatar">@shell.SuperAdminName[..1].ToUpperInvariant()</span></div>
             </header>
             <main id="admin-content" class="of-admin-content" tabindex="-1"><partial name="/Pages/Shared/Partials/_ToastHost.cshtml" />@RenderBody()</main>
         </div>

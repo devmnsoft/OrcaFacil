@@ -1,4 +1,5 @@
 @page
+@model OrcaFacil.Web.Pages.IndexModel
 @{ Layout = "/Pages/Shared/_PublicLayout.cshtml"; ViewData["Title"] = "Orçamentos e recibos profissionais"; }
 <section class="of-public-hero">
   <div class="of-container of-hero-grid">
@@ -56,4 +57,25 @@
 <section class="of-public-section of-surface-soft" aria-labelledby="faq-title"><div class="of-container"><header class="of-section-header"><span class="of-eyebrow">Perguntas frequentes</span><h2 id="faq-title">Respostas diretas antes de começar.</h2></header><div class="of-faq-list">
   <details><summary>O OrçaFácil emite nota fiscal?</summary><p>Não. O recibo registra a quitação declarada pelo prestador, mas não substitui nota fiscal nem documento fiscal.</p></details><details><summary>Posso começar grátis?</summary><p>Sim. Você pode criar sua conta sem cartão e conhecer o fluxo do plano Grátis.</p></details><details><summary>O recibo confirma pagamento bancário?</summary><p>Pagamento registrado manualmente. A informação não representa confirmação automática do banco, cartão ou operadora.</p></details><details><summary>Posso usar no celular?</summary><p>Sim. A interface se adapta ao navegador do celular, tablet e computador.</p></details><details><summary>Posso enviar orçamento pelo WhatsApp?</summary><p>Você pode compartilhar o link seguro ou o PDF pelo canal que usa com o cliente, inclusive WhatsApp.</p></details><details><summary>Meus dados ficam salvos?</summary><p>Sim. Clientes, serviços e documentos permanecem organizados na sua conta, conforme o plano e as regras de privacidade.</p></details><details><summary>Posso cadastrar serviços recorrentes?</summary><p>Sim. Cadastre serviços no catálogo para reutilizar descrições, unidades e valores em novas propostas.</p></details>
 </div></div></section>
-<section class="of-final-cta of-surface-light"><div class="of-container"><div><span class="of-eyebrow">Sua próxima proposta começa aqui</span><h2>Crie seu primeiro orçamento grátis.</h2><p>Organize o pedido e apresente uma proposta profissional. Sem cartão para começar.</p></div><div class="of-home-actions"><a class="of-button of-button-primary of-button-lg" asp-page="/Auth/Register">Criar conta grátis</a><a class="of-button of-button-secondary of-button-lg" asp-page="/Index" asp-fragment="como-funciona">Ver como funciona</a></div></div></section>
+<section id="contato" class="of-public-section of-lead-section" aria-labelledby="lead-title">
+  <div class="of-container of-lead-grid">
+    <div class="of-lead-copy"><span class="of-eyebrow">Conversa sem compromisso</span><h2 id="lead-title">Quer ver o OrçaFácil funcionando no seu negócio?</h2><p>Conte um pouco da sua rotina. A equipe MNSOFT entra em contato para entender o cenário e apresentar o produto com clareza.</p><ul class="of-security-list"><li><svg class="of-icon" aria-hidden="true"><use href="#of-icon-success" /></svg>Atendimento humano</li><li><svg class="of-icon" aria-hidden="true"><use href="#of-icon-success" /></svg>Sem envio a serviços externos</li><li><svg class="of-icon" aria-hidden="true"><use href="#of-icon-success" /></svg>Seus dados usados somente para este contato</li></ul></div>
+    <form class="of-lead-card" method="post" asp-page-handler="Lead" data-lead-form data-focus-first-error>
+      @Html.AntiForgeryToken()
+      <div asp-validation-summary="ModelOnly" class="of-form-summary" tabindex="-1"></div>
+      <div class="of-lead-fields">
+        <div class="of-field"><label asp-for="Input.Name">Nome <span aria-hidden="true">*</span></label><input asp-for="Input.Name" autocomplete="name" /><span asp-validation-for="Input.Name"></span></div>
+        <div class="of-field"><label asp-for="Input.CompanyName">Empresa</label><input asp-for="Input.CompanyName" autocomplete="organization" /></div>
+        <div class="of-field"><label asp-for="Input.Phone">Telefone/WhatsApp</label><input asp-for="Input.Phone" type="tel" autocomplete="tel" inputmode="tel" /><span asp-validation-for="Input.Phone"></span></div>
+        <div class="of-field"><label asp-for="Input.Email">E-mail</label><input asp-for="Input.Email" type="email" autocomplete="email" /><span asp-validation-for="Input.Email"></span></div>
+        <div class="of-field"><label asp-for="Input.Segment">Segmento</label><input asp-for="Input.Segment" placeholder="Ex.: manutenção, consultoria" /></div>
+        <div class="of-field"><label asp-for="Input.MonthlyBudgetVolume">Orçamentos por mês</label><input asp-for="Input.MonthlyBudgetVolume" type="number" min="0" inputmode="numeric" /></div>
+        <div class="of-field of-field-wide"><label asp-for="Input.Message">Mensagem</label><textarea asp-for="Input.Message" rows="4" maxlength="1200" placeholder="O que você gostaria de organizar melhor?"></textarea><span asp-validation-for="Input.Message"></span></div>
+      </div>
+      <label class="of-consent"><input asp-for="Input.ConsentAccepted" /> <span>Autorizo a MNSOFT a usar estes dados para responder à minha solicitação, conforme a <a asp-page="/Privacidade">Política de Privacidade</a>.</span></label><span asp-validation-for="Input.ConsentAccepted"></span>
+      <button class="of-button of-button-primary of-button-lg" type="submit" data-submit-button><span data-submit-label>Quero falar com a MNSOFT</span><span data-submit-loading hidden>Enviando…</span></button>
+      <small>O consentimento é obrigatório e pode ser revogado pelos canais informados na Política de Privacidade.</small>
+    </form>
+  </div>
+</section>
+<section class="of-final-cta of-surface-light"><div class="of-container"><div><span class="of-eyebrow">Sua próxima proposta começa aqui</span><h2>Crie seu primeiro orçamento grátis.</h2><p>Organize o pedido e apresente uma proposta profissional. Sem cartão para começar.</p></div><div class="of-home-actions"><a class="of-button of-button-primary of-button-lg" asp-page="/Auth/Register">Criar conta grátis</a><a class="of-button of-button-secondary of-button-lg" asp-page="/Precos">Ver planos</a><a class="of-text-link" asp-page="/Support/Index">Falar com suporte</a></div></div></section>
