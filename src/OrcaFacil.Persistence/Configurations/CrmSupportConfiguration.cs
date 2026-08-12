@@ -1,0 +1,41 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using OrcaFacil.Domain.Entities;
+
+namespace OrcaFacil.Persistence.Configurations;
+
+public sealed class CommercialInteractionConfiguration : IEntityTypeConfiguration<CommercialInteraction>
+{
+    public void Configure(EntityTypeBuilder<CommercialInteraction> b)
+    {
+        b.ToTable("commercial_interactions", "orcafacil"); b.ConfigureBase();
+        b.Property(x => x.Type).HasConversion<string>().HasMaxLength(24); b.Property(x => x.Channel).HasConversion<string>().HasMaxLength(24);
+        b.Property(x => x.Summary).HasMaxLength(1200).IsRequired(); b.HasIndex(x => new { x.AccountId, x.NextFollowUpAt });
+        b.HasOne<BusinessAccount>().WithMany().HasForeignKey(x => x.AccountId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<CommercialLead>().WithMany().HasForeignKey(x => x.LeadId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<Client>().WithMany().HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<Document>().WithMany().HasForeignKey(x => x.DocumentId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.CreatedByUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class SupportTicketConfiguration : IEntityTypeConfiguration<SupportTicket>
+{
+    public void Configure(EntityTypeBuilder<SupportTicket> b)
+    {
+        b.ToTable("support_tickets", "orcafacil"); b.ConfigureBase(); b.Property(x => x.Protocol).HasMaxLength(24).IsRequired();
+        b.Property(x => x.Category).HasConversion<string>().HasMaxLength(24); b.Property(x => x.Status).HasConversion<string>().HasMaxLength(24); b.Property(x => x.Priority).HasConversion<string>().HasMaxLength(16);
+        b.Property(x => x.Subject).HasMaxLength(180).IsRequired(); b.Property(x => x.Description).HasMaxLength(5000).IsRequired(); b.Property(x => x.InternalNotes).HasMaxLength(4000);
+        b.HasIndex(x => x.Protocol).IsUnique(); b.HasIndex(x => new { x.AccountId, x.Status, x.CreatedAt });
+        b.HasOne<BusinessAccount>().WithMany().HasForeignKey(x => x.AccountId).OnDelete(DeleteBehavior.Restrict); b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.OpenedByUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class SupportTicketMessageConfiguration : IEntityTypeConfiguration<SupportTicketMessage>
+{
+    public void Configure(EntityTypeBuilder<SupportTicketMessage> b)
+    {
+        b.ToTable("support_ticket_messages", "orcafacil"); b.ConfigureBase(); b.Property(x => x.Body).HasMaxLength(5000).IsRequired(); b.HasIndex(x => new { x.TicketId, x.CreatedAt });
+        b.HasOne<SupportTicket>().WithMany().HasForeignKey(x => x.TicketId).OnDelete(DeleteBehavior.Cascade); b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.AuthorUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
