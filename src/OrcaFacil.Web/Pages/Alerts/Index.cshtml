@@ -24,7 +24,7 @@
 @if (Model.Items.Count == 0) { <section class="report-empty"><h2>Tudo em dia</h2><p>Nenhum alerta operacional foi identificado com os filtros atuais.</p></section> }
 <section class="operational-list">
 @foreach (var item in Model.Items) {
-  <article class="metric-card operational-card">
+  <article class="metric-card operational-card is-@item.Type.ToString().ToLowerInvariant()">
     <div><span>@item.Type · @item.Category · @item.CreatedAt.ToLocalTime().ToString("g")</span><h2>@item.Title</h2><p>@IndexModel.Description(item)</p><strong>@(item.IsRead ? "Encerrado" : "Aberto")</strong></div>
     <div class="filter-actions">
       @if (!string.IsNullOrWhiteSpace(item.ActionUrl)) { <a class="of-button-secondary" href="@item.ActionUrl">@item.ActionText</a> }

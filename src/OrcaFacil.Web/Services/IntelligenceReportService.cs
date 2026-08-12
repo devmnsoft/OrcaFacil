@@ -116,7 +116,27 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
         return new("Serviços", [new("Serviços cadastrados", services.Count), new("Nunca usados", rows.Count(x => x.Count == 0)), new("Valor vendido", rows.Sum(x => x.Approved), true), new("Itens em propostas", rows.Sum(x => x.Count))], rows);
     }
 
-    private static string NormalizeStage(string status, ClientDecision decision) => decision == ClientDecision.Approved ? "Aprovado" : decision == ClientDecision.Rejected ? "Recusado" : status switch { "Draft" => "Rascunho", "Issued" => "Pronto", "Sent" => "Enviado", "Viewed" => "Visualizado", "Converted" => "Convertido em OS", "Expired" => "Expirado", _ => status };
+    private static string NormalizeStage(string status, ClientDecision decision)
+    {
+        if (decision == ClientDecision.Approved) return "Aprovado";
+        if (decision == ClientDecision.Rejected) return "Recusado";
+
+        // Documents created by older and newer workflows can use either status
+        // vocabulary. Keep both mapped to the same customer-facing funnel.
+        return status switch
+        {
+            "Draft" => "Rascunho",
+            "Ready" or "Issued" => "Pronto",
+            "Sent" => "Enviado",
+            "Viewed" => "Visualizado",
+            "InNegotiation" or "ChangeRequested" => "Em negociação",
+            "Approved" => "Aprovado",
+            "Rejected" => "Recusado",
+            "Expired" => "Expirado",
+            "Converted" or "ConvertedToWorkOrder" => "Convertido em OS",
+            _ => status
+        };
+    }
     private static int StageOrder(string stage)
     {
         var stages = new[]

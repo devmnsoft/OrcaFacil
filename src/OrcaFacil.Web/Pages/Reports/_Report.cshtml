@@ -1,10 +1,22 @@
 @model OrcaFacil.Web.Pages.Reports.ReportPageModel
+@{ var isFinancialReport = Model.Report.Title == "Financeiro"; }
 <header class="report-hero">
   <div><span class="eyebrow">INTELIGÊNCIA COMERCIAL</span><h1>@Model.Report.Title</h1><p>Dados reais da conta selecionada, consolidados para o período.</p></div>
   <a class="of-button-primary" asp-route-handler="Export" asp-route-from="@Model.From?.ToString("yyyy-MM-dd")" asp-route-to="@Model.To?.ToString("yyyy-MM-dd")" asp-route-clientId="@Model.ClientId" asp-route-status="@Model.Status" asp-route-paymentMethod="@Model.PaymentMethod">Exportar CSV</a>
 </header>
 <details class="report-filters" open><summary>Filtros do relatório</summary>
- <form method="get" class="filter-grid"><div asp-validation-summary="ModelOnly" class="of-form-error" role="alert"></div><label>De<input type="date" asp-for="From" /></label><label>Até<input type="date" asp-for="To" /></label><label>Status<input asp-for="Status" placeholder="Todos" /></label><label>Forma de pagamento<input asp-for="PaymentMethod" placeholder="Todas" /></label><div class="filter-actions"><a href="@Context.Request.Path" class="of-button-secondary">Limpar</a><button class="of-button-primary" type="submit">Aplicar filtros</button></div></form>
+ <form method="get" class="filter-grid">
+   <div asp-validation-summary="ModelOnly" class="of-form-error" role="alert"></div>
+   <label>De<input type="date" asp-for="From" /></label>
+   <label>Até<input type="date" asp-for="To" /></label>
+   <label>Status<select asp-for="Status">
+     <option value="">Todos</option>
+     <optgroup label="Propostas"><option value="Draft">Rascunho</option><option value="Ready">Pronto</option><option value="Sent">Enviado</option><option value="Viewed">Visualizado</option><option value="InNegotiation">Em negociação</option><option value="Approved">Aprovado</option><option value="Rejected">Recusado</option><option value="Expired">Expirado</option><option value="ConvertedToWorkOrder">Convertido em OS</option></optgroup>
+     @if (isFinancialReport) { <optgroup label="Pagamentos"><option value="Active">Ativo</option><option value="Reversed">Revertido</option></optgroup> }
+   </select></label>
+   <label>Forma de pagamento<input asp-for="PaymentMethod" placeholder="Todas" /></label>
+   <div class="filter-actions"><a href="@Context.Request.Path" class="of-button-secondary">Limpar</a><button class="of-button-primary" type="submit">Aplicar filtros</button></div>
+ </form>
 </details>
 <section class="metric-grid">
 @foreach (var metric in Model.Report.Metrics) { <article class="metric-card"><span>@metric.Label</span><strong>@(metric.Value < 0 ? "Dados insuficientes" : metric.IsMoney ? metric.Value.ToString("C") : $"{metric.Value:0.##}{metric.Suffix}")</strong></article> }
