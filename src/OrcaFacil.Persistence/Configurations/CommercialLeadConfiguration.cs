@@ -24,5 +24,7 @@ public sealed class CommercialLeadConfiguration : IEntityTypeConfiguration<Comme
         builder.HasIndex(x => x.Email);
         builder.HasOne<BusinessAccount>().WithMany().HasForeignKey(x => x.ConvertedAccountId)
             .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Client>().WithMany().HasForeignKey(x => x.ConvertedClientId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

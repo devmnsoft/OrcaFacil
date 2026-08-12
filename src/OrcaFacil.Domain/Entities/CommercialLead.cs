@@ -16,6 +16,7 @@ public sealed class CommercialLead : Entity
     public string SourcePage { get; set; } = "/";
     public CommercialLeadStatus Status { get; set; } = CommercialLeadStatus.New;
     public Guid? ConvertedAccountId { get; set; }
+    public Guid? ConvertedClientId { get; set; }
     public string? InternalNotes { get; set; }
     public string? DiscardReason { get; set; }
 }

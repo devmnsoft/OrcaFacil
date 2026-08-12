@@ -68,6 +68,9 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<PrivacyProcessingActivity> PrivacyProcessingActivities => Set<PrivacyProcessingActivity>();
     public DbSet<AccountOnboardingState> AccountOnboardingStates => Set<AccountOnboardingState>();
     public DbSet<CommercialLead> CommercialLeads => Set<CommercialLead>();
+    public DbSet<CommercialInteraction> CommercialInteractions => Set<CommercialInteraction>();
+    public DbSet<SupportTicket> SupportTickets => Set<SupportTicket>();
+    public DbSet<SupportTicketMessage> SupportTicketMessages => Set<SupportTicketMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
