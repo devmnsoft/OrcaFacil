@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Domain.Enums;
