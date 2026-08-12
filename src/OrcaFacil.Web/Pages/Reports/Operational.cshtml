@@ -1,0 +1,22 @@
+@page "/Reports/Operational"
+@model OrcaFacil.Web.Pages.Reports.OperationalModel
+@{ ViewData["Title"] = "Relatório operacional"; }
+<header class="report-hero">
+  <div><span class="eyebrow">SAÚDE DA OPERAÇÃO</span><h1>Relatório operacional</h1><p>Consolidação real dos alertas detectados na conta, sem duplicar ocorrências a cada acesso.</p></div>
+  <a class="of-button-primary" asp-page="/Alerts/Index">Tratar alertas</a>
+</header>
+<section class="metric-grid">
+  <article class="metric-card"><span>Alertas abertos</span><strong>@Model.Open</strong></article>
+  <article class="metric-card"><span>Alertas encerrados</span><strong>@Model.Closed</strong></article>
+  <article class="metric-card"><span>Categorias monitoradas</span><strong>@Model.Groups.Count</strong></article>
+</section>
+@if (Model.Groups.Count == 0)
+{
+  <section class="report-empty"><h2>Operação em dia</h2><p>Não há ocorrências operacionais registradas para esta conta.</p></section>
+}
+else
+{
+  <div class="report-table-wrap"><table class="report-table"><thead><tr><th>Categoria</th><th>Em aberto</th><th>Total identificado</th><th>Ação</th></tr></thead><tbody>
+  @foreach (var group in Model.Groups) { <tr><td data-label="Categoria"><strong>@group.Name</strong></td><td data-label="Em aberto">@group.Open</td><td data-label="Total">@group.Total</td><td data-label="Ação"><a asp-page="/Alerts/Index" asp-route-type="@group.Name">Ver ocorrências</a></td></tr> }
+  </tbody></table></div>
+}

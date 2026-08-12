@@ -1,0 +1,23 @@
+@page "/Reports"
+@model OrcaFacil.Web.Pages.Reports.IndexModel
+@{
+    ViewData["Title"] = "Central de inteligência";
+    var funnelCount = IndexModel.FindMetric(Model.Funnel, "Propostas")?.Value ?? 0;
+    var received = IndexModel.FindMetric(Model.Financial, "Valor recebido")?.Value ?? 0;
+    var clientCount = IndexModel.FindMetric(Model.Clients, "Cadastrados")?.Value ?? 0;
+    var serviceCount = IndexModel.FindMetric(Model.Services, "Serviços cadastrados")?.Value ?? 0;
+}
+<header class="report-hero of-report-hub-hero">
+  <div><span class="eyebrow">DECISÕES COM CONTEXTO</span><h1>Central de inteligência</h1><p>Acompanhe o mês com dados reais da conta selecionada e avance direto para cada análise.</p></div>
+  <a class="of-button-primary" asp-page="/Alerts/Index">Ver prioridades <span class="of-count-badge">@Model.OpenAlerts</span></a>
+</header>
+
+<section class="of-report-hub" aria-label="Relatórios disponíveis">
+  <article class="of-report-tile is-commercial"><span class="of-report-icon" aria-hidden="true">↗</span><p>COMERCIAL</p><h2>Funil comercial</h2><strong>@funnelCount.ToString("0") propostas no mês</strong><small>Etapas, valores, aprovação e tempo sem avanço.</small><a asp-page="/Reports/CommercialFunnel">Abrir funil <span aria-hidden="true">→</span></a></article>
+  <article class="of-report-tile is-financial"><span class="of-report-icon" aria-hidden="true">$</span><p>FINANCEIRO</p><h2>Financeiro</h2><strong>@received.ToString("C") recebidos</strong><small>Proposto, aprovado, recebido, pendências e formas de pagamento.</small><a asp-page="/Reports/Financial">Analisar financeiro <span aria-hidden="true">→</span></a></article>
+  <article class="of-report-tile"><span class="of-report-icon" aria-hidden="true">◎</span><p>RELACIONAMENTO</p><h2>Clientes</h2><strong>@clientCount.ToString("0") cadastrados</strong><small>Movimentação, valor aprovado, recebimentos e inatividade.</small><a asp-page="/Reports/Clients">Analisar clientes <span aria-hidden="true">→</span></a></article>
+  <article class="of-report-tile"><span class="of-report-icon" aria-hidden="true">◇</span><p>PORTFÓLIO</p><h2>Serviços</h2><strong>@serviceCount.ToString("0") no catálogo</strong><small>Uso, vendas, aprovação e margem apenas quando autorizada.</small><a asp-page="/Reports/Services">Analisar serviços <span aria-hidden="true">→</span></a></article>
+  <article class="of-report-tile"><span class="of-report-icon" aria-hidden="true">≋</span><p>OPERAÇÃO</p><h2>Relatório operacional</h2><strong>@Model.OpenAlerts ocorrências abertas</strong><small>Visão consolidada da saúde operacional por categoria.</small><a asp-page="/Reports/Operational">Ver operação <span aria-hidden="true">→</span></a></article>
+  <article class="of-report-tile is-alert"><span class="of-report-icon" aria-hidden="true">!</span><p>PRIORIDADES</p><h2>Alertas</h2><strong>@Model.OpenAlerts em aberto</strong><small>Prioridades deduplicadas, geradas a partir da rotina da conta.</small><a asp-page="/Alerts/Index">Abrir central <span aria-hidden="true">→</span></a></article>
+  <article class="of-report-tile"><span class="of-report-icon" aria-hidden="true">↓</span><p>EXPORTAÇÕES</p><h2>Dados portáveis</h2><strong>CSV com filtros</strong><small>Exporte em cada relatório somente os dados autorizados e visíveis.</small><a asp-page="/Reports/Financial">Escolher relatório <span aria-hidden="true">→</span></a></article>
+</section>
