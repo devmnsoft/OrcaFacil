@@ -10,37 +10,51 @@
 <div class="of-onboarding-shell">
 <main class="of-onboarding-panel of-onboarding-stage">
 <div class="of-onboarding-step">
-<span class="of-onboarding-eyebrow">Seu primeiro resultado em cerca de 5 minutos</span>
-<h1>Vamos preparar seu primeiro orçamento.</h1>
-<p>Em poucos passos, você configura os dados do seu negócio, cadastra um serviço e monta uma proposta com aparência profissional.</p>
+<span class="of-onboarding-eyebrow">Jornada de ativação</span>
+<h1>Do cadastro ao primeiro recebimento.</h1>
+<p>Este checklist acompanha dados reais da sua conta e indica sempre uma ação que já existe no OrçaFácil.</p>
 </div>
-<partial name="_Progress" model="Model.State.CompletedSteps"/>
-<ul class="of-onboarding-checklist">
-<li>Dados do negócio</li>
-<li>Identidade dos documentos</li>
-<li>Primeiro cliente</li>
-<li>Primeiro serviço</li>
-<li>Primeiro orçamento</li>
-</ul>
+<div class="of-activation-progress">
+  <strong>@Model.State.CompletedSteps de @Model.State.TotalSteps etapas concluídas</strong>
+  <progress value="@Model.State.CompletedSteps" max="@Model.State.TotalSteps">@Model.State.CompletedSteps de @Model.State.TotalSteps</progress>
+</div>
+<ol class="of-activation-list">
+@foreach (var step in Model.State.ActivationSteps)
+{
+  <li class="@(step.IsCompleted ? "is-complete" : null)">
+    <span class="of-activation-status" aria-hidden="true">@(step.IsCompleted ? "✓" : "○")</span>
+    <div><h2>@step.Title</h2><p>@step.Description</p></div>
+    @if (step.IsCompleted) { <span class="of-activation-done">Concluído</span> }
+    else { <a class="of-onboarding-button of-onboarding-button--secondary" href="@step.Page">@step.ActionLabel</a> }
+  </li>
+}
+</ol>
 <div class="of-onboarding-actions">
+@if (!Model.State.IsCompleted)
+{
 <form method="post" asp-page-handler="Begin" data-onboarding-form>
-<button class="of-onboarding-button of-onboarding-button--primary" type="submit" data-submit-text="Preparando…">Começar configuração</button>
+<button class="of-onboarding-button of-onboarding-button--primary" type="submit" data-submit-text="Preparando…">Configuração guiada</button>
 </form>
+}
+<a class="of-onboarding-button of-onboarding-button--secondary" asp-page="/Dashboard/Index">Voltar ao dashboard</a>
+@if (!Model.State.IsCompleted)
+{
 <form method="post" asp-page-handler="Skip">
 <button class="of-onboarding-button of-onboarding-button--secondary" type="submit" aria-describedby="skip-help">Pular por enquanto</button>
 <small id="skip-help" class="of-onboarding-help">Você poderá retomar esta configuração pelo dashboard.</small>
 </form>
+}
 </div>
 </main>
 <aside class="of-onboarding-aside">
 <div class="of-onboarding-brand" aria-label="OrçaFácil, uma solução MNSOFT">OrçaFácil <small>por MNSOFT</small></div>
-<strong>Você está no controle</strong>
+<strong>Progresso sem dados fictícios</strong>
 <div class="of-onboarding-document-preview">
 <small>ORÇAMENTO</small>
 <b>Sua proposta profissional</b>
 <span>Identidade, cliente, serviço e total com leitura clara.</span>
 </div>
-<p>Cliente e serviço podem ser cadastrados depois. Os dados obrigatórios garantem um documento profissional.</p>
+<p>As etapas mudam automaticamente quando você cadastra, envia, recebe uma decisão, registra um pagamento ou emite um recibo.</p>
 <span>OrçaFácil · MNSOFT</span>
 </aside>
 </div>
