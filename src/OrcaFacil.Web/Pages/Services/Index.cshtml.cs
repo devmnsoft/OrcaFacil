@@ -6,7 +6,7 @@ using OrcaFacil.Domain.Entities;
 
 namespace OrcaFacil.Web.Pages.Services;
 [Authorize]
-public sealed class IndexModel(IServiceCatalogApplicationService catalog, IServiceUnitCatalog units) : PageModel
+public sealed class IndexModel(IServiceCatalogApplicationService catalog, IServiceUnitCatalog units, OrcaFacil.Application.Abstractions.ICurrentAccountService account) : PageModel
 {
     public IReadOnlyList<ServiceUnitOption> UnitOptions { get; private set; } = units.GetAll();
     [BindProperty(SupportsGet=true)] public string? Search { get; set; }
@@ -15,6 +15,7 @@ public sealed class IndexModel(IServiceCatalogApplicationService catalog, IServi
     [BindProperty(SupportsGet=true)] public int PageNumber { get; set; } = 1;
     [BindProperty(SupportsGet=true)] public int PageSize { get; set; } = 20;
     public List<ServiceCatalogItem> Items { get; private set; } = [];
+    public bool CanViewCosts => account.AccountRoleCode is "Owner" or "Administrator";
     public int ActiveCount { get; private set; } public int InactiveCount { get; private set; } public int FavoriteCount { get; private set; } public int UsedCount { get; private set; }
     public async Task<IActionResult> OnGetAsync(CancellationToken ct) { var result = await catalog.ListAsync(new(Search, Unit: Unit, Active: Status == "all" ? null : Status != "inactive", Page: PageNumber, PageSize: PageSize), ct); if (result is null) return Forbid(); Items = result.Items.ToList(); ActiveCount=result.Active;InactiveCount=result.Inactive;FavoriteCount=result.Favorites;UsedCount=result.Used;return Page(); }
     public async Task<IActionResult> OnPostFavoriteAsync(Guid id,CancellationToken ct) { var result=await catalog.ToggleFavoriteAsync(id,ct); return result.Code == ServiceCatalogResultCode.NotFound ? NotFound() : RedirectToPage(); }

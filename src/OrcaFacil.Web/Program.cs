@@ -36,6 +36,7 @@ using OrcaFacil.Application.Commercial;
 using OrcaFacil.Persistence.Services;
 using OrcaFacil.Application.Receipts;
 using OrcaFacil.Application.Clients;
+using OrcaFacil.Application.Pricing;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddOrcaFacilLocalConfiguration();
@@ -113,6 +114,7 @@ builder.Services.AddScoped<IClientWorkspaceService, ClientWorkspaceService>();
 builder.Services.AddScoped<OrcaFacil.Application.Onboarding.IOnboardingApplicationService, OnboardingApplicationService>();
 builder.Services.AddScoped<IQuoteWorkspaceService, QuoteWorkspaceService>();
 builder.Services.AddScoped<IGuidedBudgetStartService, GuidedBudgetStartService>();
+builder.Services.AddSingleton<IPricingEngineService, PricingEngineService>();
 builder.Services.AddScoped<OrcaFacil.Application.Services.IServiceCatalogApplicationService, ServiceCatalogApplicationService>();
 builder.Services.AddSingleton<OrcaFacil.Application.Services.IServiceUnitCatalog, OrcaFacil.Application.Services.ServiceUnitCatalog>();
 builder.Services.AddScoped<IDocumentNumberService, DocumentNumberService>();
@@ -286,7 +288,13 @@ app.MapGet("/Internal/Services/Search", async Task<IResult> (string? q, Guid? ca
     if (categoryId.HasValue) query = query.Where(x => x.CategoryId == categoryId);
     if (favorite == true) query = query.Where(x => x.IsFavorite);
     query = mostUsed == true ? query.OrderByDescending(x => x.UseCount) : recent == true ? query.OrderByDescending(x => x.LastUsedAt) : query.OrderByDescending(x => x.IsFavorite).ThenBy(x => x.Name);
-    var results = await query.Take(Math.Clamp(limit ?? 12, 1, 50)).Select(x => new { x.Id, x.Name, x.Description, x.CategoryId, unit = x.UnitCode, price = x.StandardPrice, durationMinutes = x.SuggestedDurationMinutes, estimatedCost = x.EstimatedCost, margin = x.StandardPrice - x.EstimatedCost }).ToListAsync(ct);
+    var take = Math.Clamp(limit ?? 12, 1, 50);
+    if (account.AccountRoleCode is "Owner" or "Administrator")
+    {
+        var protectedResults = await query.Take(take).Select(x => new { x.Id, x.Name, x.Description, x.CategoryId, unit = x.UnitCode, price = x.StandardPrice, durationMinutes = x.SuggestedDurationMinutes, estimatedCost = x.EstimatedCost, margin = x.StandardPrice - x.EstimatedCost }).ToListAsync(ct);
+        return Results.Ok(new { results = protectedResults });
+    }
+    var results = await query.Take(take).Select(x => new { x.Id, x.Name, x.Description, x.CategoryId, unit = x.UnitCode, price = x.StandardPrice, durationMinutes = x.SuggestedDurationMinutes }).ToListAsync(ct);
     return Results.Ok(new { results });
 }).RequireAuthorization();
 app.MapGet("/Internal/Accounts", async Task<IResult> (HttpContext context, IAccountSwitcherService switcher, CancellationToken ct) =>
