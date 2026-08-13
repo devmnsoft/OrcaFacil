@@ -10,7 +10,7 @@ namespace OrcaFacil.Web.Services;
 public sealed record RoutineItem(Guid Id, string Kind, string Title, string Client, string Origin, DateTime Date,
     string Priority, string Status, string NextAction, string Page);
 public sealed record MessageTemplateView(Guid Id, string Code, string Name, string Channel, string? Subject,
-    string Body, bool IsActive, bool IsSystem);
+    string Body, bool IsActive, bool IsSystem, DateTime CreatedAt, DateTime? UpdatedAt);
 
 public interface ICommercialAutomationService
 {
@@ -70,23 +70,29 @@ public sealed partial class CommercialAutomationService(OrcaFacilDbContext db, I
         return await db.CommercialMessageTemplates.AsNoTracking()
             .Where(x => x.AccountId == AccountId || (x.AccountId == null && x.IsSystem))
             .OrderByDescending(x => x.AccountId == AccountId).ThenBy(x => x.Name)
-            .Select(x => new MessageTemplateView(x.Id, x.Code, x.Name, x.Channel, x.Subject, x.Body, x.IsActive, x.IsSystem))
+            .Select(x => new MessageTemplateView(x.Id, x.Code, x.Name, x.Channel, x.Subject, x.Body, x.IsActive, x.IsSystem, x.CreatedAt, x.UpdatedAt))
             .ToListAsync(ct);
     }
 
     public async Task<(bool Ok, string Message)> SaveTemplateAsync(Guid? id, string name, string channel, string? subject, string body, bool active, CancellationToken ct = default)
     {
         await account.EnsureAccountAccessAsync(ct);
-        name = name.Trim(); channel = channel.Trim(); body = body.Trim(); subject = subject?.Trim();
+        name = name?.Trim() ?? string.Empty; channel = channel?.Trim() ?? string.Empty; body = body?.Trim() ?? string.Empty; subject = subject?.Trim();
         if (name.Length is < 3 or > 140 || body.Length is < 5 or > 4000) return (false, "Informe nome e corpo válidos.");
         if (channel is not ("WhatsApp" or "Email" or "General")) return (false, "Canal inválido.");
+        if (subject?.Length > 180) return (false, "O assunto deve ter no máximo 180 caracteres.");
         if (channel == "Email" && string.IsNullOrWhiteSpace(subject)) return (false, "O assunto é obrigatório para e-mail.");
-        var invalid = VariableRegex().Matches(body).Select(x => x.Groups[1].Value).FirstOrDefault(x => !Variables.Contains(x));
-        if (invalid is not null) return (false, $"A variável {{{invalid}}} não é reconhecida.");
+        var content = $"{subject}\n{body}";
+        var invalid = VariableRegex().Matches(content).Select(x => x.Groups[1].Value).FirstOrDefault(x => !Variables.Contains(x, StringComparer.Ordinal));
+        if (invalid is not null) return (false, $"A variável {{{invalid}}} não é reconhecida. Use uma das variáveis disponíveis.");
+        if (content.Count(x => x == '{') != content.Count(x => x == '}')) return (false, "Existe uma variável incompleta. Confira as chaves de abertura e fechamento.");
         CommercialMessageTemplate? template = id is null ? null : await db.CommercialMessageTemplates.SingleOrDefaultAsync(x => x.Id == id && x.AccountId == AccountId && !x.IsSystem, ct);
         if (id is not null && template is null) return (false, "Template não encontrado ou protegido.");
+        var created = template is null;
         if (template is null) { template = new() { AccountId = AccountId, Code = $"custom-{Guid.NewGuid():N}", CreatedByUserId = user.UserId }; db.Add(template); }
         template.Name = name; template.Channel = channel; template.Subject = channel == "Email" ? subject : null; template.Body = body; template.IsActive = active;
+        if (!created) template.Touch();
+        db.ActivityEvents.Add(new ActivityEvent { AccountId = AccountId, ActorUserId = user.UserId, EntityType = nameof(CommercialMessageTemplate), EntityId = template.Id, Action = created ? "MESSAGE_TEMPLATE_CREATED" : "MESSAGE_TEMPLATE_UPDATED", Summary = created ? $"Template '{name}' criado." : $"Template '{name}' atualizado." });
         await db.SaveChangesAsync(ct); return (true, "Template salvo com sucesso.");
     }
 
@@ -99,6 +105,6 @@ public sealed partial class CommercialAutomationService(OrcaFacilDbContext db, I
         await db.SaveChangesAsync(ct); return (true, "Mensagem preparada. Confirme o envio no aplicativo escolhido.");
     }
 
-    [GeneratedRegex(@"\{([A-Za-z]+)\}")]
+    [GeneratedRegex(@"\{([^{}]*)\}")]
     private static partial Regex VariableRegex();
 }

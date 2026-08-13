@@ -1,15 +1,48 @@
 @page
 @model OrcaFacil.Web.Pages.MessageTemplates.IndexModel
-@{ViewData["Title"]="Templates de mensagem";ViewData["Section"]="Comercial";}
-<header class="of-page-header of-commercial-hero"><div><p class="of-eyebrow">Comunicação comercial</p><h1>Mensagens consistentes, com contexto real</h1><p>Personalize textos por conta. Variáveis são validadas no servidor antes de salvar.</p></div></header>
-<section class="of-template-layout">
- <div class="of-template-list"><div class="of-section-heading"><div><p class="of-eyebrow">Biblioteca</p><h2>Templates disponíveis</h2></div><span class="of-badge">@Model.Templates.Count</span></div>
- @if(Model.Templates.Count==0){<div class="of-empty-state"><h3>Nenhum template disponível</h3><p>Crie o primeiro texto da sua conta no formulário ao lado.</p></div>}
- @foreach(var template in Model.Templates){<article class="of-template-card"><header><div><strong>@template.Name</strong><small>@template.Channel</small></div><span class="of-badge">@(template.IsSystem?"Sistema":"Personalizado")</span></header>@if(template.Subject is not null){<p><b>Assunto:</b> @template.Subject</p>}<p>@template.Body</p></article>}
- </div>
- <form class="of-template-editor" method="post" asp-page-handler="Save"><p class="of-eyebrow">Novo template</p><h2>Escrever mensagem</h2>
-  <label><span>Nome</span><input name="name" maxlength="140" required/></label><label><span>Canal</span><select name="channel" required><option value="WhatsApp">WhatsApp</option><option value="Email">E-mail</option><option value="General">Geral</option></select></label><label><span>Assunto (obrigatório para e-mail)</span><input name="subject" maxlength="180"/></label><label><span>Corpo</span><textarea name="body" maxlength="4000" rows="10" required></textarea></label><label class="of-check"><input type="checkbox" name="active" value="true" checked/> Ativo</label>
-  <div class="of-variable-list" aria-label="Variáveis disponíveis">@foreach(var variable in Model.Variables){<code>@($"{{{variable}}}")</code>}</div><button class="of-button-primary">Salvar template</button>
- </form>
+@{ ViewData["Title"] = "Templates de mensagem"; ViewData["Section"] = "Comercial"; }
+<header class="of-page-header of-commercial-hero">
+    <div><p class="of-eyebrow">Comunicação comercial</p><h1>Mensagens consistentes, com contexto real</h1><p>Crie comunicações profissionais para cada momento da jornada. Todas as variáveis são validadas no servidor.</p></div>
+    <div class="of-template-summary"><strong>@Model.Templates.Count</strong><span>modelos disponíveis</span></div>
+</header>
+
+<section class="of-template-layout" data-template-workspace>
+    <div class="of-template-list">
+        <div class="of-section-heading"><div><p class="of-eyebrow">Biblioteca</p><h2>Templates disponíveis</h2></div><span class="of-badge">@Model.Templates.Count</span></div>
+        @if (Model.Templates.Count == 0)
+        {
+            <div class="of-empty-state"><span aria-hidden="true">✦</span><h3>Sua biblioteca começa aqui</h3><p>Crie o primeiro texto da conta no editor. Ele ficará disponível nos seus fluxos comerciais.</p></div>
+        }
+        @foreach (var template in Model.Templates)
+        {
+            <article class="of-template-card @(template.IsActive ? "" : "is-inactive")">
+                <header><div><strong>@template.Name</strong><small>Atualizado em @((template.UpdatedAt ?? template.CreatedAt).ToLocalTime().ToString("dd/MM/yyyy"))</small></div><div class="of-template-badges"><span class="of-channel-badge is-@template.Channel.ToLowerInvariant()">@template.Channel</span><span class="of-status-badge">@(template.IsActive ? "Ativo" : "Inativo")</span></div></header>
+                @if (template.Subject is not null) { <p class="of-template-subject"><b>Assunto:</b> @template.Subject</p> }
+                <p class="of-template-body">@template.Body</p>
+                <footer><span>@(template.IsSystem ? "Padrão do sistema" : "Personalizado")</span></footer>
+            </article>
+        }
+    </div>
+
+    <div class="of-template-compose">
+        <form class="of-template-editor" method="post" asp-page-handler="Save" data-template-form>
+            <div><p class="of-eyebrow">Novo template</p><h2>Escrever mensagem</h2><p class="of-editor-hint">O preview ao lado usa apenas dados ilustrativos e não os salva.</p></div>
+            <label><span>Nome</span><input name="name" maxlength="140" minlength="3" required autocomplete="off" data-template-name /></label>
+            <label><span>Canal</span><select name="channel" required data-template-channel><option value="WhatsApp">WhatsApp</option><option value="Email">E-mail</option><option value="General">Geral</option></select></label>
+            <label data-subject-field><span>Assunto <small>obrigatório para e-mail</small></span><input name="subject" maxlength="180" data-template-subject /></label>
+            <label><span>Corpo</span><textarea name="body" maxlength="4000" minlength="5" rows="9" required data-template-body placeholder="Olá, {ClienteNome}! Escreva sua mensagem..."></textarea><small><span data-body-count>0</span>/4000 caracteres</small></label>
+            <label class="of-check"><input type="checkbox" name="active" value="true" checked /> <span>Disponibilizar este template</span></label>
+            <div><span class="of-field-title">Inserir variável</span><div class="of-variable-list" aria-label="Variáveis disponíveis">@foreach (var variable in Model.Variables) { <button type="button" data-variable="@variable"><code>@($"{{{variable}}}")</code></button> }</div></div>
+            <button class="of-button-primary of-loading-button" data-loading-text="Salvando…">Salvar template</button>
+        </form>
+
+        <aside class="of-preview-panel" aria-live="polite">
+            <div class="of-preview-heading"><div><p class="of-eyebrow">Preview ao vivo</p><h2 data-preview-title>WhatsApp</h2></div><span class="of-preview-live">Ao vivo</span></div>
+            <div class="of-preview-device" data-preview-device><strong data-preview-subject hidden></strong><p data-preview-body>Comece a escrever para visualizar a mensagem.</p></div>
+            <p class="of-preview-warning" data-preview-warning hidden>Há uma variável desconhecida ou incompleta.</p>
+            <small>Exemplo visual: Cliente Ana · Orçamento ORC-1042. Nenhum dado fictício será persistido.</small>
+        </aside>
+    </div>
 </section>
-@section Styles{<link rel="stylesheet" href="~/css/commercial.css" asp-append-version="true"/>}
+@section Styles { <link rel="stylesheet" href="~/css/commercial.css" asp-append-version="true" /> }
+@section Scripts { <script src="~/js/message-templates.js" asp-append-version="true"></script> }
