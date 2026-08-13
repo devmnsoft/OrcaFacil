@@ -138,6 +138,7 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
             _ => status
         };
     }
+
     private static int StageOrder(string stage)
     {
         var stages = new[]
