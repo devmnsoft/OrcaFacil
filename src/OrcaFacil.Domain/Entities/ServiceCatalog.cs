@@ -21,6 +21,12 @@ public sealed class ServiceCatalogItem : Entity
     public bool IsFavorite { get; set; }
     public bool IsActive { get; set; } = true;
     public bool IsRecurring { get; set; }
+    public RecurrencePeriod DefaultPeriodicity { get; set; } = RecurrencePeriod.Monthly;
+    public decimal? SuggestedMonthlyPrice { get; set; }
+    public decimal? EstimatedMonthlyCost { get; set; }
+    public int? DefaultResponseSlaHours { get; set; }
+    public int? DefaultExecutionSlaHours { get; set; }
+    public string? DefaultChecklist { get; set; }
     public bool IsRecommended { get; set; }
     public int UseCount { get; set; }
     public DateTime? LastUsedAt { get; set; }

@@ -11,6 +11,10 @@ public sealed class ServiceEditorInput
     [MaxLength(120)] public string? DefaultDeliveryTerm { get; set; } [MaxLength(2000)] public string? DefaultNotes { get; set; }
     [MaxLength(500)] public string? Tags { get; set; }
     public bool IsFavorite { get; set; } public bool IsActive { get; set; } = true; public bool IsRecurring { get; set; } public bool IsRecommended { get; set; } public uint Version { get; set; }
+    public OrcaFacil.Domain.Entities.RecurrencePeriod DefaultPeriodicity { get; set; } = OrcaFacil.Domain.Entities.RecurrencePeriod.Monthly;
+    [Range(0,999999999)] public decimal? SuggestedMonthlyPrice { get; set; } [Range(0,999999999)] public decimal? EstimatedMonthlyCost { get; set; }
+    [Range(1,8760)] public int? DefaultResponseSlaHours { get; set; } [Range(1,8760)] public int? DefaultExecutionSlaHours { get; set; }
+    [MaxLength(4000)] public string? DefaultChecklist { get; set; }
 }
 public sealed class ServiceEditorViewModel
 {

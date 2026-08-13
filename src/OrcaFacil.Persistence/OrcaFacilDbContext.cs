@@ -74,6 +74,10 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<SupportTicketMessage> SupportTicketMessages => Set<SupportTicketMessage>();
     public DbSet<AccountSettings> AccountSettings => Set<AccountSettings>();
     public DbSet<DataImport> DataImports => Set<DataImport>();
+    public DbSet<RecurringContract> RecurringContracts => Set<RecurringContract>();
+    public DbSet<ContractItem> ContractItems => Set<ContractItem>();
+    public DbSet<ContractPayment> ContractPayments => Set<ContractPayment>();
+    public DbSet<ContractEvent> ContractEvents => Set<ContractEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

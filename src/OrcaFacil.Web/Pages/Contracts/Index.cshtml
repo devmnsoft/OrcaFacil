@@ -1,0 +1,11 @@
+@page
+@model OrcaFacil.Web.Pages.Contracts.IndexModel
+@{ ViewData["Title"] = "Contratos recorrentes"; }
+@section Styles { <link rel="stylesheet" href="~/css/contracts.css" asp-append-version="true" /> }
+<main class="of-contract-page">
+ <header class="of-contract-hero"><div><p class="of-eyebrow">Receita previsível</p><h1>Contratos recorrentes</h1><p>Vigências, serviços, cobranças e entregas em um só fluxo.</p></div><div class="of-contract-actions"><a class="of-button-secondary" asp-page="Calendar">Agenda</a><a class="of-button-primary" asp-page="Create">Criar contrato</a></div></header>
+ <section class="of-contract-metrics"><article><span>Ativos</span><strong>@Model.ActiveCount</strong></article><article><span>Receita mensal equivalente</span><strong>@Model.MonthlyRevenue.ToString("C")</strong></article><article><span>Total acompanhado</span><strong>@Model.Items.Count</strong></article></section>
+ <form method="get" class="of-contract-filters"><label>Status<select name="status"><option value="">Todos</option>@foreach(var s in Enum.GetValues<OrcaFacil.Domain.Entities.ContractStatus>()){<option value="@s">@s</option>}</select></label><button class="of-button-secondary" type="submit">Filtrar</button></form>
+ @if(Model.Items.Count == 0){<section class="of-contract-empty"><h2>Nenhum contrato recorrente cadastrado ainda.</h2><p>Crie um contrato real ou converta uma proposta aprovada.</p><a class="of-button-primary" asp-page="Create">Criar contrato</a></section>}
+ else {<div class="of-contract-grid">@foreach(var item in Model.Items){<article class="of-contract-card"><header><div><small>@item.Number</small><h2><a asp-page="Details" asp-route-id="@item.Id">@item.Title</a></h2><p>@item.Client</p></div><span class="of-contract-status" data-status="@item.Status">@item.Status</span></header><dl><div><dt>Recorrência</dt><dd>@item.Periodicity</dd></div><div><dt>Valor</dt><dd>@item.Amount.ToString("C")</dd></div><div><dt>Vigência</dt><dd>@item.StartDate.ToString("dd/MM/yyyy") — @(item.EndDate?.ToString("dd/MM/yyyy") ?? "indeterminada")</dd></div><div><dt>Próxima cobrança</dt><dd>@(item.NextBillingDate?.ToString("dd/MM/yyyy") ?? "a definir")</dd></div></dl><footer><a class="of-button-secondary" asp-page="Details" asp-route-id="@item.Id">Abrir contrato</a></footer></article>}</div>}
+</main>

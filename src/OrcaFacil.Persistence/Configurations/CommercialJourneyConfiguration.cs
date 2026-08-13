@@ -65,6 +65,7 @@ public sealed class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
         b.Property(x => x.TotalSnapshot).HasPrecision(18, 2); b.Property(x => x.PaymentMethod).HasMaxLength(80); b.Property(x => x.Version).IsRowVersion();
         b.HasIndex(x => new { x.AccountId, x.Number }).IsUnique();
         b.HasIndex(x => new { x.AccountId, x.SourceRevisionId }).HasFilter("source_revision_id IS NOT NULL").IsUnique();
+        b.HasIndex(x => new { x.AccountId, x.ContractId, x.ServiceCompetence }).HasFilter("contract_id IS NOT NULL").IsUnique();
         b.HasIndex(x => new { x.AccountId, x.Status, x.ScheduledStart }); b.HasIndex(x => new { x.AccountId, x.AssignedUserId, x.ScheduledStart });
     }
 }
