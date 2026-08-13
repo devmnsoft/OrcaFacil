@@ -25,7 +25,8 @@ public interface ICommercialJourneyService
     Task<OrcaFacil.Application.Documents.RevisionResult> CreateRevisionAsync(Guid documentId, string templateCode, CancellationToken ct = default);
     Task<OrcaFacil.Application.Documents.PublicQuoteResult> CreatePublicAccessAsync(Guid documentId, TimeSpan validity, CancellationToken ct = default);
     Task<OrcaFacil.Application.Documents.PublicDecisionResult> DecideAsync(string token, PublicDocumentDecisionType decision, string customerName,
-        string? reason, string? comment, string idempotencyKey, string ip, string userAgent, CancellationToken ct = default);
+        string? customerContact, string? reason, string? comment, DateTime? desiredDate, bool acceptedTerms,
+        string idempotencyKey, string ip, string userAgent, CancellationToken ct = default);
     Task<WorkOrderResult> ConvertToWorkOrderAsync(Guid documentId, CancellationToken ct = default);
     Task<WorkOrderResult> ScheduleAsync(Guid workOrderId, DateTime start, DateTime end, Guid? assigneeId, CancellationToken ct = default);
     Task<WorkOrderResult> StartAsync(Guid workOrderId, CancellationToken ct = default);

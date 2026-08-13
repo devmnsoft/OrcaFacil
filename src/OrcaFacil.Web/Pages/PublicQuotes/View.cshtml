@@ -5,29 +5,41 @@
 <section class="public-quote-shell" aria-labelledby="quote-title">
     @if (q is null)
     {
-        <div class="public-quote-message" role="alert">
+        <div class="public-quote-message public-quote-message--unavailable" role="alert">
             <p class="of-eyebrow">Acesso à proposta</p>
-            <h1 id="quote-title">Não foi possível abrir este orçamento</h1>
+            <h1 id="quote-title">Esta proposta não está disponível</h1>
             <p>@Model.LoadError</p>
+            <p>Peça à empresa emissora um novo link caso precise consultar a proposta.</p>
+            <a class="public-action public-action--neutral" asp-page="/Index">Voltar ao OrçaFácil</a>
         </div>
     }
     else
     {
         <header class="public-quote-hero">
-            <div><p class="of-eyebrow">Proposta comercial</p><h1 id="quote-title">Orçamento @q.Snapshot.Quote.Number</h1>
+            <div class="public-quote-identity">
+            @if (!string.IsNullOrWhiteSpace(q.Snapshot.Issuer.Logo)) { <img class="public-issuer-logo" src="@q.Snapshot.Issuer.Logo" alt="Logotipo de @q.Snapshot.Issuer.Name" /> }
+            <div><p class="of-eyebrow">Proposta comercial · versão @q.Version</p><h1 id="quote-title">Proposta @q.Snapshot.Quote.Number</h1>
             <p>Preparado por <strong>@q.Snapshot.Issuer.Name</strong> para <strong>@q.Snapshot.Customer.Name</strong>.</p></div>
+            </div>
             <div class="public-quote-total"><span>Total</span><strong>@q.Snapshot.Quote.Total.ToString("C")</strong></div>
         </header>
         <div class="public-quote-meta" aria-label="Dados do orçamento">
-            <span>Versão @q.Version</span><span>Emitido em @q.Snapshot.Quote.IssueDate.ToString("dd/MM/yyyy")</span>
+            <span>Status: @(q.DecisionRegistered ? "Respondida" : "Aguardando resposta")</span><span>Emitida em @q.Snapshot.Quote.IssueDate.ToString("dd/MM/yyyy")</span>
             <span>Válido até @(q.Snapshot.Quote.ValidUntil?.ToString("dd/MM/yyyy") ?? q.ExpiresAt.ToString("dd/MM/yyyy"))</span>
         </div>
         <section class="public-quote-card" aria-labelledby="items-title">
             <h2 id="items-title">Serviços e valores</h2>
-            <div class="public-quote-table-wrap"><table class="public-quote-table"><thead><tr><th>Serviço</th><th>Qtd.</th><th>Valor unitário</th><th>Total</th></tr></thead>
-            <tbody>@foreach (var item in q.Snapshot.Items) { <tr><td data-label="Serviço">@item.Description</td><td data-label="Quantidade">@item.Quantity</td><td data-label="Valor unitário">@item.UnitPrice.ToString("C")</td><td data-label="Total">@item.Total.ToString("C")</td></tr> }</tbody></table></div>
+            <div class="public-quote-table-wrap"><table class="public-quote-table"><thead><tr><th>Serviço</th><th>Qtd.</th><th>Valor unitário</th><th>Desconto</th><th>Total</th></tr></thead>
+            <tbody>@foreach (var item in q.Snapshot.Items) { <tr><td data-label="Serviço">@item.Description</td><td data-label="Quantidade">@item.Quantity</td><td data-label="Valor unitário">@item.UnitPrice.ToString("C")</td><td data-label="Desconto">@item.Discount.ToString("C")</td><td data-label="Total">@item.Total.ToString("C")</td></tr> }</tbody></table></div>
+            <dl class="public-quote-summary"><div><dt>Subtotal</dt><dd>@q.Snapshot.Quote.Subtotal.ToString("C")</dd></div><div><dt>Descontos</dt><dd>@q.Snapshot.Quote.Discount.ToString("C")</dd></div><div class="is-total"><dt>Total da proposta</dt><dd>@q.Snapshot.Quote.Total.ToString("C")</dd></div></dl>
             @if (!string.IsNullOrWhiteSpace(q.Snapshot.Quote.Conditions)) { <h3>Condições</h3><p>@q.Snapshot.Quote.Conditions</p> }
-            @if (!string.IsNullOrWhiteSpace(q.Snapshot.Quote.Notes)) { <h3>Observações</h3><p>@q.Snapshot.Quote.Notes</p> }
+            @if (!string.IsNullOrWhiteSpace(q.Snapshot.Quote.DeliveryTime)) { <h3>Prazo</h3><p>@q.Snapshot.Quote.DeliveryTime</p> }
+            @if (!string.IsNullOrWhiteSpace(q.Snapshot.Quote.Payment)) { <h3>Pagamento</h3><p>@q.Snapshot.Quote.Payment</p> }
+            @if (!string.IsNullOrWhiteSpace(q.Snapshot.Quote.Notes)) { <h3>Observações</h3><p class="public-preline">@q.Snapshot.Quote.Notes</p> }
+        </section>
+        <section class="public-quote-toolbar" aria-label="Ações da proposta">
+            <button type="button" class="public-action public-action--neutral" data-print-quote>Imprimir proposta</button>
+            @if (!string.IsNullOrWhiteSpace(q.Snapshot.Issuer.Phone)) { var digits = new string(q.Snapshot.Issuer.Phone.Where(char.IsDigit).ToArray()); var whatsapp = $"https://wa.me/{digits}?text={Uri.EscapeDataString($"Olá! Estou consultando a proposta {q.Snapshot.Quote.Number}.")}"; <a class="public-action public-action--whatsapp" href="@whatsapp" target="_blank" rel="noopener noreferrer">Falar pelo WhatsApp</a> }
         </section>
         @if (q.DecisionRegistered)
         {
@@ -36,15 +48,22 @@
         else
         {
             <section class="public-quote-card" aria-labelledby="decision-title">
-                <h2 id="decision-title">Qual é sua decisão?</h2><p>Informe o responsável e escolha uma das ações abaixo.</p>
+                <p class="of-eyebrow">Aceite comercial</p><h2 id="decision-title">Como deseja prosseguir?</h2><p>Confirme seus dados e escolha somente uma ação. A empresa receberá sua resposta imediatamente.</p>
                 <div asp-validation-summary="ModelOnly" class="field-validation-error" tabindex="-1"></div>
                 <form method="post" class="public-decision-form" data-submit-once>
                     <input asp-for="Input.IdempotencyKey" type="hidden" />
                     <label asp-for="Input.Name">Nome do responsável</label><input asp-for="Input.Name" autocomplete="name" />
                     <span asp-validation-for="Input.Name" class="field-validation-error"></span>
-                    <label asp-for="Input.Message">Mensagem ou motivo</label><textarea asp-for="Input.Message" rows="4" aria-describedby="message-help"></textarea>
-                    <small id="message-help">Obrigatória para solicitar alteração; opcional para aprovação ou recusa.</small>
+                    <label asp-for="Input.Contact">E-mail ou telefone</label><input asp-for="Input.Contact" autocomplete="email" inputmode="email" />
+                    <span asp-validation-for="Input.Contact" class="field-validation-error"></span>
+                    <label asp-for="Input.Reason">Motivo da recusa</label><select asp-for="Input.Reason"><option value="">Selecione somente se for recusar</option><option value="price">Preço</option><option value="deadline">Prazo</option><option value="scope">Escopo</option><option value="competitor">Escolhi outro fornecedor</option><option value="duplicate">Proposta duplicada</option><option value="other">Outro</option></select>
+                    <span asp-validation-for="Input.Reason" class="field-validation-error"></span>
+                    <label asp-for="Input.DesiredDate">Prazo desejado para alteração</label><input asp-for="Input.DesiredDate" type="date" />
+                    <label asp-for="Input.Message">Comentário ou alteração desejada</label><textarea asp-for="Input.Message" rows="4" aria-describedby="message-help"></textarea>
+                    <small id="message-help">Descreva obrigatoriamente o que deseja mudar ao solicitar uma alteração.</small>
                     <span asp-validation-for="Input.Message" class="field-validation-error"></span>
+                    <label class="public-terms"><input asp-for="Input.AcceptedTerms" /> <span>Li e estou de acordo com as condições, valores e validade desta proposta.</span></label>
+                    <span asp-validation-for="Input.AcceptedTerms" class="field-validation-error"></span>
                     <div class="public-decision-actions">
                         <button asp-page-handler="Approve" class="public-action public-action--approve">Aprovar orçamento</button>
                         <button asp-page-handler="Change" class="public-action public-action--change">Solicitar alteração</button>

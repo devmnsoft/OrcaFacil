@@ -39,7 +39,7 @@ public sealed class PublicDocumentDecisionConfiguration : IEntityTypeConfigurati
     public void Configure(EntityTypeBuilder<PublicDocumentDecision> b)
     {
         b.ToTable("public_document_decisions"); b.ConfigureBase(); b.Property(x => x.Decision).HasConversion<string>().HasMaxLength(24);
-        b.Property(x => x.CustomerName).HasMaxLength(180); b.Property(x => x.ReasonCode).HasMaxLength(40); b.Property(x => x.Comment).HasMaxLength(1000);
+        b.Property(x => x.CustomerName).HasMaxLength(180); b.Property(x => x.CustomerContact).HasMaxLength(254); b.Property(x => x.ReasonCode).HasMaxLength(40); b.Property(x => x.Comment).HasMaxLength(1000); b.Property(x => x.DesiredDate).HasColumnType("date");
         b.Property(x => x.IpHash).HasMaxLength(128); b.Property(x => x.UserAgentHash).HasMaxLength(128); b.Property(x => x.IdempotencyKey).HasMaxLength(128);
         b.HasIndex(x => new { x.AccountId, x.DocumentRevisionId }).IsUnique();
         b.HasIndex(x => new { x.AccountId, x.IdempotencyKey }).IsUnique();

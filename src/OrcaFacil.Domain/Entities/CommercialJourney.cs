@@ -43,8 +43,11 @@ public sealed class PublicDocumentDecision : Entity
     public Guid DocumentRevisionId { get; set; }
     public PublicDocumentDecisionType Decision { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerContact { get; set; }
     public string? ReasonCode { get; set; }
     public string? Comment { get; set; }
+    public DateTime? DesiredDate { get; set; }
+    public bool AcceptedTerms { get; set; }
     public string IpHash { get; set; } = string.Empty;
     public string UserAgentHash { get; set; } = string.Empty;
     public string IdempotencyKey { get; set; } = string.Empty;
