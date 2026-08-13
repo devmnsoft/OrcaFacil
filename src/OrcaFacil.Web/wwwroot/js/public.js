@@ -29,14 +29,13 @@ const syncHeader = () => publicHeader?.classList.toggle('is-scrolled', window.sc
 window.addEventListener('scroll', syncHeader, { passive: true }); syncHeader();
 
 export function shouldHandleSmoothScroll(link) {
-  if (!(link instanceof HTMLAnchorElement)) return false;
+  if (!link) return false;
   const rawHref = link.getAttribute('href');
-  if (!rawHref || /^(?:mailto|tel):/i.test(rawHref)) return false;
+  if (!rawHref || rawHref === '#') return false;
+  if (/^(?:mailto:|tel:|https?:\/\/)/i.test(rawHref)) return false;
   try {
-    const destination = new URL(rawHref, window.location.href);
-    if (!['http:', 'https:'].includes(destination.protocol) || destination.origin !== window.location.origin || !destination.hash) return false;
-    const canonicalPath = path => path.replace(/\/Index\/?$/i, '/').replace(/\/+$/, '') || '/';
-    if (canonicalPath(destination.pathname) !== canonicalPath(window.location.pathname)) return false;
+    const destination = new URL(link.href, window.location.href);
+    if (destination.pathname !== window.location.pathname || !destination.hash) return false;
     return document.querySelector(destination.hash) !== null;
   } catch { return false; }
 }
