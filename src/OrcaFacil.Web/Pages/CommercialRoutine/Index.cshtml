@@ -1,0 +1,20 @@
+@page
+@model OrcaFacil.Web.Pages.CommercialRoutine.IndexModel
+@{ ViewData["Title"] = "Rotina comercial"; ViewData["Section"] = "Comercial"; }
+<header class="of-page-header of-commercial-hero">
+  <div><p class="of-eyebrow">Seu dia comercial</p><h1>Prioridades que pedem ação</h1><p>Somente ocorrências reais da sua conta, ordenadas por urgência.</p></div>
+  <a class="of-button-secondary" asp-page="PendingQuotes">Propostas sem resposta</a>
+</header>
+<section class="of-routine-summary" aria-label="Resumo da rotina">
+  <div><strong>@Model.Items.Count</strong><span>ações abertas</span></div><div><strong>@Model.Items.Count(x => x.Priority == "critical")</strong><span>prioridade alta</span></div><div><strong>@Model.Items.Count(x => x.Kind.Contains("followup"))</strong><span>follow-ups</span></div>
+</section>
+@if (Model.Items.Count == 0) { <section class="of-empty-state"><h2>Rotina em dia</h2><p>Não há propostas ou retornos exigindo atenção agora.</p><a class="of-button-primary" asp-page="/Documents/New">Criar orçamento</a></section> }
+else { <section class="of-routine-list" aria-label="Ações comerciais">
+@foreach (var item in Model.Items) { <article class="of-routine-card">
+ <div class="of-routine-marker is-@item.Priority"></div><div class="of-routine-main"><div class="of-section-heading"><div><p class="of-eyebrow">@item.Origin</p><h2>@item.Title</h2></div><span class="of-badge is-@item.Priority">@item.Priority</span></div>
+ <p><strong>@item.Client</strong> · @item.Status</p><small>@item.Date.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · Próxima ação: @item.NextAction</small></div>
+ <div class="of-routine-actions"><a class="of-button-secondary" asp-page="@item.Page" asp-route-id="@item.Id">Abrir origem</a>
+ <details><summary>Agendar follow-up</summary><form method="post" asp-page-handler="Schedule"><input type="hidden" name="documentId" value="@item.Id"/><label><span>Data e hora</span><input type="datetime-local" name="nextFollowUpAt" required/></label><label><span>Observação</span><input name="note" maxlength="1000"/></label><button class="of-button-primary">Agendar</button></form></details>
+ @if(item.Kind.Contains("followup")){<form method="post" asp-page-handler="Complete"><input type="hidden" name="documentId" value="@item.Id"/><button class="of-button-secondary">Concluir</button></form>}</div>
+</article> }</section> }
+@section Styles { <link rel="stylesheet" href="~/css/commercial.css" asp-append-version="true" /> }

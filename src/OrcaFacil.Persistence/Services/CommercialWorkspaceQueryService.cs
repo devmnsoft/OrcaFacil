@@ -127,6 +127,7 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         "FOLLOW_UP_SCHEDULED" => new(e.Action, "Retorno agendado", e.Summary, e.CreatedAt, "Equipe", "info", "calendar"),
         "FOLLOW_UP_SNOOZED" => new(e.Action, "Retorno adiado", e.Summary, e.CreatedAt, "Equipe", "warning", "clock"),
         "FOLLOW_UP_COMPLETED" => new(e.Action, "Acompanhamento concluído", e.Summary, e.CreatedAt, "Equipe", "success", "success"),
+        "MESSAGE_PREPARED" => new(e.Action, "Mensagem preparada", e.Summary, e.CreatedAt, "Equipe", "info", "share"),
         _ => new(e.Action, e.Summary ?? e.Action, null, e.CreatedAt, e.ActorUserId is null ? "Sistema" : "Equipe", "neutral", "audit") };
     private static string Context(string code, DateTime last, DateTime? valid) {
         if (valid is { } date && date > DateTime.UtcNow && date <= DateTime.UtcNow.AddDays(1)) return "Validade vence amanhã";

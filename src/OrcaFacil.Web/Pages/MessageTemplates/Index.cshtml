@@ -1,0 +1,15 @@
+@page
+@model OrcaFacil.Web.Pages.MessageTemplates.IndexModel
+@{ViewData["Title"]="Templates de mensagem";ViewData["Section"]="Comercial";}
+<header class="of-page-header of-commercial-hero"><div><p class="of-eyebrow">Comunicação comercial</p><h1>Mensagens consistentes, com contexto real</h1><p>Personalize textos por conta. Variáveis são validadas no servidor antes de salvar.</p></div></header>
+<section class="of-template-layout">
+ <div class="of-template-list"><div class="of-section-heading"><div><p class="of-eyebrow">Biblioteca</p><h2>Templates disponíveis</h2></div><span class="of-badge">@Model.Templates.Count</span></div>
+ @if(Model.Templates.Count==0){<div class="of-empty-state"><h3>Nenhum template disponível</h3><p>Crie o primeiro texto da sua conta no formulário ao lado.</p></div>}
+ @foreach(var template in Model.Templates){<article class="of-template-card"><header><div><strong>@template.Name</strong><small>@template.Channel</small></div><span class="of-badge">@(template.IsSystem?"Sistema":"Personalizado")</span></header>@if(template.Subject is not null){<p><b>Assunto:</b> @template.Subject</p>}<p>@template.Body</p></article>}
+ </div>
+ <form class="of-template-editor" method="post" asp-page-handler="Save"><p class="of-eyebrow">Novo template</p><h2>Escrever mensagem</h2>
+  <label><span>Nome</span><input name="name" maxlength="140" required/></label><label><span>Canal</span><select name="channel" required><option value="WhatsApp">WhatsApp</option><option value="Email">E-mail</option><option value="General">Geral</option></select></label><label><span>Assunto (obrigatório para e-mail)</span><input name="subject" maxlength="180"/></label><label><span>Corpo</span><textarea name="body" maxlength="4000" rows="10" required></textarea></label><label class="of-check"><input type="checkbox" name="active" value="true" checked/> Ativo</label>
+  <div class="of-variable-list" aria-label="Variáveis disponíveis">@foreach(var variable in Model.Variables){<code>@($"{{{variable}}}")</code>}</div><button class="of-button-primary">Salvar template</button>
+ </form>
+</section>
+@section Styles{<link rel="stylesheet" href="~/css/commercial.css" asp-append-version="true"/>}

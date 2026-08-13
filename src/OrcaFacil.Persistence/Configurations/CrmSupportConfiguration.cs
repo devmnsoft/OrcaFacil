@@ -19,6 +19,22 @@ public sealed class CommercialInteractionConfiguration : IEntityTypeConfiguratio
     }
 }
 
+public sealed class CommercialMessageTemplateConfiguration : IEntityTypeConfiguration<CommercialMessageTemplate>
+{
+    public void Configure(EntityTypeBuilder<CommercialMessageTemplate> b)
+    {
+        b.ToTable("commercial_message_templates", "orcafacil");
+        b.ConfigureBase();
+        b.Property(x => x.Code).HasMaxLength(80).IsRequired();
+        b.Property(x => x.Name).HasMaxLength(140).IsRequired();
+        b.Property(x => x.Channel).HasMaxLength(20).IsRequired();
+        b.Property(x => x.Subject).HasMaxLength(180);
+        b.Property(x => x.Body).HasMaxLength(4000).IsRequired();
+        b.HasIndex(x => new { x.AccountId, x.Code }).IsUnique();
+        b.HasQueryFilter(x => !x.IsDeleted);
+    }
+}
+
 public sealed class SupportTicketConfiguration : IEntityTypeConfiguration<SupportTicket>
 {
     public void Configure(EntityTypeBuilder<SupportTicket> b)

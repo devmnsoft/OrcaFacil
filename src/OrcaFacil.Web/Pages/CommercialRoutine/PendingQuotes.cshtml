@@ -1,0 +1,7 @@
+@page
+@model OrcaFacil.Web.Pages.CommercialRoutine.PendingQuotesModel
+@{ ViewData["Title"]="Propostas sem resposta"; ViewData["Section"]="Comercial"; }
+<header class="of-page-header"><div><p class="of-eyebrow">Pipeline</p><h1>Propostas sem resposta</h1><p>Envios e visualizações reais que ainda não receberam uma decisão do cliente.</p></div><a class="of-button-secondary" asp-page="Index">Voltar à rotina</a></header>
+@if(Model.Items.Count==0){<section class="of-empty-state"><h2>Nenhuma proposta aguardando</h2><p>Quando uma proposta for compartilhada e ainda não tiver resposta, ela aparecerá aqui.</p></section>}
+else{<section class="of-routine-list">@foreach(var item in Model.Items){<article class="of-routine-card"><div class="of-routine-main"><p class="of-eyebrow">@item.Origin</p><h2>@item.Client</h2><p>@item.Title · @item.Date.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p><strong>@item.NextAction</strong></div><div class="of-routine-actions"><a class="of-button-primary" asp-page="/Documents/Details" asp-route-id="@item.Id">Abrir proposta</a></div></article>}</section>}
+@section Styles { <link rel="stylesheet" href="~/css/commercial.css" asp-append-version="true" /> }

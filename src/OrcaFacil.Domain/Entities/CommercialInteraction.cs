@@ -16,3 +16,18 @@ public sealed class CommercialInteraction : Entity
     public Guid CreatedByUserId { get; set; }
     public DateTime? CompletedAt { get; set; }
 }
+
+/// <summary>A reusable, account-scoped commercial message. System defaults are represented
+/// by rows without an account and can never be edited by customers.</summary>
+public sealed class CommercialMessageTemplate : Entity
+{
+    public Guid? AccountId { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Channel { get; set; } = "General";
+    public string? Subject { get; set; }
+    public string Body { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+    public bool IsSystem { get; set; }
+    public Guid? CreatedByUserId { get; set; }
+}
