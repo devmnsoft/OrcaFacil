@@ -2,11 +2,14 @@ using System.Globalization;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Persistence;
 using OrcaFacil.Web.Services;
 
 namespace OrcaFacil.Web.Pages.Reports;
 
-public abstract class ReportPageModel(IIntelligenceReportService reports) : PageModel
+public abstract class ReportPageModel(IIntelligenceReportService reports, ICurrentAccountService account, OrcaFacilDbContext db) : PageModel
 {
     [BindProperty(SupportsGet = true)] public DateTime? From { get; set; }
     [BindProperty(SupportsGet = true)] public DateTime? To { get; set; }
@@ -14,12 +17,20 @@ public abstract class ReportPageModel(IIntelligenceReportService reports) : Page
     [BindProperty(SupportsGet = true)] public string? Status { get; set; }
     [BindProperty(SupportsGet = true)] public string? PaymentMethod { get; set; }
     public IntelligenceReport Report { get; protected set; } = new("Relatório", [], []);
+    public IReadOnlyList<ReportClientOption> Clients { get; private set; } = [];
     protected ReportFilter Filter => new(From, To, ClientId, Status, PaymentMethod);
     protected abstract Task<IntelligenceReport> LoadAsync(ReportFilter filter, CancellationToken ct);
     protected abstract string FilePrefix { get; }
 
     public async Task OnGetAsync(CancellationToken ct)
     {
+        var accountId = account.AccountId ?? throw new UnauthorizedAccessException("Selecione uma conta para consultar relatórios.");
+        Clients = await db.Clients.AsNoTracking()
+            .Where(x => x.AccountId == accountId && !x.IsDeleted && x.IsActive)
+            .OrderBy(x => x.Name)
+            .Select(x => new ReportClientOption(x.Id, x.Name))
+            .ToListAsync(ct);
+
         if (!ValidatePeriod()) return;
         Report = await LoadAsync(Filter, ct);
     }
@@ -65,3 +76,5 @@ public abstract class ReportPageModel(IIntelligenceReportService reports) : Page
         return true;
     }
 }
+
+public sealed record ReportClientOption(Guid Id, string Name);

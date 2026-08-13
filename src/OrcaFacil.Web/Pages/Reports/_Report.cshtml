@@ -9,6 +9,10 @@
    <div asp-validation-summary="ModelOnly" class="of-form-error" role="alert"></div>
    <label>De<input type="date" asp-for="From" /></label>
    <label>Até<input type="date" asp-for="To" /></label>
+   <label>Cliente<select asp-for="ClientId">
+     <option value="">Todos os clientes</option>
+     @foreach (var client in Model.Clients) { <option value="@client.Id">@client.Name</option> }
+   </select></label>
    <label>Status<select asp-for="Status">
      <option value="">Todos</option>
      <optgroup label="Propostas"><option value="Draft">Rascunho</option><option value="Ready">Pronto</option><option value="Sent">Enviado</option><option value="Viewed">Visualizado</option><option value="InNegotiation">Em negociação</option><option value="Approved">Aprovado</option><option value="Rejected">Recusado</option><option value="Expired">Expirado</option><option value="ConvertedToWorkOrder">Convertido em OS</option></optgroup>
