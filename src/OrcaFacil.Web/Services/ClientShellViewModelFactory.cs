@@ -14,6 +14,7 @@ public sealed class ClientShellViewModelFactory(
     ICurrentAccountService account,
     INotificationService notifications,
     IPlanExperienceService planExperience,
+    INavigationMapService navigation,
     OrcaFacilDbContext db) : IClientShellViewModelFactory
 {
     public async Task<ClientShellViewModel> CreateAsync(CancellationToken cancellationToken = default)
@@ -33,9 +34,8 @@ public sealed class ClientShellViewModelFactory(
             where role.Code == account.AccountRoleCode && !role.IsDeleted && !rolePermission.IsDeleted && !permission.IsDeleted
             orderby permission.Code
             select permission.Code).ToArrayAsync(cancellationToken);
-        var allowedMenus = ClientMenu.Items.Select(group => new ShellMenuGroup(group.Label,
-            group.Items.Where(item => item.RequiredPermission is null || permissions.Contains(item.RequiredPermission)).ToArray()))
-            .Where(group => group.Items.Count > 0).ToArray();
+        var allowedMenus = navigation.GetGroups(permissions).Select(group => new ShellMenuGroup(group.Label,
+            group.Items.Select(item => new ShellMenuItem(item.Label, item.Page, item.Icon, RequiredPermission: item.RequiredPermission)).ToArray())).ToArray();
         var unread = await notifications.GetUnreadCountAsync(user.UserId, cancellationToken);
         return new ClientShellViewModel(
             user.UserId, FirstName(user.Name), MaskEmail(user.Email), account.AccountId, accountName,
@@ -69,17 +69,3 @@ public sealed record ShellMenuGroup(string Label, IReadOnlyList<ShellMenuItem> I
 public sealed record ShellMenuItem(string Label, string Page, string Icon, bool Premium = false, string? RequiredPlan = null, string? RequiredPermission = null);
 public sealed record ShellAction(string Label, string Page, string Icon);
 public sealed record ShellUsageItem(string Label, int Used, int? Limit);
-
-internal static class ClientMenu
-{
-    internal static readonly IReadOnlyList<ShellMenuGroup> Items =
-    [
-        new("Início", [new("Visão geral", "/Dashboard/Index", "dashboard")]),
-        new("Comercial", [new("Rotina comercial", "/CommercialRoutine/Index", "calendar"), new("Orçamentos", "/Documents/Index", "quote", RequiredPermission: "documents.read"), new("Contratos", "/Contracts/Index", "document"), new("Templates de mensagem", "/MessageTemplates/Index", "share")]),
-        new("Operação", [new("Ordens de serviço", "/WorkOrders/Index", "work-order"), new("Agenda", "/Schedule/Index", "calendar")]),
-        new("Financeiro", [new("Pagamentos", "/Payments/Index", "payment"), new("Recibos", "/Receipts/Index", "receipt", RequiredPermission: "receipts.read"), new("Relatório recorrente", "/Reports/Recurring", "dashboard")]),
-        new("Cadastros", [new("Clientes", "/Clients/Index", "client", RequiredPermission: "clients.read"), new("Serviços", "/Services/Index", "service", RequiredPermission: "services.read"), new("Importação", "/Import/Index", "upload"), new("Modelos", "/Templates/Index", "quote-ready", true, "Profissional", "templates.read")]),
-        new("Conta", [new("Dados do emitente", "/Profile/Index", "account"), new("Meu plano", "/Subscription/Index", "plan"), new("Notificações", "/Notifications/Index", "notification")]),
-        new("Suporte", [new("Central de ajuda", "/Support/Index", "help"), new("Conhecer recursos", "/Discover", "premium")])
-    ];
-}
