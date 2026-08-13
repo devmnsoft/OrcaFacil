@@ -7,7 +7,7 @@ namespace OrcaFacil.Web.Pages.MessageTemplates;
 public sealed class IndexModel(ICommercialAutomationService automation) : PageModel
 {
  public IReadOnlyList<MessageTemplateView> Templates { get; private set; }=[];
- public static IReadOnlyList<string> Variables => CommercialAutomationService.Variables;
+ public IReadOnlyList<string> Variables => CommercialAutomationService.Variables;
  public async Task OnGetAsync(CancellationToken ct)=>Templates=await automation.GetTemplatesAsync(ct);
  public async Task<IActionResult> OnPostSaveAsync(Guid? id,string name,string channel,string? subject,string body,bool active,CancellationToken ct)
  { var result=await automation.SaveTemplateAsync(id,name,channel,subject,body,active,ct); TempData[result.Ok?"Success":"Error"]=result.Message; return RedirectToPage(); }

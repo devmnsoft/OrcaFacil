@@ -24,5 +24,5 @@ public sealed class IndexModel(IClientWorkspaceService workspace) : PageModel
     public async Task OnGetAsync(CancellationToken ct) => Result = await workspace.ListAsync(new(Search, PersonType, City, Favorite: Favorite, Active: Active, Sort: Sort, Page: PageNumber, PageSize: PageSize), ct);
     public async Task<IActionResult> OnPostDeleteAsync(Guid id, CancellationToken ct) { var result = await workspace.DeleteAsync(id, ct); TempData[result.Code == ClientResultCode.Success ? "Success" : "Error"] = result.Code == ClientResultCode.Success ? "Cliente removido. Orçamentos e histórico foram preservados." : "Cliente não encontrado nesta conta."; return RedirectToPage(); }
     public async Task<IActionResult> OnPostFavoriteAsync(Guid id, CancellationToken ct) { await workspace.ToggleFavoriteAsync(id, ct); return RedirectToPage(); }
-    public static string Mask(BrazilianDocumentType? type, string? number) => BrazilianDocument.Mask(type, number);
+    public string Mask(BrazilianDocumentType? type, string? number) => BrazilianDocument.Mask(type, number);
 }
