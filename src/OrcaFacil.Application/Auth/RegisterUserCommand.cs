@@ -22,4 +22,5 @@ public sealed record RegisterUserCommand(
     string Password,
     bool AcceptTerms,
     bool AcceptPrivacy,
-    string? CorrelationId = null);
+    string? CorrelationId = null,
+    string SelectedPlanCode = "FREE");
