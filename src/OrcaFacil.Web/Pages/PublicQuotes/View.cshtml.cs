@@ -34,8 +34,13 @@ public sealed class ViewModel(IPublicDocumentAccessService access, ICommercialJo
     {
         if (decision == PublicDocumentDecisionType.ChangeRequested && string.IsNullOrWhiteSpace(Input.Message))
             ModelState.AddModelError(nameof(Input.Message), "Conte o que precisa ser alterado.");
+        if (decision == PublicDocumentDecisionType.Rejected && string.IsNullOrWhiteSpace(Input.Reason))
+            ModelState.AddModelError(nameof(Input.Reason), "Selecione o principal motivo da recusa.");
+        if (decision == PublicDocumentDecisionType.Approved && !Input.AcceptedTerms)
+            ModelState.AddModelError(nameof(Input.AcceptedTerms), "Confirme que leu e aceita as condições da proposta.");
         if (!ModelState.IsValid) { await OnGetAsync(token, ct); return Page(); }
-        var result = await journey.DecideAsync(token, decision, Input.Name, null, Input.Message,
+        var result = await journey.DecideAsync(token, decision, Input.Name, Input.Contact, Input.Reason, Input.Message,
+            Input.DesiredDate, Input.AcceptedTerms,
             string.IsNullOrWhiteSpace(Input.IdempotencyKey) ? Guid.NewGuid().ToString("N") : Input.IdempotencyKey,
             HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown", Request.Headers.UserAgent.ToString(), ct);
         TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
@@ -45,7 +50,11 @@ public sealed class ViewModel(IPublicDocumentAccessService access, ICommercialJo
     public sealed class DecisionInput
     {
         [Required(ErrorMessage = "Informe o nome do responsável."), StringLength(180)] public string Name { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Informe um e-mail ou telefone para retorno."), StringLength(254)] public string Contact { get; set; } = string.Empty;
+        [StringLength(40)] public string? Reason { get; set; }
         [StringLength(1000)] public string? Message { get; set; }
+        [DataType(DataType.Date)] public DateTime? DesiredDate { get; set; }
+        public bool AcceptedTerms { get; set; }
         public string IdempotencyKey { get; set; } = Guid.NewGuid().ToString("N");
     }
 }

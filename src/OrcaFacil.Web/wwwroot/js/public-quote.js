@@ -1,4 +1,5 @@
 const form = document.querySelector('[data-submit-once]');
+document.querySelector('[data-print-quote]')?.addEventListener('click', () => window.print());
 
 if (form) {
   const firstError = form.closest('section')?.querySelector('.field-validation-error:not(:empty)');

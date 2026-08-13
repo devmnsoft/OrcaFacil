@@ -78,8 +78,9 @@ public sealed class CommercialJourneyService(
             document.Id, revision.RevisionId, access.Id, DocumentStatus.Sent, generated.Token);
     }
 
-    public async Task<PublicDecisionResult> DecideAsync(string token, PublicDocumentDecisionType decision, string customerName, string? reason,
-        string? comment, string idempotencyKey, string ip, string userAgent, CancellationToken ct = default)
+    public async Task<PublicDecisionResult> DecideAsync(string token, PublicDocumentDecisionType decision, string customerName,
+        string? customerContact, string? reason, string? comment, DateTime? desiredDate, bool acceptedTerms,
+        string idempotencyKey, string ip, string userAgent, CancellationToken ct = default)
     {
         var correlation = CorrelationId;
         var hash = tokens.Hash(token);
@@ -92,6 +93,14 @@ public sealed class CommercialJourneyService(
             return PublicDecision(false, QuoteLifecycleCode.PublicLinkRevoked, "Este link foi revogado.", correlation, access);
         if (access.ExpiresAt <= now)
             return PublicDecision(false, QuoteLifecycleCode.PublicLinkExpired, "Este link expirou.", correlation, access);
+        if (string.IsNullOrWhiteSpace(customerName) || string.IsNullOrWhiteSpace(customerContact))
+            return PublicDecision(false, QuoteLifecycleCode.InvalidStatus, "Informe o responsável e um contato para retorno.", correlation, access);
+        if (decision == PublicDocumentDecisionType.Approved && !acceptedTerms)
+            return PublicDecision(false, QuoteLifecycleCode.InvalidStatus, "Confirme a ciência das condições para aprovar.", correlation, access);
+        if (decision == PublicDocumentDecisionType.Rejected && string.IsNullOrWhiteSpace(reason))
+            return PublicDecision(false, QuoteLifecycleCode.InvalidStatus, "Informe o motivo da recusa.", correlation, access);
+        if (decision == PublicDocumentDecisionType.ChangeRequested && string.IsNullOrWhiteSpace(comment))
+            return PublicDecision(false, QuoteLifecycleCode.InvalidStatus, "Descreva o que deseja alterar.", correlation, access);
 
         var existing = await db.PublicDocumentDecisions.SingleOrDefaultAsync(
             x => x.AccountId == access.AccountId && x.IdempotencyKey == idempotencyKey, ct);
@@ -105,7 +114,8 @@ public sealed class CommercialJourneyService(
 
         var entity = new PublicDocumentDecision {
             AccountId = access.AccountId, DocumentId = access.DocumentId, DocumentRevisionId = access.DocumentRevisionId,
-            Decision = decision, CustomerName = Clean(customerName, 180), ReasonCode = Clean(reason, 40), Comment = Clean(comment, 1000),
+            Decision = decision, CustomerName = Clean(customerName, 180), CustomerContact = Clean(customerContact, 254),
+            ReasonCode = Clean(reason, 40), Comment = Clean(comment, 1000), DesiredDate = desiredDate, AcceptedTerms = acceptedTerms,
             IpHash = fingerprints.Create(ip), UserAgentHash = fingerprints.Create(userAgent), IdempotencyKey = idempotencyKey
         };
         db.PublicDocumentDecisions.Add(entity);
@@ -116,6 +126,13 @@ public sealed class CommercialJourneyService(
         SetDocumentStatus(document, status);
         AddEvent($"Quote{decision}", document.Id,
             decision == PublicDocumentDecisionType.ChangeRequested ? "Alteração solicitada." : $"Orçamento {decision}.", access.AccountId);
+        db.Notifications.Add(new Notification {
+            AccountId = access.AccountId, UserId = access.CreatedByUserId, DocumentId = document.Id,
+            Title = decision switch { PublicDocumentDecisionType.Approved => "Proposta aprovada", PublicDocumentDecisionType.Rejected => "Proposta recusada", _ => "Alteração solicitada" },
+            Message = $"{Clean(customerName, 180)} respondeu à proposta {document.Number}.",
+            Type = decision == PublicDocumentDecisionType.Approved ? NotificationType.Success : NotificationType.Warning,
+            Category = NotificationCategory.Document, ActionUrl = $"/Documents/Details/{document.Id}", ActionText = "Abrir proposta"
+        });
         await db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
         return PublicDecision(true, QuoteLifecycleCode.None, "Resposta registrada com segurança.", correlation, access, status, entity.Id);
@@ -148,13 +165,20 @@ public sealed class CommercialJourneyService(
         if (snapshot is null)
             return OperationResult<PublicQuoteView>.Failure("InvalidSnapshot", $"Não foi possível abrir este orçamento. Referência: {correlation}.");
 
+        var firstView = access.LastViewedAt is null;
         access.LastViewedAt = now;
         access.ViewCount++;
         if (await db.Documents.SingleOrDefaultAsync(x => x.Id == access.DocumentId && x.AccountId == access.AccountId && !x.IsDeleted, ct) is { } document
             && ParseDocumentStatus(document, out var status) && status == DocumentStatus.Sent)
             SetDocumentStatus(document, DocumentStatus.Viewed);
-        db.ActivityEvents.Add(new ActivityEvent { AccountId = access.AccountId, ActorUserId = null, Action = "QuoteViewed",
-            EntityType = "CommercialJourney", EntityId = access.DocumentId, Summary = "Orçamento visualizado pelo link seguro." });
+        if (firstView) {
+            db.ActivityEvents.Add(new ActivityEvent { AccountId = access.AccountId, ActorUserId = null, Action = "QuoteViewed",
+                EntityType = "CommercialJourney", EntityId = access.DocumentId, Summary = "Orçamento visualizado pelo link seguro." });
+            db.Notifications.Add(new Notification { AccountId = access.AccountId, UserId = access.CreatedByUserId,
+                DocumentId = access.DocumentId, Title = "Proposta visualizada", Message = "O cliente abriu a proposta pela primeira vez.",
+                Type = NotificationType.Info, Category = NotificationCategory.Document,
+                ActionUrl = $"/Documents/Details/{access.DocumentId}", ActionText = "Acompanhar proposta" });
+        }
         await db.SaveChangesAsync(ct);
 
         var decided = await db.PublicDocumentDecisions.AsNoTracking().AnyAsync(x =>
