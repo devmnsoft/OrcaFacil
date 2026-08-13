@@ -1,0 +1,13 @@
+@page
+@using OrcaFacil.Application.Abstractions
+@inject ICurrentAccountService CurrentAccount
+@{ ViewData["Title"]="Configurações"; var cards = new[]{
+ ("Company","Empresa","Dados fiscais, endereço e contatos"),("Branding","Identidade visual","Logos, cores e assinatura"),
+ ("Documents","Documentos","Padrões de orçamento, OS e recibo"),("Commercial","Orçamentos e comercial","Follow-ups, descontos e mensagens"),
+ ("Payments","Pagamentos e recibos","Métodos, Pix e instruções"),("Users","Usuários","Equipe, convites e papéis"),
+ ("Permissions","Permissões","Acessos efetivos por papel"),("Notifications","Notificações","Eventos e canais habilitados"),
+ ("Security","Segurança","Senha, atividade e sessões"),("Audit","Auditoria","Histórico de alterações da conta")}; }
+<header class="of-settings-hero"><p class="of-eyebrow">Conta</p><h1>Central de Configurações</h1><p>Personalize a operação sem perder segurança ou rastreabilidade.</p></header>
+<section class="of-settings-grid" aria-label="Áreas de configuração">
+@foreach(var card in cards){<a class="of-settings-card" asp-page="@card.Item1"><span aria-hidden="true">→</span><h2>@card.Item2</h2><p>@card.Item3</p></a>}
+</section>

@@ -25,13 +25,14 @@ public sealed class BudgetWizardService
     private readonly IRepository<ServiceCatalogItem> _services;
     private readonly IRepository<BudgetTemplate> _templates;
     private readonly IRepository<BudgetTemplateItem> _templateItems;
+    private readonly IRepository<AccountSettings> _accountSettings;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IDocumentNumberService _numbers;
 
     public BudgetWizardService(IRepository<Document> documents, IRepository<DocumentItem> items, IRepository<Client> clients, IRepository<ServiceCatalogItem> services,
-        IRepository<BudgetTemplate> templates, IRepository<BudgetTemplateItem> templateItems,
+        IRepository<BudgetTemplate> templates, IRepository<BudgetTemplateItem> templateItems, IRepository<AccountSettings> accountSettings,
         IUnitOfWork unitOfWork, IDocumentNumberService numbers)
-    { _documents = documents; _items = items; _clients = clients; _services = services; _templates = templates; _templateItems = templateItems; _unitOfWork = unitOfWork; _numbers = numbers; }
+    { _documents = documents; _items = items; _clients = clients; _services = services; _templates = templates; _templateItems = templateItems; _accountSettings = accountSettings; _unitOfWork = unitOfWork; _numbers = numbers; }
 
     public async Task<BudgetWizardViewModel> OpenAsync(Guid userId, Guid? accountId, Guid? documentId, Guid? clientId, CancellationToken ct,
         IReadOnlyCollection<Guid>? serviceIds = null, Guid? templateId = null)
@@ -40,6 +41,14 @@ public sealed class BudgetWizardService
         if (document is null)
         {
             document = new Document { UserId = userId, AccountId = accountId, Type = DocumentType.Budget, Status = "Draft", CurrentWizardStep = 0 };
+            var defaults = accountId.HasValue ? _accountSettings.Query().SingleOrDefault(x => x.AccountId == accountId && !x.IsDeleted) : null;
+            if (defaults is not null)
+            {
+                document.ValidUntil = DateTime.UtcNow.Date.AddDays(Math.Clamp(defaults.DefaultQuoteValidityDays, 1, 365));
+                document.EstimatedDuration = defaults.DefaultDeliveryTerm;
+                document.ConditionsText = defaults.DefaultCommercialTerms;
+                document.PixInformation = defaults.ShowBankDetails ? defaults.PixKey : null;
+            }
             document.IssueNumber(await _numbers.NextAsync(userId, DocumentType.Budget, ct));
             if (clientId.HasValue) ApplyClient(document, FindClient(userId, accountId, clientId.Value));
             await _documents.AddAsync(document, ct);

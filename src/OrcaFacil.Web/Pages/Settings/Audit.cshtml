@@ -1,0 +1,3 @@
+@page
+@model OrcaFacil.Web.Pages.Settings.AuditModel
+@{ViewData["Title"]="Auditoria";}<partial name="_SettingsNav"/><header class="of-page-heading"><h1>Auditoria da conta</h1><p>Alterações reais, limitadas à empresa autenticada.</p></header><section class="of-panel">@if(Model.Events.Count==0){<div class="of-empty-state"><h2>Nenhum evento registrado</h2><p>As próximas alterações de configurações aparecerão aqui.</p></div>}else{<div class="of-responsive-table"><table><thead><tr><th>Data</th><th>Ação</th><th>Entidade</th><th>Usuário</th></tr></thead><tbody>@foreach(var item in Model.Events){<tr><td>@item.CreatedAt.ToLocalTime().ToString("g")</td><td>@item.Action</td><td>@item.EntityType</td><td>@item.UserId</td></tr>}</tbody></table></div>}</section>

@@ -1,0 +1,3 @@
+@page
+@model OrcaFacil.Web.Pages.Settings.UsersModel
+@{ViewData["Title"]="Usuários";}<partial name="_SettingsNav"/><header class="of-page-heading"><h1>Usuários da conta</h1><p>Membros, papéis, status e último acesso vindos da conta atual.</p></header><section class="of-panel"><div class="of-responsive-table"><table><thead><tr><th>Usuário</th><th>Papel</th><th>Status</th><th>Último acesso</th></tr></thead><tbody>@foreach(var m in Model.Members){<tr><td><strong>@m.Name</strong><br/><small>@m.Email</small></td><td>@m.Role</td><td>@m.Status</td><td>@(m.LastAccess?.ToLocalTime().ToString("g")??"Ainda não acessou")</td></tr>}</tbody></table></div></section>

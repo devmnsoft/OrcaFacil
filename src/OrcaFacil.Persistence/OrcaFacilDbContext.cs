@@ -72,6 +72,7 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<CommercialMessageTemplate> CommercialMessageTemplates => Set<CommercialMessageTemplate>();
     public DbSet<SupportTicket> SupportTickets => Set<SupportTicket>();
     public DbSet<SupportTicketMessage> SupportTicketMessages => Set<SupportTicketMessage>();
+    public DbSet<AccountSettings> AccountSettings => Set<AccountSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
