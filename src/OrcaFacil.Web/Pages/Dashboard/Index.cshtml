@@ -147,7 +147,7 @@
 
 <div class="of-dashboard-lower">
     <partial name="_PlanUsageSummary" model="usage" />
-    @if (Model.Onboarding is { IsCompleted: false } onboarding)
+    @if (Model.Onboarding is { } onboarding && onboarding.CompletedSteps < onboarding.TotalSteps)
     {
         <section class="of-card onboarding-dashboard" aria-labelledby="onboarding-title">
             <div>
@@ -156,7 +156,7 @@
                 <p>@onboarding.NextAction.Description O objetivo é deixar tudo pronto para criar seu primeiro orçamento.</p>
                 <progress value="@onboarding.CompletedSteps" max="@onboarding.TotalSteps" aria-label="Progresso da configuração">@onboarding.CompletedSteps de @onboarding.TotalSteps</progress>
             </div>
-            <a class="of-button of-button-primary" href="@onboarding.NextAction.Page">Continuar</a>
+            <a class="of-button of-button-primary" asp-page="/Onboarding/Index">Ver jornada</a>
         </section>
     }
     else if (dashboard.TotalBudgets == 0)

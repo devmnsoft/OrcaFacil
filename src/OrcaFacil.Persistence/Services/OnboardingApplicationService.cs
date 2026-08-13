@@ -64,24 +64,35 @@ public sealed class OnboardingApplicationService(
             .OrderBy(x => x.CreatedAt)
             .Select(x => (Guid?)x.Id)
             .FirstOrDefaultAsync(ct);
-        var completed = new[]
+        var hasBudget = await db.Documents.AnyAsync(x => x.AccountId == state.AccountId &&
+            x.Type == DocumentType.Budget && !x.IsDeleted, ct);
+        var hasSentBudget = await db.DocumentRevisions.AnyAsync(x => x.AccountId == state.AccountId &&
+            (x.Status == DocumentRevisionStatus.Sent || x.SentAt != null) && !x.IsDeleted, ct);
+        var hasDecision = await db.PublicDocumentDecisions.AnyAsync(x => x.AccountId == state.AccountId && !x.IsDeleted, ct);
+        var hasPayment = await db.ManualPayments.AnyAsync(x => x.AccountId == state.AccountId &&
+            x.Status == FinancialRecordStatus.Active && !x.IsDeleted, ct);
+        var hasReceipt = await db.Receipts.AnyAsync(x => x.AccountId == state.AccountId && !x.IsDeleted, ct);
+        var activation = new ActivationStepView[]
         {
-            state.BusinessProfileCompletedAt,
-            state.IssuerProfileCompletedAt,
-            state.FirstClientCompletedAt,
-            state.FirstServiceCompletedAt,
-            state.FirstBudgetStartedAt
-        }.Count(x => x.HasValue);
-
+            new("company", "Complete os dados da empresa", "Esses dados identificam sua empresa nos documentos.", "/Profile/Index", "Completar empresa", state.BusinessProfileCompletedAt.HasValue && state.IssuerProfileCompletedAt.HasValue),
+            new("client", "Cadastre o primeiro cliente", "Organize contato e dados usados na proposta.", "/Clients/Create", "Cadastrar cliente", client.HasValue),
+            new("service", "Cadastre o primeiro serviço", "Monte seu catálogo com preço e prazo padrão.", "/Services/Create", "Cadastrar serviço", service.HasValue),
+            new("budget", "Crie o primeiro orçamento", "Reúna cliente, serviços e condições comerciais.", "/Documents/New", "Criar orçamento", hasBudget),
+            new("send", "Envie o orçamento", "Compartilhe uma versão registrada com o cliente.", "/Documents/Index", "Abrir orçamentos", hasSentBudget),
+            new("approval", "Acompanhe a aprovação", "Veja a resposta registrada pelo cliente.", "/Documents/Index", "Acompanhar propostas", hasDecision),
+            new("payment", "Registre o pagamento", "Mantenha o financeiro ligado ao trabalho realizado.", "/Payments/Index", "Abrir pagamentos", hasPayment),
+            new("receipt", "Emita o recibo", "Formalize um pagamento que já foi registrado.", "/Receipts/Index", "Abrir recibos", hasReceipt)
+        };
         return OperationResult<OnboardingStateView>.Success(new OnboardingStateView(
             state.CurrentStep,
-            completed,
-            5,
+            activation.Count(x => x.IsCompleted),
+            activation.Length,
             state.CompletedAt.HasValue,
             state.SkippedAt,
             Next(state.CurrentStep),
             client,
-            service));
+            service,
+            activation));
     }
 
     public async Task<OperationResult> BeginAsync(CancellationToken ct = default)
