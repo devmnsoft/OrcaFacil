@@ -37,7 +37,20 @@
   document.querySelector('[data-action-open]')?.addEventListener('click', (event) => open(sheet, event.currentTarget));
   document.querySelector('[data-help-open]')?.addEventListener('click', (event) => open(drawer, event.currentTarget));
   document.querySelector('[data-search-open]')?.addEventListener('click', (event) => open(search, event.currentTarget));
-  document.querySelector('[data-menu-open]')?.addEventListener('click', () => document.body.classList.toggle('menu-open'));
+  const menuButton = document.querySelector('[data-menu-open]');
+  const setMenuOpen = (isOpen, restoreFocus = false) => {
+    document.body.classList.toggle('menu-open', isOpen);
+    menuButton?.setAttribute('aria-expanded', String(isOpen));
+    if (!isOpen && restoreFocus) menuButton?.focus();
+  };
+  menuButton?.setAttribute('aria-expanded', 'false');
+  menuButton?.setAttribute('aria-controls', 'client-sidebar');
+  menuButton?.addEventListener('click', () => setMenuOpen(!document.body.classList.contains('menu-open')));
+  document.querySelector('#client-sidebar')?.addEventListener('click', event => { if (event.target.closest('a[href]')) setMenuOpen(false); });
+  document.addEventListener('pointerdown', event => {
+    const sidebar = document.querySelector('#client-sidebar');
+    if (document.body.classList.contains('menu-open') && sidebar && !sidebar.contains(event.target) && !menuButton?.contains(event.target)) setMenuOpen(false);
+  });
   document.querySelectorAll('[data-dialog-close]').forEach((button) => button.addEventListener('click', () => close(button.closest('[role="dialog"]'))));
 
   document.addEventListener('keydown', (event) => {
@@ -48,7 +61,7 @@
     if (event.key === 'Escape') {
       const visibleDialog = document.querySelector('[role="dialog"]:not([hidden])');
       if (visibleDialog) close(visibleDialog);
-      else document.body.classList.remove('menu-open');
+      else if (document.body.classList.contains('menu-open')) setMenuOpen(false, true);
     }
     if (event.key === 'Tab') {
       const dialog = document.querySelector('[role="dialog"]:not([hidden])');

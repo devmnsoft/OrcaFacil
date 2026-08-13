@@ -181,6 +181,7 @@
     {
         <main id="main-content"><partial name="Partials/_ToastHost" />@RenderBody()</main>
     }
+    <environment include="Development"><script src="~/js/diagnostics/js-health.js" asp-append-version="true"></script></environment>
     <script src="~/js/experience.js" asp-append-version="true"></script>
     <script type="module" src="~/js/shell.js" asp-append-version="true"></script>
     <script type="module" src="~/js/account-switcher.js" asp-append-version="true"></script>

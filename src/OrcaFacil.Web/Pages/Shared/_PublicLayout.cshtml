@@ -54,7 +54,8 @@
     <div class="of-container of-footer-bottom"><span>© @DateTime.UtcNow.Year MNSOFT. Todos os direitos reservados.</span><span>OrçaFácil, feito para quem presta serviços.</span></div>
   </footer>
   <partial name="Partials/_OverlayHost" />
-  <script type="module" src="~/js/public.js" asp-append-version="true"></script>
+  <environment include="Development"><script src="~/js/diagnostics/js-health.js" asp-append-version="true"></script></environment>
+  <script src="~/js/public.js" asp-append-version="true"></script>
   <script type="module" src="~/js/ui/feedback.js" asp-append-version="true"></script>
   @await RenderSectionAsync("Scripts", false)
 </body>
