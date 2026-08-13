@@ -30,9 +30,11 @@ document.querySelector('[data-confirm-accept]')?.addEventListener('click', () =>
 window.showToast = (message, type = 'success') => toastManager.show({ message, type });
 window.confirmAction = message => new Promise(resolve => {
   const dialog = document.querySelector('#confirm-dialog');
-  dialog.querySelector('[data-confirm-message]').textContent = message;
+  if (!dialog) { resolve(window.confirm(message)); return; }
+  const messageNode = dialog.querySelector('[data-confirm-message]');
+  if (messageNode) messageNode.textContent = message;
   dialog.addEventListener('overlay:close', event => resolve(event.detail.result === 'confirm'), { once: true });
   const accept = dialog.querySelector('[data-confirm-accept]');
-  accept.addEventListener('click', () => overlayManager.close(dialog, 'confirm'), { once: true });
+  accept?.addEventListener('click', () => overlayManager.close(dialog, 'confirm'), { once: true });
   overlayManager.open(dialog);
 });

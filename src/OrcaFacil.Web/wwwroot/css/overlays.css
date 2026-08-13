@@ -1,7 +1,9 @@
 .of-overlay-open { overflow: hidden; }
 .of-overlay-host { position: relative; z-index: var(--of-z-overlay); }
-.of-overlay { align-items: center; background: var(--of-overlay); display: flex; inset: 0; justify-content: center; opacity: 0; padding: var(--of-space-4); position: fixed; transition: opacity var(--of-transition); }
+.of-overlay { align-items: center; background: var(--of-overlay); display: flex; inset: 0; justify-content: center; opacity: 0; padding: var(--of-space-4); pointer-events: none; position: fixed; transition: opacity var(--of-transition); }
+.of-overlay[hidden] { display: none; }
 .of-overlay.is-open { opacity: 1; }
+.of-overlay.is-open { pointer-events: auto; }
 .of-dialog { background: var(--of-surface); border: 1px solid var(--of-border); border-radius: var(--of-radius-lg); box-shadow: var(--of-shadow-lg); display: grid; gap: var(--of-space-5); max-height: calc(100dvh - 32px); max-width: 32rem; overflow: auto; padding: var(--of-space-6); transform: translateY(10px); transition: transform var(--of-transition); width: 100%; }
 .of-overlay.is-open .of-dialog { transform: translateY(0); }
 .of-dialog__icon { align-items: center; background: var(--of-warning-soft); border-radius: 999px; color: var(--of-warning); display: flex; height: 48px; justify-content: center; width: 48px; }

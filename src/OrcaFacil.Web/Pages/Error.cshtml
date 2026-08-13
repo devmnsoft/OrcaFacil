@@ -11,7 +11,7 @@
       <div class="d-flex gap-2 flex-wrap"><a class="btn btn-primary" asp-page="/Index">Voltar para início</a><a class="btn btn-outline-primary" asp-page="/Support/Index">Falar com a MNSOFT</a></div>
       @if (Model.ShowTechnicalDetails)
       {
-        <div class="accordion of-accordion mt-4" id="errorDetails"><div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#technicalDetails">Detalhes técnicos de desenvolvimento</button></h2><div id="technicalDetails" class="accordion-collapse collapse" data-bs-parent="#errorDetails"><div class="accordion-body"><code>@Model.TechnicalDetails</code></div></div></div></div>
+        <details class="of-card"><summary>Detalhes técnicos de desenvolvimento</summary><code>@Model.TechnicalDetails</code></details>
       }
     </div>
   </div>
