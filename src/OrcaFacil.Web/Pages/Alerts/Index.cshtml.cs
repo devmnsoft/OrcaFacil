@@ -65,7 +65,7 @@ public sealed class IndexModel(IOperationalAlertService alerts, ICurrentAccountS
     public async Task<IActionResult> OnPostIgnoreAsync(Guid id, CancellationToken ct) =>
         await Close(id, "Alerta ignorado.", ct);
 
-    public static string Description(Notification item) => item.Message.Split(" [alert:", 2)[0];
+    public string Description(Notification item) => item.Message.Split(" [alert:", 2)[0];
 
     private IQueryable<Notification> FilteredQuery(bool asTracking)
     {
