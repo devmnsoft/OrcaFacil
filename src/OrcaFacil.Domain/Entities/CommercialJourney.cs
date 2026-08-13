@@ -94,6 +94,8 @@ public sealed class WorkOrderChecklistItem : Entity
     public Guid AccountId { get; set; }
     public Guid WorkOrderId { get; set; }
     public string Description { get; set; } = string.Empty;
+    public string? Details { get; set; }
+    public bool IsRequired { get; set; } = true;
     public int Position { get; set; }
     public bool IsCompleted { get; set; }
     public DateTime? CompletedAt { get; set; }

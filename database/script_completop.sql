@@ -601,3 +601,11 @@ CREATE TABLE IF NOT EXISTS orcafacil.support_tickets (id uuid PRIMARY KEY, accou
 CREATE INDEX IF NOT EXISTS ix_support_tickets_account_status_created ON orcafacil.support_tickets(account_id,status,created_at);
 CREATE TABLE IF NOT EXISTS orcafacil.support_ticket_messages (id uuid PRIMARY KEY, ticket_id uuid NOT NULL REFERENCES orcafacil.support_tickets(id) ON DELETE CASCADE, author_user_id uuid NOT NULL REFERENCES orcafacil.users(id) ON DELETE RESTRICT, body varchar(5000) NOT NULL, is_admin_reply boolean NOT NULL DEFAULT false, is_internal boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
 CREATE INDEX IF NOT EXISTS ix_support_ticket_messages_ticket_created ON orcafacil.support_ticket_messages(ticket_id,created_at);
+
+-- Checklist operacional completo (2026-08-13). Seguro para bancos existentes.
+ALTER TABLE IF EXISTS orcafacil.work_order_checklist_items
+    ADD COLUMN IF NOT EXISTS details character varying(1000);
+ALTER TABLE IF EXISTS orcafacil.work_order_checklist_items
+    ADD COLUMN IF NOT EXISTS is_required boolean NOT NULL DEFAULT true;
+CREATE INDEX IF NOT EXISTS ix_work_order_checklist_items_required_pending
+    ON orcafacil.work_order_checklist_items (account_id, work_order_id, is_required, is_completed);
