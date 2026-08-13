@@ -78,7 +78,7 @@ internal static class ClientMenu
         new("Comercial", [new("Rotina comercial", "/CommercialRoutine/Index", "calendar"), new("Orçamentos", "/Documents/Index", "quote", RequiredPermission: "documents.read"), new("Templates de mensagem", "/MessageTemplates/Index", "share")]),
         new("Operação", [new("Ordens de serviço", "/WorkOrders/Index", "work-order"), new("Agenda", "/Schedule/Index", "calendar")]),
         new("Financeiro", [new("Pagamentos", "/Payments/Index", "payment"), new("Recibos", "/Receipts/Index", "receipt", RequiredPermission: "receipts.read")]),
-        new("Cadastros", [new("Clientes", "/Clients/Index", "client", RequiredPermission: "clients.read"), new("Serviços", "/Services/Index", "service", RequiredPermission: "services.read"), new("Modelos", "/Templates/Index", "quote-ready", true, "Profissional", "templates.read")]),
+        new("Cadastros", [new("Clientes", "/Clients/Index", "client", RequiredPermission: "clients.read"), new("Serviços", "/Services/Index", "service", RequiredPermission: "services.read"), new("Importação", "/Import/Index", "upload"), new("Modelos", "/Templates/Index", "quote-ready", true, "Profissional", "templates.read")]),
         new("Conta", [new("Dados do emitente", "/Profile/Index", "account"), new("Meu plano", "/Subscription/Index", "plan"), new("Notificações", "/Notifications/Index", "notification")]),
         new("Suporte", [new("Central de ajuda", "/Support/Index", "help"), new("Conhecer recursos", "/Discover", "premium")])
     ];
