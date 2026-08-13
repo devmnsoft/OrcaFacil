@@ -612,3 +612,29 @@ ALTER TABLE IF EXISTS orcafacil.work_order_checklist_items
     ADD COLUMN IF NOT EXISTS is_required boolean NOT NULL DEFAULT true;
 CREATE INDEX IF NOT EXISTS ix_work_order_checklist_items_required_pending
     ON orcafacil.work_order_checklist_items (account_id, work_order_id, is_required, is_completed);
+
+-- Templates comerciais por conta (2026-08-13). Defaults globais são somente leitura na aplicação.
+CREATE TABLE IF NOT EXISTS orcafacil.commercial_message_templates (
+    id uuid PRIMARY KEY, account_id uuid REFERENCES orcafacil.business_accounts(id) ON DELETE RESTRICT,
+    code varchar(80) NOT NULL, name varchar(140) NOT NULL, channel varchar(20) NOT NULL,
+    subject varchar(180), body varchar(4000) NOT NULL, is_active boolean NOT NULL DEFAULT true,
+    is_system boolean NOT NULL DEFAULT false, created_by_user_id uuid REFERENCES orcafacil.users(id) ON DELETE RESTRICT,
+    created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false,
+    CONSTRAINT ck_commercial_message_templates_channel CHECK (channel IN ('WhatsApp','Email','General'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_commercial_message_templates_account_id_code ON orcafacil.commercial_message_templates(account_id,code);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_commercial_message_templates_system_code ON orcafacil.commercial_message_templates(code) WHERE account_id IS NULL;
+INSERT INTO orcafacil.commercial_message_templates(id,account_id,code,name,channel,subject,body,is_active,is_system)
+SELECT md5('message-template:' || code)::uuid,NULL,code,name,channel,subject,body,true,true FROM (VALUES
+ ('quote-send','Envio de orçamento','WhatsApp',NULL,'Olá, {ClienteNome}! Preparei o orçamento {NumeroOrcamento}, no valor de {ValorTotal}. Você pode revisar a proposta em {LinkPublico}.'),
+ ('sent-reminder','Lembrete após envio','WhatsApp',NULL,'Olá, {ClienteNome}! Conseguiu analisar o orçamento {NumeroOrcamento}? Estou à disposição para esclarecer qualquer ponto.'),
+ ('view-reminder','Lembrete após visualização','WhatsApp',NULL,'Olá, {ClienteNome}! Vi que você acessou a proposta {NumeroOrcamento}. Posso ajudar com alguma dúvida?'),
+ ('expiring','Proposta próxima do vencimento','Email','Sua proposta {NumeroOrcamento} vence em breve','Olá, {ClienteNome}. A proposta {NumeroOrcamento} é válida até {Validade}. Se precisar de ajustes, responda esta mensagem.'),
+ ('expired','Proposta vencida','General',NULL,'Olá, {ClienteNome}. A validade da proposta {NumeroOrcamento} terminou. Posso preparar uma versão atualizada para você?'),
+ ('change-request','Alteração solicitada','General',NULL,'Olá, {ClienteNome}! Recebemos sua solicitação de alteração na proposta {NumeroOrcamento} e vamos revisar os detalhes.'),
+ ('approved','Proposta aprovada','General',NULL,'Obrigado pela aprovação, {ClienteNome}! O próximo passo é agendarmos a execução do serviço.'),
+ ('work-order-schedule','Agendamento de OS','WhatsApp',NULL,'Olá, {ClienteNome}! Vamos combinar a melhor data para executar o serviço aprovado?'),
+ ('friendly-charge','Cobrança amigável','General',NULL,'Olá, {ClienteNome}! Identificamos um pagamento pendente. Se já realizou, por favor desconsidere e nos envie o comprovante.'),
+ ('thank-you','Agradecimento pós-venda','General',NULL,'Obrigado pela confiança, {ClienteNome}! Foi um prazer atender você. Conte com a {EmpresaNome}.')
+) AS seed(code,name,channel,subject,body)
+ON CONFLICT DO NOTHING;

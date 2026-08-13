@@ -75,7 +75,7 @@ internal static class ClientMenu
     internal static readonly IReadOnlyList<ShellMenuGroup> Items =
     [
         new("Início", [new("Visão geral", "/Dashboard/Index", "dashboard")]),
-        new("Comercial", [new("Orçamentos", "/Documents/Index", "quote", RequiredPermission: "documents.read")]),
+        new("Comercial", [new("Rotina comercial", "/CommercialRoutine/Index", "calendar"), new("Orçamentos", "/Documents/Index", "quote", RequiredPermission: "documents.read"), new("Templates de mensagem", "/MessageTemplates/Index", "share")]),
         new("Operação", [new("Ordens de serviço", "/WorkOrders/Index", "work-order"), new("Agenda", "/Schedule/Index", "calendar")]),
         new("Financeiro", [new("Pagamentos", "/Payments/Index", "payment"), new("Recibos", "/Receipts/Index", "receipt", RequiredPermission: "receipts.read")]),
         new("Cadastros", [new("Clientes", "/Clients/Index", "client", RequiredPermission: "clients.read"), new("Serviços", "/Services/Index", "service", RequiredPermission: "services.read"), new("Modelos", "/Templates/Index", "quote-ready", true, "Profissional", "templates.read")]),
