@@ -68,6 +68,8 @@ public sealed class CommercialFollowUp : Entity
 public sealed class WorkOrder : Entity
 {
     public Guid AccountId { get; set; }
+    public Guid? ContractId { get; set; }
+    public DateOnly? ServiceCompetence { get; set; }
     public Guid? SourceDocumentId { get; set; }
     public Guid? SourceRevisionId { get; set; }
     public Guid ClientId { get; set; }

@@ -26,7 +26,10 @@ public sealed record ServiceCatalogPage(IReadOnlyList<ServiceCatalogItem> Items,
 public sealed record ServiceCatalogInput(string Name, string? Code, string? Description, Guid? CategoryId, string UnitCode,
     decimal StandardPrice, decimal EstimatedCost, decimal DesiredMarginPercentage, int? SuggestedDurationMinutes,
     string? DefaultDeliveryTerm, string? DefaultNotes, string? Tags, string? InternalNotes,
-    bool IsFavorite, bool IsActive, bool IsRecurring, bool IsRecommended);
+    bool IsFavorite, bool IsActive, bool IsRecurring, bool IsRecommended,
+    RecurrencePeriod DefaultPeriodicity = RecurrencePeriod.Monthly, decimal? SuggestedMonthlyPrice = null,
+    decimal? EstimatedMonthlyCost = null, int? DefaultResponseSlaHours = null, int? DefaultExecutionSlaHours = null,
+    string? DefaultChecklist = null);
 public sealed record ServiceCatalogDetails(ServiceCatalogItem Item, IReadOnlyList<ServicePriceHistory> PriceHistory);
 public enum ServiceCatalogResultCode { Success, AccountRequired, NotFound, InvalidInput, ConcurrencyConflict }
 public sealed record ServiceCatalogResult(ServiceCatalogResultCode Code, Guid? Id = null, string? Message = null);
