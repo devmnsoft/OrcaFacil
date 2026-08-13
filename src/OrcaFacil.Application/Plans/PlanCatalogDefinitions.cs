@@ -9,7 +9,8 @@ public static class PlanCatalogDefinitions
         {
             ["FREE"] = ("Grátis", 0m, 0m),
             ["PROFESSIONAL"] = ("Profissional", 24.90m, 249m),
-            ["BUSINESS"] = ("Negócio", 49.90m, 499m)
+            ["BUSINESS"] = ("Negócio", 49.90m, 499m),
+            ["ENTERPRISE"] = ("Enterprise", 0m, 0m)
         };
 
     private static PlanFeatureSetting Unlimited => new(true, null, true);
@@ -21,7 +22,8 @@ public static class PlanCatalogDefinitions
         {
             ["FREE"] = Matrix(1, 25, 20, 10, true, 90, 3, false, false, false, false, false, false, true, false, false, false, false, false, false, false),
             ["PROFESSIONAL"] = Matrix(1, null, null, null, false, null, null, true, true, true, true, true, true, true, true, false, false, false, false, false, false),
-            ["BUSINESS"] = Matrix(3, null, null, null, false, null, null, true, true, true, true, true, true, true, true, true, true, true, true, true, true)
+            ["BUSINESS"] = Matrix(3, null, null, null, false, null, null, true, true, true, true, true, true, true, true, true, true, true, true, true, true),
+            ["ENTERPRISE"] = Matrix(10, null, null, null, false, null, null, true, true, true, true, true, true, true, true, true, true, true, true, true, true)
         };
 
     private static IReadOnlyDictionary<string, PlanFeatureSetting> Matrix(int team, int? clients, int? services, int? pdf,

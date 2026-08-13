@@ -4,7 +4,7 @@
 <section class="of-public-auth of-surface-soft">
   <div class="of-container of-auth-page-space"><div class="of-auth-shell">
     <aside class="of-auth-context of-surface-brand" data-register-context>
-      <p class="of-eyebrow">Comece com o plano Grátis</p><h1>Seu trabalho, com uma apresentação mais profissional.</h1>
+      <p class="of-eyebrow">Plano escolhido por você</p><h1>Seu trabalho, com uma apresentação mais profissional.</h1>
       <p data-context-copy>Esses dados ajudam a identificar sua conta e preparar os documentos do seu trabalho.</p>
       <img src="/img/illustrations/register-person.svg" data-register-illustration alt="Dados de uma pessoa profissional organizados" />
       <p class="of-security-note"><partial name="Partials/_Icon" model='new IconViewModel("protected-data", "sm", Decorative: true)' /> Seus dados são usados para administrar a conta e preparar seus documentos.</p>
@@ -16,8 +16,24 @@
         @if (Model.RegistrationErrorCode is not null) {<div class="of-registration-error of-surface-danger" role="alert" tabindex="-1" data-registration-error><h2 >Não conseguimos concluir seu cadastro.</h2><p>Seus dados ainda não foram salvos. Tente novamente. Caso o problema continue, envie o código abaixo ao suporte.</p><code>@Model.RegistrationErrorCode</code><div class="of-form-actions"><button type="button" class="of-button of-button-secondary" data-copy="@Model.RegistrationErrorCode">Copiar código</button><button type="button" class="of-button of-button-secondary" data-retry>Tentar novamente</button><a class="of-button of-button-tertiary" asp-page="/Support/Index" asp-route-correlationId="@Model.RegistrationErrorCode">Falar com o suporte</a></div></div>}
         <div asp-validation-summary="ModelOnly" class="of-form-summary" role="alert"></div>
 
+        <fieldset class="of-form-section of-register-plans">
+          <legend class="of-step-label"><span>1</span> Escolha seu plano</legend>
+          <p class="of-text-secondary">O Grátis é ativado agora. Planos pagos ficam pendentes até a confirmação real do pagamento e, enquanto isso, sua conta usa os recursos gratuitos.</p>
+          <div class="of-register-plan-grid">
+          @foreach (var plan in Model.Catalog.Plans.Where(plan => plan.Code is "FREE" or "PROFESSIONAL" or "BUSINESS"))
+          {
+            <label class="of-register-plan" for="plan-@plan.Code.ToLowerInvariant()">
+              <input asp-for="Input.SelectedPlanCode" id="plan-@plan.Code.ToLowerInvariant()" type="radio" value="@plan.Code" />
+              <span><strong>@plan.Name</strong><small>@(plan.MonthlyPrice == 0 ? "Grátis" : $"{plan.MonthlyPrice:C}/mês")</small></span>
+              <em>@plan.Description</em>
+            </label>
+          }
+          </div>
+          <span asp-validation-for="Input.SelectedPlanCode" class="of-field-error"></span>
+        </fieldset>
+
         <fieldset class="of-form-section">
-          <legend class="of-step-label"><span>1</span> Como você trabalha?</legend>
+          <legend class="of-step-label"><span>2</span> Como você trabalha?</legend>
           <div class="of-form-grid">
             <div class="of-field"><label class="of-account-choice of-card h-100" for="account-individual"><input asp-for="Input.AccountType" id="account-individual" type="radio" value="Individual" /><strong>Pessoa Física</strong><span>Para autônomos e profissionais que trabalham usando o próprio CPF.</span></label></div>
             <div class="of-field"><label class="of-account-choice of-card h-100" for="account-company"><input asp-for="Input.AccountType" id="account-company" type="radio" value="Company" /><strong>Pessoa Jurídica</strong><span>Para MEIs, empresas e negócios que trabalham usando CNPJ.</span></label></div>
@@ -26,7 +42,7 @@
         </fieldset>
         <p class="visually-hidden" aria-live="polite" data-account-announcement></p>
 
-        <div class="of-form-step"><h2 class="of-step-label h5"><span>2</span> Seus dados</h2><p data-form-context>Esses dados ajudam a identificar sua conta e preparar os documentos do seu trabalho.</p><div class="of-form-grid">
+        <div class="of-form-step"><h2 class="of-step-label h5"><span>3</span> Seus dados</h2><p data-form-context>Esses dados ajudam a identificar sua conta e preparar os documentos do seu trabalho.</p><div class="of-form-grid">
           <div class="of-field" data-individual-field><label asp-for="Input.Name" class="of-field-label">Nome completo</label><input asp-for="Input.Name" class="of-field-control" autocomplete="name" /><div class="of-field-help">Como seu nome deve aparecer nos documentos?</div><span asp-validation-for="Input.Name" class="of-field-error"></span></div>
           <div class="of-field" data-individual-field><label asp-for="Input.ProfessionalName" class="of-field-label">Nome profissional <span class="of-field-optional">(opcional)</span></label><input asp-for="Input.ProfessionalName" class="of-field-control" /><div class="of-field-help">Use este campo quando seus clientes conhecem você por outro nome.</div></div>
           <div class="of-field" data-company-field><label asp-for="Input.LegalName" class="of-field-label">Razão social</label><input asp-for="Input.LegalName" class="of-field-control" /><div class="of-field-help">Nome oficial registrado da empresa.</div><span asp-validation-for="Input.LegalName" class="of-field-error"></span></div>
@@ -43,15 +59,15 @@
           <div class="of-field"><label asp-for="Input.City" class="of-field-label">Cidade</label><input asp-for="Input.City" class="of-field-control" autocomplete="address-level2" /><span asp-validation-for="Input.City" class="of-field-error"></span></div>
           <div class="of-field"><label asp-for="Input.State" class="of-field-label">Estado</label><input asp-for="Input.State" class="of-field-control" maxlength="2" autocomplete="address-level1" placeholder="UF" /><span asp-validation-for="Input.State" class="of-field-error"></span></div>
         </div></div>
-        <div class="of-form-step"><h2 class="of-step-label h5"><span>3</span> Seu acesso</h2><div class="of-form-grid">
+        <div class="of-form-step"><h2 class="of-step-label h5"><span>4</span> Seu acesso</h2><div class="of-form-grid">
           <div class="of-field"><label asp-for="Input.Password" class="of-field-label">Senha</label><div class="of-password-field"><input asp-for="Input.Password" type="password" class="of-field-control" autocomplete="new-password" aria-describedby="password-help" /><button type="button" class="of-password-toggle" data-password-toggle aria-label="Mostrar senha" aria-pressed="false"><partial name="Partials/_Icon" model='new IconViewModel("preview", "sm", Decorative: true)' /></button></div><small id="password-help" class="of-field-help">Use ao menos 8 caracteres.</small><span asp-validation-for="Input.Password" class="of-field-error"></span></div>
           <div class="of-field"><label asp-for="Input.ConfirmPassword" class="of-field-label">Confirmar senha</label><div class="of-password-field"><input asp-for="Input.ConfirmPassword" type="password" class="of-field-control" autocomplete="new-password" /><button type="button" class="of-password-toggle" data-password-toggle aria-label="Mostrar senha" aria-pressed="false"><partial name="Partials/_Icon" model='new IconViewModel("preview", "sm", Decorative: true)' /></button></div><span asp-validation-for="Input.ConfirmPassword" class="of-field-error"></span></div>
         </div></div>
-        <div class="of-form-step"><h2 class="of-step-label h5"><span>4</span> Termos e privacidade</h2>
+        <div class="of-form-step"><h2 class="of-step-label h5"><span>5</span> Termos e privacidade</h2>
         <div class="of-consent-field"><input asp-for="Input.AcceptTerms" class="of-consent-control" /><label asp-for="Input.AcceptTerms" class="of-consent-label">Li e concordo com os <a asp-page="/Termos" target="_blank">Termos de Uso</a>.</label><span asp-validation-for="Input.AcceptTerms" class="of-field-error"></span></div>
         <div class="of-consent-field"><input asp-for="Input.AcceptPrivacy" class="of-consent-control" /><label asp-for="Input.AcceptPrivacy" class="of-consent-label">Li o <a asp-page="/Privacidade" target="_blank">Aviso de Privacidade</a> e entendi como meus dados serão utilizados para criar e administrar minha conta.</label><span asp-validation-for="Input.AcceptPrivacy" class="of-field-error"></span></div>
         <div class="of-consent-field"><input asp-for="Input.AcceptMarketing" class="of-consent-control" /><label asp-for="Input.AcceptMarketing" class="of-consent-label">Quero receber novidades e comunicações comerciais. <span class="of-field-optional">(opcional)</span></label></div></div>
-        <button class="of-button of-button-primary of-button-block" type="submit" data-loading>Criar minha conta grátis</button>
+        <button class="of-button of-button-primary of-button-block" type="submit" data-loading>Criar minha conta</button>
         <p class="of-auth-support"><a asp-page="/Auth/Login">Já tenho uma conta</a></p>
       </form>
     </div></div>

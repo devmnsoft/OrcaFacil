@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OrcaFacil.Application.Auth;
+using OrcaFacil.Application.Plans;
 using OrcaFacil.Domain.Enums;
 using OrcaFacil.Web.Extensions;
 using OrcaFacil.Web.Services;
@@ -10,9 +11,10 @@ using OrcaFacil.Web.Services;
 namespace OrcaFacil.Web.Pages.Auth;
 
 [AllowAnonymous]
-public sealed class RegisterModel(AuthService authService, IUserSignInService signIn, ILogger<RegisterModel> logger) : PageModel
+public sealed class RegisterModel(AuthService authService, IUserSignInService signIn, IPlanCatalogService catalog, ILogger<RegisterModel> logger) : PageModel
 {
     [BindProperty] public InputModel Input { get; set; } = new();
+    public PlanCatalogView Catalog { get; private set; } = default!;
     public string? RegistrationErrorCode { get; private set; }
 
     public sealed class InputModel
@@ -39,10 +41,18 @@ public sealed class RegisterModel(AuthService authService, IUserSignInService si
         [Range(typeof(bool), "true", "true", ErrorMessage = "Aceite os termos para continuar.")] public bool AcceptTerms { get; set; }
         [Range(typeof(bool), "true", "true", ErrorMessage = "Aceite a política de privacidade para continuar.")] public bool AcceptPrivacy { get; set; }
         public bool AcceptMarketing { get; set; }
+        [Required] public string SelectedPlanCode { get; set; } = "FREE";
+    }
+
+    public async Task OnGetAsync(string? plan, CancellationToken ct)
+    {
+        await LoadCatalogAsync(ct);
+        Input.SelectedPlanCode = PublicPlanCode(plan);
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
+        await LoadCatalogAsync(ct);
         ApplyConditionalValidation();
         if (!ModelState.IsValid) return InvalidPage();
 
@@ -50,7 +60,8 @@ public sealed class RegisterModel(AuthService authService, IUserSignInService si
         var command = new RegisterUserCommand(Input.AccountType!.Value, Input.DocumentNumber, registrationName,
             Input.ProfessionalName, Input.LegalName, Input.TradeName, Input.ResponsibleName, Input.Phone,
             Input.Email, Input.PostalCode, Input.Street, Input.StreetNumber, Input.Complement, Input.District,
-            Input.City, Input.State, Input.Password, Input.AcceptTerms, Input.AcceptPrivacy, HttpContext.TraceIdentifier);
+            Input.City, Input.State, Input.Password, Input.AcceptTerms, Input.AcceptPrivacy, HttpContext.TraceIdentifier,
+            PublicPlanCode(Input.SelectedPlanCode));
         try
         {
             var result = await authService.RegisterAsync(command, ct);
@@ -97,4 +108,7 @@ public sealed class RegisterModel(AuthService authService, IUserSignInService si
         TempData.Warning("Revise os campos destacados para concluir seu cadastro.");
         return Page();
     }
+
+    private async Task LoadCatalogAsync(CancellationToken ct) => Catalog = await catalog.GetPublishedAsync(ct);
+    private static string PublicPlanCode(string? value) => value?.Trim().ToUpperInvariant() is "PROFESSIONAL" or "BUSINESS" ? value.Trim().ToUpperInvariant() : "FREE";
 }

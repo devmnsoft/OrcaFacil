@@ -92,7 +92,8 @@ public class AuthService
             LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success");
 
             var now = DateTime.UtcNow;
-            var freePlan = _plans.Query().SingleOrDefault(x => x.Code == "FREE" && x.IsActive && !x.IsDeleted);
+            var requestedPlanCode = NormalizePublicPlanCode(command.SelectedPlanCode);
+            var freePlan = _plans.Query().SingleOrDefault(x => x.Code == "FREE" && x.IsActive && x.IsPublic && !x.IsDeleted);
             var freeVersion = freePlan is null ? null : _planVersions.Query()
                 .Where(x => x.PlanId == freePlan.Id && x.Status == PlanVersionStatus.Published && !x.IsDeleted &&
                             x.ValidFrom <= now && (x.ValidUntil == null || x.ValidUntil > now))
@@ -102,6 +103,14 @@ public class AuthService
                 _logger.LogCritical("ACCOUNT_REGISTRATION_BLOCKED_FREE_PLAN_CONFIGURATION_MISSING");
                 return Result<UserSummaryDto>.Fail("Não foi possível preparar seu plano grátis agora. Tente novamente em instantes.");
             }
+            var selectedPlan = requestedPlanCode == "FREE" ? freePlan : _plans.Query()
+                .SingleOrDefault(x => x.Code == requestedPlanCode && x.IsActive && x.IsPublic && !x.IsDeleted);
+            var selectedVersion = selectedPlan is null ? null : _planVersions.Query()
+                .Where(x => x.PlanId == selectedPlan.Id && x.Status == PlanVersionStatus.Published && !x.IsDeleted &&
+                            x.ValidFrom <= now && (x.ValidUntil == null || x.ValidUntil > now))
+                .OrderByDescending(x => x.VersionNumber).FirstOrDefault();
+            if (selectedVersion is null)
+                return Result<UserSummaryDto>.Fail("O plano escolhido não está disponível. Escolha outro plano para continuar.");
             stage = "REGISTER_FREE_PLAN_RESOLVED";
             LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success");
 
@@ -139,12 +148,13 @@ public class AuthService
             var subscription = new Subscription
             {
                 AccountId = account.Id, UserId = user.Id, Plan = PlanType.Free,
-                SelectedPlanVersionId = freeVersion.Id, EffectivePlanVersionId = freeVersion.Id,
-                Status = SubscriptionStatus.Free, Provider = "None", PriceAtActivation = 0m,
+                SelectedPlanVersionId = selectedVersion.Id, EffectivePlanVersionId = freeVersion.Id,
+                Status = requestedPlanCode == "FREE" ? SubscriptionStatus.Free : SubscriptionStatus.PendingPayment,
+                Provider = requestedPlanCode == "FREE" ? "None" : "MercadoPago", PriceAtActivation = 0m,
                 Amount = 0m, StartedAt = now
             };
             var issuer = new IssuerProfile { UserId = user.Id, BusinessName = account.DisplayName, DocumentNumber = document, Phone = command.Phone.Trim(), Email = email, City = command.City.Trim(), Address = BuildAddress(command) };
-            var notification = new Notification { AccountId = account.Id, UserId = user.Id, Title = "Conta criada", Message = "Conta criada. Vamos preparar seu espaço.", Type = NotificationType.Success, Category = NotificationCategory.Account, ActionUrl = "/Onboarding", ActionText = "Continuar" };
+            var notification = new Notification { AccountId = account.Id, UserId = user.Id, Title = "Conta criada", Message = requestedPlanCode == "FREE" ? "Conta criada com o plano Grátis. Vamos preparar seu espaço." : $"Conta criada. Sua escolha pelo plano {selectedPlan!.DisplayName} foi registrada e aguarda contratação.", Type = NotificationType.Success, Category = NotificationCategory.Account, ActionUrl = requestedPlanCode == "FREE" ? "/Onboarding" : "/Subscription", ActionText = "Continuar" };
 
             stage = "REGISTER_ENTITIES_PREPARED";
             LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success", user.Id, account.Id);
@@ -244,5 +254,11 @@ public class AuthService
         var parts = new[] { command.Street, command.StreetNumber, command.Complement, command.District, command.City, command.State };
         var address = string.Join(", ", parts.Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value!.Trim()));
         return string.IsNullOrWhiteSpace(address) ? null : address;
+    }
+
+    private static string NormalizePublicPlanCode(string? code)
+    {
+        var normalized = code?.Trim().ToUpperInvariant();
+        return normalized is "PROFESSIONAL" or "BUSINESS" ? normalized : "FREE";
     }
 }
