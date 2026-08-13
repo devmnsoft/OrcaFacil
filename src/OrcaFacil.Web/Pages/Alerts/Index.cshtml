@@ -25,7 +25,7 @@
 <section class="operational-list">
 @foreach (var item in Model.Items) {
   <article class="metric-card operational-card is-@item.Type.ToString().ToLowerInvariant()">
-    <div><span>@item.Type · @item.Category · @item.CreatedAt.ToLocalTime().ToString("g")</span><h2>@item.Title</h2><p>@IndexModel.Description(item)</p><strong>@(item.IsRead ? "Encerrado" : "Aberto")</strong></div>
+    <div><span>@item.Type · @item.Category · @item.CreatedAt.ToLocalTime().ToString("g")</span><h2>@item.Title</h2><p>@Model.Description(item)</p><strong>@(item.IsRead ? "Encerrado" : "Aberto")</strong></div>
     <div class="filter-actions">
       @if (!string.IsNullOrWhiteSpace(item.ActionUrl)) { <a class="of-button-secondary" href="@item.ActionUrl">@item.ActionText</a> }
       @if (!item.IsRead) {

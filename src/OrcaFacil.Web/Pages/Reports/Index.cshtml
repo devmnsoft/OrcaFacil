@@ -2,10 +2,10 @@
 @model OrcaFacil.Web.Pages.Reports.IndexModel
 @{
     ViewData["Title"] = "Central de inteligência";
-    var funnelCount = IndexModel.FindMetric(Model.Funnel, "Propostas")?.Value ?? 0;
-    var received = IndexModel.FindMetric(Model.Financial, "Valor recebido")?.Value ?? 0;
-    var clientCount = IndexModel.FindMetric(Model.Clients, "Cadastrados")?.Value ?? 0;
-    var serviceCount = IndexModel.FindMetric(Model.Services, "Serviços cadastrados")?.Value ?? 0;
+    var funnelCount = Model.FindMetric(Model.Funnel, "Propostas")?.Value ?? 0;
+    var received = Model.FindMetric(Model.Financial, "Valor recebido")?.Value ?? 0;
+    var clientCount = Model.FindMetric(Model.Clients, "Cadastrados")?.Value ?? 0;
+    var serviceCount = Model.FindMetric(Model.Services, "Serviços cadastrados")?.Value ?? 0;
 }
 <header class="report-hero of-report-hub-hero">
   <div><span class="eyebrow">DECISÕES COM CONTEXTO</span><h1>Central de inteligência</h1><p>Acompanhe o mês com dados reais da conta selecionada e avance direto para cada análise.</p></div>

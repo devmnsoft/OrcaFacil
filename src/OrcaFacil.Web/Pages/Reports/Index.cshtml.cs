@@ -37,6 +37,6 @@ public sealed class IndexModel(
             x.AccountId == accountId && !x.IsDeleted && !x.IsRead && x.Message.Contains("[alert:"), ct);
     }
 
-    public static Metric? FindMetric(IntelligenceReport report, string label) =>
-        report.Metrics.FirstOrDefault(x => x.Label == label);
+    public Metric? FindMetric(IntelligenceReport report, string label) =>
+        report.Metrics.FirstOrDefault(x => string.Equals(x.Label, label, StringComparison.OrdinalIgnoreCase));
 }
