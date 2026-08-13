@@ -1,0 +1,44 @@
+@page "/Import"
+@model OrcaFacil.Web.Pages.Import.IndexModel
+@using OrcaFacil.Domain.Entities
+@{ ViewData["Title"] = "Central de Importação"; ViewData["Section"] = "Cadastros"; }
+
+<header class="of-import-hero">
+    <div><p class="of-eyebrow">Entrada inteligente de dados</p><h1>Traga seus cadastros com segurança</h1><p>Envie CSV UTF-8, confira cada inconsistência e só então crie registros reais nesta conta.</p></div>
+    <a class="of-button-secondary" asp-page="/Import/History">Ver histórico</a>
+</header>
+
+<div asp-validation-summary="ModelOnly" class="of-inline-message" role="alert"></div>
+<section class="of-import-grid" aria-label="Tipos de importação">
+    <article class="of-import-card"><span class="of-import-card__icon">C</span><div><p class="of-eyebrow">Clientes</p><h2>Carteira de clientes</h2><p>Valida nome, e-mail e duplicidades por e-mail, telefone ou documento.</p></div><div class="of-import-actions"><a asp-page-handler="Template" asp-route-type="Clients">Baixar modelo</a><button type="button" class="of-button" data-import-open="Clients">Importar clientes</button></div></article>
+    <article class="of-import-card"><span class="of-import-card__icon">S</span><div><p class="of-eyebrow">Serviços</p><h2>Catálogo de serviços</h2><p>Valida nome, valores e serviços existentes antes de gravar.</p></div><div class="of-import-actions"><a asp-page-handler="Template" asp-route-type="Services">Baixar modelo</a><button type="button" class="of-button" data-import-open="Services">Importar serviços</button></div></article>
+</section>
+
+<dialog class="of-import-dialog" data-import-dialog>
+  <form method="post" enctype="multipart/form-data" asp-page-handler="Upload">
+    @Html.AntiForgeryToken()
+    <header><div><p class="of-eyebrow">Etapa 1 de 2</p><h2>Enviar e validar CSV</h2></div><button type="button" data-import-close aria-label="Fechar">×</button></header>
+    <input type="hidden" asp-for="Type" data-import-type />
+    <label class="of-upload-zone"><strong>Escolha o arquivo CSV UTF-8</strong><span>Até 5 MB. O arquivo será isolado na conta atual.</span><input asp-for="File" type="file" accept=".csv,text/csv" required /></label>
+    <span asp-validation-for="File" class="of-field-error"></span>
+    <footer><button type="button" class="of-button-secondary" data-import-close>Cancelar</button><button type="submit" class="of-button">Validar arquivo</button></footer>
+  </form>
+</dialog>
+
+@if (Model.Preview is { Status: DataImportStatus.ReadyToImport } preview)
+{
+ <section class="of-import-review">
+  <header><div><p class="of-eyebrow">Etapa 2 de 2</p><h2>Revisão antes de importar</h2><p>@preview.FileName · @preview.TotalRows linhas</p></div><div class="of-import-summary"><span class="is-success">@(preview.TotalRows-preview.FailedRows) prontas</span><span class="is-danger">@preview.FailedRows bloqueadas</span></div></header>
+  <div class="of-table-scroll"><table class="of-import-table"><thead><tr><th>Linha</th><th>Registro</th><th>Situação</th><th>Orientação</th></tr></thead><tbody>
+  @foreach(var row in Model.Rows){<tr><td data-label="Linha">@row.Line</td><td data-label="Registro"><strong>@(row.Value("name") ?? "Sem nome")</strong><small>@(row.Value("email") ?? row.Value("description"))</small></td><td data-label="Situação"><span class="@(row.Errors.Count==0?"is-success":"is-danger")">@(row.Errors.Count==0?"Válida":"Não será importada")</span></td><td data-label="Orientação">@(row.Errors.Count==0?"Pronta para confirmar.":string.Join(" ",row.Errors))</td></tr>}
+  </tbody></table></div>
+  <footer><a class="of-button-secondary" asp-page="/Import/Index">Escolher outro arquivo</a>@if(preview.FailedRows>0){<a class="of-button-secondary" asp-page-handler="Errors" asp-route-id="@preview.Id">Baixar erros</a>}<form method="post" asp-page-handler="Confirm" asp-route-id="@preview.Id">@Html.AntiForgeryToken()<button class="of-button" type="submit" disabled="@(preview.TotalRows==preview.FailedRows)">Confirmar @(preview.TotalRows-preview.FailedRows) registros</button></form></footer>
+ </section>
+}
+
+<section class="of-import-history"><header><div><p class="of-eyebrow">Rastreabilidade</p><h2>Importações recentes</h2></div></header>
+@if(Model.Recent.Count==0){<div class="of-empty-state"><span class="of-import-card__icon">↑</span><h2>Nenhuma importação ainda</h2><p>Baixe um modelo, preencha com seus dados e valide sem alterar o banco até sua confirmação.</p></div>}
+else{<div class="of-table-scroll"><table class="of-import-table"><thead><tr><th>Data</th><th>Arquivo</th><th>Tipo</th><th>Status</th><th>Resultado</th></tr></thead><tbody>@foreach(var item in Model.Recent){<tr><td data-label="Data">@item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td><td data-label="Arquivo">@item.FileName</td><td data-label="Tipo">@item.Type</td><td data-label="Status"><span>@item.Status</span></td><td data-label="Resultado">@item.ImportedRows importados · @item.FailedRows erros</td></tr>}</tbody></table></div>}
+</section>
+
+@section Scripts { <script>document.querySelectorAll('[data-import-open]').forEach(b=>b.addEventListener('click',()=>{document.querySelector('[data-import-type]').value=b.dataset.importOpen;document.querySelector('[data-import-dialog]').showModal()}));document.querySelectorAll('[data-import-close]').forEach(b=>b.addEventListener('click',()=>b.closest('dialog').close()));</script> }

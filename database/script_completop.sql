@@ -660,3 +660,24 @@ ALTER TABLE orcafacil.service_catalog_items ADD COLUMN IF NOT EXISTS is_recurrin
 ALTER TABLE orcafacil.service_catalog_items ADD COLUMN IF NOT EXISTS is_recommended boolean NOT NULL DEFAULT false;
 CREATE INDEX IF NOT EXISTS ix_service_catalog_items_account_recurring ON orcafacil.service_catalog_items(account_id, is_recurring) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS ix_service_catalog_items_account_recommended ON orcafacil.service_catalog_items(account_id, is_recommended) WHERE is_deleted = false AND is_active = true;
+-- Governança da importação de cadastros (idempotente)
+CREATE TABLE IF NOT EXISTS orcafacil.data_imports (
+    id uuid PRIMARY KEY,
+    account_id uuid NOT NULL,
+    type varchar(24) NOT NULL,
+    file_name varchar(255) NOT NULL,
+    uploaded_by_user_id uuid NOT NULL,
+    status varchar(32) NOT NULL,
+    total_rows integer NOT NULL DEFAULT 0,
+    imported_rows integer NOT NULL DEFAULT 0,
+    skipped_rows integer NOT NULL DEFAULT 0,
+    failed_rows integer NOT NULL DEFAULT 0,
+    completed_at timestamptz NULL,
+    summary varchar(2000) NULL,
+    staged_rows_json jsonb NULL,
+    errors_json jsonb NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NULL,
+    is_deleted boolean NOT NULL DEFAULT false
+);
+CREATE INDEX IF NOT EXISTS ix_data_imports_account_id_created_at ON orcafacil.data_imports (account_id, created_at);
