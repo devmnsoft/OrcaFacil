@@ -6,8 +6,11 @@ public sealed class ServiceEditorInput
     [Required,MaxLength(180)] public string Name { get; set; } = ""; [MaxLength(40)] public string? Code { get; set; }
     public Guid? CategoryId { get; set; } [MaxLength(1200)] public string? Description { get; set; } [Required] public string UnitCode { get; set; } = "service";
     [Range(0,999999999)] public decimal StandardPrice { get; set; } [Range(0,999999999)] public decimal EstimatedCost { get; set; }
+    [Range(0,99.99)] public decimal DesiredMarginPercentage { get; set; }
     [Range(1,525600)] public int? SuggestedDurationMinutes { get; set; } [MaxLength(2000)] public string? InternalNotes { get; set; }
-    public bool IsFavorite { get; set; } public bool IsActive { get; set; } = true; public uint Version { get; set; }
+    [MaxLength(120)] public string? DefaultDeliveryTerm { get; set; } [MaxLength(2000)] public string? DefaultNotes { get; set; }
+    [MaxLength(500)] public string? Tags { get; set; }
+    public bool IsFavorite { get; set; } public bool IsActive { get; set; } = true; public bool IsRecurring { get; set; } public bool IsRecommended { get; set; } public uint Version { get; set; }
 }
 public sealed class ServiceEditorViewModel
 {

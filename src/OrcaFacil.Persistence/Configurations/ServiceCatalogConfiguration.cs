@@ -12,6 +12,8 @@ public sealed class ServiceCatalogItemConfiguration : IEntityTypeConfiguration<S
         builder.Property(x => x.Code).HasMaxLength(40); builder.Property(x => x.Name).HasMaxLength(180).IsRequired();
         builder.Property(x => x.Description).HasMaxLength(1200); builder.Property(x => x.UnitCode).HasMaxLength(24).IsRequired();
         builder.Property(x => x.StandardPrice).HasPrecision(18, 2); builder.Property(x => x.EstimatedCost).HasPrecision(18, 2);
+        builder.Property(x => x.DesiredMarginPercentage).HasPrecision(5, 2); builder.Property(x => x.DefaultDeliveryTerm).HasMaxLength(120);
+        builder.Property(x => x.DefaultNotes).HasMaxLength(2000); builder.Property(x => x.Tags).HasMaxLength(500);
         builder.Property(x => x.InternalNotes).HasMaxLength(2000); builder.Property(x => x.Version).IsRowVersion();
         builder.HasIndex(x => new { x.AccountId, x.Name }); builder.HasIndex(x => new { x.AccountId, x.Code }).IsUnique();
     }

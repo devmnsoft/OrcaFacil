@@ -650,3 +650,13 @@ CREATE TABLE IF NOT EXISTS orcafacil.account_settings (
  accepted_payment_methods text, bank_name text, bank_branch text, bank_account text, beneficiary text, pix_key text, payment_instructions text, receipt_text text, collection_message text, notification_preferences_json jsonb NOT NULL DEFAULT '{}',
  created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
 CREATE UNIQUE INDEX IF NOT EXISTS ix_account_settings_account_id ON orcafacil.account_settings(account_id);
+
+-- Catálogo inteligente e precificação orientada (2026-08-13).
+ALTER TABLE orcafacil.service_catalog_items ADD COLUMN IF NOT EXISTS desired_margin_percentage numeric(5,2) NOT NULL DEFAULT 0;
+ALTER TABLE orcafacil.service_catalog_items ADD COLUMN IF NOT EXISTS default_delivery_term varchar(120);
+ALTER TABLE orcafacil.service_catalog_items ADD COLUMN IF NOT EXISTS default_notes varchar(2000);
+ALTER TABLE orcafacil.service_catalog_items ADD COLUMN IF NOT EXISTS tags varchar(500);
+ALTER TABLE orcafacil.service_catalog_items ADD COLUMN IF NOT EXISTS is_recurring boolean NOT NULL DEFAULT false;
+ALTER TABLE orcafacil.service_catalog_items ADD COLUMN IF NOT EXISTS is_recommended boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS ix_service_catalog_items_account_recurring ON orcafacil.service_catalog_items(account_id, is_recurring) WHERE is_deleted = false;
+CREATE INDEX IF NOT EXISTS ix_service_catalog_items_account_recommended ON orcafacil.service_catalog_items(account_id, is_recommended) WHERE is_deleted = false AND is_active = true;

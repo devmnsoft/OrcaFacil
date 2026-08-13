@@ -12,14 +12,23 @@ public sealed class ServiceCatalogItem : Entity
     public string UnitCode { get; set; } = "service";
     public decimal StandardPrice { get; set; }
     public decimal EstimatedCost { get; set; }
+    public decimal DesiredMarginPercentage { get; set; }
     public int? SuggestedDurationMinutes { get; set; }
+    public string? DefaultDeliveryTerm { get; set; }
+    public string? DefaultNotes { get; set; }
+    public string? Tags { get; set; }
     public string? InternalNotes { get; set; }
     public bool IsFavorite { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool IsRecurring { get; set; }
+    public bool IsRecommended { get; set; }
     public int UseCount { get; set; }
     public DateTime? LastUsedAt { get; set; }
     public uint Version { get; set; }
     public decimal Margin => StandardPrice - EstimatedCost;
+    public decimal SuggestedPrice => DesiredMarginPercentage >= 100
+        ? StandardPrice
+        : Math.Round(EstimatedCost / (1 - DesiredMarginPercentage / 100), 2, MidpointRounding.AwayFromZero);
 }
 
 public sealed class ServiceCategory : Entity
