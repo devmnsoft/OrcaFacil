@@ -84,6 +84,7 @@ builder.Services.AddScoped<IDashboardExperienceService, DashboardExperienceServi
 builder.Services.AddSingleton<IContextualHelpService, ContextualHelpService>();
 builder.Services.AddScoped<IPlanExperienceService, PlanExperienceService>();
 builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
+builder.Services.AddSingleton<INavigationMapService, NavigationMapService>();
 builder.Services.AddScoped<IIntelligenceReportService, IntelligenceReportService>();
 builder.Services.AddScoped<IOperationalAlertService, OperationalAlertService>();
 builder.Services.AddScoped<IAdminShellViewModelFactory, AdminShellViewModelFactory>();
