@@ -3,9 +3,9 @@
 <nav class="of-menu">
   <a class="@Active("/Dashboard")" asp-page="/Dashboard/Index">Dashboard</a><a class="@Active("/CommercialRoutine")" asp-page="/CommercialRoutine/Index">Rotina comercial</a>
   <a class="@Active("/Documents/New")" asp-page="/Documents/New">Novo orçamento</a><a class="@Active("/Documents/Index")" asp-page="/Documents/Index">Orçamentos</a>
-  <a class="@Active("/Clients")" asp-page="/Clients/Index">Clientes</a><a class="@Active("/Services")" asp-page="/Services/Index">Serviços</a><a class="@Active("/ServicePackages")" asp-page="/ServicePackages/Index">Pacotes</a><a class="@Active("/Contracts")" asp-page="/Contracts/Index">Contratos</a>
+  <a class="@Active("/Clients")" asp-page="/Clients/Index">Clientes</a><a class="@Active("/Services")" asp-page="/Services/Index">Serviços</a><a class="@Active("/Contracts")" asp-page="/Contracts/Index">Contratos</a>
   <a class="@Active("/WorkOrders")" asp-page="/WorkOrders/Index">OS</a><a class="@Active("/Schedule")" asp-page="/Schedule/Index">Agenda</a><a class="@Active("/Payments")" asp-page="/Payments/Index">Pagamentos</a><a class="@Active("/Receipts")" asp-page="/Receipts/Index">Recibos</a>
-  <a class="@Active("/Reports")" asp-page="/Reports/Index">Relatórios</a><a class="@Active("/Alerts")" asp-page="/Alerts/Index">Alertas</a><a class="@Active("/Sales")" asp-page="/Sales/Leads/Index">Leads</a><a class="@Active("/MessageTemplates")" asp-page="/MessageTemplates/Index">Templates de mensagem</a>
+  <a class="@Active("/Reports")" asp-page="/Reports/Index">Relatórios</a><a class="@Active("/Alerts")" asp-page="/Alerts/Index">Alertas</a><a class="@Active("/MessageTemplates")" asp-page="/MessageTemplates/Index">Templates de mensagem</a>
   <a class="@Active("/Settings")" asp-page="/Settings/Index">Configurações</a><a class="@Active("/Subscription")" asp-page="/Subscription/Index">Meu plano</a><a class="@Active("/Support")" asp-page="/Support/Index">Suporte</a>
   @if (User.IsInRole("SuperAdmin")) { <a asp-area="Admin" asp-page="/Dashboard">Admin</a><a asp-page="/Diagnostico">Diagnóstico</a> }
 </nav>

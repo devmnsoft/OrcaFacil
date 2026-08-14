@@ -39,6 +39,14 @@ public class LoginModel : PageModel
             TempData.Error("Não foi possível entrar agora porque o serviço de dados está temporariamente indisponível.");
             return Page();
         }
+        catch (Exception ex) when (ex.IsPostgresUndefinedColumn())
+        {
+            _logger.LogError(ex, "LOGIN_SCHEMA_OUTDATED CorrelationId {CorrelationId} SqlState {SqlState}", HttpContext.TraceIdentifier, "42703");
+            const string message = "O banco de dados está desatualizado. Execute a atualização do schema antes de fazer login.";
+            ModelState.AddModelError(string.Empty, message);
+            TempData.Error(message);
+            return Page();
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "LOGIN_UNEXPECTED_ERROR CorrelationId {CorrelationId} Operation {Operation}", HttpContext.TraceIdentifier, "Login");
