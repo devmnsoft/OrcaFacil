@@ -242,7 +242,8 @@ public class AuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao autenticar usuário");
+            _logger.LogError(ex, "AUTH_LOGIN_ERROR CorrelationId {CorrelationId} ExceptionType {ExceptionType}",
+                command.CorrelationId ?? "not-provided", ex.GetType().Name);
             throw;
         }
     }

@@ -72,7 +72,18 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
             var searchPath = await connection.ExecuteScalarAsync<string>(new CommandDefinition("show search_path", cancellationToken: ct));
             var canRead = await connection.ExecuteScalarAsync<bool>(new CommandDefinition("select has_schema_privilege(current_user, @Schema, 'USAGE')", new { Schema = ExpectedSchema }, cancellationToken: ct));
             var canWrite = await connection.ExecuteScalarAsync<bool>(new CommandDefinition("select has_schema_privilege(current_user, @Schema, 'CREATE')", new { Schema = ExpectedSchema }, cancellationToken: ct));
-            var requiredColumns = new[] { "documents.account_id", "clients.account_id", "users.session_version", "public_document_accesses.token_hash" };
+            // Keep authentication prerequisites explicit. A partially upgraded users table must be
+            // diagnosed before EF Core attempts to materialize UserAccount during sign-in.
+            var requiredColumns = new[]
+            {
+                "documents.account_id", "clients.account_id", "public_document_accesses.token_hash",
+                "users.failed_login_attempts", "users.last_failed_login_at",
+                "users.last_successful_login_at", "users.locked_until", "users.is_blocked",
+                "users.block_reason", "users.must_change_password", "users.password_changed_at",
+                "users.password_changed_by_user_id", "users.password_expires_at",
+                "users.password_reset_reason", "users.session_version", "users.accepted_terms_at",
+                "users.accepted_privacy_at", "users.legacy_unversioned_acceptance"
+            };
             var columns = (await connection.QueryAsync<string>(new CommandDefinition("select table_name || '.' || column_name from information_schema.columns where table_schema=@Schema", new { Schema = ExpectedSchema }, cancellationToken: ct))).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var missingColumns = requiredColumns.Where(x => !columns.Contains(x)).ToArray();
             var requiredIndexes = new[] { "ix_documents_account_client", "ux_public_document_access_token_hash", "ix_work_orders_schedule" };

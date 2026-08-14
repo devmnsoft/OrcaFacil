@@ -36,6 +36,7 @@
     "check:public-navigation": "node scripts/check-public-navigation.mjs",
     "check:js-safety": "node scripts/check-js-safety.mjs",
     "check:authenticated-navigation": "node scripts/check-authenticated-navigation.mjs",
+    "check:routes": "node scripts/check-routes.mjs",
     "check:authenticated-ui": "node scripts/check-authenticated-ui-legacy-dependencies.mjs"
   },
   "engines": {
