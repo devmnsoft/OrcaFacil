@@ -19,6 +19,7 @@
   }
   else
   {
+    <div class="of-admin-alert" role="alert"><strong>Banco desatualizado: execute o script de atualização antes de continuar.</strong><br />Use <code>scripts/update-database-local.ps1</code>; nenhuma informação técnica sensível é exibida aqui.</div>
     <div class="table-responsive"><table class="of-data-table"><thead><tr><th>Tabela</th><th>Coluna</th><th>Estado</th><th>Migration recomendada</th></tr></thead><tbody>
     @foreach (var issue in contract.Issues)
     {
@@ -31,4 +32,4 @@
 @if (Model.LocalSettingsPath is not null) { <p class="of-security-note"><span>Para alterar a conexão, edite <code>src/OrcaFacil.Web/appsettings.Local.json</code> e reinicie a aplicação.</span></p> }
 <div class="of-admin-grid"><div ><div class="of-card"><h2 class="h5">Tabelas encontradas</h2>@if((r?.ExistingTables.Count ?? 0)==0){<partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Nenhuma tabela encontrada.", Text="Execute o script completo para criar a estrutura esperada.", Icon="bi-database-exclamation" }' />}else{<ul class="list-group list-group-flush">@foreach (var table in r?.ExistingTables ?? Array.Empty<string>()) { <li class="list-group-item"><span class="of-admin-status ok">OK</span> @table</li> }</ul>}</div></div><div ><div class="of-card"><h2 class="h5">Tabelas ausentes</h2>@if((r?.MissingTables.Count ?? 0)==0){<p><span class="of-admin-status ok">OK</span> Nenhuma tabela ausente.</p>}else{<ul class="list-group list-group-flush">@foreach (var table in r?.MissingTables ?? Array.Empty<string>()) { <li class="list-group-item"><span class="of-admin-status error">Erro</span> @table</li> }</ul>}</div></div></div>
 <div class="of-card"><h2 class="h5">Colunas críticas ausentes</h2>@if ((r?.MissingColumns?.Count ?? 0) == 0) { <p><span class="of-admin-status ok">OK</span> Contrato de colunas validado.</p> } else { <ul>@foreach (var column in r?.MissingColumns ?? Array.Empty<string>()) { <li><code>@column</code></li> }</ul> }</div>
-<div class="of-card"><h2 class="h5">Execução manual</h2><p>Para reparar as colunas de login, execute <code>psql -U postgres -d orcafacil -f database/patch_fix_users_login_security_columns.sql</code>. Para atualizar toda a estrutura, execute <code>psql -U postgres -d orcafacil -f database/script_completop.sql</code>. Ambos são idempotentes e usam somente o schema <code>orcafacil</code>.</p></div>
+<div class="of-card"><h2 class="h5">Execução manual</h2><p>Execute <code>.\scripts\update-database-local.ps1 -Host localhost -Port 5432 -Database orcafacil -User postgres</code>. O atualizador aplica o script completo e o patch RC idempotentes, usando somente o schema <code>orcafacil</code> e sem apagar dados.</p></div>

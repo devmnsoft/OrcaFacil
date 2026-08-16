@@ -15,9 +15,21 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
     public static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> RegistrationContract =
         new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
         {
-            ["users"] = Columns(("id", "uuid"), ("email", "character varying"), ("password_hash", "character varying"), ("session_version", "integer")),
+            ["users"] = Columns(
+                ("id", "uuid"), ("email", "character varying"), ("password_hash", "character varying"),
+                ("failed_login_attempts", "integer"), ("last_failed_login_at", "timestamp with time zone"),
+                ("last_successful_login_at", "timestamp with time zone"), ("locked_until", "timestamp with time zone"),
+                ("is_blocked", "boolean"), ("block_reason", "character varying"), ("must_change_password", "boolean"),
+                ("password_changed_at", "timestamp with time zone"), ("password_changed_by_user_id", "uuid"),
+                ("password_expires_at", "timestamp with time zone"), ("password_reset_reason", "character varying"),
+                ("session_version", "integer"), ("accepted_privacy_at", "timestamp with time zone"),
+                ("accepted_terms_at", "timestamp with time zone"), ("legacy_unversioned_acceptance", "boolean")),
             ["business_accounts"] = Columns(("id", "uuid"), ("document_number", "character varying"), ("is_deleted", "boolean")),
             ["account_members"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("user_id", "uuid"), ("role_code", "character varying")),
+            ["documents"] = Columns(("id", "uuid"), ("account_id", "uuid")),
+            ["clients"] = Columns(("id", "uuid"), ("account_id", "uuid")),
+            ["service_catalog_items"] = Columns(("id", "uuid"), ("account_id", "uuid")),
+            ["public_quotes"] = Columns(("id", "uuid"), ("document_id", "uuid")),
             ["billing_customer_profiles"] = Columns(
                 ("id", "uuid"), ("account_id", "uuid"), ("user_id", "uuid"), ("person_type", "character varying"),
                 ("document_type", "character varying"), ("document_number", "character varying"), ("name", "character varying"),
