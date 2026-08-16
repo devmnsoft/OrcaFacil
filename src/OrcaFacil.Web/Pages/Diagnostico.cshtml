@@ -19,5 +19,6 @@
   <li>Autenticação: cookie auth configurada</li>
 </ul>
 @if (db?.CanConnect != true || db.MissingTables.Count > 0 || (db.MissingColumns?.Count ?? 0) > 0) { <div class="callout"><strong>Como corrigir</strong><p>Para corrigir somente o login, execute <code>psql -v ON_ERROR_STOP=1 -f database/patch_fix_users_login_security_columns.sql</code>. Para atualizar todo o schema, execute <code>psql -v ON_ERROR_STOP=1 -f database/script_completop.sql</code>. Depois, atualize esta página.</p></div> }
+@if (db?.MissingTables.Contains("account_onboarding_states", StringComparer.OrdinalIgnoreCase) == true) { <div class="callout"><strong>Banco desatualizado: tabela account_onboarding_states ausente.</strong><p>Execute <code>database/patch_fix_account_onboarding_states.sql</code> ou <code>database/script_completop.sql</code>.</p></div> }
 <details><summary>Ver detalhes técnicos</summary><dl><dt>PostgreSQL</dt><dd>@db?.PostgreSqlVersion</dd><dt>Usuário</dt><dd>@db?.ConnectedUser</dd><dt>search_path</dt><dd>@db?.SearchPath</dd><dt>Permissões</dt><dd>Leitura: @db?.CanRead; criação: @db?.CanWrite</dd><dt>Tabelas faltantes</dt><dd>@string.Join(", ", db?.MissingTables ?? [])</dd><dt>Colunas faltantes</dt><dd>@string.Join(", ", db?.MissingColumns ?? [])</dd></dl></details>
 @if (!string.IsNullOrWhiteSpace(db?.Error)) { <p class="text-danger">@db.Error</p> }

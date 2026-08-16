@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OrcaFacil.Application.Auth;
@@ -27,9 +28,11 @@ public class LoginModel : PageModel
         {
             var result = await _authService.LoginAsync(new LoginUserCommand(Input.Email, Input.Password, HttpContext.TraceIdentifier), ct);
             if (!result.Succeeded || result.Value is null) { ModelState.AddModelError(string.Empty, result.Error ?? "Não foi possível entrar."); TempData.Error(result.Error ?? "Não foi possível entrar."); _logger.LogWarning("USER_LOGIN_FAILED_WEB CorrelationId {CorrelationId}", HttpContext.TraceIdentifier); return Page(); }
+            // Validate the post-login dependency before emitting the authentication cookie. This
+            // avoids leaving a valid identity behind when an older database cannot run onboarding.
+            var configured = await _db.AccountOnboardingStates.AsNoTracking().AnyAsync(x => x.UserId == result.Value.Id && x.CompletedAt != null && !x.IsDeleted, ct);
             await _signIn.SignInAsync(HttpContext, result.Value, cancellationToken: ct);
             TempData.Success("Login realizado com sucesso.");
-            var configured = await _db.AccountOnboardingStates.AsNoTracking().AnyAsync(x => x.UserId == result.Value.Id && x.CompletedAt != null && !x.IsDeleted, ct);
             return RedirectToPage(configured ? "/Dashboard/Index" : "/Onboarding/Index");
         }
         catch (Exception ex) when (ex.IsPostgresInvalidPassword())
@@ -39,10 +42,14 @@ public class LoginModel : PageModel
             TempData.Error("Não foi possível entrar agora porque o serviço de dados está temporariamente indisponível.");
             return Page();
         }
-        catch (Exception ex) when (ex.IsPostgresUndefinedColumn())
+        catch (Exception ex) when (ex.IsPostgresUndefinedColumn() || ex.IsPostgresUndefinedTable())
         {
-            _logger.LogError(ex, "LOGIN_SCHEMA_OUTDATED CorrelationId {CorrelationId} SqlState {SqlState}", HttpContext.TraceIdentifier, "42703");
-            const string message = "O banco de dados está desatualizado. Execute a atualização do schema antes de fazer login.";
+            // Defensive cleanup also covers failures after a custom sign-in implementation has
+            // started writing the response.
+            await HttpContext.SignOutAsync();
+            var sqlState = ex.IsPostgresUndefinedTable() ? "42P01" : "42703";
+            _logger.LogError(ex, "LOGIN_SCHEMA_OUTDATED CorrelationId {CorrelationId} SqlState {SqlState}", HttpContext.TraceIdentifier, sqlState);
+            const string message = "O login foi validado, mas o banco de dados está desatualizado para o onboarding. Execute a atualização do schema e tente novamente.";
             ModelState.AddModelError(string.Empty, message);
             TempData.Error(message);
             return Page();
