@@ -10,6 +10,9 @@ public static class DatabaseExceptionExtensions
     public static bool IsPostgresUndefinedColumn(this Exception exception) =>
         exception.FindPostgresSqlState("42703") is not null;
 
+    public static bool IsPostgresUndefinedTable(this Exception exception) =>
+        exception.FindPostgresSqlState("42P01") is not null;
+
     public static Exception? FindPostgresSqlState(this Exception exception, string sqlState)
     {
         for (var current = exception; current is not null; current = current.InnerException!)

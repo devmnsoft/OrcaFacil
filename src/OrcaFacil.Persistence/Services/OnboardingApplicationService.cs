@@ -23,22 +23,26 @@ public sealed class OnboardingApplicationService(
                 "Não foi possível identificar seu espaço."));
         }
 
-        var state = await db.AccountOnboardingStates.SingleOrDefaultAsync(
+        // The unique account/user index is the concurrency boundary. An upsert avoids two
+        // simultaneous first requests creating duplicate onboarding rows.
+        const string initialStep = "Welcome";
+        var now = DateTime.UtcNow;
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO orcafacil.account_onboarding_states
+                (id, account_id, user_id, current_step, last_seen_at, created_at, is_deleted)
+            VALUES
+                ({Guid.NewGuid()}, {accountId}, {current.UserId}, {initialStep}, {now}, {now}, false)
+            ON CONFLICT (account_id, user_id) DO UPDATE
+                SET is_deleted = false,
+                    last_seen_at = EXCLUDED.last_seen_at,
+                    updated_at = EXCLUDED.last_seen_at
+            """, ct);
+
+        var state = await db.AccountOnboardingStates.SingleAsync(
             x => x.AccountId == accountId &&
                  x.UserId == current.UserId &&
                  !x.IsDeleted,
             ct);
-
-        if (state is null)
-        {
-            state = new AccountOnboardingState
-            {
-                AccountId = accountId,
-                UserId = current.UserId
-            };
-            db.Add(state);
-            await db.SaveChangesAsync(ct);
-        }
 
         state.LastSeenAt = DateTime.UtcNow;
         return (state, null);

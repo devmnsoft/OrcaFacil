@@ -560,6 +560,52 @@ INSERT INTO orcafacil.features(id,code,display_name,description,value_type,categ
 SELECT md5(code)::uuid,code,name,name,type,category FROM (VALUES
 ('team.members_limit','Pessoas da equipe','Integer','Equipe'),('clients.active_limit','Clientes ativos','Integer','Clientes'),('services.active_limit','Serviços ativos','Integer','Serviços'),('documents.monthly_limit','Documentos mensais','Integer','Documentos'),('pdf.monthly_limit','PDFs mensais','Integer','Documentos'),('pdf.watermark','Marca OrçaFácil','Boolean','Documentos'),('branding.custom_logo','Logo próprio','Boolean','Marca'),('history.days_visible','Histórico visível','Integer','Histórico'),('templates.basic_limit','Modelos básicos','Integer','Modelos'),('templates.custom_enabled','Modelos personalizados','Boolean','Modelos'),('public_approval.enabled','Aprovação pública','Boolean','Documentos'),('public_approval.monthly_limit','Aprovações mensais','Integer','Documentos'),('document.convert_to_receipt','Conversão em recibo','Boolean','Documentos'),('sharing.whatsapp','Compartilhamento por WhatsApp','Boolean','Compartilhamento'),('sharing.public_link','Link público','Boolean','Compartilhamento'),('numbering.custom_prefix','Prefixo personalizado','Boolean','Documentos'),('commercial.pipeline','Pipeline comercial','Boolean','Comercial'),('commercial.followups','Acompanhamentos','Boolean','Comercial'),('commercial.metrics','Indicadores comerciais','Boolean','Comercial'),('reports.basic','Relatórios básicos','Boolean','Relatórios'),('reports.advanced','Relatórios avançados','Boolean','Relatórios'),('exports.csv','Exportação CSV','Boolean','Relatórios'),('audit.account','Auditoria da conta','Boolean','Auditoria'),('support.priority','Suporte prioritário','Boolean','Suporte')) f(code,name,type,category) ON CONFLICT(code) DO NOTHING;
 
+
+-- Onboarding por conta (correção aditiva e segura para reexecução).
+CREATE TABLE IF NOT EXISTS orcafacil.account_onboarding_states (
+    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    account_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    current_step varchar(32) NOT NULL DEFAULT 'Welcome',
+    business_profile_completed_at timestamptz,
+    issuer_profile_completed_at timestamptz,
+    first_client_completed_at timestamptz,
+    first_service_completed_at timestamptz,
+    first_budget_started_at timestamptz,
+    first_budget_completed_at timestamptz,
+    completed_at timestamptz,
+    skipped_at timestamptz,
+    last_seen_at timestamptz NOT NULL DEFAULT now(),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz,
+    is_deleted boolean NOT NULL DEFAULT false,
+    CONSTRAINT pk_account_onboarding_states PRIMARY KEY (id)
+);
+
+-- Repara instalações em que a tabela foi criada parcialmente. As colunas de
+-- vínculo permanecem sem valor padrão para nunca associar dados à conta errada.
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS id uuid DEFAULT gen_random_uuid();
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS account_id uuid;
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS user_id uuid;
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS current_step varchar(32) NOT NULL DEFAULT 'Welcome';
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS business_profile_completed_at timestamptz;
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS issuer_profile_completed_at timestamptz;
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS first_client_completed_at timestamptz;
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS first_service_completed_at timestamptz;
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS first_budget_started_at timestamptz;
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS first_budget_completed_at timestamptz;
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS completed_at timestamptz;
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS skipped_at timestamptz;
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS last_seen_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS updated_at timestamptz;
+ALTER TABLE orcafacil.account_onboarding_states ADD COLUMN IF NOT EXISTS is_deleted boolean NOT NULL DEFAULT false;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ix_account_onboarding_states_account_id_user_id
+    ON orcafacil.account_onboarding_states (account_id, user_id);
+CREATE INDEX IF NOT EXISTS ix_account_onboarding_states_current_step_last_seen_at
+    ON orcafacil.account_onboarding_states (current_step, last_seen_at);
+
 COMMIT;
 
 -- RELEASE OPERACIONAL 4: recuperação segura e fila transacional

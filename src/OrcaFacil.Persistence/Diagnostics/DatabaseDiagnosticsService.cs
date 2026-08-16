@@ -16,7 +16,7 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
         "user_usage", "subscriptions", "payments", "payment_events", "mercadopago_webhook_events",
         "billing_customer_profiles", "clients", "plan_features", "admin_settings", "notifications",
         "audit_logs", "system_logs", "system_errors", "business_accounts", "account_members",
-        "plans", "plan_versions"
+        "plans", "plan_versions", "account_onboarding_states"
     ];
 
     private readonly IConfiguration _configuration;
@@ -82,11 +82,21 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
                 "users.block_reason", "users.must_change_password", "users.password_changed_at",
                 "users.password_changed_by_user_id", "users.password_expires_at",
                 "users.password_reset_reason", "users.session_version", "users.accepted_terms_at",
-                "users.accepted_privacy_at", "users.legacy_unversioned_acceptance"
+                "users.accepted_privacy_at", "users.legacy_unversioned_acceptance",
+                "account_onboarding_states.id", "account_onboarding_states.account_id",
+                "account_onboarding_states.user_id", "account_onboarding_states.current_step",
+                "account_onboarding_states.completed_at", "account_onboarding_states.skipped_at",
+                "account_onboarding_states.last_seen_at", "account_onboarding_states.created_at",
+                "account_onboarding_states.updated_at", "account_onboarding_states.is_deleted"
             };
             var columns = (await connection.QueryAsync<string>(new CommandDefinition("select table_name || '.' || column_name from information_schema.columns where table_schema=@Schema", new { Schema = ExpectedSchema }, cancellationToken: ct))).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var missingColumns = requiredColumns.Where(x => !columns.Contains(x)).ToArray();
-            var requiredIndexes = new[] { "ix_documents_account_client", "ux_public_document_access_token_hash", "ix_work_orders_schedule" };
+            var requiredIndexes = new[]
+            {
+                "ix_documents_account_client", "ux_public_document_access_token_hash", "ix_work_orders_schedule",
+                "ix_account_onboarding_states_account_id_user_id",
+                "ix_account_onboarding_states_current_step_last_seen_at"
+            };
             var indexes = (await connection.QueryAsync<string>(new CommandDefinition("select indexname from pg_indexes where schemaname=@Schema", new { Schema = ExpectedSchema }, cancellationToken: ct))).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var missingIndexes = requiredIndexes.Where(x => !indexes.Contains(x)).ToArray();
             var appliedMigrations = existing.Contains("__EFMigrationsHistory")
