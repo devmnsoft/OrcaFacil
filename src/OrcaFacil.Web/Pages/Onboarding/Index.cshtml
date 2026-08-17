@@ -23,7 +23,9 @@
 {
   <li class="@(step.IsCompleted ? "is-complete" : null)">
     <span class="of-activation-status" aria-hidden="true">@(step.IsCompleted ? "✓" : "○")</span>
-    <div><h2>@step.Title</h2><p>@step.Description</p></div>
+    <div><h2>@step.Title</h2><p>@step.Description</p>
+      @if (step.CompletedAt.HasValue) { <time class="of-activation-date" datetime="@step.CompletedAt.Value.ToString("O")">Concluído em @step.CompletedAt.Value.ToLocalTime().ToString("dd/MM/yyyy")</time> }
+    </div>
     @if (step.IsCompleted) { <span class="of-activation-done">Concluído</span> }
     else { <a class="of-onboarding-button of-onboarding-button--secondary" href="@step.Page">@step.ActionLabel</a> }
   </li>
