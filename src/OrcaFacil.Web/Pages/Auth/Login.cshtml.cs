@@ -28,10 +28,28 @@ public class LoginModel : PageModel
         _db = db;
     }
     [BindProperty] public InputModel Input { get; set; } = new();
-    public record InputModel { [Required, EmailAddress] public string Email { get; set; } = string.Empty; [Required] public string Password { get; set; } = string.Empty; }
+    public record InputModel
+    {
+        [Required, EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        public string Password { get; set; } = string.Empty;
+
+        // Honeypot: the field is visually hidden and must remain empty. This adds a lightweight,
+        // accessible bot check without forcing legitimate users through an external CAPTCHA.
+        public string? Website { get; set; }
+    }
     public IActionResult OnGet() => User.Identity?.IsAuthenticated == true ? RedirectToPage("/Dashboard/Index") : Page();
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
+        if (!string.IsNullOrWhiteSpace(Input.Website))
+        {
+            _logger.LogWarning("LOGIN_BOT_CHALLENGE_FAILED CorrelationId {CorrelationId}", HttpContext.TraceIdentifier);
+            ModelState.AddModelError(string.Empty, "Não foi possível validar este acesso. Atualize a página e tente novamente.");
+            return Page();
+        }
+
         if (!ModelState.IsValid) { TempData.Warning("Informe e-mail e senha para entrar."); return Page(); }
         try
         {
