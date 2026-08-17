@@ -1,7 +1,7 @@
 using OrcaFacil.Application.Common;
 using OrcaFacil.Domain.Enums;
 namespace OrcaFacil.Application.Onboarding;
-public sealed record ActivationStepView(string Code, string Title, string Description, string Page, string ActionLabel, bool IsCompleted);
+public sealed record ActivationStepView(string Code, string Title, string Description, string Page, string ActionLabel, bool IsCompleted, DateTime? CompletedAt);
 public sealed record OnboardingStateView(OnboardingStep CurrentStep, int CompletedSteps, int TotalSteps, bool IsCompleted, DateTime? SkippedAt, NextActionDescriptor NextAction, Guid? FirstClientId, Guid? FirstServiceId, IReadOnlyList<ActivationStepView> ActivationSteps);
 public sealed record BusinessProfileInput(PersonType PersonType, string Name, string Document, string Phone, string? WhatsApp, string Email, string City, string State);
 public sealed record DocumentIdentityInput(string DisplayName, string? Phone, string? Email, string? City, string? Address, string? PixKey, string? DefaultNote);
