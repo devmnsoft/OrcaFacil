@@ -16,7 +16,7 @@ if (/Password\s*=|Host=.*;|postgres:\/\//i.test(serialized)) {
   console.error('appsettings.Production.json parece conter uma connection string ou senha versionada.');
   process.exit(1);
 }
-for (const check of ['check:js-safety', 'check:public-navigation', 'check:authenticated-navigation', 'check:routes', 'check:razor-pages', 'check:open-features']) {
+for (const check of ['check:js-safety', 'check:public-navigation', 'check:authenticated-navigation', 'check:routes', 'check:razor-pages', 'check:open-features', 'check:design-consistency']) {
   const result = spawnSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', check], { stdio: 'inherit' });
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
