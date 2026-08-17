@@ -16,8 +16,17 @@ public class LoginModel : PageModel
     private readonly AuthService _authService;
     private readonly ILogger<LoginModel> _logger;
     private readonly IUserSignInService _signIn;
+    private readonly IAccountSelectionService _accountSelection;
     private readonly OrcaFacil.Persistence.OrcaFacilDbContext _db;
-    public LoginModel(AuthService authService, ILogger<LoginModel> logger, IUserSignInService signIn, OrcaFacil.Persistence.OrcaFacilDbContext db) { _authService = authService; _logger = logger; _signIn = signIn; _db = db; }
+    public LoginModel(AuthService authService, ILogger<LoginModel> logger, IUserSignInService signIn,
+        IAccountSelectionService accountSelection, OrcaFacil.Persistence.OrcaFacilDbContext db)
+    {
+        _authService = authService;
+        _logger = logger;
+        _signIn = signIn;
+        _accountSelection = accountSelection;
+        _db = db;
+    }
     [BindProperty] public InputModel Input { get; set; } = new();
     public record InputModel { [Required, EmailAddress] public string Email { get; set; } = string.Empty; [Required] public string Password { get; set; } = string.Empty; }
     public IActionResult OnGet() => User.Identity?.IsAuthenticated == true ? RedirectToPage("/Dashboard/Index") : Page();
@@ -28,10 +37,33 @@ public class LoginModel : PageModel
         {
             var result = await _authService.LoginAsync(new LoginUserCommand(Input.Email, Input.Password, HttpContext.TraceIdentifier), ct);
             if (!result.Succeeded || result.Value is null) { ModelState.AddModelError(string.Empty, result.Error ?? "Não foi possível entrar."); TempData.Error(result.Error ?? "Não foi possível entrar."); _logger.LogWarning("USER_LOGIN_FAILED_WEB CorrelationId {CorrelationId}", HttpContext.TraceIdentifier); return Page(); }
-            // Validate the post-login dependency before emitting the authentication cookie. This
-            // avoids leaving a valid identity behind when an older database cannot run onboarding.
-            var configured = await _db.AccountOnboardingStates.AsNoTracking().AnyAsync(x => x.UserId == result.Value.Id && x.CompletedAt != null && !x.IsDeleted, ct);
-            await _signIn.SignInAsync(HttpContext, result.Value, cancellationToken: ct);
+            // Select the same account used by the cookie and initialize onboarding before emitting
+            // it. Besides validating the schema, the upsert closes the first-login race safely.
+            var (account, _) = await _accountSelection.SelectAsync(result.Value.Id, null, ct);
+            if (account is null)
+            {
+                const string noAccountMessage = "Seu acesso foi validado, mas não há uma conta ativa vinculada. Fale com o suporte MNSOFT.";
+                _logger.LogWarning("LOGIN_ACTIVE_ACCOUNT_MISSING UserId {UserId} CorrelationId {CorrelationId}",
+                    result.Value.Id, HttpContext.TraceIdentifier);
+                ModelState.AddModelError(string.Empty, noAccountMessage);
+                TempData.Error(noAccountMessage);
+                return Page();
+            }
+
+            var now = DateTime.UtcNow;
+            const string initialStep = "Welcome";
+            await _db.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO orcafacil.account_onboarding_states
+                    (id, account_id, user_id, current_step, last_seen_at, created_at, is_deleted)
+                VALUES
+                    ({Guid.NewGuid()}, {account.AccountId}, {result.Value.Id}, {initialStep}, {now}, {now}, false)
+                ON CONFLICT (account_id, user_id) DO NOTHING
+                """, ct);
+            var configured = await _db.AccountOnboardingStates.AsNoTracking().AnyAsync(x =>
+                x.AccountId == account.AccountId && x.UserId == result.Value.Id &&
+                x.CompletedAt != null && !x.IsDeleted, ct);
+
+            await _signIn.SignInAsync(HttpContext, result.Value, account.AccountId, cancellationToken: ct);
             TempData.Success("Login realizado com sucesso.");
             return RedirectToPage(configured ? "/Dashboard/Index" : "/Onboarding/Index");
         }
