@@ -1,0 +1,9 @@
+@page "/Admin/Audit"
+@model OrcaFacil.Web.Areas.Admin.Pages.Audit.IndexModel
+@{ ViewData["Title"] = "Auditoria"; }
+<header class="of-page-header"><div><p class="of-eyebrow">Segurança e conformidade</p><h1>Auditoria</h1><p>Rastro imutável das ações administrativas e operacionais, sem exposição de payloads sensíveis.</p></div></header>
+<form method="get" class="of-card of-admin-filter"><label class="of-field"><span>Ação, entidade ou identificador</span><input class="of-field-control" type="search" name="query" value="@Model.Query" /></label><button class="of-button of-button-primary" type="submit">Filtrar</button></form>
+<section class="of-card"><div class="of-admin-table-wrap"><table class="of-data-table"><thead><tr><th>Data UTC</th><th>Ação</th><th>Entidade</th><th>Conta</th><th>Usuário</th></tr></thead><tbody>
+@if (Model.Items.Count == 0) { <tr><td colspan="5">Nenhum evento corresponde ao filtro.</td></tr> }
+@foreach (var item in Model.Items) { <tr><td>@item.CreatedAt.ToString("g")</td><td><span class="of-status-badge">@item.Action</span></td><td>@item.EntityType <small>@item.EntityId</small></td><td>@(item.AccountId?.ToString() ?? "Plataforma")</td><td>@(item.UserId?.ToString() ?? "Sistema")</td></tr> }
+</tbody></table></div></section>

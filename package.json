@@ -42,7 +42,9 @@
     "check:release-readiness": "node scripts/check-release-readiness.mjs",
     "check:authenticated-ui": "node scripts/check-authenticated-ui-legacy-dependencies.mjs",
     "check:database-schema": "node scripts/check-database-schema.mjs",
-    "check:design-consistency": "node scripts/check-design-consistency.mjs"
+    "check:design-consistency": "node scripts/check-design-consistency.mjs",
+    "check:admin-security": "node scripts/check-admin-security.mjs",
+    "check:permissions": "node scripts/check-permissions.mjs"
   },
   "engines": {
     "node": ">=18"
