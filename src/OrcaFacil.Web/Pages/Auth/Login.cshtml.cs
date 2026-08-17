@@ -38,7 +38,8 @@ public class LoginModel : PageModel
             var result = await _authService.LoginAsync(new LoginUserCommand(Input.Email, Input.Password, HttpContext.TraceIdentifier), ct);
             if (!result.Succeeded || result.Value is null) { ModelState.AddModelError(string.Empty, result.Error ?? "Não foi possível entrar."); TempData.Error(result.Error ?? "Não foi possível entrar."); _logger.LogWarning("USER_LOGIN_FAILED_WEB CorrelationId {CorrelationId}", HttpContext.TraceIdentifier); return Page(); }
             // Select the same account used by the cookie and initialize onboarding before emitting
-            // it. Besides validating the schema, the upsert closes the first-login race safely.
+            // it. Besides validating the schema, the upsert closes the first-login race safely and
+            // reactivates a soft-deleted state so its unique key cannot strand the user in a loop.
             var (account, _) = await _accountSelection.SelectAsync(result.Value.Id, null, ct);
             if (account is null)
             {
@@ -57,7 +58,14 @@ public class LoginModel : PageModel
                     (id, account_id, user_id, current_step, last_seen_at, created_at, is_deleted)
                 VALUES
                     ({Guid.NewGuid()}, {account.AccountId}, {result.Value.Id}, {initialStep}, {now}, {now}, false)
-                ON CONFLICT (account_id, user_id) DO NOTHING
+                ON CONFLICT (account_id, user_id) DO UPDATE
+                SET is_deleted = false,
+                    current_step = CASE
+                        WHEN account_onboarding_states.is_deleted THEN {initialStep}
+                        ELSE account_onboarding_states.current_step
+                    END,
+                    last_seen_at = {now},
+                    updated_at = {now}
                 """, ct);
             var configured = await _db.AccountOnboardingStates.AsNoTracking().AnyAsync(x =>
                 x.AccountId == account.AccountId && x.UserId == result.Value.Id &&
