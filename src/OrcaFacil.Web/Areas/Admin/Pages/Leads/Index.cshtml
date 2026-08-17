@@ -3,7 +3,7 @@
 @using OrcaFacil.Domain.Enums
 @{ ViewData["Title"] = "Leads comerciais"; }
 <header class="of-page-header"><div><p class="of-eyebrow">Comercial</p><h1>Leads da Home</h1><p>Solicitações recebidas com consentimento, centralizadas para acompanhamento.</p></div></header>
-<form method="get" class="of-admin-filter"><label>Status <select name="status"><option value="">Todos</option>@foreach(var status in Enum.GetValues<CommercialLeadStatus>()){<option value="@status">@status</option>}</select></label><button class="of-button of-button-secondary">Filtrar</button></form>
+<form method="get" class="of-admin-filter"><label>Status <select name="status"><option value="">Todos</option>@foreach(var status in Enum.GetValues<CommercialLeadStatus>()){<option value="@status">@status</option>}</select></label><button type="submit" class="of-button of-button-secondary">Filtrar</button></form>
 <section class="of-card of-table-scroll"><table class="of-data-table"><thead><tr><th>Data</th><th>Status</th><th>Nome / empresa</th><th>Contato</th><th>Segmento</th><th>Volume</th><th>Origem</th><th></th></tr></thead><tbody>
 @if(Model.Items.Count == 0){<tr><td colspan="8">Nenhum lead encontrado.</td></tr>}
 @foreach(var lead in Model.Items){<tr><td><time datetime="@lead.CreatedAt.ToString("O")">@lead.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</time></td><td><span class="of-status-badge">@lead.Status</span></td><td><strong>@lead.Name</strong><br/><small>@(lead.CompanyName ?? "—")</small></td><td>@(lead.Phone ?? lead.Email ?? "—")</td><td>@(lead.Segment ?? "—")</td><td>@(lead.MonthlyBudgetVolume?.ToString() ?? "—")</td><td>@lead.SourcePage</td><td><a class="of-text-link" asp-page="Details" asp-route-id="@lead.Id">Abrir</a></td></tr>}

@@ -42,7 +42,7 @@
                 @if (!Model.Receipt.CancelledAt.HasValue)
                 {
                     <form method="post" asp-page-handler="Share">
-                        <button class="of-button of-button--primary">Registrar compartilhamento</button>
+                        <button type="submit" class="of-button of-button--primary">Registrar compartilhamento</button>
                     </form>
                     <a class="of-button" href="@Model.WhatsAppShareUrl" rel="noopener noreferrer">WhatsApp</a>
                     <form method="post" asp-page-handler="Cancel">
@@ -50,7 +50,7 @@
                             Motivo do cancelamento
                             <textarea asp-for="CancellationReason" required></textarea>
                         </label>
-                        <button class="of-button of-button--danger">Cancelar recibo</button>
+                        <button type="submit" class="of-button of-button--danger">Cancelar recibo</button>
                     </form>
                 }
                 else

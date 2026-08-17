@@ -29,8 +29,8 @@
     <div class="filter-actions">
       @if (!string.IsNullOrWhiteSpace(item.ActionUrl)) { <a class="of-button-secondary" href="@item.ActionUrl">@item.ActionText</a> }
       @if (!item.IsRead) {
-        <form method="post" asp-page-handler="Resolve" asp-route-type="@Model.Type" asp-route-status="@Model.Status"><input type="hidden" name="id" value="@item.Id"/><button class="of-button-primary">Resolver</button></form>
-        <form method="post" asp-page-handler="Ignore" asp-route-type="@Model.Type" asp-route-status="@Model.Status"><input type="hidden" name="id" value="@item.Id"/><button class="of-button-secondary">Ignorar</button></form>
+        <form method="post" asp-page-handler="Resolve" asp-route-type="@Model.Type" asp-route-status="@Model.Status"><input type="hidden" name="id" value="@item.Id"/><button type="submit" class="of-button-primary">Resolver</button></form>
+        <form method="post" asp-page-handler="Ignore" asp-route-type="@Model.Type" asp-route-status="@Model.Status"><input type="hidden" name="id" value="@item.Id"/><button type="submit" class="of-button-secondary">Ignorar</button></form>
       }
     </div>
   </article>

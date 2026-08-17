@@ -33,7 +33,7 @@
             <label><span>Corpo</span><textarea name="body" maxlength="4000" minlength="5" rows="9" required data-template-body placeholder="Olá, {ClienteNome}! Escreva sua mensagem..."></textarea><small><span data-body-count>0</span>/4000 caracteres</small></label>
             <label class="of-check"><input type="checkbox" name="active" value="true" checked /> <span>Disponibilizar este template</span></label>
             <div><span class="of-field-title">Inserir variável</span><div class="of-variable-list" aria-label="Variáveis disponíveis">@foreach (var variable in Model.Variables) { <button type="button" data-variable="@variable"><code>@($"{{{variable}}}")</code></button> }</div></div>
-            <button class="of-button-primary of-loading-button" data-loading-text="Salvando…">Salvar template</button>
+            <button type="submit" class="of-button-primary of-loading-button" data-loading-text="Salvando…">Salvar template</button>
         </form>
 
         <aside class="of-preview-panel" aria-live="polite">

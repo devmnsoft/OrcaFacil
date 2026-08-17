@@ -15,7 +15,7 @@
     {
         <form method="post" asp-page-handler="MarkAllAsRead">
             @Html.AntiForgeryToken()
-            <button class="btn btn-outline-primary"><i class="bi bi-check2-all me-2"></i>Marcar todas como lidas</button>
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-check2-all me-2"></i>Marcar todas como lidas</button>
         </form>
     }
 </header>
@@ -46,7 +46,7 @@
                     {
                         <form method="post" asp-page-handler="MarkAsRead" asp-route-id="@item.Id">
                             @Html.AntiForgeryToken()
-                            <button class="btn btn-sm btn-outline-secondary">Marcar como lida</button>
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Marcar como lida</button>
                         </form>
                     }
                 </article>
