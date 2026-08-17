@@ -1,0 +1,9 @@
+@page "/Admin/Webhooks"
+@model OrcaFacil.Web.Areas.Admin.Pages.Webhooks.IndexModel
+@{ ViewData["Title"] = "Webhooks"; }
+<header class="of-page-header"><div><p class="of-eyebrow">Gateway</p><h1>Eventos de pagamento</h1><p>Acompanhamento idempotente dos eventos recebidos. O payload e os segredos do gateway não são exibidos.</p></div></header>
+<form method="get" class="of-card of-admin-filter"><label class="of-field"><span>Processamento</span><select class="of-field-control" name="processed"><option value="">Todos</option><option value="true">Processados</option><option value="false">Pendentes</option></select></label><button type="submit" class="of-button of-button-primary">Filtrar</button></form>
+<section class="of-card"><div class="of-admin-table-wrap"><table class="of-data-table"><thead><tr><th>Recebido</th><th>Status</th><th>Evento</th><th>Tópico</th><th>Pagamento</th><th>CorrelationId</th></tr></thead><tbody>
+@if(Model.Items.Count == 0){<tr><td colspan="6">Nenhum webhook corresponde ao filtro.</td></tr>}
+@foreach(var item in Model.Items){<tr><td>@item.CreatedAt.ToString("g")</td><td><span class="of-status-badge">@(item.Processed ? "Processado" : "Pendente")</span></td><td>@item.EventKey</td><td>@(item.Topic ?? "—")</td><td>@(item.PaymentId ?? "—")</td><td>@(item.CorrelationId ?? "—")</td></tr>}
+</tbody></table></div></section>

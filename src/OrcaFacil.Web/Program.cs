@@ -206,7 +206,11 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("PlanManagement", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin"));
     options.AddPolicy("PaymentManagement", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin", "PlatformFinance"));
     options.AddPolicy("SystemSettingsManagement", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin"));
+    foreach (var permission in OrcaFacil.Application.Security.PermissionCodes.All)
+        options.AddPolicy($"Permission:{permission}", policy => policy.AddRequirements(new OrcaFacil.Web.Security.PermissionRequirement(permission)));
 });
+builder.Services.AddScoped<OrcaFacil.Application.Abstractions.IPermissionService, OrcaFacil.Web.Security.PermissionService>();
+builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, OrcaFacil.Web.Security.PermissionAuthorizationHandler>();
 builder.Services.AddRateLimiter(options => options.AddFixedWindowLimiter("public", limiter =>
 {
     limiter.PermitLimit = 20;

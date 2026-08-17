@@ -1,0 +1,9 @@
+@page "/Admin/EmailOutbox"
+@model OrcaFacil.Web.Areas.Admin.Pages.EmailOutbox.IndexModel
+@{ ViewData["Title"] = "EmailOutbox"; }
+<header class="of-page-header"><div><p class="of-eyebrow">Entrega transacional</p><h1>EmailOutbox</h1><p>Destinatários permanecem mascarados e o reprocessamento é auditado.</p></div></header>
+<form method="get" class="of-card of-admin-filter"><label class="of-field"><span>Status</span><select class="of-field-control" name="status"><option value="">Todos</option>@foreach(var status in Enum.GetValues<OrcaFacil.Domain.Entities.EmailOutboxStatus>()){<option value="@status">@status</option>}</select></label><button type="submit" class="of-button of-button-primary">Filtrar</button></form>
+<section class="of-card"><div class="of-admin-table-wrap"><table class="of-data-table"><thead><tr><th>Criado</th><th>Status</th><th>Destino</th><th>Template</th><th>Tentativas</th><th>Próxima tentativa</th><th>Erro</th><th>Ação</th></tr></thead><tbody>
+@if(Model.Items.Count == 0){<tr><td colspan="8">A fila não possui mensagens para este filtro.</td></tr>}
+@foreach(var item in Model.Items){<tr><td>@item.CreatedAt.ToString("g")</td><td><span class="of-status-badge">@item.Status</span></td><td>@item.RecipientMasked</td><td>@item.TemplateCode</td><td>@item.Attempts</td><td>@item.NextAttemptAt.ToString("g")</td><td>@(item.LastErrorCode ?? "—")</td><td>@if(item.Status is OrcaFacil.Domain.Entities.EmailOutboxStatus.Failed or OrcaFacil.Domain.Entities.EmailOutboxStatus.DeadLetter){<form method="post" asp-page-handler="Retry"><input type="hidden" name="id" value="@item.Id" /><button type="submit" class="of-button of-button-secondary">Reprocessar</button></form>}</td></tr>}
+</tbody></table></div></section>
