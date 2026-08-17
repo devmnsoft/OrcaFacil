@@ -28,10 +28,18 @@ const rules = [
 ];
 
 const failures = [];
+const buttonWithoutType = /<button\b(?![^>]*\btype\s*=)[^>]*>/gi;
+const disabledAntiforgery = /<form\b[^>]*\bmethod\s*=\s*["']post["'][^>]*\basp-antiforgery\s*=\s*["']false["'][^>]*>/gi;
 for (const root of roots) {
   for (const file of (await walk(root)).filter(candidate => extensions.has(path.extname(candidate)))) {
     const lines = (await readFile(file, 'utf8')).split(/\r?\n/);
     lines.forEach((line, index) => {
+      if (path.extname(file) === '.cshtml') {
+        if (buttonWithoutType.test(line)) failures.push(`${file}:${index + 1}: botão sem atributo type`);
+        buttonWithoutType.lastIndex = 0;
+        if (disabledAntiforgery.test(line)) failures.push(`${file}:${index + 1}: formulário POST sem antiforgery`);
+        disabledAntiforgery.lastIndex = 0;
+      }
       for (const [description, pattern] of rules) {
         if (pattern.test(line)) failures.push(`${file}:${index + 1}: ${description}`);
       }

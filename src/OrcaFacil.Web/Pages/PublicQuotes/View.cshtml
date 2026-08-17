@@ -65,9 +65,9 @@
                     <label class="public-terms"><input asp-for="Input.AcceptedTerms" /> <span>Li e estou de acordo com as condições, valores e validade desta proposta.</span></label>
                     <span asp-validation-for="Input.AcceptedTerms" class="field-validation-error"></span>
                     <div class="public-decision-actions">
-                        <button asp-page-handler="Approve" class="public-action public-action--approve">Aprovar orçamento</button>
-                        <button asp-page-handler="Change" class="public-action public-action--change">Solicitar alteração</button>
-                        <button asp-page-handler="Reject" class="public-action public-action--reject">Recusar</button>
+                        <button type="submit" asp-page-handler="Approve" class="public-action public-action--approve">Aprovar orçamento</button>
+                        <button type="submit" asp-page-handler="Change" class="public-action public-action--change">Solicitar alteração</button>
+                        <button type="submit" asp-page-handler="Reject" class="public-action public-action--reject">Recusar</button>
                     </div>
                 </form>
             </section>
