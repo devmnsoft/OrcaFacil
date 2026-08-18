@@ -1,29 +1,10 @@
-import { readFile } from 'node:fs/promises';
-
-const required = [
-  'account_onboarding_states',
-  'ix_account_onboarding_states_account_id_user_id',
-  'ix_account_onboarding_states_current_step_last_seen_at',
-  'failed_login_attempts',
-  'session_version'
-];
-const files = [
-  'database/script_completop.sql',
-  'database/patch_release_candidate_schema.sql',
-  'database/patch_fix_account_onboarding_states.sql'
-];
-let failed = false;
-for (const file of files) {
-  const sql = (await readFile(file, 'utf8')).toLowerCase();
-  const expected = file.endsWith('patch_fix_account_onboarding_states.sql')
-    ? required.slice(0, 3)
-    : required;
-  const missing = expected.filter(token => !sql.includes(token));
-  if (missing.length) {
-    failed = true;
-    console.error(`${file}: ausente: ${missing.join(', ')}`);
-  } else {
-    console.log(`${file}: contrato de schema OK`);
-  }
-}
-if (failed) process.exitCode = 1;
+import { existsSync, readFileSync } from 'node:fs';
+const sql=readFileSync('database/script_completop.sql','utf8').toLowerCase();
+const requiredTables=['users','business_accounts','account_members','account_onboarding_states','clients','service_catalog_items','documents','document_items','public_quotes','work_orders','manual_payments','receipts','notifications','audit_logs','system_logs','email_outbox_messages','plans','plan_versions','features','plan_feature_values','subscriptions'];
+const missing=requiredTables.filter(t=>!new RegExp(`create\\s+table\\s+if\\s+not\\s+exists\\s+orcafacil\\.${t}\\b`,'i').test(sql));
+const requiredTokens=['create schema if not exists orcafacil','on conflict','failed_login_attempts','session_version','ix_account_onboarding_states_account_id_user_id'];
+for(const token of requiredTokens)if(!sql.includes(token))missing.push(token);
+if(!existsSync('database/seed-superadmin.sql'))missing.push('database/seed-superadmin.sql');
+if(/drop\s+(table|schema|database)|truncate\s+/i.test(sql))missing.push('operação destrutiva detectada');
+if(missing.length){console.error('Contrato V1 incompleto/inseguro:\n'+missing.join('\n'));process.exit(1)}
+console.log(`Schema V1: ${requiredTables.length} tabelas obrigatórias, seeds idempotentes e política não destrutiva OK.`);

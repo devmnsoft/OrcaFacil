@@ -65,8 +65,15 @@ builder.Services.AddDbContext<OrcaFacilDbContext>(options => options
     .UseNpgsql(configuredConnection ?? fallbackConnection)
     .EnableSensitiveDataLogging(false)
     .EnableDetailedErrors(builder.Environment.IsDevelopment() && builder.Configuration.GetValue("Diagnostics:EnableEfDetailedErrors", false)));
-var keyPath = builder.Configuration["DataProtection:KeysPath"] ?? Path.Combine(builder.Environment.ContentRootPath, ".keys");
-builder.Services.AddDataProtection().SetApplicationName("OrcaFacil").PersistKeysToFileSystem(new DirectoryInfo(keyPath));
+var configuredKeyPath = builder.Configuration["DataProtection:KeysPath"];
+var keyPath = Path.GetFullPath(string.IsNullOrWhiteSpace(configuredKeyPath)
+    ? Path.Combine(builder.Environment.ContentRootPath, ".keys")
+    : configuredKeyPath);
+Directory.CreateDirectory(keyPath);
+builder.Services.AddSingleton(new DataProtectionOperationalState(keyPath, true));
+builder.Services.AddDataProtection()
+    .SetApplicationName(builder.Configuration["DataProtection:ApplicationName"] ?? "OrcaFacil")
+    .PersistKeysToFileSystem(new DirectoryInfo(keyPath));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -217,7 +224,8 @@ builder.Services.AddRateLimiter(options => options.AddFixedWindowLimiter("public
     limiter.Window = TimeSpan.FromMinutes(1);
 }));
 builder.Services.AddControllers();
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages(options =>
+    options.Conventions.AddPageRoute("/Diagnostico", "/Admin/SystemHealth"));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 
