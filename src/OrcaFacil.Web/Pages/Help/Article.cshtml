@@ -1,0 +1,4 @@
+@page "/Help/Article/{slug}"
+@model OrcaFacil.Web.Pages.Help.ArticleModel
+@{Layout="/Pages/Shared/_PublicLayout.cshtml";ViewData["Title"]=Model.Article.Title;}
+<article class="of-section"><div class="of-container of-article"><a asp-page="Index">← Central de Ajuda</a><p class="of-eyebrow">@Model.Article.Category</p><h1>@Model.Article.Title</h1><p class="of-lead">@Model.Article.Summary</p><div class="of-article-content">@foreach(var paragraph in Model.Article.Content.Split('\n',StringSplitOptions.RemoveEmptyEntries)){<p>@paragraph</p>}</div><aside class="of-card"><h2>Ainda precisa de ajuda?</h2><p>Abra um chamado para receber acompanhamento da equipe.</p><a class="of-button of-button-primary" asp-page="/Support/Tickets">Abrir chamado</a></aside></div></article>

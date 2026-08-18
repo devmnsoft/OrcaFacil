@@ -1,0 +1,5 @@
+@page "/Settings/Setup"
+@model OrcaFacil.Web.Pages.Settings.SetupModel
+@{ViewData["Title"]="Checklist de implantação";}
+<header class="of-page-header"><div><p class="of-eyebrow">Implantação assistida</p><h1>Prepare sua conta para operar</h1><p>Este checklist usa dados reais da conta e leva você diretamente ao que falta.</p></div><div class="of-progress-ring" aria-label="@Model.Progress% concluído"><strong>@Model.Progress%</strong><span>concluído</span></div></header>
+<section class="of-setup-grid">@foreach(var item in Model.Items){<article class="of-card of-setup-item @(item.Done?"is-complete":null)"><span class="of-setup-check" aria-hidden="true">@(item.Done?"✓":"○")</span><div><h2>@item.Title</h2><p>Responsável: @item.Responsible</p>@if(item.CompletedAt.HasValue){<small>Concluído em @item.CompletedAt.Value.ToLocalTime().ToString("dd/MM/yyyy")</small>}else{<small>Pendente</small>}</div><a class="of-button @(item.Done?"of-button-secondary":"of-button-primary")" href="@item.Page">@item.Action</a></article>}</section>

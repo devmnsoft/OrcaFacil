@@ -72,6 +72,9 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<CommercialMessageTemplate> CommercialMessageTemplates => Set<CommercialMessageTemplate>();
     public DbSet<SupportTicket> SupportTickets => Set<SupportTicket>();
     public DbSet<SupportTicketMessage> SupportTicketMessages => Set<SupportTicketMessage>();
+    public DbSet<UserFeedback> UserFeedback => Set<UserFeedback>();
+    public DbSet<KnowledgeBaseArticle> KnowledgeBaseArticles => Set<KnowledgeBaseArticle>();
+    public DbSet<ReleaseNote> ReleaseNotes => Set<ReleaseNote>();
     public DbSet<AccountSettings> AccountSettings => Set<AccountSettings>();
     public DbSet<DataImport> DataImports => Set<DataImport>();
     public DbSet<RecurringContract> RecurringContracts => Set<RecurringContract>();

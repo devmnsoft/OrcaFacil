@@ -1,0 +1,4 @@
+@page
+@model OrcaFacil.Web.Areas.Admin.Pages.Feedback.IndexModel
+@{ViewData["Title"]="Feedbacks";}
+<header class="of-admin-page-header"><div><p class="of-eyebrow">Voz do cliente</p><h1>Feedbacks recebidos</h1><p>Sinais reais da experiência, separados dos chamados que exigem acompanhamento.</p></div></header><section class="of-card">@if(Model.Items.Count==0){<div class="of-empty-state"><h2>Nenhum feedback recebido</h2><p>As novas respostas aparecerão aqui.</p></div>}else{<div class="of-table-wrap"><table class="of-table"><thead><tr><th>Sentimento</th><th>Mensagem</th><th>Página</th><th>Conta</th><th>Recebido</th></tr></thead><tbody>@foreach(var x in Model.Items){<tr><td><span class="of-status-badge">@x.Rating</span></td><td>@(x.Message??"Sem comentário")</td><td><code>@x.PageUrl</code></td><td>@(x.AccountId?.ToString()??"Público")</td><td>@x.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td></tr>}</tbody></table></div>}</section>

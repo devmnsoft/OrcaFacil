@@ -18,13 +18,16 @@ public sealed class TicketsModel(OrcaFacilDbContext db, ICurrentAccountService c
     [BindProperty, Required, StringLength(180)] public string Subject { get; set; } = string.Empty;
     [BindProperty, Required, StringLength(5000, MinimumLength = 10)] public string Description { get; set; } = string.Empty;
     [BindProperty] public SupportTicketCategory Category { get; set; }
+    [BindProperty] public SupportTicketPriority Priority { get; set; } = SupportTicketPriority.Normal;
+    [BindProperty, StringLength(300)] public string? RelatedPage { get; set; }
+    [BindProperty, StringLength(100)] public string? CorrelationId { get; set; }
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct) { if (current.AccountId is null) return Forbid(); await Load(ct); return Page(); }
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
         if (current.AccountId is not Guid accountId) return Forbid();
         if (!ModelState.IsValid) { await Load(ct); return Page(); }
-        var ticket = new SupportTicket { AccountId = accountId, OpenedByUserId = current.UserId, Protocol = $"SUP-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid():N}"[..21].ToUpperInvariant(), Category = Category, Subject = Subject.Trim(), Description = Description.Trim() };
+        var ticket = new SupportTicket { AccountId = accountId, OpenedByUserId = current.UserId, Protocol = $"SUP-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid():N}"[..21].ToUpperInvariant(), Category = Category, Priority = Priority, Subject = Subject.Trim(), Description = Description.Trim(), RelatedPage = RelatedPage?.Trim(), CorrelationId = string.IsNullOrWhiteSpace(CorrelationId) ? HttpContext.TraceIdentifier : CorrelationId.Trim(), BrowserInfo = Request.Headers.UserAgent.FirstOrDefault()?[..Math.Min(Request.Headers.UserAgent.FirstOrDefault()!.Length, 500)] };
         db.SupportTickets.Add(ticket);
         db.SupportTicketMessages.Add(new SupportTicketMessage { TicketId = ticket.Id, AuthorUserId = current.UserId, Body = ticket.Description });
         var admins = await db.Users.Where(x => x.Role == UserRole.SuperAdmin && x.IsActive && !x.IsDeleted).Select(x => x.Id).ToListAsync(ct);

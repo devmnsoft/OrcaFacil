@@ -13,9 +13,46 @@ public sealed class SupportTicket : Entity
     public SupportTicketPriority Priority { get; set; } = SupportTicketPriority.Normal;
     public string Subject { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+    public string? RelatedPage { get; set; }
+    public string? CorrelationId { get; set; }
+    public string? BrowserInfo { get; set; }
     public string? InternalNotes { get; set; }
     public DateTime? ResolvedAt { get; set; }
     public DateTime? ClosedAt { get; set; }
+}
+
+public sealed class UserFeedback : Entity
+{
+    public Guid? AccountId { get; set; }
+    public Guid? UserId { get; set; }
+    public string PageUrl { get; set; } = string.Empty;
+    public string Rating { get; set; } = string.Empty;
+    public string? Message { get; set; }
+    public string? BrowserInfo { get; set; }
+    public string? CorrelationId { get; set; }
+}
+
+public sealed class KnowledgeBaseArticle : Entity
+{
+    public string Title { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
+    public string Summary { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public string Audience { get; set; } = "All";
+    public bool IsPublished { get; set; }
+    public int DisplayOrder { get; set; }
+    public DateTime? PublishedAt { get; set; }
+}
+
+public sealed class ReleaseNote : Entity
+{
+    public string Version { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public DateTime ReleasedAt { get; set; }
+    public string Category { get; set; } = string.Empty;
+    public bool IsPublished { get; set; }
 }
 
 public sealed class SupportTicketMessage : Entity

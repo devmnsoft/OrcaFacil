@@ -1,0 +1,4 @@
+@page "/ReleaseNotes"
+@model OrcaFacil.Web.Pages.ReleaseNotes.IndexModel
+@{Layout="/Pages/Shared/_PublicLayout.cshtml";ViewData["Title"]="Novidades";}
+<section class="of-help-hero"><div class="of-container"><p class="of-eyebrow">OrçaFácil em evolução</p><h1>Novidades e melhorias</h1><p>Acompanhe o que mudou no produto sem interromper seu trabalho.</p></div></section><section class="of-section"><div class="of-container of-release-list">@if(Model.Items.Count==0){<div class="of-empty-state"><h2>Nenhuma nota publicada</h2><p>As novidades revisadas aparecerão aqui.</p></div>}@foreach(var x in Model.Items){<article class="of-card"><div class="of-release-meta"><span class="of-status-badge">@x.Category</span><time>@x.ReleasedAt.ToLocalTime().ToString("dd/MM/yyyy")</time><code>@x.Version</code></div><h2>@x.Title</h2>@foreach(var p in x.Description.Split('\n',StringSplitOptions.RemoveEmptyEntries)){<p>@p</p>}</article>}</div></section>
