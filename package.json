@@ -51,7 +51,10 @@
     "check:deploy-readiness": "node scripts/check-deploy-readiness.mjs",
     "check:release-v1": "node scripts/check-release-v1.mjs",
     "check:support-readiness": "node scripts/check-support-readiness.mjs",
-    "check:help-center": "node scripts/check-help-center.mjs"
+    "check:help-center": "node scripts/check-help-center.mjs",
+    "check:commercial-flow": "node scripts/check-commercial-flow.mjs",
+    "check:public-quote-security": "node scripts/check-public-quote-security.mjs",
+    "check:payment-receipt-flow": "node scripts/check-payment-receipt-flow.mjs"
   },
   "engines": {
     "node": ">=18"
