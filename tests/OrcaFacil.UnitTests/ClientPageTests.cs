@@ -26,7 +26,7 @@ public class ClientPageTests
     [InlineData(BrazilianDocumentType.CPF, "52998224725", "***.***.***-25")]
     [InlineData(BrazilianDocumentType.CNPJ, "04252011000110", "**.***.***/****-10")]
     public void Clients_Index_Masks_Documents(BrazilianDocumentType type, string number, string expected) =>
-        Assert.Equal(expected, IndexModel.Mask(type, number));
+        Assert.Equal(expected, IndexModel.MaskDocument(type, number));
 
     [Fact]
     public void Clients_IndexModel_Exposes_Filter_Pagination_And_Delete_Handler()
