@@ -18,6 +18,7 @@ const rules = [
   ['expressão `is var` combinada com `&&`; use uma variável explícita', /\bis\s+var\s+\w+\s*&&/],
   ['implementação incompleta', /\bNotImplementedException\b/],
   ['link sem destino', /href\s*=\s*["']#["']/],
+  ['link com destino vazio', /href\s*=\s*["']\s*["']/],
   ['URL JavaScript inerte', /javascript\s*:\s*void\b/i]
 ];
 const failures = [];

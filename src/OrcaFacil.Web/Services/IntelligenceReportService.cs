@@ -25,12 +25,23 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
     private Guid AccountId => account.AccountId ?? throw new UnauthorizedAccessException("Selecione uma conta para consultar relatórios.");
     // The upper bound is exclusive so every instant of the selected final day is included,
     // independently of the precision used by the database provider.
-    private static DateTime From(ReportFilter f) => DateTime.SpecifyKind(f.From?.Date ?? DateTime.UtcNow.Date.AddMonths(-1), DateTimeKind.Utc);
-    private static DateTime To(ReportFilter f) => DateTime.SpecifyKind(f.To?.Date.AddDays(1) ?? DateTime.UtcNow.Date.AddDays(1), DateTimeKind.Utc);
+    private static (DateTime From, DateTime To) Period(ReportFilter filter)
+    {
+        var from = DateTime.SpecifyKind(filter.From?.Date ?? DateTime.UtcNow.Date.AddMonths(-1), DateTimeKind.Utc);
+        var to = DateTime.SpecifyKind(filter.To?.Date.AddDays(1) ?? DateTime.UtcNow.Date.AddDays(1), DateTimeKind.Utc);
+
+        if (from >= to)
+        {
+            throw new ArgumentException("A data inicial deve ser anterior ou igual à data final.", nameof(filter));
+        }
+
+        return (from, to);
+    }
 
     public async Task<IntelligenceReport> CommercialFunnelAsync(ReportFilter f, CancellationToken ct)
     {
-        var from = From(f); var to = To(f); var accountId = AccountId;
+        var (from, to) = Period(f);
+        var accountId = AccountId;
         var query = db.Documents.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted && x.Type == DocumentType.Budget && x.CreatedAt >= from && x.CreatedAt < to);
         if (f.ClientId is { } clientId) query = query.Where(x => x.ClientId == clientId);
         if (!string.IsNullOrWhiteSpace(f.Status)) query = query.Where(x => x.Status == f.Status);
@@ -44,7 +55,8 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
 
     public async Task<IntelligenceReport> FinancialAsync(ReportFilter f, CancellationToken ct)
     {
-        var from = From(f); var to = To(f); var accountId = AccountId;
+        var (from, to) = Period(f);
+        var accountId = AccountId;
         var hasPaymentStatus = Enum.TryParse<FinancialRecordStatus>(f.Status, true, out var paymentStatus);
         var documents = db.Documents.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted && x.Type == DocumentType.Budget && x.CreatedAt >= from && x.CreatedAt < to);
         if (f.ClientId is { } documentClientId) documents = documents.Where(x => x.ClientId == documentClientId);
@@ -63,7 +75,8 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
 
     public async Task<IntelligenceReport> ClientsAsync(ReportFilter f, CancellationToken ct)
     {
-        var from = From(f); var to = To(f); var accountId = AccountId;
+        var (from, to) = Period(f);
+        var accountId = AccountId;
         var clientQuery = db.Clients.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted);
         if (f.ClientId is { } clientId) clientQuery = clientQuery.Where(x => x.Id == clientId);
         var clients = await clientQuery.Select(x => new { x.Id, x.Name, x.IsActive, x.LastInteractionAt }).ToListAsync(ct);
@@ -91,7 +104,8 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
 
     public async Task<IntelligenceReport> ServicesAsync(ReportFilter f, CancellationToken ct)
     {
-        var from = From(f); var to = To(f); var accountId = AccountId;
+        var (from, to) = Period(f);
+        var accountId = AccountId;
         var services = await db.ServiceCatalogItems.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted).Select(x => new { x.Id, x.Name }).ToListAsync(ct);
         var canViewMargin = account.AccountRoleCode is "Owner" or "Administrator";
         var itemQuery = from item in db.DocumentItems.AsNoTracking()
