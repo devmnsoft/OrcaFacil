@@ -1,0 +1,54 @@
+@page
+@model OrcaFacil.Web.Pages.CommercialPipeline.IndexModel
+@{
+    ViewData["Title"] = "Pipeline comercial";
+}
+<header class="of-page-header">
+    <div>
+        <p class="of-eyebrow">Comercial</p>
+        <h1>Pipeline comercial</h1>
+        <p>Acompanhe oportunidades reais da conta e aja sobre cada proposta.</p>
+    </div>
+    <a class="of-button of-button-primary" asp-page="/Documents/New">Novo orçamento</a>
+</header>
+
+<form class="of-pipeline-filters" data-pipeline-filters>
+    <label>Etapa
+        <select data-pipeline-stage>
+            <option value="">Todas as etapas</option>
+            @foreach (var column in Model.Pipeline.Pipeline)
+            {
+                <option value="@column.Code">@column.Title (@column.Count)</option>
+            }
+        </select>
+    </label>
+    <label>Cliente
+        <input type="search" data-pipeline-client placeholder="Buscar pelo nome" autocomplete="off" />
+    </label>
+</form>
+
+<section class="of-pipeline-board" aria-label="Etapas do pipeline">
+@foreach (var column in Model.Pipeline.Pipeline)
+{
+    <article class="of-pipeline-column" data-pipeline-column="@column.Code">
+        <header><div><h2>@column.Title</h2><span class="of-badge">@column.Count</span></div><strong>@column.Total.ToString("C")</strong></header>
+        <div class="of-pipeline-cards">
+        @if (column.Cards.Count == 0)
+        {
+            <p class="of-empty-state">Nenhuma oportunidade nesta etapa.</p>
+        }
+        @foreach (var card in column.Cards)
+        {
+            <a class="of-pipeline-card" data-client="@card.ClientName.ToLowerInvariant()" asp-page="/Documents/Details" asp-route-id="@card.DocumentId">
+                <span class="of-pipeline-card__number">@card.Number</span>
+                <strong>@card.ClientName</strong>
+                <span>@card.Total.ToString("C")</span>
+                <small>@card.Context</small>
+            </a>
+        }
+        </div>
+    </article>
+}
+</section>
+
+@section Scripts { <script src="~/js/commercial-pipeline.js" asp-append-version="true"></script> }
