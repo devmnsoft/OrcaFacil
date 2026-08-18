@@ -44,7 +44,8 @@
     "check:database-schema": "node scripts/check-database-schema.mjs",
     "check:design-consistency": "node scripts/check-design-consistency.mjs",
     "check:admin-security": "node scripts/check-admin-security.mjs",
-    "check:permissions": "node scripts/check-permissions.mjs"
+    "check:permissions": "node scripts/check-permissions.mjs",
+    "check:persona-flows": "node scripts/check-persona-flows.mjs"
   },
   "engines": {
     "node": ">=18"
