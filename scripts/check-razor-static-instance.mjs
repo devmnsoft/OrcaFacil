@@ -28,8 +28,26 @@ for (const file of pageModels) {
 const failures = [];
 for (const file of files.filter(candidate => candidate.endsWith('.cshtml'))) {
   const source = await readFile(file, 'utf8');
+  const lines = source.split(/\r?\n/);
+
+  lines.forEach((line, index) => {
+    if (/@model\s+dynamic\b/.test(line)) {
+      failures.push(`${file}:${index + 1}: @model dynamic remove a verificacao de tipos da Razor Page`);
+    }
+    if (/\bclass\s+IndexModel\b/.test(line)) {
+      failures.push(`${file}:${index + 1}: IndexModel deve ser declarado no code-behind, nao na view`);
+    }
+    if (/\bIndexModel\s*\./.test(line)) {
+      failures.push(`${file}:${index + 1}: use Model para acessar o PageModel na view`);
+    }
+  });
+
   for (const member of staticMembers.get(file) ?? []) {
-    if (new RegExp(`@?Model\\.${member}\\b`).test(source)) failures.push(`${file}: Model acessa o membro estático ${member}`);
+    lines.forEach((line, index) => {
+      if (new RegExp(`@?Model\\.${member}\\b`).test(line)) {
+        failures.push(`${file}:${index + 1}: Model acessa o membro estático ${member}`);
+      }
+    });
   }
 }
 
