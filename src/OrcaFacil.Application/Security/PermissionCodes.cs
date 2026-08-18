@@ -29,6 +29,15 @@ public static class PermissionCodes
     public const string DiagnosticsView = "Diagnostics.View";
     public const string LogsView = "Logs.View";
     public const string AuditView = "Audit.View";
+    public const string SupportView = "Support.View";
+    public const string SupportCreateTicket = "Support.CreateTicket";
+    public const string SupportManageTickets = "Support.ManageTickets";
+    public const string FeedbackView = "Feedback.View";
+    public const string FeedbackCreate = "Feedback.Create";
+    public const string KnowledgeBaseManage = "KnowledgeBase.Manage";
+    public const string ReleaseNotesManage = "ReleaseNotes.Manage";
+    public const string SetupChecklistView = "SetupChecklist.View";
+    public const string SetupChecklistManage = "SetupChecklist.Manage";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -36,6 +45,7 @@ public static class PermissionCodes
         DocumentsCreate, DocumentsEdit, DocumentsGeneratePublicLink, DocumentsConvertToWorkOrder,
         WorkOrdersView, WorkOrdersManage, PaymentsView, PaymentsManage, ReceiptsView, ReceiptsManage,
         ReportsView, ReportsExport, SettingsView, SettingsManage, UsersManage, PlanManage, AdminAccess,
-        DiagnosticsView, LogsView, AuditView
+        DiagnosticsView, LogsView, AuditView, SupportView, SupportCreateTicket, SupportManageTickets,
+        FeedbackView, FeedbackCreate, KnowledgeBaseManage, ReleaseNotesManage, SetupChecklistView, SetupChecklistManage
     };
 }

@@ -16,7 +16,9 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
         "user_usage", "subscriptions", "payments", "payment_events", "mercadopago_webhook_events",
         "billing_customer_profiles", "clients", "plan_features", "admin_settings", "notifications",
         "audit_logs", "system_logs", "system_errors", "business_accounts", "account_members",
-        "plans", "plan_versions", "account_onboarding_states"
+        "plans", "plan_versions", "features", "plan_feature_values", "account_onboarding_states",
+        "service_catalog_items", "work_orders", "manual_payments", "receipts", "email_outbox_messages",
+        "support_tickets", "support_ticket_messages", "user_feedback", "knowledge_base_articles", "release_notes"
     ];
 
     private readonly IConfiguration _configuration;
@@ -87,7 +89,10 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
                 "account_onboarding_states.user_id", "account_onboarding_states.current_step",
                 "account_onboarding_states.completed_at", "account_onboarding_states.skipped_at",
                 "account_onboarding_states.last_seen_at", "account_onboarding_states.created_at",
-                "account_onboarding_states.updated_at", "account_onboarding_states.is_deleted"
+                "account_onboarding_states.updated_at", "account_onboarding_states.is_deleted",
+                "support_tickets.related_page", "support_tickets.correlation_id", "support_tickets.browser_info",
+                "user_feedback.page_url", "user_feedback.rating", "knowledge_base_articles.slug",
+                "knowledge_base_articles.is_published", "release_notes.version", "release_notes.is_published"
             };
             var columns = (await connection.QueryAsync<string>(new CommandDefinition("select table_name || '.' || column_name from information_schema.columns where table_schema=@Schema", new { Schema = ExpectedSchema }, cancellationToken: ct))).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var missingColumns = requiredColumns.Where(x => !columns.Contains(x)).ToArray();

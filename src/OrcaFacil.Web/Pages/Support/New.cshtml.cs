@@ -1,0 +1,1 @@
+using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Mvc; using Microsoft.AspNetCore.Mvc.RazorPages; namespace OrcaFacil.Web.Pages.Support; [Authorize] public sealed class NewModel:PageModel { public IActionResult OnGet()=>RedirectToPage("Tickets"); }

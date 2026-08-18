@@ -1,0 +1,3 @@
+using Microsoft.AspNetCore.Mvc.RazorPages; using Microsoft.EntityFrameworkCore; using OrcaFacil.Domain.Entities; using OrcaFacil.Persistence;
+namespace OrcaFacil.Web.Pages.Help;
+public sealed class IndexModel(OrcaFacilDbContext db):PageModel { public IReadOnlyList<KnowledgeBaseArticle> Articles{get;private set;}=[]; public string? Query{get;private set;} public async Task OnGetAsync(string? q,CancellationToken ct){Query=q;var data=db.KnowledgeBaseArticles.AsNoTracking().Where(x=>x.IsPublished&&!x.IsDeleted);if(!string.IsNullOrWhiteSpace(q))data=data.Where(x=>x.Title.Contains(q)||x.Summary.Contains(q));Articles=await data.OrderBy(x=>x.DisplayOrder).ThenBy(x=>x.Title).ToListAsync(ct);} }

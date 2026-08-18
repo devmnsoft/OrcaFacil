@@ -12,6 +12,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>@ViewData["Title"] · OrçaFácil</title>
   <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+  <link rel="stylesheet" href="~/css/support.css" asp-append-version="true" />
 </head>
 <body class="of-app-shell">
 @if (User.Identity?.IsAuthenticated == true)
@@ -27,9 +28,11 @@
 }
 else { <main><partial name="Partials/_ToastHost" />@RenderBody()</main> }
 <partial name="Partials/_OverlayHost" />
+@if (User.Identity?.IsAuthenticated == true) { <aside class="of-feedback-widget" data-feedback-widget><button type="button" class="of-button of-button-secondary" data-feedback-open>Feedback</button><div class="of-feedback-panel" data-feedback-panel hidden><button type="button" class="of-feedback-close" data-feedback-close aria-label="Fechar">×</button><strong>Como foi sua experiência?</strong><form method="post" asp-page="/Feedback/Index"><input name="PageUrl" type="hidden" value="@currentPath" /><input name="CorrelationId" type="hidden" value="@Context.TraceIdentifier" />@foreach(var option in new[]{"Gostei","Não gostei","Algo está confuso","Encontrei um erro","Sugestão"}){<label><input name="Rating" type="radio" value="@option" required /> @option</label>}<textarea name="Message" maxlength="2000" rows="3" placeholder="Detalhes opcionais; não inclua dados sigilosos."></textarea><button type="submit" class="of-button of-button-primary">Enviar</button><a asp-page="/Support/Tickets">Precisa de resposta? Abra um chamado</a></form></div></aside> }
 <environment include="Development"><script src="~/js/diagnostics/js-health.js" asp-append-version="true"></script></environment>
 <script src="~/js/app.js" asp-append-version="true"></script>
 <script type="module" src="~/js/ui/feedback.js" asp-append-version="true"></script>
+<script type="module" src="~/js/ui/feedback-widget.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", false)
 </body>
 </html>

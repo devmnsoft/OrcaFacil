@@ -47,7 +47,9 @@
     "check:permissions": "node scripts/check-permissions.mjs",
     "check:persona-flows": "node scripts/check-persona-flows.mjs",
     "check:deploy-readiness": "node scripts/check-deploy-readiness.mjs",
-    "check:release-v1": "node scripts/check-release-v1.mjs"
+    "check:release-v1": "node scripts/check-release-v1.mjs",
+    "check:support-readiness": "node scripts/check-support-readiness.mjs",
+    "check:help-center": "node scripts/check-help-center.mjs"
   },
   "engines": {
     "node": ">=18"
