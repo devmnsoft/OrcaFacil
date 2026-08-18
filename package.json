@@ -45,7 +45,9 @@
     "check:design-consistency": "node scripts/check-design-consistency.mjs",
     "check:admin-security": "node scripts/check-admin-security.mjs",
     "check:permissions": "node scripts/check-permissions.mjs",
-    "check:persona-flows": "node scripts/check-persona-flows.mjs"
+    "check:persona-flows": "node scripts/check-persona-flows.mjs",
+    "check:deploy-readiness": "node scripts/check-deploy-readiness.mjs",
+    "check:release-v1": "node scripts/check-release-v1.mjs"
   },
   "engines": {
     "node": ">=18"

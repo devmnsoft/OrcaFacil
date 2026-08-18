@@ -715,6 +715,42 @@ CREATE TABLE IF NOT EXISTS orcafacil.account_settings (
 CREATE UNIQUE INDEX IF NOT EXISTS ix_account_settings_account_id ON orcafacil.account_settings(account_id);
 
 -- Catálogo inteligente e precificação orientada (2026-08-13).
+-- Tabelas centrais do fluxo quote-to-cash. Estas definições precisam anteceder
+-- os ALTERs abaixo para também suportar uma instalação totalmente nova.
+CREATE TABLE IF NOT EXISTS orcafacil.service_catalog_items (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), account_id uuid NOT NULL REFERENCES orcafacil.business_accounts(id) ON DELETE RESTRICT,
+ code varchar(40), name varchar(180) NOT NULL, description varchar(1200), category_id uuid, unit_code varchar(24) NOT NULL DEFAULT 'service',
+ standard_price numeric(18,2) NOT NULL DEFAULT 0, estimated_cost numeric(18,2) NOT NULL DEFAULT 0, suggested_duration_minutes integer,
+ internal_notes varchar(2000), is_favorite boolean NOT NULL DEFAULT false, is_active boolean NOT NULL DEFAULT true, use_count integer NOT NULL DEFAULT 0,
+ last_used_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false,
+ version xid NOT NULL DEFAULT '0');
+CREATE UNIQUE INDEX IF NOT EXISTS ux_service_catalog_items_account_code ON orcafacil.service_catalog_items(account_id,code) WHERE code IS NOT NULL;
+CREATE INDEX IF NOT EXISTS ix_service_catalog_items_account_name ON orcafacil.service_catalog_items(account_id,name);
+
+CREATE TABLE IF NOT EXISTS orcafacil.manual_payments (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), account_id uuid NOT NULL REFERENCES orcafacil.business_accounts(id) ON DELETE RESTRICT,
+ work_order_id uuid REFERENCES orcafacil.work_orders(id) ON DELETE RESTRICT, document_id uuid REFERENCES orcafacil.documents(id) ON DELETE RESTRICT,
+ client_id uuid NOT NULL REFERENCES orcafacil.clients(id) ON DELETE RESTRICT, amount numeric(18,2) NOT NULL,
+ payment_method varchar(40) NOT NULL, paid_at timestamptz NOT NULL, notes varchar(1000), registered_by_user_id uuid NOT NULL REFERENCES orcafacil.users(id) ON DELETE RESTRICT,
+ idempotency_key varchar(128) NOT NULL, status varchar(24) NOT NULL DEFAULT 'Active', reversed_at timestamptz,
+ reversed_by_user_id uuid REFERENCES orcafacil.users(id) ON DELETE RESTRICT, reversal_reason varchar(500),
+ created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_manual_payments_account_idempotency ON orcafacil.manual_payments(account_id,idempotency_key);
+CREATE INDEX IF NOT EXISTS ix_manual_payments_account_work_order_paid ON orcafacil.manual_payments(account_id,work_order_id,paid_at);
+
+CREATE TABLE IF NOT EXISTS orcafacil.receipts (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), account_id uuid NOT NULL REFERENCES orcafacil.business_accounts(id) ON DELETE RESTRICT,
+ payment_id uuid NOT NULL REFERENCES orcafacil.manual_payments(id) ON DELETE RESTRICT, work_order_id uuid REFERENCES orcafacil.work_orders(id) ON DELETE RESTRICT,
+ document_id uuid REFERENCES orcafacil.documents(id) ON DELETE RESTRICT, legacy_document_id uuid, client_id uuid NOT NULL REFERENCES orcafacil.clients(id) ON DELETE RESTRICT,
+ number varchar(40) NOT NULL, issuer_snapshot jsonb NOT NULL DEFAULT '{}', client_snapshot jsonb NOT NULL DEFAULT '{}', service_snapshot jsonb NOT NULL DEFAULT '[]',
+ amount numeric(18,2) NOT NULL, amount_in_words varchar(500) NOT NULL, payment_method varchar(40) NOT NULL, issued_at timestamptz NOT NULL,
+ city varchar(180), notes varchar(1000), fiscal_notice varchar(500) NOT NULL, origin_type varchar(24) NOT NULL,
+ service_description varchar(1000) NOT NULL, cancelled_at timestamptz, cancelled_by_user_id uuid REFERENCES orcafacil.users(id) ON DELETE RESTRICT,
+ cancellation_reason varchar(500), pdf_storage_key varchar(500), sent_at timestamptz, last_shared_at timestamptz,
+ created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_receipts_account_number ON orcafacil.receipts(account_id,number);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_receipts_account_payment ON orcafacil.receipts(account_id,payment_id);
+
 ALTER TABLE orcafacil.service_catalog_items ADD COLUMN IF NOT EXISTS desired_margin_percentage numeric(5,2) NOT NULL DEFAULT 0;
 ALTER TABLE orcafacil.service_catalog_items ADD COLUMN IF NOT EXISTS default_delivery_term varchar(120);
 ALTER TABLE orcafacil.service_catalog_items ADD COLUMN IF NOT EXISTS default_notes varchar(2000);
