@@ -16,6 +16,7 @@ async function walk(directory) {
 
 const rules = [
   ['expressão `is var` combinada com `&&`; use uma variável explícita', /\bis\s+var\s+\w+\s*&&/],
+  ['resultado de `Array.IndexOf` combinado com `&&`; use uma variável explícita', /Array\.IndexOf\([^\r\n]*\)[^\r\n]*&&/],
   ['implementação incompleta', /\bNotImplementedException\b/],
   ['link sem destino', /href\s*=\s*["']#["']/],
   ['link com destino vazio', /href\s*=\s*["']\s*["']/],

@@ -133,24 +133,56 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
 
     private static string NormalizeStage(string status, ClientDecision decision)
     {
-        if (decision == ClientDecision.Approved) return "Aprovado";
-        if (decision == ClientDecision.Rejected) return "Recusado";
-
-        // Documents created by older and newer workflows can use either status
-        // vocabulary. Keep both mapped to the same customer-facing funnel.
-        return status switch
+        if (decision == ClientDecision.Approved)
         {
-            "Draft" => "Rascunho",
-            "Ready" or "Issued" => "Pronto",
-            "Sent" => "Enviado",
-            "Viewed" => "Visualizado",
-            "InNegotiation" or "ChangeRequested" => "Em negociação",
-            "Approved" => "Aprovado",
-            "Rejected" => "Recusado",
-            "Expired" => "Expirado",
-            "Converted" or "ConvertedToWorkOrder" => "Convertido em OS",
-            _ => status
-        };
+            return "Aprovado";
+        }
+
+        if (decision == ClientDecision.Rejected)
+        {
+            return "Recusado";
+        }
+
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            return "Rascunho";
+        }
+
+        switch (status.Trim())
+        {
+            case "Draft":
+                return "Rascunho";
+
+            case "Ready":
+            case "Issued":
+                return "Pronto";
+
+            case "Sent":
+                return "Enviado";
+
+            case "Viewed":
+                return "Visualizado";
+
+            case "InNegotiation":
+            case "ChangeRequested":
+                return "Em negociação";
+
+            case "Approved":
+                return "Aprovado";
+
+            case "Rejected":
+                return "Recusado";
+
+            case "Expired":
+                return "Expirado";
+
+            case "Converted":
+            case "ConvertedToWorkOrder":
+                return "Convertido em OS";
+
+            default:
+                return status;
+        }
     }
 
     private static int StageOrder(string stage)
