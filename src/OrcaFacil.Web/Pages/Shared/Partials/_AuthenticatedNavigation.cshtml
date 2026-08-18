@@ -1,7 +1,7 @@
 @model string
 @{ string Active(string path) => Model.StartsWith(path, StringComparison.OrdinalIgnoreCase) ? "is-active" : string.Empty; }
 <nav class="of-menu">
-  <a class="@Active("/Dashboard")" asp-page="/Dashboard/Index">Dashboard</a><a class="@Active("/CommercialRoutine")" asp-page="/CommercialRoutine/Index">Rotina comercial</a>
+  <a class="@Active("/Dashboard")" asp-page="/Dashboard/Index">Dashboard</a><a class="@Active("/CommercialPipeline")" asp-page="/CommercialPipeline/Index">Pipeline</a><a class="@Active("/CommercialRoutine")" asp-page="/CommercialRoutine/Index">Rotina comercial</a>
   <a class="@Active("/Documents/New")" asp-page="/Documents/New">Novo orçamento</a><a class="@Active("/Documents/Index")" asp-page="/Documents/Index">Orçamentos</a>
   <a class="@Active("/Clients")" asp-page="/Clients/Index">Clientes</a><a class="@Active("/Services")" asp-page="/Services/Index">Serviços</a><a class="@Active("/Contracts")" asp-page="/Contracts/Index">Contratos</a>
   <a class="@Active("/WorkOrders")" asp-page="/WorkOrders/Index">OS</a><a class="@Active("/Schedule")" asp-page="/Schedule/Index">Agenda</a><a class="@Active("/Payments")" asp-page="/Payments/Index">Pagamentos</a><a class="@Active("/Receipts")" asp-page="/Receipts/Index">Recibos</a>

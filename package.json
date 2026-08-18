@@ -35,6 +35,8 @@
     "check:public-contracts": "node scripts/check-public-contract-collisions.mjs",
     "check:public-navigation": "node scripts/check-public-navigation.mjs",
     "check:js-safety": "node scripts/check-js-safety.mjs",
+    "check:aspnet-scope": "node scripts/check-aspnet-scope.mjs",
+    "check:commercial-automation": "node scripts/check-commercial-automation.mjs",
     "check:build-blockers": "node scripts/check-build-blockers.mjs",
     "check:razor-static-instance": "node scripts/check-razor-static-instance.mjs",
     "check:authenticated-navigation": "node scripts/check-authenticated-navigation.mjs",

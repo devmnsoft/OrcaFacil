@@ -65,11 +65,30 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         var access = await db.PublicDocumentAccesses.AsNoTracking().Where(x => x.AccountId == AccountId && ids.Contains(x.DocumentId)).ToListAsync(ct);
         var decisions = await db.PublicDocumentDecisions.AsNoTracking().Where(x => x.AccountId == AccountId && ids.Contains(x.DocumentId)).ToListAsync(ct);
         var orderDocIds = await db.WorkOrders.AsNoTracking().Where(x => x.AccountId == AccountId && x.SourceDocumentId != null && ids.Contains(x.SourceDocumentId.Value)).Select(x => x.SourceDocumentId!.Value).ToListAsync(ct);
-        var groups = new[] { ("sent", "Enviados", new[] { "Sent" }), ("viewed", "Visualizados", new[] { "Viewed" }),
-            ("change", "Em negociação", new[] { "ChangeRequested" }), ("approved", "Aprovados", new[] { "Approved", "ConvertedToWorkOrder" }) };
+        var paidDocumentIds = await (from payment in db.ManualPayments.AsNoTracking()
+            join order in db.WorkOrders.AsNoTracking() on payment.WorkOrderId equals (Guid?)order.Id
+            where payment.AccountId == AccountId && !payment.IsDeleted && payment.Status == FinancialRecordStatus.Active
+                && order.SourceDocumentId != null && ids.Contains(order.SourceDocumentId.Value)
+            group payment by order.SourceDocumentId!.Value into payments
+            where payments.Sum(x => x.Amount) > 0
+            select payments.Key).ToListAsync(ct);
+        var groups = new[] {
+            ("lead", "Lead", Array.Empty<string>()),
+            ("client", "Cliente cadastrado", Array.Empty<string>()),
+            ("draft", "Orçamento em rascunho", new[] { "Draft" }),
+            ("ready", "Proposta pronta", new[] { "Ready", "Issued" }),
+            ("sent", "Proposta enviada", new[] { "Sent" }),
+            ("viewed", "Visualizada", new[] { "Viewed" }),
+            ("change", "Em negociação", new[] { "InNegotiation", "ChangeRequested" }),
+            ("approved", "Aprovada", new[] { "Approved" }),
+            ("converted", "Convertida em OS", new[] { "Converted", "ConvertedToWorkOrder" }),
+            ("paid", "Paga", Array.Empty<string>()),
+            ("lost", "Perdida", new[] { "Rejected", "Expired" }) };
         var columns = groups.Select(group => {
-            var rows = docs.Where(x => group.Item3.Contains(x.Status, StringComparer.OrdinalIgnoreCase)).ToArray();
-            return new CommercialPipelineColumn(group.Item1, group.Item2, rows.Length, rows.Sum(x => x.Total), rows.Take(3).Select(x => {
+            var rows = group.Item1 == "paid"
+                ? docs.Where(x => paidDocumentIds.Contains(x.Id)).ToArray()
+                : docs.Where(x => !paidDocumentIds.Contains(x.Id) && group.Item3.Contains(x.Status, StringComparer.OrdinalIgnoreCase)).ToArray();
+            return new CommercialPipelineColumn(group.Item1, group.Item2, rows.Length, rows.Sum(x => x.Total), rows.Select(x => {
                 var a = access.Where(y => y.DocumentId == x.Id).OrderByDescending(y => y.LastViewedAt ?? y.CreatedAt).FirstOrDefault();
                 var last = a?.LastViewedAt ?? a?.CreatedAt ?? x.CreatedAt;
                 return new CommercialPipelineCard(x.Id, x.Number, x.ClientName, x.Total, x.CreatedAt, last, x.ValidUntil, Context(group.Item1, last, x.ValidUntil));
