@@ -19,7 +19,9 @@ const instanceMembers = new Map();
 for (const file of pageModels) {
   const source = await readFile(file, 'utf8');
   const relativePage = file.slice(0, -3);
-  staticMembers.set(relativePage, new Set([...source.matchAll(/public\s+static\s+[\w<>,?\[\].]+\s+(\w+)\s*\(/g)].map(match => match[1])));
+  staticMembers.set(relativePage, new Set([
+    ...[...source.matchAll(/public\s+static\s+[\w<>,?\[\].]+\s+(\w+)\s*(?:\(|\{|=>)/g)].map(match => match[1])
+  ]));
   instanceMembers.set(relativePage, new Set([...source.matchAll(/public\s+(?!static\b)[\w<>,?\[\].]+\s+(\w+)\s*\(/g)].map(match => match[1])));
 }
 
@@ -27,7 +29,7 @@ const failures = [];
 for (const file of files.filter(candidate => candidate.endsWith('.cshtml'))) {
   const source = await readFile(file, 'utf8');
   for (const member of staticMembers.get(file) ?? []) {
-    if (new RegExp(`@?Model\\.${member}\\s*\\(`).test(source)) failures.push(`${file}: Model acessa o membro estático ${member}`);
+    if (new RegExp(`@?Model\\.${member}\\b`).test(source)) failures.push(`${file}: Model acessa o membro estático ${member}`);
   }
 }
 
