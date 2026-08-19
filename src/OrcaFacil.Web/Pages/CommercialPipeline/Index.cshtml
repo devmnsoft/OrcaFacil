@@ -39,12 +39,15 @@
         }
         @foreach (var card in column.Cards)
         {
-            <a class="of-pipeline-card" data-client="@card.ClientName.ToLowerInvariant()" asp-page="/Documents/Details" asp-route-id="@card.DocumentId">
-                <span class="of-pipeline-card__number">@card.Number</span>
-                <strong>@card.ClientName</strong>
-                <span>@card.Total.ToString("C")</span>
-                <small>@card.Context</small>
-            </a>
+            <article class="of-pipeline-card" data-client="@card.ClientName.ToLowerInvariant()">
+                <a asp-page="/Documents/Details" asp-route-id="@card.DocumentId">
+                    <span class="of-pipeline-card__number">@card.Number</span>
+                    <strong>@card.ClientName</strong>
+                    <span>@card.Total.ToString("C")</span>
+                    <small>@card.Context</small>
+                </a>
+                <a class="of-pipeline-card__action" asp-page="/CommercialRoutine/Index" aria-label="Registrar follow-up de @card.Number">Registrar follow-up</a>
+            </article>
         }
         </div>
     </article>
