@@ -1,35 +1,43 @@
-# Ambientes do OrçaFácil
+# Ambientes do OrçaFácil ASP.NET
 
-## Local
-- Roda com `npm start` na porta padrão `8095`.
-- Pode usar Firebase real, emuladores ou modo demonstração com `localStorage`.
-- Use `.env` local não versionado para variáveis locais; nunca commite segredos.
+O ASP.NET Core carrega `appsettings.json` e o arquivo do ambiente selecionado por
+`ASPNETCORE_ENVIRONMENT`. Segredos devem ser fornecidos por variáveis com `__`
+como separador; `.env.example` é apenas um inventário e não é carregado pela
+aplicação.
 
-### Pepper técnico no Windows/Visual Studio
+## Development
 
-O perfil `Development` contém somente um valor explícito e identificável como local, para que a aplicação abra sem armazenar um segredo real. Para substituir esse valor na sua máquina (recomendado), use o Secret Manager:
+Use `appsettings.Development.json` e, para valores privados, Secret Manager ou
+variáveis de ambiente. Inicie sem Visual Studio com
+`scripts/windows/start-local.ps1`; encerre com `stop-local.ps1`.
 
-```powershell
-dotnet user-secrets init --project src/OrcaFacil.Web
-dotnet user-secrets set "Security:TechnicalFingerprintPepper" "use-um-valor-local-longo-e-aleatorio" --project src/OrcaFacil.Web
-```
+## Staging e Production
 
-Ou configure a variável de ambiente do Windows e reinicie o Visual Studio:
+Defina no host, no mínimo:
 
-```powershell
-setx Security__TechnicalFingerprintPepper "use-um-valor-local-longo-e-aleatorio"
-```
+- `ConnectionStrings__DefaultConnection`;
+- `Application__PublicBaseUrl` com HTTPS e domínio público real;
+- `Security__TechnicalFingerprintPepper`, `Security__PasswordResetPepper` e
+  `Security__SecurityEventPepper` com valores aleatórios independentes;
+- `DataProtection__KeysPath` ou `ORCAFACIL_DATAPROTECTION_PATH` apontando para
+  uma pasta persistente fora do diretório publicado;
+- `Uploads__Path` e `SystemHealth__LogsPath` fora de `wwwroot`;
+- `Email__Host`, `Email__UserName` e `Email__Password` quando SMTP for usado.
 
-`Testing` usa exclusivamente seu fallback fixo quando não há configuração. Em `Staging`, `Production` e qualquer outro ambiente, não existe fallback: `Security:TechnicalFingerprintPepper` é obrigatório e a inicialização falha sem ele. Nunca reutilize o valor de desenvolvimento em produção.
+Nunca coloque senhas, peppers, tokens ou connection strings reais nos arquivos
+versionados. Em Production, HSTS, cookies seguros e erros sanitizados são
+ativados pela aplicação.
 
-## Homologação
-- Recomendado usar Firebase Hosting preview channel ou projeto Firebase separado.
-- Firestore deve ser de teste quando houver projeto dedicado.
-- Valida release antes de produção com `npm run validate` e artifact `dist`.
-- Futuro `.firebaserc`: `staging: orcafacil-hml` quando o projeto existir.
+## Manutenção
 
-## Produção
-- Firebase Hosting oficial no projeto `orcafacil-b771c`.
-- Firestore oficial e App Check recomendado.
-- Publicação deve usar `dist`, gerado por build minificado/ofuscado.
-- `npm run security:check` é obrigatório antes de deploy.
+`ORCAFACIL_MAINTENANCE_MODE=true` habilita a resposta de manutenção com HTTP
+503. `/health` e os ativos essenciais continuam acessíveis. SuperAdmin pode
+acessar `/Admin/SystemHealth`; usuários comuns não alcançam fluxos da aplicação.
+Desabilite com `ORCAFACIL_MAINTENANCE_MODE=false` após a janela operacional.
+
+## Variáveis equivalentes
+
+Variáveis ASP.NET convencionais continuam aceitas. Por exemplo,
+`DataProtection__KeysPath` equivale ao alias
+`ORCAFACIL_DATAPROTECTION_PATH`, e `MaintenanceMode__Enabled` equivale ao alias
+`ORCAFACIL_MAINTENANCE_MODE`.

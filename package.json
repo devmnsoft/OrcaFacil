@@ -71,7 +71,12 @@
     "check:message-templates": "node scripts/check-message-templates.mjs",
     "check:operational-flow": "node scripts/check-operational-flow.mjs",
     "check:work-order-status": "node scripts/check-work-order-status.mjs",
-    "check:schedule-flow": "node scripts/check-schedule-flow.mjs"
+    "check:schedule-flow": "node scripts/check-schedule-flow.mjs",
+    "check:production-readiness": "node scripts/check-production-readiness.mjs",
+    "check:security-production": "node scripts/check-security-production.mjs",
+    "check:appsettings-secrets": "node scripts/check-appsettings-secrets.mjs",
+    "check:public-links": "node scripts/check-public-links.mjs",
+    "check:backup-restore": "node scripts/check-backup-restore.mjs"
   },
   "engines": {
     "node": ">=18"
