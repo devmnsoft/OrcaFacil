@@ -27,3 +27,12 @@
   .of-check-toggle { position: absolute; left: 0; top: 0; }
   .of-checklist-editor { margin-left: 0; }
 }
+.of-filter-bar { display:grid; grid-template-columns:repeat(5,minmax(8rem,1fr)) auto; gap:var(--of-space-3); align-items:end; }
+.of-filter-bar label,.of-action-form label { display:grid; gap:.35rem; color:var(--of-text-secondary); font-size:.82rem; font-weight:700; }
+.of-action-details summary { list-style:none; text-align:center; cursor:pointer; }
+.of-action-details summary::-webkit-details-marker { display:none; }
+.of-action-form { display:grid; gap:var(--of-space-3); margin-top:var(--of-space-3); padding:var(--of-space-3); border:1px solid var(--of-border); border-radius:var(--of-radius); background:var(--of-surface-subtle); }
+.of-segmented-control { display:flex; flex-wrap:wrap; gap:var(--of-space-2); margin-bottom:var(--of-space-4); }
+.of-segmented-control .is-active { border-color:var(--of-primary); color:var(--of-primary); box-shadow:0 0 0 2px color-mix(in srgb,var(--of-primary) 15%,transparent); }
+@media(max-width:55rem){.of-filter-bar{grid-template-columns:repeat(2,minmax(0,1fr))}.of-filter-bar button{width:100%}}
+@media(max-width:28rem){.of-filter-bar{grid-template-columns:1fr}.of-segmented-control .of-button{flex:1 1 calc(50% - var(--of-space-2));text-align:center}}

@@ -118,3 +118,6 @@ CREATE INDEX IF NOT EXISTS ix_financial_entry_status_due ON orcafacil.financial_
 CREATE INDEX IF NOT EXISTS ix_financial_entry_client_due ON orcafacil.financial_entries(account_id,client_id,due_date);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_financial_entry_contract_payment ON orcafacil.financial_entries(account_id,contract_payment_id) WHERE contract_payment_id IS NOT NULL AND is_deleted=false;
 COMMIT;
+
+-- Sprint 3: motivo obrigatório de cancelamento (evolução não destrutiva e idempotente).
+ALTER TABLE orcafacil.work_orders ADD COLUMN IF NOT EXISTS cancellation_reason varchar(1000);

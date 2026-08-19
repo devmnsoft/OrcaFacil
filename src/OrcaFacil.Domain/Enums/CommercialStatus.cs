@@ -8,7 +8,7 @@ public enum DocumentStatus
 public enum DocumentRevisionStatus { Draft, Sent, Superseded, Approved, Rejected, ChangeRequested, Expired, Revoked }
 public enum PublicAccessStatus { Active, Expired, Revoked }
 public enum PublicDocumentDecisionType { Approved, Rejected, ChangeRequested }
-public enum WorkOrderStatus { Planned, Scheduled, InProgress, WaitingCustomer, WaitingMaterial, Completed, Cancelled }
+public enum WorkOrderStatus { Planned, Scheduled, InProgress, WaitingCustomer, WaitingMaterial, Completed, Cancelled, Paused, Overdue }
 public enum FollowUpChannel { Phone, WhatsApp, Email, InPerson, Other }
 public enum FollowUpResult { NoResponse, RequestedTime, RequestedChange, Interested, NotInterested, VerballyApproved, Other }
 public enum FollowUpStatus { None, Scheduled, Completed, Snoozed }

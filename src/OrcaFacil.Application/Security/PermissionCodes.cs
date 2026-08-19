@@ -15,6 +15,16 @@ public static class PermissionCodes
     public const string DocumentsConvertToWorkOrder = "Documents.ConvertToWorkOrder";
     public const string WorkOrdersView = "WorkOrders.View";
     public const string WorkOrdersManage = "WorkOrders.Manage";
+    public const string WorkOrdersCreate = "WorkOrders.Create";
+    public const string WorkOrdersEdit = "WorkOrders.Edit";
+    public const string WorkOrdersSchedule = "WorkOrders.Schedule";
+    public const string WorkOrdersChangeStatus = "WorkOrders.ChangeStatus";
+    public const string WorkOrdersCancel = "WorkOrders.Cancel";
+    public const string WorkOrdersComplete = "WorkOrders.Complete";
+    public const string WorkOrdersManageChecklist = "WorkOrders.ManageChecklist";
+    public const string ScheduleView = "Schedule.View";
+    public const string ScheduleManage = "Schedule.Manage";
+    public const string ReportsOperational = "Reports.Operational";
     public const string PaymentsView = "Payments.View";
     public const string PaymentsManage = "Payments.Manage";
     public const string ReceiptsView = "Receipts.View";
@@ -49,7 +59,9 @@ public static class PermissionCodes
     {
         DashboardView, ClientsView, ClientsManage, ServicesView, ServicesManage, DocumentsView,
         DocumentsCreate, DocumentsEdit, DocumentsGeneratePublicLink, DocumentsConvertToWorkOrder,
-        WorkOrdersView, WorkOrdersManage, PaymentsView, PaymentsManage, ReceiptsView, ReceiptsManage,
+        WorkOrdersView, WorkOrdersManage, WorkOrdersCreate, WorkOrdersEdit, WorkOrdersSchedule,
+        WorkOrdersChangeStatus, WorkOrdersCancel, WorkOrdersComplete, WorkOrdersManageChecklist,
+        ScheduleView, ScheduleManage, ReportsOperational, PaymentsView, PaymentsManage, ReceiptsView, ReceiptsManage,
         FinanceView, FinanceManage, ContractsView, ContractsManage, CashFlowView, ReportsFinancial,
         ReportsView, ReportsExport, SettingsView, SettingsManage, UsersManage, PlanManage, AdminAccess,
         DiagnosticsView, LogsView, AuditView, SupportView, SupportCreateTicket, SupportManageTickets,

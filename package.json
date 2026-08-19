@@ -61,7 +61,10 @@
     "check:contracts-flow": "node scripts/check-contracts-flow.mjs",
     "check:receipts-compliance": "node scripts/check-receipts-compliance.mjs",
     "check:commercial-actions": "node scripts/check-commercial-actions.mjs",
-    "check:message-templates": "node scripts/check-message-templates.mjs"
+    "check:message-templates": "node scripts/check-message-templates.mjs",
+    "check:operational-flow": "node scripts/check-operational-flow.mjs",
+    "check:work-order-status": "node scripts/check-work-order-status.mjs",
+    "check:schedule-flow": "node scripts/check-schedule-flow.mjs"
   },
   "engines": {
     "node": ">=18"
