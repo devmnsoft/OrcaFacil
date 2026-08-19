@@ -172,7 +172,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     options.Cookie.SecurePolicy = builder.Environment.IsProduction()
         ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
     options.LoginPath = "/Auth/Login";
-    options.AccessDeniedPath = "/Auth/Login";
+    options.AccessDeniedPath = "/Error/403";
     options.Events.OnValidatePrincipal = async context =>
     {
         var idValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);

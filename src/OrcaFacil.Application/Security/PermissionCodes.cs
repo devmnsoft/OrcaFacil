@@ -13,6 +13,8 @@ public static class PermissionCodes
     public const string DocumentsEdit = "Documents.Edit";
     public const string DocumentsGeneratePublicLink = "Documents.GeneratePublicLink";
     public const string DocumentsConvertToWorkOrder = "Documents.ConvertToWorkOrder";
+    public const string CommercialPipelineView = "CommercialPipeline.View";
+    public const string CommercialActionsManage = "CommercialActions.Manage";
     public const string WorkOrdersView = "WorkOrders.View";
     public const string WorkOrdersManage = "WorkOrders.Manage";
     public const string WorkOrdersCreate = "WorkOrders.Create";
@@ -27,16 +29,22 @@ public static class PermissionCodes
     public const string ReportsOperational = "Reports.Operational";
     public const string PaymentsView = "Payments.View";
     public const string PaymentsManage = "Payments.Manage";
+    public const string PaymentsReverse = "Payments.Reverse";
+    public const string ReceivablesView = "Receivables.View";
+    public const string ReceivablesManage = "Receivables.Manage";
     public const string ReceiptsView = "Receipts.View";
     public const string ReceiptsManage = "Receipts.Manage";
+    public const string ReceiptsCancel = "Receipts.Cancel";
     public const string FinanceView = "Finance.View";
     public const string FinanceManage = "Finance.Manage";
     public const string ContractsView = "Contracts.View";
     public const string ContractsManage = "Contracts.Manage";
+    public const string ContractChargesGenerate = "ContractCharges.Generate";
     public const string CashFlowView = "CashFlow.View";
     public const string ReportsFinancial = "Reports.Financial";
     public const string ReportsView = "Reports.View";
     public const string ReportsExport = "Reports.Export";
+    public const string SupportManage = "Support.Manage";
     public const string SettingsView = "Settings.View";
     public const string SettingsManage = "Settings.Manage";
     public const string UsersManage = "Users.Manage";
@@ -59,12 +67,14 @@ public static class PermissionCodes
     {
         DashboardView, ClientsView, ClientsManage, ServicesView, ServicesManage, DocumentsView,
         DocumentsCreate, DocumentsEdit, DocumentsGeneratePublicLink, DocumentsConvertToWorkOrder,
+        CommercialPipelineView, CommercialActionsManage,
         WorkOrdersView, WorkOrdersManage, WorkOrdersCreate, WorkOrdersEdit, WorkOrdersSchedule,
         WorkOrdersChangeStatus, WorkOrdersCancel, WorkOrdersComplete, WorkOrdersManageChecklist,
-        ScheduleView, ScheduleManage, ReportsOperational, PaymentsView, PaymentsManage, ReceiptsView, ReceiptsManage,
-        FinanceView, FinanceManage, ContractsView, ContractsManage, CashFlowView, ReportsFinancial,
+        ScheduleView, ScheduleManage, ReportsOperational, PaymentsView, PaymentsManage, PaymentsReverse,
+        ReceivablesView, ReceivablesManage, ReceiptsView, ReceiptsManage, ReceiptsCancel,
+        FinanceView, FinanceManage, ContractsView, ContractsManage, ContractChargesGenerate, CashFlowView, ReportsFinancial,
         ReportsView, ReportsExport, SettingsView, SettingsManage, UsersManage, PlanManage, AdminAccess,
-        DiagnosticsView, LogsView, AuditView, SupportView, SupportCreateTicket, SupportManageTickets,
+        DiagnosticsView, LogsView, AuditView, SupportView, SupportManage, SupportCreateTicket, SupportManageTickets,
         FeedbackView, FeedbackCreate, KnowledgeBaseManage, ReleaseNotesManage, SetupChecklistView, SetupChecklistManage
     };
 }

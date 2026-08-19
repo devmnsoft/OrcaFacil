@@ -1,0 +1,9 @@
+@page
+@model OrcaFacil.Web.Areas.Admin.Pages.Accounts.IndexModel
+@{ ViewData["Title"] = "Contas"; }
+<div class="of-page">
+<header class="of-page-header"><div><p class="of-eyebrow">Operação SaaS</p><h1>Contas</h1><p>Consulte situação, plano e acesso sem remover o histórico da empresa.</p></div></header>
+<section class="of-metric-grid"><article class="of-metric-card"><span>Total</span><strong>@Model.Total</strong></article><article class="of-metric-card"><span>Ativas</span><strong>@Model.Active</strong></article><article class="of-metric-card"><span>Bloqueadas</span><strong>@Model.Blocked</strong></article></section>
+<form method="get" class="of-card of-filter-bar"><label>Nome, e-mail ou documento<input type="search" name="query" value="@Model.Query" /></label><label>Status<select name="status"><option value="">Todos</option>@foreach(var value in Enum.GetNames<OrcaFacil.Domain.Enums.AccountStatus>()){<option value="@value" selected="@(Model.Status == value)">@value</option>}</select></label><label>Plano<input name="plan" value="@Model.Plan" /></label><button type="submit" class="of-button-primary">Filtrar</button></form>
+<section class="of-card"><div class="of-admin-table-wrap"><table class="of-table"><thead><tr><th>Conta</th><th>Documento</th><th>Status</th><th>Plano</th><th>Membros</th><th></th></tr></thead><tbody>@if(Model.Items.Count == 0){<tr><td colspan="6"><div class="of-empty-state">Nenhuma conta corresponde aos filtros.</div></td></tr>}@foreach(var item in Model.Items){<tr><td><strong>@item.Name</strong><br/><small>@item.Email</small></td><td>@item.Document</td><td><span class="of-status-badge">@item.Status</span></td><td>@item.Plan</td><td>@item.Members</td><td><a class="of-button-secondary" asp-page="Details" asp-route-id="@item.Id">Visão 360</a></td></tr>}</tbody></table></div></section>
+</div>
