@@ -1,4 +1,5 @@
 @page
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy="SuperAdmin")]
-@{ViewData["Title"]="Planos";}
-<header class="of-page-header"><div><p class="of-eyebrow">Benefícios</p><h1>Planos e benefícios</h1><p>PlanFeature controla limites e recursos pagos.</p></div></header><div class="of-admin-grid"><div ><div class="of-card"><h2>Free</h2><ul><li>documents.monthly_limit</li><li>PDF com marca OrçaFácil</li><li>Acesso básico</li></ul></div></div><div ><div class="of-card"><h2>Pro</h2><ul><li>pdf.remove_watermark</li><li>public_approval.enabled</li><li>templates.advanced</li><li>support.priority</li></ul></div></div></div>
+@model OrcaFacil.Web.Areas.Admin.Pages.Plans.IndexModel
+@{ ViewData["Title"]="Planos"; }
+<div class="of-page"><header class="of-page-header"><div><p class="of-eyebrow">Catálogo SaaS</p><h1>Planos e versões</h1><p>Versões publicadas preservam os termos das assinaturas existentes.</p></div></header>
+<section class="of-mobile-card-list">@if(Model.Items.Count==0){<div class="of-card of-empty-state"><h2>Catálogo não configurado</h2><p>Publique planos e limites antes de habilitar novas contratações.</p></div>}@foreach(var plan in Model.Items){<article class="of-card of-data-card"><div class="of-section-heading"><div><p class="of-eyebrow">@plan.Code</p><h2>@plan.Name</h2></div><span class="of-status-badge">@(plan.IsActive ? "Ativo" : "Inativo")</span></div><p>@plan.Description</p><dl><div><dt>Versões</dt><dd>@plan.Versions</dd></div><div><dt>Publicada</dt><dd>@(plan.PublishedVersion?.ToString() ?? "Nenhuma")</dd></div><div><dt>Assinaturas</dt><dd>@plan.Subscriptions</dd></div></dl></article>}</section></div>
