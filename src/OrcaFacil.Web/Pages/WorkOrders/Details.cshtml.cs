@@ -31,6 +31,13 @@ public sealed class DetailsModel(OrcaFacilDbContext db, ICurrentAccountService a
     [BindProperty, StringLength(1000)]
     public string? CompletionNote { get; set; }
 
+    [BindProperty, Required]
+    public DateTime ScheduledStart { get; set; }
+    [BindProperty, Required]
+    public DateTime ScheduledEnd { get; set; }
+    [BindProperty, StringLength(1000, MinimumLength = 3)]
+    public string? CancellationReason { get; set; }
+
     public async Task<IActionResult> OnGetAsync(Guid id, CancellationToken ct) => await LoadAsync(id, ct) ? Page() : NotFound();
 
     public async Task<IActionResult> OnPostStartAsync(Guid id, CancellationToken ct)
@@ -44,6 +51,30 @@ public sealed class DetailsModel(OrcaFacilDbContext db, ICurrentAccountService a
         var incomplete = await db.WorkOrderChecklistItems.AnyAsync(x => x.AccountId == account.AccountId && x.WorkOrderId == id && !x.IsDeleted && x.IsRequired && !x.IsCompleted, ct);
         if (incomplete) { TempData["Error"] = "Conclua os itens obrigatórios do checklist antes de finalizar a ordem."; return RedirectToPage(new { id }); }
         var result = await journey.CompleteAsync(id, null, ct); TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostScheduleAsync(Guid id, CancellationToken ct)
+    {
+        var result = await journey.ScheduleAsync(id, ScheduledStart, ScheduledEnd, null, ct);
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostPauseAsync(Guid id, CancellationToken ct) => await RunStatusAsync(id, journey.PauseAsync(id, ct));
+    public async Task<IActionResult> OnPostResumeAsync(Guid id, CancellationToken ct) => await RunStatusAsync(id, journey.ResumeAsync(id, ct));
+
+    public async Task<IActionResult> OnPostCancelAsync(Guid id, CancellationToken ct)
+    {
+        var result = await journey.CancelAsync(id, CancellationReason ?? string.Empty, ct);
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
+        return RedirectToPage(new { id });
+    }
+
+    private async Task<IActionResult> RunStatusAsync(Guid id, Task<WorkOrderResult> operation)
+    {
+        var result = await operation;
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
         return RedirectToPage(new { id });
     }
 

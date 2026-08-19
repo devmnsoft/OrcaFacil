@@ -233,11 +233,14 @@ public sealed class CommercialJourneyService(
         var document = await OwnedDocument(documentId, ct);
         if (document is null || !Enum.TryParse<DocumentStatus>(document.Status, out var status) || status != DocumentStatus.Approved)
             return Work(false, "NotApproved", "Apenas orçamento aprovado pode virar ordem.", document?.Id, document?.Status, correlation);
-        var revision = await db.DocumentRevisions.SingleAsync(x => x.AccountId == AccountId && x.DocumentId == documentId && x.IsCurrent, ct);
-        var existing = await db.WorkOrders.SingleOrDefaultAsync(x => x.AccountId == AccountId && x.SourceRevisionId == revision.Id, ct);
+        if (document.ClientId is not { } clientId || !await db.Clients.AnyAsync(x => x.AccountId == AccountId && x.Id == clientId && !x.IsDeleted, ct))
+            return Work(false, "InvalidClient", "Vincule um cliente válido da conta antes de gerar a OS.", document.Id, document.Status, correlation);
+        var revision = await db.DocumentRevisions.SingleOrDefaultAsync(x => x.AccountId == AccountId && x.DocumentId == documentId && x.IsCurrent, ct);
+        if (revision is null) return Work(false, "RevisionRequired", "Gere a versão aprovada da proposta antes de criar a OS.", document.Id, document.Status, correlation);
+        var existing = await db.WorkOrders.SingleOrDefaultAsync(x => x.AccountId == AccountId && x.SourceDocumentId == document.Id && !x.IsDeleted, ct);
         if (existing is not null) return Work(true, "IdempotentReplay", "Ordem já criada.", existing.Id, existing.Status.ToString(), correlation);
         var order = new WorkOrder { AccountId = AccountId, SourceDocumentId = document.Id, SourceRevisionId = revision.Id,
-            ClientId = document.ClientId ?? Guid.Empty, Number = $"OS-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid():N}"[..20], Title = $"Serviço do orçamento {document.Number}",
+            ClientId = clientId, Number = $"OS-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid():N}"[..20], Title = $"Serviço do orçamento {document.Number}",
             ClientSnapshot = JsonSerializer.Serialize(new { document.ClientName, document.ClientEmail, document.ClientPhone }),
             ItemsSnapshot = JsonSerializer.Serialize(document.Items.Select(x => new { x.Description, x.Quantity, x.UnitPrice, x.Discount })),
             TotalSnapshot = revision.Total, Notes = document.Notes, CreatedByUserId = currentUser.UserId };
@@ -255,7 +258,16 @@ public sealed class CommercialJourneyService(
     public Task<WorkOrderResult> ScheduleAsync(Guid id, DateTime start, DateTime end, Guid? assignee, CancellationToken ct = default) =>
         ChangeOrder(id, WorkOrderStatus.Scheduled, x => { if (end <= start) return false; x.ScheduledStart = start.ToUniversalTime(); x.ScheduledEnd = end.ToUniversalTime(); x.AssignedUserId = assignee; return true; }, "Serviço agendado.", ct);
     public Task<WorkOrderResult> StartAsync(Guid id, CancellationToken ct = default) => ChangeOrder(id, WorkOrderStatus.InProgress, x => { x.StartedAt = DateTime.UtcNow; return true; }, "Execução iniciada.", ct);
-    public Task<WorkOrderResult> CompleteAsync(Guid id, string? notes, CancellationToken ct = default) => ChangeOrder(id, WorkOrderStatus.Completed, x => { x.CompletedAt = DateTime.UtcNow; x.Notes = Clean(notes, 4000); return true; }, "Serviço concluído. Registre o pagamento separadamente.", ct);
+    public Task<WorkOrderResult> PauseAsync(Guid id, CancellationToken ct = default) => ChangeOrder(id, WorkOrderStatus.Paused, _ => true, "Execução pausada.", ct);
+    public Task<WorkOrderResult> ResumeAsync(Guid id, CancellationToken ct = default) => ChangeOrder(id, WorkOrderStatus.InProgress, _ => true, "Execução retomada.", ct);
+    public Task<WorkOrderResult> CompleteAsync(Guid id, string? notes, CancellationToken ct = default) =>
+        ChangeOrder(id, WorkOrderStatus.Completed, x => { x.CompletedAt = DateTime.UtcNow; if (!string.IsNullOrWhiteSpace(notes)) x.Notes = Clean(notes, 4000); return true; }, "Serviço concluído. Pendência financeira registrada quando aplicável.", ct);
+    public Task<WorkOrderResult> CancelAsync(Guid id, string reason, CancellationToken ct = default)
+    {
+        var cleanReason = Clean(reason, 1000);
+        if (cleanReason is null) return Task.FromResult(Work(false, "CancellationReasonRequired", "Informe o motivo do cancelamento.", id, null, CorrelationId));
+        return ChangeOrder(id, WorkOrderStatus.Cancelled, x => { x.CancelledAt = DateTime.UtcNow; x.CancellationReason = cleanReason; return true; }, $"OS cancelada. Motivo: {cleanReason}", ct);
+    }
 
     public async Task<PaymentRegistrationResult> RegisterAsync(ManualPaymentRequest request, CancellationToken ct = default)
     {
@@ -348,7 +360,16 @@ public sealed class CommercialJourneyService(
         if (order is null) return Work(false, "NotFound", "Ordem não encontrada.", null, null, correlation);
         if (!workOrderTransitions.CanTransition(order.Status, next)) return Work(false, "InvalidTransition", "Mudança de status não permitida.", order.Id, order.Status.ToString(), correlation);
         if (!mutate(order)) return Work(false, "Invalid", "Revise os dados informados.", order.Id, order.Status.ToString(), correlation);
-        order.Status = next; AddEvent($"WorkOrder{next}", order.Id, message); await db.SaveChangesAsync(ct); return Work(true, "Updated", message, order.Id, next.ToString(), correlation);
+        order.Status = next;
+        if (next == WorkOrderStatus.Completed && !order.PaymentReceived && order.TotalSnapshot > 0 &&
+            !await db.FinancialEntries.AnyAsync(x => x.AccountId == AccountId && x.WorkOrderId == order.Id && !x.IsDeleted, ct))
+        {
+            db.FinancialEntries.Add(new FinancialEntry { AccountId = AccountId, ClientId = order.ClientId,
+                DocumentId = order.SourceDocumentId, WorkOrderId = order.Id, Origin = FinancialEntryOrigin.WorkOrder,
+                Description = $"Serviço concluído · {order.Number}", DueDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                Amount = order.TotalSnapshot, Status = FinancialEntryStatus.Pending });
+        }
+        AddEvent($"WorkOrder{next}", order.Id, message); await db.SaveChangesAsync(ct); return Work(true, "Updated", message, order.Id, next.ToString(), correlation);
     }
 
     private Task<Document?> OwnedDocument(Guid id, CancellationToken ct) => db.Documents.Include(x => x.Items).SingleOrDefaultAsync(x => x.Id == id && x.AccountId == AccountId && !x.IsDeleted, ct);

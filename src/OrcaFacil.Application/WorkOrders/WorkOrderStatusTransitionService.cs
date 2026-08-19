@@ -13,8 +13,10 @@ public sealed class WorkOrderStatusTransitionService : IWorkOrderStatusTransitio
     private static readonly IReadOnlyDictionary<WorkOrderStatus, HashSet<WorkOrderStatus>> Allowed = new Dictionary<WorkOrderStatus, HashSet<WorkOrderStatus>>
     {
         [WorkOrderStatus.Planned] = [WorkOrderStatus.Scheduled, WorkOrderStatus.Cancelled],
-        [WorkOrderStatus.Scheduled] = [WorkOrderStatus.Planned, WorkOrderStatus.InProgress, WorkOrderStatus.Cancelled],
-        [WorkOrderStatus.InProgress] = [WorkOrderStatus.WaitingCustomer, WorkOrderStatus.WaitingMaterial, WorkOrderStatus.Completed, WorkOrderStatus.Cancelled],
+        [WorkOrderStatus.Scheduled] = [WorkOrderStatus.InProgress, WorkOrderStatus.Cancelled, WorkOrderStatus.Overdue],
+        [WorkOrderStatus.Overdue] = [WorkOrderStatus.InProgress, WorkOrderStatus.Cancelled],
+        [WorkOrderStatus.InProgress] = [WorkOrderStatus.Paused, WorkOrderStatus.WaitingCustomer, WorkOrderStatus.WaitingMaterial, WorkOrderStatus.Completed, WorkOrderStatus.Cancelled],
+        [WorkOrderStatus.Paused] = [WorkOrderStatus.InProgress, WorkOrderStatus.Cancelled],
         [WorkOrderStatus.WaitingCustomer] = [WorkOrderStatus.InProgress, WorkOrderStatus.Cancelled],
         [WorkOrderStatus.WaitingMaterial] = [WorkOrderStatus.InProgress, WorkOrderStatus.Cancelled]
     };

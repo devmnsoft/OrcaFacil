@@ -82,6 +82,7 @@ public sealed class WorkOrder : Entity
     public DateTime? StartedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
     public DateTime? CancelledAt { get; set; }
+    public string? CancellationReason { get; set; }
     public Guid? AssignedUserId { get; set; }
     public string AddressSnapshot { get; set; } = "{}";
     public string ClientSnapshot { get; set; } = "{}";

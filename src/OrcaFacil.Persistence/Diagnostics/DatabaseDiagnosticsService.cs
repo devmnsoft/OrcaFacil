@@ -90,6 +90,9 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
                 "account_onboarding_states.completed_at", "account_onboarding_states.skipped_at",
                 "account_onboarding_states.last_seen_at", "account_onboarding_states.created_at",
                 "account_onboarding_states.updated_at", "account_onboarding_states.is_deleted",
+                "work_orders.account_id", "work_orders.cancellation_reason",
+                "work_order_checklist_items.account_id", "work_order_checklist_items.work_order_id",
+                "work_order_checklist_items.is_required", "work_order_checklist_items.is_completed",
                 "support_tickets.related_page", "support_tickets.correlation_id", "support_tickets.browser_info",
                 "user_feedback.page_url", "user_feedback.rating", "knowledge_base_articles.slug",
                 "knowledge_base_articles.is_published", "release_notes.version", "release_notes.is_published"
