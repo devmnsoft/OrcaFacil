@@ -168,7 +168,7 @@ public sealed class Receipt : Entity
     public DateTime IssuedAt { get; set; }
     public string? City { get; set; }
     public string? Notes { get; set; }
-    public string FiscalNotice { get; set; } = "Recibo de pagamento registrado manualmente; não substitui documento fiscal quando exigido.";
+    public string FiscalNotice { get; set; } = "Recibo não substitui nota fiscal.";
     public ReceiptOriginType OriginType { get; set; }
     public string ServiceDescription { get; set; } = string.Empty;
     public DateTime? CancelledAt { get; set; }
@@ -177,4 +177,13 @@ public sealed class Receipt : Entity
     public string? PdfStorageKey { get; set; }
     public DateTime? SentAt { get; set; }
     public DateTime? LastSharedAt { get; set; }
+}
+
+/// <summary>Serializes receipt numbering inside one tenant and calendar year.</summary>
+public sealed class ReceiptSequence : Entity
+{
+    public Guid AccountId { get; set; }
+    public int Year { get; set; }
+    public long CurrentNumber { get; set; }
+    public string Prefix { get; set; } = "REC";
 }

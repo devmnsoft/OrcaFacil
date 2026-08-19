@@ -11,6 +11,7 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
     public const string PasswordRecoveryMigration = "20260728230000_AddPasswordRecoveryAndEmailOutbox";
     public const string CommercialJourneyMigration = "20260729000000_AddCommercialJourney";
     public const string QuoteToCashMigration = "20260730000000_AddManualPaymentsAndReceipts";
+    public const string ReceiptSequenceMigration = "20260819010000_AddReceiptSequences";
 
     public static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> RegistrationContract =
         new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
@@ -75,6 +76,10 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
                 ("id", "uuid"), ("account_id", "uuid"), ("payment_id", "uuid"), ("work_order_id", "uuid"),
                 ("client_id", "uuid"), ("number", "character varying"), ("issuer_snapshot", "jsonb"),
                 ("client_snapshot", "jsonb"), ("service_snapshot", "jsonb"), ("amount", "numeric")),
+            ["receipt_sequences"] = Columns(
+                ("id", "uuid"), ("account_id", "uuid"), ("year", "integer"),
+                ("current_number", "bigint"), ("prefix", "character varying"),
+                ("created_at", "timestamp with time zone"), ("is_deleted", "boolean")),
             ["password_reset_tokens"] = Columns(
                 ("id", "uuid"), ("user_id", "uuid"), ("token_hash", "character varying"),
                 ("expires_at", "timestamp with time zone"), ("used_at", "timestamp with time zone"),
@@ -135,7 +140,7 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
         return new(issues.Count == 0 && !pending, issues, DateTimeOffset.UtcNow, pending);
     }
 
-    public static readonly string[] RequiredMigrations = [RepairMigration, PasswordRecoveryMigration, CommercialJourneyMigration, QuoteToCashMigration];
+    public static readonly string[] RequiredMigrations = [RepairMigration, PasswordRecoveryMigration, CommercialJourneyMigration, QuoteToCashMigration, ReceiptSequenceMigration];
 
     private static readonly (string Table, string Name)[] EssentialIndexes =
     [
@@ -147,6 +152,7 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
         ("work_orders", "ux_work_orders_revision"),
         ("manual_payments", "ux_manual_payments_idempotency"),
         ("receipts", "ux_receipts_payment"),
+        ("receipt_sequences", "ux_receipt_sequences_account_year"),
         ("password_reset_tokens", "uq_password_reset_tokens_token_hash"),
         ("email_outbox_messages", "uq_email_outbox_idempotency_key")
     ];
@@ -176,6 +182,7 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
         "password_reset_tokens" or "email_outbox_messages" => PasswordRecoveryMigration,
         "document_revisions" or "public_document_accesses" or "public_document_decisions" or
             "commercial_follow_ups" or "work_orders" => CommercialJourneyMigration,
+        "receipt_sequences" => ReceiptSequenceMigration,
         "manual_payments" or "receipts" => QuoteToCashMigration,
         _ => RepairMigration
     };
