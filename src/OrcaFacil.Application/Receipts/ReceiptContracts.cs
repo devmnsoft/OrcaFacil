@@ -21,6 +21,7 @@ public sealed record CreateReceiptResult(bool Succeeded, CreateReceiptCode Code,
 public interface IReceiptApplicationService
 {
     Task<CreateReceiptResult> CreateAsync(CreateReceiptRequest request, CancellationToken ct = default);
+    Task<CreateReceiptResult> CreateForPaymentAsync(Guid paymentId, string serviceDescription, string? city, string? notes, CancellationToken ct = default);
     Task<bool> CancelAsync(Guid receiptId, string reason, CancellationToken ct = default);
     Task<bool> MarkSharedAsync(Guid receiptId, CancellationToken ct = default);
     Task<bool> ReversePaymentAsync(Guid paymentId, string reason, CancellationToken ct = default);

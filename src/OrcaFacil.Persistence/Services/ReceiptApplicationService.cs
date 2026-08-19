@@ -57,13 +57,13 @@ public sealed class ReceiptApplicationService(
         };
         db.ManualPayments.Add(payment);
 
-        var sequence = await db.Receipts.CountAsync(x => x.AccountId == accountId, ct) + 1;
+        var number = await NextReceiptNumberAsync(accountId, ct);
         var receipt = new Receipt
         {
             AccountId = accountId, PaymentId = payment.Id, ClientId = client.Id,
             WorkOrderId = request.WorkOrderId, DocumentId = request.DocumentId,
             LegacyDocumentId = request.LegacyDocumentId, OriginType = request.OriginType,
-            Number = $"REC-{DateTime.UtcNow:yyyy}-{sequence:00000}", Amount = request.Amount,
+            Number = number, Amount = request.Amount,
             AmountInWords = numberToWords.ToCurrencyWords(request.Amount), PaymentMethod = canonicalPaymentMethod,
             IssuedAt = DateTime.UtcNow, City = request.City?.Trim(), Notes = request.Notes?.Trim(),
             ServiceDescription = request.ServiceDescription.Trim(),
@@ -75,6 +75,69 @@ public sealed class ReceiptApplicationService(
         await transaction.CommitAsync(ct);
         return new(true, CreateReceiptCode.None, "Recibo emitido com sucesso.", payment.Id, receipt.Id,
             receipt.Number, RedirectPage, correlationId);
+    }
+
+    public async Task<CreateReceiptResult> CreateForPaymentAsync(Guid paymentId, string serviceDescription, string? city, string? notes, CancellationToken ct = default)
+    {
+        var correlationId = Guid.NewGuid().ToString("N");
+        if (currentAccount.AccountId is not Guid accountId)
+            return Failure(CreateReceiptCode.AccessDenied, "A conta ativa não permite esta operação.", correlationId);
+        if (string.IsNullOrWhiteSpace(serviceDescription))
+            return Failure(CreateReceiptCode.InvalidOrigin, "Descreva o serviço recebido.", correlationId);
+
+        var payment = await db.ManualPayments.AsNoTracking().SingleOrDefaultAsync(
+            x => x.Id == paymentId && x.AccountId == accountId && !x.IsDeleted, ct);
+        if (payment is null || payment.Status != FinancialRecordStatus.Active)
+            return Failure(CreateReceiptCode.AccessDenied, "Pagamento ativo não encontrado nesta conta.", correlationId);
+
+        var existing = await db.Receipts.AsNoTracking().SingleOrDefaultAsync(
+            x => x.AccountId == accountId && x.PaymentId == paymentId && !x.IsDeleted, ct);
+        if (existing is not null)
+            return new(true, CreateReceiptCode.DuplicateRequest, "Este pagamento já possui recibo.", payment.Id,
+                existing.Id, existing.Number, RedirectPage, correlationId);
+
+        var client = await db.Clients.AsNoTracking().SingleOrDefaultAsync(
+            x => x.Id == payment.ClientId && x.AccountId == accountId && !x.IsDeleted, ct);
+        if (client is null) return Failure(CreateReceiptCode.ClientNotFound, "Cliente não encontrado nesta conta.", correlationId);
+
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        var receipt = new Receipt
+        {
+            AccountId = accountId, PaymentId = payment.Id, ClientId = payment.ClientId,
+            WorkOrderId = payment.WorkOrderId, DocumentId = payment.DocumentId,
+            OriginType = payment.WorkOrderId.HasValue ? ReceiptOriginType.WorkOrder : payment.DocumentId.HasValue ? ReceiptOriginType.Budget : ReceiptOriginType.Standalone,
+            Number = await NextReceiptNumberAsync(accountId, ct), Amount = payment.Amount,
+            AmountInWords = numberToWords.ToCurrencyWords(payment.Amount), PaymentMethod = payment.PaymentMethod,
+            IssuedAt = DateTime.UtcNow, City = city?.Trim(), Notes = notes?.Trim(),
+            ServiceDescription = serviceDescription.Trim(),
+            ClientSnapshot = JsonSerializer.Serialize(new { client.Id, client.Name, client.DocumentNumber, client.Email, client.Phone, client.City }),
+            ServiceSnapshot = JsonSerializer.Serialize(new { description = serviceDescription.Trim() })
+        };
+        db.Receipts.Add(receipt);
+        await db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+        return new(true, CreateReceiptCode.None, "Recibo emitido com sucesso.", payment.Id, receipt.Id,
+            receipt.Number, RedirectPage, correlationId);
+    }
+
+    private async Task<string> NextReceiptNumberAsync(Guid accountId, CancellationToken ct)
+    {
+        var year = DateTime.UtcNow.Year;
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO orcafacil.receipt_sequences
+                (id, account_id, year, current_number, prefix, created_at, is_deleted)
+            VALUES ({Guid.NewGuid()}, {accountId}, {year}, 0, {"REC"}, now(), false)
+            ON CONFLICT (account_id, year) DO NOTHING
+            """, ct);
+        var sequence = await db.ReceiptSequences.FromSqlInterpolated($"""
+            SELECT * FROM orcafacil.receipt_sequences
+             WHERE account_id = {accountId} AND year = {year}
+             FOR UPDATE
+            """).SingleAsync(ct);
+        sequence.CurrentNumber++;
+        sequence.Touch();
+        await db.SaveChangesAsync(ct);
+        return $"{sequence.Prefix}-{year}-{sequence.CurrentNumber:000000}";
     }
 
     public async Task<bool> CancelAsync(Guid receiptId, string reason, CancellationToken ct = default)

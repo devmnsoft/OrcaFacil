@@ -5,6 +5,7 @@ namespace OrcaFacil.Web.ViewModels.Receipts;
 
 public sealed class ReceiptCreateInput
 {
+    public Guid? PaymentId { get; set; }
     [Required(ErrorMessage = "Selecione um cliente.")]
     public Guid ClientId { get; set; }
     [EnumDataType(typeof(ReceiptOriginType), ErrorMessage = "Selecione uma origem válida.")]

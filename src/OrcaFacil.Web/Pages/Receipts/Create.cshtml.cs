@@ -47,7 +47,7 @@ public sealed class CreateModel(IReceiptApplicationService receipts, ICurrentAcc
         if (paymentId is Guid existingPayment)
         {
             var payment = await db.ManualPayments.AsNoTracking().SingleOrDefaultAsync(x => x.Id == existingPayment && x.AccountId == account.AccountId && !x.IsDeleted, ct);
-            if (payment is not null) { Input.ClientId = payment.ClientId; Input.Amount = payment.Amount; Input.PaymentMethod = payment.PaymentMethod; Input.PaidAt = payment.PaidAt; }
+            if (payment is not null) { Input.PaymentId = payment.Id; Input.ClientId = payment.ClientId; Input.WorkOrderId = payment.WorkOrderId; Input.DocumentId = payment.DocumentId; Input.Amount = payment.Amount; Input.PaymentMethod = payment.PaymentMethod; Input.PaidAt = payment.PaidAt; Input.OriginType = payment.WorkOrderId.HasValue ? ReceiptOriginType.WorkOrder : payment.DocumentId.HasValue ? ReceiptOriginType.Budget : ReceiptOriginType.Standalone; }
         }
         return Page();
     }
@@ -58,7 +58,9 @@ public sealed class CreateModel(IReceiptApplicationService receipts, ICurrentAcc
         if (!ModelState.IsValid) { await LoadOptionsAsync(ct); return Page(); }
         if (account.AccountId is not Guid accountId) return Forbid();
         if (string.IsNullOrWhiteSpace(Input.IdempotencyKey)) Input.IdempotencyKey = Guid.NewGuid().ToString("N");
-        var result = await receipts.CreateAsync(new(accountId, Input.ClientId, Input.OriginType, Input.WorkOrderId,
+        var result = Input.PaymentId is Guid paymentId
+            ? await receipts.CreateForPaymentAsync(paymentId, Input.ServiceDescription, Input.City, Input.Notes, ct)
+            : await receipts.CreateAsync(new(accountId, Input.ClientId, Input.OriginType, Input.WorkOrderId,
             Input.DocumentId, Input.Amount, Input.PaymentMethod, Input.PaidAt, Input.City,
             Input.ServiceDescription, Input.Notes, Input.IdempotencyKey, Input.DocumentId), ct);
         if (!result.Succeeded) { ModelState.AddModelError(string.Empty, result.Message); await LoadOptionsAsync(ct); return Page(); }

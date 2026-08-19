@@ -115,6 +115,16 @@ public sealed class ReceiptConfiguration : IEntityTypeConfiguration<Receipt>
     }
 }
 
+public sealed class ReceiptSequenceConfiguration : IEntityTypeConfiguration<ReceiptSequence>
+{
+    public void Configure(EntityTypeBuilder<ReceiptSequence> b)
+    {
+        b.ToTable("receipt_sequences"); b.ConfigureBase();
+        b.Property(x => x.Prefix).HasMaxLength(12).IsRequired();
+        b.HasIndex(x => new { x.AccountId, x.Year }).IsUnique();
+    }
+}
+
 public sealed class FinancialEntryConfiguration : IEntityTypeConfiguration<FinancialEntry>
 {
     public void Configure(EntityTypeBuilder<FinancialEntry> b)

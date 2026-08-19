@@ -59,6 +59,7 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<WorkOrderChecklistItem> WorkOrderChecklistItems => Set<WorkOrderChecklistItem>();
     public DbSet<ManualPayment> ManualPayments => Set<ManualPayment>();
     public DbSet<Receipt> Receipts => Set<Receipt>();
+    public DbSet<ReceiptSequence> ReceiptSequences => Set<ReceiptSequence>();
     public DbSet<FinancialEntry> FinancialEntries => Set<FinancialEntry>();
     public DbSet<LegalDocument> LegalDocuments => Set<LegalDocument>();
     public DbSet<LegalDocumentVersion> LegalDocumentVersions => Set<LegalDocumentVersion>();

@@ -10,6 +10,7 @@
     <header class="receipt-create__header"><div><p class="of-eyebrow">Financeiro</p><h1>Criar recibo</h1><p>Registre o recebimento e emita um comprovante profissional.</p></div></header>
     <form method="post" class="receipt-create__grid" id="receipt-form">
         <input asp-for="Input.IdempotencyKey" type="hidden" />
+        <input asp-for="Input.PaymentId" type="hidden" />
         <div class="receipt-create__form">
             <div asp-validation-summary="ModelOnly" class="receipt-errors"></div>
             <section class="receipt-section">
@@ -50,7 +51,7 @@
             </section>
         </div>
         <aside class="receipt-preview" aria-label="Prévia do recibo">
-            <div class="receipt-paper"><p class="receipt-paper__brand">ORÇAFÁCIL</p><p class="receipt-paper__number">RECIBO · número provisório</p><h2>Recibo de pagamento</h2><div class="receipt-paper__amount" data-output="amount">R$ 0,00</div><p>Recebemos de <strong data-output="client">cliente selecionado</strong> o valor acima referente a:</p><p data-output="service">descrição do serviço</p><dl><div><dt>Forma</dt><dd data-output="method">Pix</dd></div><div><dt>Data</dt><dd data-output="date">—</dd></div></dl><p class="receipt-paper__signature">Assinatura do emitente</p><small>Este recibo não substitui documento fiscal quando exigido.</small></div>
+            <div class="receipt-paper"><p class="receipt-paper__brand">ORÇAFÁCIL</p><p class="receipt-paper__number">RECIBO · número provisório</p><h2>Recibo de pagamento</h2><div class="receipt-paper__amount" data-output="amount">R$ 0,00</div><p>Recebemos de <strong data-output="client">cliente selecionado</strong> o valor acima referente a:</p><p data-output="service">descrição do serviço</p><dl><div><dt>Forma</dt><dd data-output="method">Pix</dd></div><div><dt>Data</dt><dd data-output="date">—</dd></div></dl><p class="receipt-paper__signature">Assinatura do emitente</p><small>Recibo não substitui nota fiscal.</small></div>
             <button class="receipt-submit" type="submit">Registrar e emitir recibo</button>
         </aside>
     </form>
