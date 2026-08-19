@@ -32,7 +32,9 @@ public sealed class DetailsModel(OrcaFacilDbContext db, ICurrentAccountService a
         if (amount <= 0 || !TryCompetence(competence, out var competenceDate)) { TempData["Error"] = "Revise competência e valor."; return RedirectToPage(new { id }); }
         if (await db.ContractPayments.AnyAsync(x => x.AccountId == account.AccountId && x.ContractId == id && x.Competence == competenceDate && !x.IsDeleted, ct)) { TempData["Error"] = "Já existe pagamento para esta competência."; return RedirectToPage(new { id }); }
         var payment = new ContractPayment { AccountId = contract.AccountId, ContractId = id, ClientId = contract.ClientId, Competence = competenceDate, DueDate = dueDate, Amount = amount, Status = RecurringPaymentStatus.Pending };
-        db.Add(payment); AddEvent(contract, "PaymentForecast", $"Pagamento de {amount:C} previsto para {dueDate:dd/MM/yyyy}.", "ContractPayment", payment.Id, $"/Contracts/Details/{id}#payments"); await db.SaveChangesAsync(ct); return RedirectToPage(new { id });
+        db.Add(payment);
+        db.Add(new FinancialEntry { AccountId = contract.AccountId, ClientId = contract.ClientId, ContractId = id, ContractPaymentId = payment.Id, Origin = FinancialEntryOrigin.Contract, Description = $"{contract.Title} · {competenceDate:MM/yyyy}", DueDate = dueDate, Amount = amount });
+        AddEvent(contract, "PaymentForecast", $"Pagamento de {amount:C} previsto para {dueDate:dd/MM/yyyy}.", "ContractPayment", payment.Id, $"/Contracts/Details/{id}#payments"); await db.SaveChangesAsync(ct); return RedirectToPage(new { id });
     }
     public async Task<IActionResult> OnPostPayAsync(Guid id, Guid paymentId, string paymentMethod, CancellationToken ct)
     {
@@ -41,6 +43,8 @@ public sealed class DetailsModel(OrcaFacilDbContext db, ICurrentAccountService a
         if (payment.Status == RecurringPaymentStatus.Paid) { TempData["Error"] = "Pagamento já registrado."; return RedirectToPage(new { id }); }
         var manual = new ManualPayment { AccountId = contract.AccountId, ClientId = contract.ClientId, Amount = payment.Amount, PaymentMethod = paymentMethod, PaidAt = DateTime.UtcNow, Notes = $"Contrato {contract.Number}; competência {payment.Competence:MM/yyyy}", RegisteredByUserId = account.UserId, IdempotencyKey = $"contract:{payment.Id}" };
         db.Add(manual); payment.Status = RecurringPaymentStatus.Paid; payment.PaidAt = manual.PaidAt; payment.PaymentMethod = paymentMethod; payment.ManualPaymentId = manual.Id;
+        var entry = await db.FinancialEntries.SingleOrDefaultAsync(x => x.AccountId == account.AccountId && x.ContractPaymentId == payment.Id && !x.IsDeleted, ct);
+        if (entry is not null) { entry.PaidAmount = entry.Amount; entry.Status = FinancialEntryStatus.Paid; }
         AddEvent(contract, "PaymentPaid", $"Pagamento de {payment.Amount:C} registrado.", "ManualPayment", manual.Id, $"/Receipts/Create?paymentId={manual.Id}"); await db.SaveChangesAsync(ct); return RedirectToPage("/Receipts/Create", new { paymentId = manual.Id });
     }
     public async Task<IActionResult> OnPostWorkOrderAsync(Guid id, string competence, CancellationToken ct)

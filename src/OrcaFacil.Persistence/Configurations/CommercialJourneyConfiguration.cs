@@ -114,3 +114,19 @@ public sealed class ReceiptConfiguration : IEntityTypeConfiguration<Receipt>
         b.HasIndex(x => new { x.AccountId, x.Number }).IsUnique(); b.HasIndex(x => new { x.AccountId, x.PaymentId }).IsUnique();
     }
 }
+
+public sealed class FinancialEntryConfiguration : IEntityTypeConfiguration<FinancialEntry>
+{
+    public void Configure(EntityTypeBuilder<FinancialEntry> b)
+    {
+        b.ToTable("financial_entries"); b.ConfigureBase();
+        b.Property(x => x.Description).HasMaxLength(500).IsRequired();
+        b.Property(x => x.Amount).HasPrecision(18, 2); b.Property(x => x.PaidAmount).HasPrecision(18, 2);
+        b.Property(x => x.Origin).HasConversion<string>().HasMaxLength(24);
+        b.Property(x => x.Status).HasConversion<string>().HasMaxLength(24);
+        b.Property(x => x.CancellationReason).HasMaxLength(500);
+        b.HasIndex(x => new { x.AccountId, x.Status, x.DueDate });
+        b.HasIndex(x => new { x.AccountId, x.ClientId, x.DueDate });
+        b.HasIndex(x => new { x.AccountId, x.ContractPaymentId }).HasFilter("contract_payment_id IS NOT NULL").IsUnique();
+    }
+}

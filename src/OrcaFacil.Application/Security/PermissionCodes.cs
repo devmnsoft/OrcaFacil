@@ -19,6 +19,12 @@ public static class PermissionCodes
     public const string PaymentsManage = "Payments.Manage";
     public const string ReceiptsView = "Receipts.View";
     public const string ReceiptsManage = "Receipts.Manage";
+    public const string FinanceView = "Finance.View";
+    public const string FinanceManage = "Finance.Manage";
+    public const string ContractsView = "Contracts.View";
+    public const string ContractsManage = "Contracts.Manage";
+    public const string CashFlowView = "CashFlow.View";
+    public const string ReportsFinancial = "Reports.Financial";
     public const string ReportsView = "Reports.View";
     public const string ReportsExport = "Reports.Export";
     public const string SettingsView = "Settings.View";
@@ -44,6 +50,7 @@ public static class PermissionCodes
         DashboardView, ClientsView, ClientsManage, ServicesView, ServicesManage, DocumentsView,
         DocumentsCreate, DocumentsEdit, DocumentsGeneratePublicLink, DocumentsConvertToWorkOrder,
         WorkOrdersView, WorkOrdersManage, PaymentsView, PaymentsManage, ReceiptsView, ReceiptsManage,
+        FinanceView, FinanceManage, ContractsView, ContractsManage, CashFlowView, ReportsFinancial,
         ReportsView, ReportsExport, SettingsView, SettingsManage, UsersManage, PlanManage, AdminAccess,
         DiagnosticsView, LogsView, AuditView, SupportView, SupportCreateTicket, SupportManageTickets,
         FeedbackView, FeedbackCreate, KnowledgeBaseManage, ReleaseNotesManage, SetupChecklistView, SetupChecklistManage

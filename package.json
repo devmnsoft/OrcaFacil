@@ -56,7 +56,10 @@
     "check:help-center": "node scripts/check-help-center.mjs",
     "check:commercial-flow": "node scripts/check-commercial-flow.mjs",
     "check:public-quote-security": "node scripts/check-public-quote-security.mjs",
-    "check:payment-receipt-flow": "node scripts/check-payment-receipt-flow.mjs"
+    "check:payment-receipt-flow": "node scripts/check-payment-receipt-flow.mjs",
+    "check:financial-flow": "node scripts/check-financial-flow.mjs",
+    "check:contracts-flow": "node scripts/check-contracts-flow.mjs",
+    "check:receipts-compliance": "node scripts/check-receipts-compliance.mjs"
   },
   "engines": {
     "node": ">=18"
