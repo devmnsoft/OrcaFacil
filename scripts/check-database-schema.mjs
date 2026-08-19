@@ -1,6 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 const sql=readFileSync('database/script_completop.sql','utf8').toLowerCase();
-const requiredTables=['users','business_accounts','account_members','account_onboarding_states','clients','service_catalog_items','documents','document_items','public_quotes','work_orders','manual_payments','receipts','notifications','audit_logs','system_logs','email_outbox_messages','plans','plan_versions','features','plan_feature_values','subscriptions'];
+// Names below follow the EF mappings used by the ASP.NET application. The
+// business concepts named "receivables", "contracts", "contract charges",
+// "commercial actions" and "message templates" are persisted respectively as
+// financial_entries, recurring_contracts, contract_payments,
+// commercial_interactions and commercial_message_templates.
+const requiredTables=['users','business_accounts','account_members','account_onboarding_states','clients','service_catalog_items','documents','document_items','public_quotes','work_orders','manual_payments','receipts','notifications','audit_logs','system_logs','email_outbox_messages','plans','plan_versions','features','plan_feature_values','subscriptions','financial_entries','recurring_contracts','contract_payments','commercial_interactions','commercial_message_templates','support_tickets'];
 const missing=requiredTables.filter(t=>!new RegExp(`create\\s+table\\s+if\\s+not\\s+exists\\s+orcafacil\\.${t}\\b`,'i').test(sql));
 const requiredTokens=['create schema if not exists orcafacil','on conflict','failed_login_attempts','session_version','ix_account_onboarding_states_account_id_user_id'];
 for(const token of requiredTokens)if(!sql.includes(token))missing.push(token);

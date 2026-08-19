@@ -76,7 +76,8 @@
     "check:security-production": "node scripts/check-security-production.mjs",
     "check:appsettings-secrets": "node scripts/check-appsettings-secrets.mjs",
     "check:public-links": "node scripts/check-public-links.mjs",
-    "check:backup-restore": "node scripts/check-backup-restore.mjs"
+    "check:backup-restore": "node scripts/check-backup-restore.mjs",
+    "check:release-final": "node scripts/check-release-final.mjs"
   },
   "engines": {
     "node": ">=18"
