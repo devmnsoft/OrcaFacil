@@ -40,6 +40,12 @@ using OrcaFacil.Application.Pricing;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddOrcaFacilLocalConfiguration();
+// Operational aliases keep Windows service/IIS configuration concise while the
+// regular ASP.NET double-underscore variables remain supported.
+if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ORCAFACIL_DATAPROTECTION_PATH")))
+    builder.Configuration["DataProtection:KeysPath"] = Environment.GetEnvironmentVariable("ORCAFACIL_DATAPROTECTION_PATH");
+if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ORCAFACIL_MAINTENANCE_MODE")))
+    builder.Configuration["MaintenanceMode:Enabled"] = Environment.GetEnvironmentVariable("ORCAFACIL_MAINTENANCE_MODE");
 if (builder.Configuration.GetValue("Diagnostics:EnableEfCommandLogging", false))
     builder.Configuration["Serilog:MinimumLevel:Override:Microsoft.EntityFrameworkCore.Database.Command"] = "Information";
 
@@ -261,6 +267,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
+app.UseMiddleware<MaintenanceModeMiddleware>();
 app.UseAuthorization();
 static Task WritePublicHealth(HttpContext context, HealthReport report)
 {
@@ -271,6 +278,7 @@ static Task WritePublicHealth(HttpContext context, HealthReport report)
 }
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = check => check.Tags.Contains("live"), ResponseWriter = WritePublicHealth });
 app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready"), ResponseWriter = WritePublicHealth });
+app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready"), ResponseWriter = WritePublicHealth });
 app.MapPost("/api/webhooks/mercadopago", async (HttpRequest request, OrcaFacil.Application.Abstractions.IPaymentGateway gateway, OrcaFacil.Persistence.OrcaFacilDbContext db, CancellationToken ct) =>
 {
     using var reader = new StreamReader(request.Body);
