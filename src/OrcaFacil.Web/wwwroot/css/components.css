@@ -220,3 +220,49 @@
 .of-import-dialog{width:min(38rem,calc(100% - 2rem));padding:0;border:0;border-radius:1.25rem;box-shadow:0 2rem 5rem #071a2f55}.of-import-dialog::backdrop{background:#071a2faa}.of-import-dialog form>header,.of-import-dialog form>footer{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1.25rem 1.5rem}.of-import-dialog h2{margin:.2rem 0}.of-import-dialog header button{border:0;background:none;font-size:1.75rem;cursor:pointer}.of-import-dialog footer{justify-content:flex-end;border-top:1px solid var(--of-border)}.of-upload-zone{display:grid;gap:.5rem;margin:0 1.5rem 1.5rem;padding:2rem;border:2px dashed var(--of-border);border-radius:1rem;background:var(--of-surface-soft);text-align:center;cursor:pointer}.of-upload-zone span{color:var(--of-text-secondary)}.of-upload-zone input{max-width:100%;margin:.75rem auto 0}
 .of-import-review,.of-import-history{overflow:hidden;margin-bottom:var(--of-space-7);border:1px solid var(--of-border);border-radius:1.25rem;background:var(--of-surface);box-shadow:var(--of-shadow-card)}.of-import-review>header,.of-import-history>header{display:flex;justify-content:space-between;gap:1rem;padding:1.5rem}.of-import-review h2,.of-import-history h2{margin:.2rem 0}.of-import-summary{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}.of-import-summary span,.of-import-table span{padding:.3rem .6rem;border-radius:999px;background:var(--of-surface-soft);font-size:.8rem;font-weight:800}.of-import-summary .is-success,.of-import-table .is-success{background:#e7f7ef;color:#176b4b}.of-import-summary .is-danger,.of-import-table .is-danger{background:#fff0ee;color:#9b3028}.of-table-scroll{overflow-x:auto}.of-import-table{width:100%;border-collapse:collapse}.of-import-table th,.of-import-table td{padding:1rem 1.5rem;border-top:1px solid var(--of-border);text-align:left;vertical-align:top}.of-import-table th{color:var(--of-text-secondary);font-size:.75rem;text-transform:uppercase}.of-import-table td small{display:block;margin-top:.25rem;color:var(--of-text-secondary)}.of-import-review>footer{display:flex;justify-content:flex-end;align-items:center;gap:.75rem;padding:1rem 1.5rem;border-top:1px solid var(--of-border)}.of-import-review>footer form{margin:0}
 @media(max-width:720px){.of-import-hero{align-items:stretch;flex-direction:column}.of-import-grid{grid-template-columns:1fr}.of-import-card{padding:1.1rem}.of-import-review>header{display:grid}.of-import-review>footer{align-items:stretch;flex-direction:column}.of-import-review>footer>*{width:100%;text-align:center}.of-import-review>footer button{width:100%}.of-import-table thead{display:none}.of-import-table,.of-import-table tbody,.of-import-table tr,.of-import-table td{display:block;width:100%}.of-import-table tr{padding:.75rem;border-top:1px solid var(--of-border)}.of-import-table td{display:flex;justify-content:space-between;gap:1rem;padding:.4rem;border:0;text-align:right}.of-import-table td:before{content:attr(data-label);color:var(--of-text-secondary);font-weight:700;text-align:left}.of-table-scroll{overflow:visible}}
+/* Sprint 6 semantic component vocabulary. These aliases deliberately build on
+   the existing tokens so pages can migrate without parallel visual systems. */
+.of-page-header,
+.of-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4, 1rem);
+  flex-wrap: wrap;
+}
+
+.of-data-card,
+.of-metric-card,
+.of-form-card,
+.of-action-panel {
+  border: 1px solid var(--color-border, #dbe4ee);
+  border-radius: var(--radius-lg, 1rem);
+  background: var(--color-surface, #fff);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgb(15 23 42 / .08));
+  padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+.of-metric-card strong { display: block; font-size: clamp(1.5rem, 4vw, 2rem); }
+.of-input,
+.of-select,
+.of-textarea { width: 100%; min-height: 2.75rem; }
+.of-textarea { min-height: 7rem; resize: vertical; }
+.of-button-ghost { background: transparent; border-color: transparent; color: var(--color-primary, #14532d); }
+.of-button-ghost:hover { background: var(--color-surface-soft, #f1f5f9); }
+
+.of-command-bar {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+
+.of-mobile-card-list { display: none; }
+.of-modal { width: min(36rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow: auto; }
+
+@media (max-width: 47.99rem) {
+  .of-mobile-card-list { display: grid; gap: .75rem; }
+  .of-page-header > .of-command-bar,
+  .of-section-header > .of-command-bar { width: 100%; }
+  .of-command-bar > .of-button { flex: 1 1 auto; }
+}
