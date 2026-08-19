@@ -59,7 +59,9 @@
     "check:payment-receipt-flow": "node scripts/check-payment-receipt-flow.mjs",
     "check:financial-flow": "node scripts/check-financial-flow.mjs",
     "check:contracts-flow": "node scripts/check-contracts-flow.mjs",
-    "check:receipts-compliance": "node scripts/check-receipts-compliance.mjs"
+    "check:receipts-compliance": "node scripts/check-receipts-compliance.mjs",
+    "check:commercial-actions": "node scripts/check-commercial-actions.mjs",
+    "check:message-templates": "node scripts/check-message-templates.mjs"
   },
   "engines": {
     "node": ">=18"
