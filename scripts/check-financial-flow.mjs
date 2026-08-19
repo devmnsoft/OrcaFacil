@@ -1,0 +1,5 @@
+import { access, readFile } from 'node:fs/promises';
+const files=['src/OrcaFacil.Web/Pages/Receivables/Index.cshtml','src/OrcaFacil.Web/Pages/Receivables/Index.cshtml.cs','src/OrcaFacil.Web/Pages/CashFlow/Index.cshtml','src/OrcaFacil.Web/Pages/CashFlow/Index.cshtml.cs','src/OrcaFacil.Domain/Entities/CommercialJourney.cs'];
+await Promise.all(files.map(file=>access(file))); const text=(await Promise.all(files.map(x=>readFile(x,'utf8')))).join('\n');
+const rules=[[/AccountId\s*==\s*account\.AccountId/,'consultas sem isolamento por conta'],[/Amount\s*>?=?\s*0|amount > 0/,'valor positivo não validado'],[/FinancialEntryStatus/,'status do recebível ausente'],[/FinancialEntryOrigin/,'origem do recebível ausente'],[/asp-page="\/Payments\/Register"/,'CTA de pagamento sem rota real'],[/AsNoTracking\(\)/,'leitura financeira sem AsNoTracking']];
+const failures=rules.filter(([r])=>!r.test(text)).map(([,m])=>m);if(failures.length){console.error(`Fluxo financeiro inválido:\n${failures.join('\n')}`);process.exit(1)}console.log(`Fluxo financeiro validado em ${files.length} arquivos.`);

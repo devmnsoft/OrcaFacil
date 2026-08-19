@@ -126,6 +126,29 @@ public sealed class ManualPayment : Entity
     public string? ReversalReason { get; set; }
 }
 
+public enum FinancialEntryStatus { Pending, PartiallyPaid, Paid, Overdue, Canceled }
+public enum FinancialEntryOrigin { Budget, WorkOrder, Contract, Manual }
+
+/// <summary>A tenant-owned amount expected from a customer. Payments remain immutable history.</summary>
+public sealed class FinancialEntry : Entity
+{
+    public Guid AccountId { get; set; }
+    public Guid ClientId { get; set; }
+    public Guid? DocumentId { get; set; }
+    public Guid? WorkOrderId { get; set; }
+    public Guid? ContractId { get; set; }
+    public Guid? ContractPaymentId { get; set; }
+    public FinancialEntryOrigin Origin { get; set; }
+    public string Description { get; set; } = string.Empty;
+    public DateOnly DueDate { get; set; }
+    public decimal Amount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public FinancialEntryStatus Status { get; set; } = FinancialEntryStatus.Pending;
+    public DateTime? CanceledAt { get; set; }
+    public Guid? CanceledByUserId { get; set; }
+    public string? CancellationReason { get; set; }
+}
+
 public sealed class Receipt : Entity
 {
     public Guid AccountId { get; set; }

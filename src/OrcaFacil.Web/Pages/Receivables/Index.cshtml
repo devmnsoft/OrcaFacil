@@ -1,0 +1,20 @@
+@page
+@model OrcaFacil.Web.Pages.Receivables.IndexModel
+@{ ViewData["Title"] = "Contas a receber"; }
+<link rel="stylesheet" href="~/css/finance.css" asp-append-version="true" />
+<header class="of-page-header"><div><span class="of-eyebrow">Financeiro</span><h1>Contas a receber</h1><p>Acompanhe valores previstos, pagos e vencidos sem perder o vínculo comercial.</p></div></header>
+<section class="of-finance-metrics" aria-label="Resumo financeiro">
+ <article class="of-finance-card"><span>Saldo a receber</span><strong>@Model.Pending.ToString("C")</strong></article>
+ <article class="of-finance-card is-danger"><span>Saldo vencido</span><strong>@Model.Overdue.ToString("C")</strong></article>
+ <article class="of-finance-card"><span>Lançamentos</span><strong>@Model.Entries.Count</strong></article>
+</section>
+<form method="get" class="of-filter-bar">
+ <label>Status <select asp-for="Status"><option value="">Todos</option>@foreach(var item in Enum.GetValues<OrcaFacil.Domain.Entities.FinancialEntryStatus>()){<option value="@item">@item</option>}</select></label>
+ <label>Origem <select asp-for="Origin"><option value="">Todas</option>@foreach(var item in Enum.GetValues<OrcaFacil.Domain.Entities.FinancialEntryOrigin>()){<option value="@item">@item</option>}</select></label>
+ <label>De <input asp-for="DueFrom" type="date" /></label><label>Até <input asp-for="DueTo" type="date" /></label>
+ <button type="submit" class="of-button of-button-primary">Filtrar</button>
+</form>
+@if(Model.Entries.Count == 0){<section class="of-empty-state"><h2>Nenhuma conta encontrada</h2><p>Ajuste os filtros ou gere uma cobrança a partir de um contrato ativo.</p><a class="of-button" asp-page="/Contracts/Index">Abrir contratos</a></section>}
+else {<div class="of-responsive-table"><table><thead><tr><th>Cliente</th><th>Descrição</th><th>Origem</th><th>Vencimento</th><th>Status</th><th>Saldo</th><th>Ações</th></tr></thead><tbody>
+@foreach(var item in Model.Entries){<tr><td><a asp-page="/Clients/Details" asp-route-id="@item.ClientId">@item.ClientName</a></td><td>@item.Description</td><td>@item.Origin</td><td>@item.DueDate.ToString("dd/MM/yyyy")</td><td><span class="of-status-badge is-@item.EffectiveStatus.ToString().ToLowerInvariant()">@item.EffectiveStatus</span></td><td>@item.Balance.ToString("C")</td><td class="of-actions">@if(item.WorkOrderId.HasValue){<a asp-page="/Payments/Register" asp-route-id="@item.WorkOrderId">Registrar pagamento</a>} @if(item.ContractId.HasValue){<a asp-page="/Contracts/Details" asp-route-id="@item.ContractId">Contrato</a>}<a asp-page="/Clients/Details" asp-route-id="@item.ClientId">Cliente</a></td></tr>}
+</tbody></table></div>}
