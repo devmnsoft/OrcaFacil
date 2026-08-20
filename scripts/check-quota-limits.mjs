@@ -1,0 +1,1 @@
+process.argv.push('Quota por plano','src/OrcaFacil.Application/Jobs/SaasOperationsContracts.cs','Você atingiu o limite','src/OrcaFacil.Domain/Entities/SaasOperations.cs','QuotaEvent'); await import('./check-sprint15-foundation.mjs');

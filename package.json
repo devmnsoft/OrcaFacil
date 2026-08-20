@@ -99,7 +99,14 @@
     "check:audit-sanitization": "node scripts/check-audit-sanitization.mjs",
     "check:sensitive-data": "node scripts/check-sensitive-data.mjs",
     "check:token-security": "node scripts/check-token-security.mjs",
-    "check:session-security": "node scripts/check-session-security.mjs"
+    "check:session-security": "node scripts/check-session-security.mjs",
+    "check:performance-readiness": "node scripts/check-performance-readiness.mjs Sprint15 src/OrcaFacil.Persistence/Queries/DashboardQueries.cs \"limit 5\" src/OrcaFacil.Web/Services/IntelligenceReportService.cs AsNoTracking",
+    "check:jobs-idempotency": "node scripts/check-jobs-idempotency.mjs",
+    "check:outbox-flow": "node scripts/check-outbox-flow.mjs",
+    "check:quota-limits": "node scripts/check-quota-limits.mjs",
+    "check:cache-safety": "node scripts/check-cache-safety.mjs",
+    "check:rate-limit": "node scripts/check-rate-limit.mjs",
+    "check:observability": "node scripts/check-observability.mjs"
   },
   "engines": {
     "node": ">=18"

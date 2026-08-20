@@ -1,0 +1,1 @@
+process.argv.push('Observabilidade','src/OrcaFacil.Domain/Entities/SaasOperations.cs','SlowQueryLog','src/OrcaFacil.Domain/Entities/SaasOperations.cs','SystemMetric'); await import('./check-sprint15-foundation.mjs');

@@ -108,6 +108,17 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<PublicTokenAccessLog> PublicTokenAccessLogs => Set<PublicTokenAccessLog>();
     public DbSet<AccountSecuritySetting> AccountSecuritySettings => Set<AccountSecuritySetting>();
     public DbSet<AuditExportJob> AuditExportJobs => Set<AuditExportJob>();
+    public DbSet<BackgroundJob> BackgroundJobs => Set<BackgroundJob>();
+    public DbSet<JobExecution> JobExecutions => Set<JobExecution>();
+    public DbSet<JobLock> JobLocks => Set<JobLock>();
+    public DbSet<ProcessingOutboxItem> ProcessingOutbox => Set<ProcessingOutboxItem>();
+    public DbSet<SystemMetric> SystemMetrics => Set<SystemMetric>();
+    public DbSet<SlowQueryLog> SlowQueryLogs => Set<SlowQueryLog>();
+    public DbSet<TenantUsageMetric> TenantUsageMetrics => Set<TenantUsageMetric>();
+    public DbSet<CacheInvalidationEvent> CacheInvalidationEvents => Set<CacheInvalidationEvent>();
+    public DbSet<QuotaEvent> QuotaEvents => Set<QuotaEvent>();
+    public DbSet<RateLimitEvent> RateLimitEvents => Set<RateLimitEvent>();
+    public DbSet<WorkerHeartbeat> WorkerHeartbeats => Set<WorkerHeartbeat>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
