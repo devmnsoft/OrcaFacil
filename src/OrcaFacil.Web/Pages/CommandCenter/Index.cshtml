@@ -1,0 +1,8 @@
+@page "/CommandCenter"
+@model OrcaFacil.Web.Pages.CommandCenter.IndexModel
+@{ViewData["Title"]="Command Center";ViewData["Section"]="Produtividade";}
+<section class="of-page-header"><div><p class="of-eyebrow">Atalhos autorizados</p><h1>Command Center</h1><p>Vá direto à próxima etapa sem executar ações sensíveis automaticamente.</p></div></section>
+<label class="of-command-filter"><span>Filtrar ações</span><input type="search" data-command-filter placeholder="Ex.: cliente, pagamento ou agenda" autocomplete="off" /></label>
+<div class="of-command-grid" data-command-list>@foreach(var action in Model.Actions){<a href="@action.Url" data-command-item data-search-text="@action.Title @action.Category @action.Description"><small>@action.Category</small><strong>@action.Title</strong><span>@action.Description</span><b>Abrir tela →</b></a>}</div>
+<p class="of-empty-state" data-command-empty hidden>Nenhuma ação autorizada corresponde à busca.</p>
+@section Scripts {<script src="~/js/command-center.js" asp-append-version="true"></script>}

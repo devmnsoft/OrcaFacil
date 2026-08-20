@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="~/css/overlays.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/feedback.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/responsive.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/search.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", false)
 </head>
 <body>
@@ -94,6 +95,7 @@
                         <strong>@pageTitle</strong>
                     </div>
                     <div class="of-topbar-actions">
+                        <a class="of-icon-button" asp-page="/CommandCenter/Index" aria-label="Abrir Command Center" title="Command Center"><svg class="of-icon" aria-hidden="true"><use href="#of-icon-plus" /></svg></a>
                         <button class="of-search-trigger" type="button" data-search-open aria-haspopup="dialog">
                             <svg class="of-icon" aria-hidden="true"><use href="#of-icon-search" /></svg>
                             <span>Buscar</span><kbd>Ctrl K</kbd>

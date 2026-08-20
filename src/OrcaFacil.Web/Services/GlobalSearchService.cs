@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Security;
+using OrcaFacil.Domain.Entities;
 using OrcaFacil.Persistence;
 
 namespace OrcaFacil.Web.Services;
@@ -17,6 +19,8 @@ public sealed class GlobalSearchService(ICurrentAccountService currentAccount, I
     {
         if (currentAccount.AccountId is not { } accountId)
             throw new UnauthorizedAccessException("Selecione uma conta para pesquisar.");
+        if (!await currentAccount.HasPermissionAsync(PermissionCodes.SearchGlobal, cancellationToken))
+            throw new UnauthorizedAccessException("Você não tem permissão para usar a busca global.");
 
         var term = query.Trim();
         if (term.Length < 2) return [];
@@ -71,9 +75,9 @@ public sealed class GlobalSearchService(ICurrentAccountService currentAccount, I
             .OrderByDescending(x => EF.Functions.ILike(x.Name, startsWith)).ThenByDescending(x => x.UpdatedAt ?? x.CreatedAt).Take(categoryLimit)
             .Select(x => new GlobalSearchResult("Serviço", x.Name, x.Description ?? "Item do catálogo", "Ativo", "service", "/Services/Details/" + x.Id, "Abrir serviço", x.UpdatedAt ?? x.CreatedAt, 2)).ToListAsync(cancellationToken) : [];
 
-        var contracts = await db.RecurringContracts.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted && (EF.Functions.ILike(x.Number, pattern) || EF.Functions.ILike(x.Title, pattern)))
+        var contracts = await (currentAccount.HasPermissionAsync(PermissionCodes.ContractsView, cancellationToken)) ? await db.RecurringContracts.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted && (EF.Functions.ILike(x.Number, pattern) || EF.Functions.ILike(x.Title, pattern)))
             .OrderByDescending(x => EF.Functions.ILike(x.Number, startsWith)).ThenByDescending(x => x.UpdatedAt ?? x.CreatedAt).Take(categoryLimit)
-            .Select(x => new GlobalSearchResult("Contrato", x.Number, x.Title, x.Status.ToString(), "document", "/Contracts/Details/" + x.Id, "Abrir contrato", x.UpdatedAt ?? x.CreatedAt, 2)).ToListAsync(cancellationToken);
+            .Select(x => new GlobalSearchResult("Contrato", x.Number, x.Title, x.Status.ToString(), "document", "/Contracts/Details/" + x.Id, "Abrir contrato", x.UpdatedAt ?? x.CreatedAt, 2)).ToListAsync(cancellationToken) : [];
 
         var messages = await db.CommercialMessageTemplates.AsNoTracking().Where(x => !x.IsDeleted && x.IsActive && (x.AccountId == accountId || x.IsSystem) && (EF.Functions.ILike(x.Name, pattern) || EF.Functions.ILike(x.Code, pattern)))
             .OrderByDescending(x => x.AccountId == accountId).ThenBy(x => x.Name).Take(categoryLimit)
@@ -83,10 +87,20 @@ public sealed class GlobalSearchService(ICurrentAccountService currentAccount, I
             .OrderByDescending(x => x.CreatedAt).Take(categoryLimit)
             .Select(x => new GlobalSearchResult("Alerta", x.Title, x.Message, x.Type.ToString(), "notification", x.ActionUrl ?? "/Alerts", x.ActionText ?? "Abrir alerta", x.CreatedAt, 3)).ToListAsync(cancellationToken);
 
-        var payments = await db.Payments.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted &&
+        var payments = await (currentAccount.HasPermissionAsync(PermissionCodes.PaymentsView, cancellationToken)) ? await db.Payments.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted &&
                 ((x.ExternalReference != null && EF.Functions.ILike(x.ExternalReference, pattern)) || (x.PayerEmail != null && EF.Functions.ILike(x.PayerEmail, pattern))))
             .OrderByDescending(x => x.PaidAt ?? x.CreatedAt).Take(categoryLimit)
-            .Select(x => new GlobalSearchResult("Pagamento", x.ExternalReference ?? "Pagamento", x.PayerEmail ?? "Cobrança da conta", x.Status.ToString(), "payment", "/Payments/Details/" + x.Id, "Abrir pagamento", x.PaidAt ?? x.CreatedAt, 2)).ToListAsync(cancellationToken);
+            .Select(x => new GlobalSearchResult("Pagamento", x.ExternalReference ?? "Pagamento", "Cobrança da conta", x.Status.ToString(), "payment", "/Payments/Details/" + x.Id, "Abrir pagamento", x.PaidAt ?? x.CreatedAt, 2)).ToListAsync(cancellationToken) : [];
+
+        var files = await (currentAccount.HasPermissionAsync(PermissionCodes.FilesView, cancellationToken)) ? await db.FileAssets.AsNoTracking()
+            .Where(x => x.AccountId == accountId && !x.IsDeleted && x.Visibility != FileAssetVisibility.Private && EF.Functions.ILike(x.OriginalFileName, pattern))
+            .OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt).Take(categoryLimit)
+            .Select(x => new GlobalSearchResult("Arquivo", x.OriginalFileName, x.Category.ToString(), x.Visibility.ToString(), "document", "/Files/Index", "Abrir arquivos", x.UpdatedAt ?? x.CreatedAt, 1)).ToListAsync(cancellationToken) : [];
+
+        var tickets = await (currentAccount.HasPermissionAsync(PermissionCodes.SupportView, cancellationToken)) ? await db.SupportTickets.AsNoTracking()
+            .Where(x => x.AccountId == accountId && !x.IsDeleted && (EF.Functions.ILike(x.Protocol, pattern) || EF.Functions.ILike(x.Subject, pattern)))
+            .OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt).Take(categoryLimit)
+            .Select(x => new GlobalSearchResult("Chamado", x.Protocol, x.Subject, x.Status.ToString(), "help", "/Support/Tickets", "Abrir chamados", x.UpdatedAt ?? x.CreatedAt, 2)).ToListAsync(cancellationToken) : [];
 
         var budgetTemplates = await (currentAccount.HasPermissionAsync("templates.read", cancellationToken)) ? await db.BudgetTemplates.AsNoTracking()
             .Where(x => !x.IsDeleted && x.IsActive && (x.AccountId == accountId || x.IsSystemTemplate) && (EF.Functions.ILike(x.Title, pattern) || EF.Functions.ILike(x.Description, pattern)))
@@ -101,7 +115,7 @@ public sealed class GlobalSearchService(ICurrentAccountService currentAccount, I
         var navigation = navigationMap.Search(term, permissions).Select(x => new GlobalSearchResult(
             x.IsAction ? "Ação" : "Módulo", x.Label, x.Description, "Disponível", x.Icon, x.Page, x.IsAction ? "Executar" : "Abrir módulo", null, x.IsAction ? 4 : 1));
 
-        return navigation.Concat(clients).Concat(documents).Concat(orders).Concat(receipts).Concat(services).Concat(contracts).Concat(messages).Concat(alerts).Concat(payments).Concat(budgetTemplates)
+        return navigation.Concat(clients).Concat(documents).Concat(orders).Concat(receipts).Concat(services).Concat(contracts).Concat(messages).Concat(alerts).Concat(payments).Concat(files).Concat(tickets).Concat(budgetTemplates)
             .OrderByDescending(x => x.Priority).ThenByDescending(x => x.Date).Take(limit).ToArray();
     }
 }

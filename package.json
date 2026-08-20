@@ -129,7 +129,15 @@
     "check:quota-enforcement": "node scripts/check-saas-billing-v19.mjs",
     "check:upgrade-requests": "node scripts/check-saas-billing-v19.mjs",
     "check:admin-billing": "node scripts/check-saas-billing-v19.mjs",
-    "check:no-fake-checkout": "node scripts/check-saas-billing-v19.mjs"
+    "check:no-fake-checkout": "node scripts/check-saas-billing-v19.mjs",
+    "check:global-search": "node scripts/check-global-search.mjs",
+    "check:command-center": "node scripts/check-command-center.mjs",
+    "check:assistant-safety": "node scripts/check-assistant-safety.mjs",
+    "check:knowledge-base": "node scripts/check-knowledge-base.mjs",
+    "check:guided-tours": "node scripts/check-guided-tours.mjs",
+    "check:onboarding-playbooks": "node scripts/check-onboarding-playbooks.mjs",
+    "check:productivity-actions": "node scripts/check-productivity-actions.mjs",
+    "check:no-fake-assistant": "node scripts/check-no-fake-assistant.mjs"
   },
   "engines": {
     "node": ">=18"
