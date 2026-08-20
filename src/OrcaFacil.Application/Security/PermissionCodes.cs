@@ -104,6 +104,14 @@ public static class PermissionCodes
     public const string TokensRevoke = "Tokens.Revoke";
     public const string FilesDownloadPrivate = "Files.DownloadPrivate";
     public const string FilesManageVisibility = "Files.ManageVisibility";
+    public const string BusinessUnitsView = "BusinessUnits.View"; public const string BusinessUnitsManage = "BusinessUnits.Manage";
+    public const string TeamsView = "Teams.View"; public const string TeamsManage = "Teams.Manage";
+    public const string RolesView = "Roles.View"; public const string RolesManage = "Roles.Manage";
+    public const string ApprovalsView = "Approvals.View"; public const string ApprovalsRequest = "Approvals.Request"; public const string ApprovalsDecide = "Approvals.Decide";
+    public const string DiscountPoliciesView = "DiscountPolicies.View"; public const string DiscountPoliciesManage = "DiscountPolicies.Manage";
+    public const string VisibilityRulesManage = "VisibilityRules.Manage";
+    public const string WhiteLabelView = "WhiteLabel.View"; public const string WhiteLabelManage = "WhiteLabel.Manage";
+    public const string ReportsByUnit = "Reports.ByUnit"; public const string ReportsByTeam = "Reports.ByTeam";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -125,6 +133,8 @@ public static class PermissionCodes
         DocumentsPrint, DocumentsExportPdf, ReceiptsPrint, ReceiptsExportPdf, WorkOrdersPrint, ContractsPrint, BrandingManage,
         PrivacyView, PrivacyManage, PrivacyExportData, PrivacyAnonymizeData, PrivacyManageRetention, AuditExport,
         SensitiveDataView, SecurityViewSessions, SecurityManageSessions, SecurityManageUsers, TokensRevoke,
-        FilesDownloadPrivate, FilesManageVisibility
+        FilesDownloadPrivate, FilesManageVisibility, BusinessUnitsView, BusinessUnitsManage, TeamsView, TeamsManage,
+        RolesView, RolesManage, ApprovalsView, ApprovalsRequest, ApprovalsDecide, DiscountPoliciesView,
+        DiscountPoliciesManage, VisibilityRulesManage, WhiteLabelView, WhiteLabelManage, ReportsByUnit, ReportsByTeam
     };
 }

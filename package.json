@@ -106,7 +106,14 @@
     "check:quota-limits": "node scripts/check-quota-limits.mjs",
     "check:cache-safety": "node scripts/check-cache-safety.mjs",
     "check:rate-limit": "node scripts/check-rate-limit.mjs",
-    "check:observability": "node scripts/check-observability.mjs"
+    "check:observability": "node scripts/check-observability.mjs",
+    "check:business-units": "node scripts/check-sprint16.mjs",
+    "check:teams": "node scripts/check-sprint16.mjs",
+    "check:role-profiles": "node scripts/check-sprint16.mjs",
+    "check:approval-workflow": "node scripts/check-sprint16.mjs",
+    "check:discount-policies": "node scripts/check-sprint16.mjs",
+    "check:visibility-rules": "node scripts/check-sprint16.mjs",
+    "check:white-label": "node scripts/check-sprint16.mjs"
   },
   "engines": {
     "node": ">=18"

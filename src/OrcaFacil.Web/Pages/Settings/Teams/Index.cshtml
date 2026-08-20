@@ -1,0 +1,6 @@
+@page
+@model OrcaFacil.Web.Pages.Settings.Teams.IndexModel
+@{ViewData["Title"]="Equipes";}
+<section class="of-page-header"><div><span class="of-eyebrow">Administração da conta</span><h1>Equipes</h1><p>Organize responsáveis comerciais, operacionais e financeiros.</p></div></section>
+<form method="post" asp-page-handler="Create" class="of-card of-form-row"><label>Nome<input asp-for="Name" required maxlength="160"/></label><label>Tipo<select asp-for="Type" asp-items="Html.GetEnumSelectList<OrcaFacil.Domain.Entities.TeamType>()"></select></label><button type="submit" class="of-btn of-btn-primary">Criar equipe</button></form>
+<div class="of-card-grid">@if(Model.Teams.Count==0){<article class="of-card"><h2>Crie sua primeira equipe</h2><p>Agrupe pessoas por função e unidade.</p></article>}@foreach(var team in Model.Teams){<article class="of-card"><h2>@team.Name</h2><span class="of-badge">@team.Type</span><p>@(team.IsActive?"Equipe ativa":"Equipe inativa")</p></article>}</div>

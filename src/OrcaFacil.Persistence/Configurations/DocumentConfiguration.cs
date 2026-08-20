@@ -12,6 +12,8 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.ConfigureBase();
         builder.Property(x => x.UserId).HasColumnName("user_id").IsRequired();
         builder.HasIndex(x => new { x.AccountId, x.ClientId });
+        builder.Property(x => x.InternalApprovalStatus).HasConversion<string>().HasMaxLength(24);
+        builder.HasIndex(x => new { x.AccountId, x.BusinessUnitId, x.AssignedTeamId, x.AssignedToUserId });
         builder.HasOne<Client>().WithMany().HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.SetNull);
         builder.Property(x => x.Type).HasColumnName("type").HasConversion<string>().HasMaxLength(30).IsRequired();
         builder.Property(x => x.Number).HasColumnName("number").HasMaxLength(40).IsRequired();

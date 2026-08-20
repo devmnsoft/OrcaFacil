@@ -1,0 +1,6 @@
+@page
+@model OrcaFacil.Web.Pages.Settings.BusinessUnits.IndexModel
+@{ ViewData["Title"]="Unidades"; }
+<section class="of-page-header"><div><span class="of-eyebrow">Administração da conta</span><h1>Unidades e filiais</h1><p>Defina a unidade emissora dos documentos e organize sua operação.</p></div></section>
+<form method="post" asp-page-handler="Create" class="of-card of-form-row"><label>Nome da unidade<input asp-for="Name" required maxlength="160" /></label><button type="submit" class="of-btn of-btn-primary">Cadastrar unidade</button><span asp-validation-for="Name"></span></form>
+<div class="of-card-grid">@if(Model.Units.Count==0){<article class="of-card"><h2>Cadastre sua primeira unidade</h2><p>A primeira unidade ativa será definida como principal.</p></article>}@foreach(var unit in Model.Units){<article class="of-card"><div class="of-card-heading"><h2>@unit.Name</h2><span class="of-badge">@(unit.IsMain?"Unidade principal":unit.IsActive?"Ativa":"Inativa")</span></div><p>@(unit.City is null?"Endereço ainda não informado":$"{unit.City}/{unit.State}")</p>@if(!unit.IsMain&&unit.IsActive){<form method="post" asp-page-handler="SetMain"><input type="hidden" name="id" value="@unit.Id"/><button type="submit" class="of-btn">Tornar principal</button></form>}</article>}</div>
