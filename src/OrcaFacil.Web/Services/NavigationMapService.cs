@@ -20,7 +20,9 @@ public sealed class NavigationMapService : INavigationMapService
     [
         Group("principal", "Principal", 10,
             Item("dashboard", "Dashboard", "Visão geral da operação", "dashboard", "/Dashboard/Index", 10, "painel", "início"),
-            Item("search", "Busca global", "Encontre qualquer registro da conta", "search", "/Dashboard/Index", 20, "buscar", "localizar")),
+            Item("search", "Busca global", "Encontre registros autorizados da conta", "search", "/Search/Index", 20, false, "Search.Global", "buscar", "localizar"),
+            Item("command-center", "Command Center", "Acesse ações rápidas autorizadas", "plus", "/CommandCenter/Index", 30, false, "CommandCenter.Use", "atalhos", "ações"),
+            Item("assistant", "Assistente interno", "Consulte regras, dados permitidos e ajuda", "help", "/Assistant/Index", 40, false, "Assistant.Use", "orientação", "perguntar")),
         Group("comercial", "Comercial", 20,
             Item("routine", "Rotina comercial", "Prioridades e próximos contatos", "calendar", "/CommercialRoutine/Index", 10, "follow-up"),
             Item("new-budget", "Novo orçamento", "Crie uma proposta comercial", "quote", "/Documents/New", 20, true, "documents.create", "proposta", "criar orçamento"),
@@ -46,7 +48,9 @@ public sealed class NavigationMapService : INavigationMapService
         Group("account", "Conta", 70,
             Item("profile", "Dados do emitente", "Identidade da empresa", "account", "/Profile/Index", 10, "perfil"),
             Item("notifications", "Notificações", "Central de atividades", "notification", "/Notifications/Index", 20, "avisos"),
-            Item("support", "Suporte", "Ajuda e atendimento", "help", "/Support/Index", 30, "ajuda"))
+            Item("help", "Base de conhecimento", "Artigos publicados e ajuda contextual", "help", "/Help/Index", 30, false, "KnowledgeBase.View", "ajuda", "artigos"),
+            Item("productivity", "Produtividade", "Prioridades reais da rotina", "chart", "/Productivity/Index", 40, false, "Productivity.View", "pendências", "hoje"),
+            Item("support", "Suporte", "Ajuda e atendimento", "help", "/Support/Index", 50, "ajuda"))
     ];
 
     public IReadOnlyList<NavigationGroup> GetGroups(IReadOnlyCollection<string> permissions, bool isAdmin = false) => Groups

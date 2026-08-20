@@ -121,6 +121,11 @@ public static class PermissionCodes
     public const string BillingPaymentsManage = "BillingPayments.Manage"; public const string AddonsView = "Addons.View"; public const string AddonsManage = "Addons.Manage";
     public const string EntitlementsView = "Entitlements.View"; public const string EntitlementsManage = "Entitlements.Manage";
     public const string AccountAccessManage = "AccountAccess.Manage"; public const string TrialsManage = "Trials.Manage";
+    public const string SearchGlobal = "Search.Global"; public const string CommandCenterUse = "CommandCenter.Use";
+    public const string AssistantUse = "Assistant.Use"; public const string KnowledgeBaseView = "KnowledgeBase.View";
+    public const string GuidedToursView = "GuidedTours.View"; public const string GuidedToursManage = "GuidedTours.Manage";
+    public const string OnboardingManage = "Onboarding.Manage"; public const string ActivityView = "Activity.View";
+    public const string ShortcutsManageOwn = "Shortcuts.ManageOwn"; public const string FavoritesManageOwn = "Favorites.ManageOwn";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -148,6 +153,8 @@ public static class PermissionCodes
         BillingViewOwn, BillingManageOwn, BillingAdminView, BillingAdminManage, PlansView, PlansManage,
         SubscriptionsView, SubscriptionsManage, SubscriptionRequestsCreate, SubscriptionRequestsManage,
         InvoicesViewOwn, InvoicesManage, BillingPaymentsManage, AddonsView, AddonsManage, EntitlementsView,
-        EntitlementsManage, AccountAccessManage, TrialsManage
+        EntitlementsManage, AccountAccessManage, TrialsManage, SearchGlobal, CommandCenterUse, AssistantUse,
+        KnowledgeBaseView, GuidedToursView, GuidedToursManage, OnboardingManage, ActivityView,
+        ShortcutsManageOwn, FavoritesManageOwn
     };
 }

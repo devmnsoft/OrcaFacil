@@ -1,0 +1,7 @@
+@page "/Assistant"
+@model OrcaFacil.Web.Pages.Assistant.IndexModel
+@{ViewData["Title"]="Assistente interno";ViewData["Section"]="Ajuda";}
+<section class="of-page-header"><div><p class="of-eyebrow">Consulta segura e somente leitura</p><h1>Assistente interno</h1><p>Respostas baseadas em regras, dados autorizados da conta e artigos publicados. Nenhuma ação é executada automaticamente.</p></div></section>
+<div class="of-assistant"><form method="post" asp-page-handler="Ask">@Html.AntiForgeryToken()<label asp-for="Question">Como posso orientar você?</label><textarea asp-for="Question" minlength="3" maxlength="500" rows="4" placeholder="Ex.: quais propostas estão sem resposta?"></textarea><span asp-validation-for="Question"></span><button class="of-button of-button-primary" type="submit">Consultar fontes permitidas</button></form>
+@if(Model.Answer is not null){<article aria-live="polite"><small>@Model.Answer.SourceLabel</small><p>@Model.Answer.Answer</p><nav aria-label="Próximos passos">@foreach(var link in Model.Answer.Links){<a href="@link.Url">@link.Label</a>}</nav></article>}
+<aside><strong>Limites de segurança</strong><p>Este recurso não aprova propostas, registra pagamentos, emite recibos, altera permissões nem envia mensagens. Quando não há fonte permitida, ele informa isso claramente.</p></aside></div>

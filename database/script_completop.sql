@@ -1008,3 +1008,19 @@ ALTER TABLE orcafacil.documents ADD COLUMN IF NOT EXISTS assigned_team_id uuid;
 ALTER TABLE orcafacil.documents ADD COLUMN IF NOT EXISTS requires_internal_approval boolean NOT NULL DEFAULT false;
 ALTER TABLE orcafacil.documents ADD COLUMN IF NOT EXISTS internal_approval_status varchar(24);
 CREATE INDEX IF NOT EXISTS ix_documents_enterprise_scope ON orcafacil.documents(account_id,business_unit_id,assigned_team_id,assigned_to_user_id);
+
+-- Sprint 19: productivity permissions (idempotent, no user/account recreation).
+INSERT INTO orcafacil.permissions(code, display_name, is_platform_permission)
+SELECT code, code, false FROM unnest(ARRAY[
+  'Search.Global','CommandCenter.Use','Assistant.Use','KnowledgeBase.View','GuidedTours.View',
+  'GuidedTours.Manage','Onboarding.Manage','Productivity.View','Activity.View','Shortcuts.ManageOwn','Favorites.ManageOwn'
+]) AS code ON CONFLICT (code) DO NOTHING;
+INSERT INTO orcafacil.role_permissions(role_id, permission_id, created_at, is_deleted)
+SELECT r.id,p.id,now(),false FROM orcafacil.roles r CROSS JOIN orcafacil.permissions p
+WHERE r.code IN ('Owner','Administrator','Collaborator','Viewer')
+  AND p.code IN ('Search.Global','CommandCenter.Use','Assistant.Use','KnowledgeBase.View','GuidedTours.View','Productivity.View','Activity.View','Shortcuts.ManageOwn','Favorites.ManageOwn')
+ON CONFLICT (role_id,permission_id) DO NOTHING;
+INSERT INTO orcafacil.role_permissions(role_id, permission_id, created_at, is_deleted)
+SELECT r.id,p.id,now(),false FROM orcafacil.roles r CROSS JOIN orcafacil.permissions p
+WHERE r.code IN ('Owner','Administrator') AND p.code IN ('GuidedTours.Manage','Onboarding.Manage')
+ON CONFLICT (role_id,permission_id) DO NOTHING;

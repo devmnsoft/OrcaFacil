@@ -1,0 +1,10 @@
+@page "/Search"
+@model OrcaFacil.Web.Pages.Search.IndexModel
+@{ ViewData["Title"]="Busca global"; ViewData["Section"]="Produtividade"; ViewData["HelpCode"]="search"; }
+<section class="of-page-header"><div><p class="of-eyebrow">Nesta conta</p><h1>Busca global</h1><p>Encontre clientes, propostas, OS, contratos e outros registros que você pode acessar.</p></div></section>
+<form method="get" class="of-search-page-form" role="search"><label for="search-query">O que você procura?</label><div><input id="search-query" name="Query" value="@Model.Query" minlength="2" maxlength="120" required type="search" autocomplete="off" placeholder="Nome do cliente, proposta, OS, recibo ou contrato" autofocus /><button class="of-button of-button-primary" type="submit">Buscar</button></div></form>
+@if (!string.IsNullOrWhiteSpace(Model.Query)) {
+<section class="of-search-page-results" aria-live="polite"><h2>Resultados</h2>
+@if(Model.Results.Count == 0){<div class="of-empty-state"><h3>Nenhum resultado encontrado</h3><p>Tente buscar por nome do cliente, número da proposta, OS, recibo ou contrato.</p></div>}
+else {<div class="of-result-list">@foreach(var item in Model.Results){<a href="@item.Url" class="of-result-card"><span class="of-result-type">@item.Type</span><span><strong>@item.Title</strong><small>@item.Subtitle</small></span><span><small>@item.Status</small><strong>@item.Action</strong></span></a>}</div>}
+</section>}

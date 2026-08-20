@@ -107,6 +107,7 @@ builder.Services.AddScoped<IDashboardExperienceService, DashboardExperienceServi
 builder.Services.AddSingleton<IContextualHelpService, ContextualHelpService>();
 builder.Services.AddScoped<IPlanExperienceService, PlanExperienceService>();
 builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
+builder.Services.AddScoped<IInternalAssistantService, InternalAssistantService>();
 builder.Services.AddSingleton<INavigationMapService, NavigationMapService>();
 builder.Services.AddScoped<IIntelligenceReportService, IntelligenceReportService>();
 builder.Services.AddScoped<IOperationalAlertService, OperationalAlertService>();
@@ -324,10 +325,11 @@ app.MapPost("/api/webhooks/mercadopago", async (HttpRequest request, OrcaFacil.A
     return Results.Ok(new { received = true, result.EventKey });
 }).AllowAnonymous();
 app.MapGet("/health/version", () => new { app = "OrcaFacil", version = "1.0.0", environment = app.Environment.EnvironmentName, date = DateTime.UtcNow });
-app.MapGet("/Internal/Search", async Task<IResult> (string? q, int? limit, IGlobalSearchService search, CancellationToken ct) =>
+app.MapGet("/Internal/Search", async Task<IResult> (string? q, int? limit, IGlobalSearchService search, ICurrentAccountService account, CancellationToken ct) =>
 {
     if (string.IsNullOrWhiteSpace(q) || q.Trim().Length < 2)
         return Results.BadRequest(new { message = "Digite ao menos dois caracteres." });
+    if (!await account.HasPermissionAsync(PermissionCodes.SearchGlobal, ct)) return Results.Forbid();
     return Results.Ok(new { results = await search.SearchAsync(q, limit ?? 12, ct) });
 }).RequireAuthorization();
 app.MapGet("/Internal/Services/Search", async Task<IResult> (string? q, Guid? categoryId, bool? favorite, bool? recent, bool? mostUsed, int? limit, ICurrentAccountService account, OrcaFacilDbContext db, CancellationToken ct) =>
