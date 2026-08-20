@@ -19,7 +19,9 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
         "plans", "plan_versions", "features", "plan_feature_values", "account_onboarding_states",
         "service_catalog_items", "work_orders", "manual_payments", "receipts", "email_outbox_messages",
         "support_tickets", "support_ticket_messages", "user_feedback", "knowledge_base_articles", "release_notes",
-        "recommendation_cards", "automation_rules", "automation_runs", "productivity_events"
+        "recommendation_cards", "automation_rules", "automation_runs", "productivity_events",
+        "file_assets", "file_asset_links", "company_branding_profiles", "document_templates",
+        "document_template_versions", "document_audit_events"
     ];
 
     private readonly IConfiguration _configuration;

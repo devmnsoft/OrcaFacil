@@ -92,6 +92,12 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
     public DbSet<DataExport> DataExports => Set<DataExport>();
+    public DbSet<FileAsset> FileAssets => Set<FileAsset>();
+    public DbSet<FileAssetLink> FileAssetLinks => Set<FileAssetLink>();
+    public DbSet<CompanyBrandingProfile> CompanyBrandingProfiles => Set<CompanyBrandingProfile>();
+    public DbSet<DocumentTemplate> DocumentTemplates => Set<DocumentTemplate>();
+    public DbSet<DocumentTemplateVersion> DocumentTemplateVersions => Set<DocumentTemplateVersion>();
+    public DbSet<DocumentAuditEvent> DocumentAuditEvents => Set<DocumentAuditEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

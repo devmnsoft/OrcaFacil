@@ -1,0 +1,1 @@
+import fs from 'node:fs';const p=fs.readFileSync('src/OrcaFacil.Web/Pages/PublicQuotes/View.cshtml','utf8').toLowerCase();for(const forbidden of ['internalcost','costprice','marginpercent'])if(p.includes(forbidden))throw new Error(`public quote leaks ${forbidden}`);console.log('Public document safety checks passed.');

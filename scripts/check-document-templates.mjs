@@ -1,0 +1,1 @@
+import fs from 'node:fs';const source=fs.readFileSync('src/OrcaFacil.Application/DocumentTemplates/DocumentTemplateValidator.cs','utf8');for(const x of ['AllowedVariables','javascript','VariableRegex'])if(!source.includes(x))throw new Error(`template invariant failed: ${x}`);console.log('Document template checks passed.');
