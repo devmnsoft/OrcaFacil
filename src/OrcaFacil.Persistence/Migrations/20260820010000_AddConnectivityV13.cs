@@ -1,0 +1,23 @@
+using Microsoft.EntityFrameworkCore.Migrations;
+#nullable disable
+namespace OrcaFacil.Persistence.Migrations;
+public partial class AddConnectivityV13 : Migration { protected override void Up(MigrationBuilder migrationBuilder) => migrationBuilder.Sql("""
+-- Sprint 12 / V1.3: connectivity records are tenant-owned and secrets are protected or hashed.
+CREATE TABLE IF NOT EXISTS orcafacil.integration_settings (id uuid PRIMARY KEY,account_id uuid NOT NULL,public_base_url varchar(500),whats_app_number varchar(30),email_signature text,support_email varchar(255),smtp_host varchar(255),smtp_port integer,smtp_user varchar(255),protected_smtp_password text,smtp_use_ssl boolean NOT NULL DEFAULT true,email_sending_enabled boolean NOT NULL DEFAULT false,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz,is_deleted boolean NOT NULL DEFAULT false);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_integration_settings_account_id ON orcafacil.integration_settings(account_id);
+CREATE TABLE IF NOT EXISTS orcafacil.webhook_endpoints (id uuid PRIMARY KEY,account_id uuid NOT NULL,name varchar(120) NOT NULL,url varchar(1000) NOT NULL,secret_hash varchar(64) NOT NULL,protected_secret text NOT NULL,event_types text NOT NULL,is_active boolean NOT NULL DEFAULT true,last_delivery_at timestamptz,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz,is_deleted boolean NOT NULL DEFAULT false);
+CREATE INDEX IF NOT EXISTS ix_webhook_endpoints_account_active ON orcafacil.webhook_endpoints(account_id,is_active);
+CREATE TABLE IF NOT EXISTS orcafacil.webhook_deliveries (id uuid PRIMARY KEY,account_id uuid NOT NULL,webhook_endpoint_id uuid NOT NULL,event_id uuid NOT NULL,event_type varchar(80) NOT NULL,entity_type text NOT NULL,entity_id text NOT NULL,payload_json text NOT NULL DEFAULT '{}',idempotency_key varchar(180) NOT NULL,status varchar(20) NOT NULL,attempts integer NOT NULL DEFAULT 0,next_attempt_at timestamptz NOT NULL DEFAULT now(),delivered_at timestamptz,last_error_summary text,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz,is_deleted boolean NOT NULL DEFAULT false);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_webhook_deliveries_idempotency_key ON orcafacil.webhook_deliveries(idempotency_key);
+CREATE INDEX IF NOT EXISTS ix_webhook_deliveries_account_status_next ON orcafacil.webhook_deliveries(account_id,status,next_attempt_at);
+CREATE TABLE IF NOT EXISTS orcafacil.api_keys (id uuid PRIMARY KEY,account_id uuid NOT NULL,name varchar(120) NOT NULL,key_hash varchar(64) NOT NULL,prefix varchar(20) NOT NULL,scopes varchar(500) NOT NULL,last_used_at timestamptz,expires_at timestamptz,revoked_at timestamptz,created_by_user_id uuid NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz,is_deleted boolean NOT NULL DEFAULT false);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_api_keys_key_hash ON orcafacil.api_keys(key_hash);
+CREATE INDEX IF NOT EXISTS ix_api_keys_account_revoked ON orcafacil.api_keys(account_id,revoked_at);
+CREATE TABLE IF NOT EXISTS orcafacil.data_exports (id uuid PRIMARY KEY,account_id uuid NOT NULL,requested_by_user_id uuid NOT NULL,data_type varchar(40) NOT NULL,format varchar(10) NOT NULL,row_count integer NOT NULL,completed_at timestamptz NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz,is_deleted boolean NOT NULL DEFAULT false);
+CREATE INDEX IF NOT EXISTS ix_data_exports_account_completed ON orcafacil.data_exports(account_id,completed_at);
+ALTER TABLE orcafacil.account_settings ADD COLUMN IF NOT EXISTS communication_preferences_json jsonb NOT NULL DEFAULT '{}';
+ALTER TABLE orcafacil.email_outbox_messages ADD COLUMN IF NOT EXISTS account_id uuid;
+ALTER TABLE orcafacil.email_outbox_messages ADD COLUMN IF NOT EXISTS last_error_summary text;
+INSERT INTO orcafacil.permissions(code,display_name,is_platform_permission) SELECT code,code,false FROM unnest(ARRAY['Integrations.View','Integrations.Manage','Webhooks.View','Webhooks.Manage','ApiKeys.Manage','Imports.Manage','Exports.Manage','Notifications.Manage','CommunicationPreferences.Manage']) code ON CONFLICT(code) DO NOTHING;
+INSERT INTO orcafacil.role_permissions(role_id,permission_id,created_at,is_deleted) SELECT r.id,p.id,now(),false FROM orcafacil.roles r CROSS JOIN orcafacil.permissions p WHERE r.code IN ('Owner','Administrator') AND p.code IN ('Integrations.View','Integrations.Manage','Webhooks.View','Webhooks.Manage','ApiKeys.Manage','Imports.Manage','Exports.Manage','Notifications.Manage','CommunicationPreferences.Manage') ON CONFLICT(role_id,permission_id) DO NOTHING;
+"""); protected override void Down(MigrationBuilder migrationBuilder) { /* Integration history is intentionally retained. */ } }

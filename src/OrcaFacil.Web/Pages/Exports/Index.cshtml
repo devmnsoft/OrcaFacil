@@ -1,0 +1,4 @@
+@page "/Exports"
+@model OrcaFacil.Web.Pages.Exports.IndexModel
+@{ViewData["Title"]="Exportações";}
+<header class="of-page-header"><div><p class="of-eyebrow">Portabilidade</p><h1>Exportar dados</h1><p>Arquivos CSV são gerados somente com dados da conta ativa e cada operação é auditada.</p></div></header><section class="of-integration-grid"><article class="of-card"><h2>Clientes</h2><p>Nome e dados de contato cadastrados, sem tokens ou segredos.</p><form method="post" asp-page-handler="Download"><input type="hidden" name="type" value="clients"/><button type="submit" class="of-button of-button-primary">Baixar CSV</button></form></article><article class="of-card"><h2>Serviços</h2><p>Catálogo, unidade e preço padrão da conta.</p><form method="post" asp-page-handler="Download"><input type="hidden" name="type" value="services"/><button type="submit" class="of-button of-button-primary">Baixar CSV</button></form></article></section>

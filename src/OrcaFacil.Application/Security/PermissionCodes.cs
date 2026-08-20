@@ -69,6 +69,15 @@ public static class PermissionCodes
     public const string ExecutiveReportsView = "ExecutiveReports.View";
     public const string ScoresView = "Scores.View";
     public const string ScoresFinancialDetails = "Scores.FinancialDetails";
+    public const string IntegrationsView = "Integrations.View";
+    public const string IntegrationsManage = "Integrations.Manage";
+    public const string WebhooksView = "Webhooks.View";
+    public const string WebhooksManage = "Webhooks.Manage";
+    public const string ApiKeysManage = "ApiKeys.Manage";
+    public const string ImportsManage = "Imports.Manage";
+    public const string ExportsManage = "Exports.Manage";
+    public const string NotificationsManage = "Notifications.Manage";
+    public const string CommunicationPreferencesManage = "CommunicationPreferences.Manage";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -84,6 +93,7 @@ public static class PermissionCodes
         DiagnosticsView, LogsView, AuditView, SupportView, SupportManage, SupportCreateTicket, SupportManageTickets,
         FeedbackView, FeedbackCreate, KnowledgeBaseManage, ReleaseNotesManage, SetupChecklistView, SetupChecklistManage,
         RecommendationsView, AutomationRulesView, AutomationRulesManage, ProductivityView, ExecutiveReportsView,
-        ScoresView, ScoresFinancialDetails
+        ScoresView, ScoresFinancialDetails, IntegrationsView, IntegrationsManage, WebhooksView, WebhooksManage,
+        ApiKeysManage, ImportsManage, ExportsManage, NotificationsManage, CommunicationPreferencesManage
     };
 }

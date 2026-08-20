@@ -53,4 +53,5 @@ public sealed class AccountSettings : Entity
     public string? ReceiptText { get; set; }
     public string? CollectionMessage { get; set; }
     public string NotificationPreferencesJson { get; set; } = "{}";
+    public string CommunicationPreferencesJson { get; set; } = "{}";
 }
