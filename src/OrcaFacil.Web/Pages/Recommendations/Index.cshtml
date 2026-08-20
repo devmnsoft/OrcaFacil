@@ -1,0 +1,20 @@
+@page
+@model OrcaFacil.Web.Pages.Recommendations.IndexModel
+@{ ViewData["Title"] = "Recomendações"; ViewData["Section"] = "Produtividade"; }
+<header class="of-workbench-intro"><div><p class="of-eyebrow">Dados reais · regras transparentes</p><h1>Próximas melhores ações</h1><p>Prioridades calculadas a partir das suas propostas, OS e pagamentos.</p></div></header>
+@if (Model.Cards.Count == 0)
+{
+    <section class="of-card"><h2>Tudo em dia por enquanto</h2><p>Continue acompanhando suas propostas, OS e pagamentos pelo painel.</p><a class="of-button-primary" asp-page="/Dashboard/Index">Voltar ao painel</a></section>
+}
+else
+{
+    <section class="of-card-grid" aria-label="Recomendações abertas">
+    @foreach (var card in Model.Cards)
+    {
+        <article class="of-card recommendation-card" data-priority="@card.Priority.ToLowerInvariant()">
+            <span class="of-badge">@card.Priority</span><h2>@card.Title</h2><p>@card.Description</p>
+            <small><strong>Motivo:</strong> @card.Reason</small><a class="of-button-primary" href="@card.ActionUrl">@card.ActionLabel</a>
+        </article>
+    }
+    </section>
+}

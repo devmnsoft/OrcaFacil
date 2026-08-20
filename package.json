@@ -77,7 +77,12 @@
     "check:appsettings-secrets": "node scripts/check-appsettings-secrets.mjs",
     "check:public-links": "node scripts/check-public-links.mjs",
     "check:backup-restore": "node scripts/check-backup-restore.mjs",
-    "check:release-final": "node scripts/check-release-final.mjs"
+    "check:release-final": "node scripts/check-release-final.mjs",
+    "check:recommendations": "node scripts/check-recommendations.mjs",
+    "check:scoring-rules": "node scripts/check-scoring-rules.mjs",
+    "check:automation-rules": "node scripts/check-automation-rules.mjs",
+    "check:executive-reports": "node scripts/check-executive-reports.mjs",
+    "check:productivity-panel": "node scripts/check-productivity-panel.mjs"
   },
   "engines": {
     "node": ">=18"

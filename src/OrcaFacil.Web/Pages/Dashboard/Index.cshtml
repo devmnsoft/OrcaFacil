@@ -29,7 +29,15 @@
     </div>
 </header>
 
-@if (experience.NextAction is { } next)
+@if (Model.BestRecommendation is { } recommendation)
+{
+    <section class="of-next-action" aria-labelledby="best-action-title">
+        <div class="of-next-icon"><svg class="of-icon"><use href="#of-icon-success" /></svg></div>
+        <div><p class="of-eyebrow">Próxima melhor ação · @recommendation.Priority</p><h2 id="best-action-title">@recommendation.Title</h2><p>@recommendation.Description</p><small><strong>Motivo:</strong> @recommendation.Reason</small></div>
+        <a class="of-button-primary" href="@recommendation.ActionUrl">@recommendation.ActionLabel</a>
+    </section>
+}
+else if (experience.NextAction is { } next)
 {
     <section class="of-next-action" aria-labelledby="next-title">
         <div class="of-next-icon"><svg class="of-icon"><use href="#of-icon-success" /></svg></div>

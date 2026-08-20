@@ -83,6 +83,10 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<ContractItem> ContractItems => Set<ContractItem>();
     public DbSet<ContractPayment> ContractPayments => Set<ContractPayment>();
     public DbSet<ContractEvent> ContractEvents => Set<ContractEvent>();
+    public DbSet<RecommendationCard> RecommendationCards => Set<RecommendationCard>();
+    public DbSet<AutomationRule> AutomationRules => Set<AutomationRule>();
+    public DbSet<AutomationRun> AutomationRuns => Set<AutomationRun>();
+    public DbSet<ProductivityEvent> ProductivityEvents => Set<ProductivityEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

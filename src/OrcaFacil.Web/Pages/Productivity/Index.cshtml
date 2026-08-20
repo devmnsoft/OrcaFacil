@@ -1,0 +1,7 @@
+@page
+@model OrcaFacil.Web.Pages.Productivity.IndexModel
+@{ ViewData["Title"] = "Produtividade"; ViewData["Section"] = "Produtividade"; }
+<header class="of-workbench-intro"><div><p class="of-eyebrow">Eventos auditáveis</p><h1>Painel de produtividade</h1><p>Acompanhe ações efetivamente registradas pela equipe no período.</p></div></header>
+<form method="get" class="of-card of-filter-bar"><label>De <input asp-for="From" type="date" /></label><label>Até <input asp-for="To" type="date" /></label><button type="submit" class="of-button-primary">Filtrar</button></form>
+@if (Model.Metrics.Count == 0) { <section class="of-card"><h2>Nenhum evento no período</h2><p>Conclua follow-ups, propostas, OS, pagamentos ou recibos para acompanhar a produtividade aqui.</p></section> }
+else { <section class="metric-grid">@foreach (var item in Model.Metrics) { <article class="metric-card"><span>@item.Key</span><strong>@item.Value</strong></article> }</section> }

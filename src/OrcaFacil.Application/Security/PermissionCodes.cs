@@ -62,6 +62,13 @@ public static class PermissionCodes
     public const string ReleaseNotesManage = "ReleaseNotes.Manage";
     public const string SetupChecklistView = "SetupChecklist.View";
     public const string SetupChecklistManage = "SetupChecklist.Manage";
+    public const string RecommendationsView = "Recommendations.View";
+    public const string AutomationRulesView = "AutomationRules.View";
+    public const string AutomationRulesManage = "AutomationRules.Manage";
+    public const string ProductivityView = "Productivity.View";
+    public const string ExecutiveReportsView = "ExecutiveReports.View";
+    public const string ScoresView = "Scores.View";
+    public const string ScoresFinancialDetails = "Scores.FinancialDetails";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -75,6 +82,8 @@ public static class PermissionCodes
         FinanceView, FinanceManage, ContractsView, ContractsManage, ContractChargesGenerate, CashFlowView, ReportsFinancial,
         ReportsView, ReportsExport, SettingsView, SettingsManage, UsersManage, PlanManage, AdminAccess,
         DiagnosticsView, LogsView, AuditView, SupportView, SupportManage, SupportCreateTicket, SupportManageTickets,
-        FeedbackView, FeedbackCreate, KnowledgeBaseManage, ReleaseNotesManage, SetupChecklistView, SetupChecklistManage
+        FeedbackView, FeedbackCreate, KnowledgeBaseManage, ReleaseNotesManage, SetupChecklistView, SetupChecklistManage,
+        RecommendationsView, AutomationRulesView, AutomationRulesManage, ProductivityView, ExecutiveReportsView,
+        ScoresView, ScoresFinancialDetails
     };
 }
