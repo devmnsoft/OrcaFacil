@@ -6,6 +6,7 @@
   <title>@ViewData["Title"] · OrçaFácil</title>
   <meta name="description" content="Crie orçamentos, organize clientes, acompanhe aprovações, registre pagamentos e emita recibos profissionais." />
   <meta name="theme-color" content="#0B1F33" />
+  <link rel="manifest" href="~/site.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
   <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
   <link rel="stylesheet" href="~/css/icons.css" asp-append-version="true" />
@@ -58,6 +59,9 @@
   <partial name="Partials/_OverlayHost" />
   <environment include="Development"><script src="~/js/diagnostics/js-health.js" asp-append-version="true"></script></environment>
   <script src="~/js/public.js" asp-append-version="true"></script>
+  <script src="~/js/pwa.js" asp-append-version="true"></script>
+  <script src="~/js/pwa-install.js" asp-append-version="true"></script>
+  <script src="~/js/offline-status.js" asp-append-version="true"></script>
   <script type="module" src="~/js/ui/feedback.js" asp-append-version="true"></script>
   @await RenderSectionAsync("Scripts", false)
 </body>

@@ -1,0 +1,20 @@
+{
+  "name": "OrçaFácil",
+  "short_name": "OrçaFácil",
+  "description": "Orçamentos, ordens de serviço e operação de campo com segurança.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fa",
+  "theme_color": "#0b1f33",
+  "lang": "pt-BR",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/img/brand/orcafacil-symbol.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
