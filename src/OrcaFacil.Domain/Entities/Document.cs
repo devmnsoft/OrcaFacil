@@ -9,6 +9,11 @@ public class Document : Entity
 {
     public Guid? AccountId { get; set; }
     public Guid? ClientId { get; set; }
+    public Guid? BusinessUnitId { get; set; }
+    public Guid? AssignedToUserId { get; set; }
+    public Guid? AssignedTeamId { get; set; }
+    public bool RequiresInternalApproval { get; set; }
+    public ApprovalStatus? InternalApprovalStatus { get; set; }
     public Guid UserId { get; set; }
     public DocumentType Type { get; set; }
     public string Number { get; private set; } = string.Empty;

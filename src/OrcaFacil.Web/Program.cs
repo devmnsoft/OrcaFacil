@@ -127,6 +127,7 @@ builder.Services.AddSingleton<QuotaService>();
 builder.Services.AddScoped<ILoggerService, LoggerService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<DocumentService>();
+builder.Services.AddScoped<OrcaFacil.Application.Approvals.ApprovalWorkflowService>();
 builder.Services.AddScoped<BudgetWizardService>();
 builder.Services.AddScoped<BudgetDraftService>();
 builder.Services.AddScoped<IDocumentStatusTransitionService, DocumentStatusTransitionService>();

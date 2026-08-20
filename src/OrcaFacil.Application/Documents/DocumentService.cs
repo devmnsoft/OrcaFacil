@@ -118,6 +118,8 @@ public class DocumentService
         {
             var document = await _documents.GetAsync(documentId, ct);
             if (document is null || document.UserId != userId) return Result<string>.Fail("Documento não encontrado.");
+            if (document.RequiresInternalApproval && document.InternalApprovalStatus != ApprovalStatus.Approved)
+                return Result<string>.Fail("Este orçamento precisa de aprovação interna antes de ser enviado ao cliente.");
             document.PublicToken = new PublicToken().Value;
             document.PublicEnabled = true;
             var quote = new PublicQuote { DocumentId = document.Id, OwnerUserId = userId, Token = document.PublicToken, ExpiresAt = DateTime.UtcNow.AddDays(30) };

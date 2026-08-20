@@ -119,6 +119,18 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<QuotaEvent> QuotaEvents => Set<QuotaEvent>();
     public DbSet<RateLimitEvent> RateLimitEvents => Set<RateLimitEvent>();
     public DbSet<WorkerHeartbeat> WorkerHeartbeats => Set<WorkerHeartbeat>();
+    public DbSet<BusinessUnit> BusinessUnits => Set<BusinessUnit>();
+    public DbSet<BusinessUnitMember> BusinessUnitMembers => Set<BusinessUnitMember>();
+    public DbSet<Team> Teams => Set<Team>();
+    public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
+    public DbSet<RoleProfile> RoleProfiles => Set<RoleProfile>();
+    public DbSet<RoleProfilePermission> RoleProfilePermissions => Set<RoleProfilePermission>();
+    public DbSet<DiscountPolicy> DiscountPolicies => Set<DiscountPolicy>();
+    public DbSet<ApprovalRequest> ApprovalRequests => Set<ApprovalRequest>();
+    public DbSet<ApprovalRequestEvent> ApprovalRequestEvents => Set<ApprovalRequestEvent>();
+    public DbSet<WhiteLabelSetting> WhiteLabelSettings => Set<WhiteLabelSetting>();
+    public DbSet<UnitBrandingProfile> UnitBrandingProfiles => Set<UnitBrandingProfile>();
+    public DbSet<DocumentVisibilityRule> DocumentVisibilityRules => Set<DocumentVisibilityRule>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
