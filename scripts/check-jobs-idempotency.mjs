@@ -1,0 +1,1 @@
+process.argv.push('Jobs e locks','src/OrcaFacil.Persistence/Services/SaasOperationsServices.cs','ExecuteUpdateAsync','src/OrcaFacil.Domain/Entities/SaasOperations.cs','TryAcquire'); await import('./check-sprint15-foundation.mjs');

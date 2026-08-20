@@ -43,6 +43,7 @@ using OrcaFacil.Infrastructure.Files;
 using OrcaFacil.Application.Privacy;
 using OrcaFacil.Application.Retention;
 using OrcaFacil.Application.Security;
+using OrcaFacil.Application.Jobs;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddOrcaFacilLocalConfiguration();
@@ -120,6 +121,9 @@ builder.Services.AddScoped<AnonymizationService>();
 builder.Services.AddScoped<RetentionPolicyService>();
 builder.Services.AddScoped<SensitiveDataAccessService>();
 builder.Services.AddScoped<SessionSecurityService>();
+builder.Services.AddScoped<IJobLockService, JobLockService>();
+builder.Services.AddScoped<IProcessingOutboxService, ProcessingOutboxService>();
+builder.Services.AddSingleton<QuotaService>();
 builder.Services.AddScoped<ILoggerService, LoggerService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<DocumentService>();

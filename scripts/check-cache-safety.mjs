@@ -1,0 +1,1 @@
+process.argv.push('Cache multi-tenant','src/OrcaFacil.Application/Jobs/SaasOperationsContracts.cs','tenant:{accountId:N}','src/OrcaFacil.Domain/Entities/SaasOperations.cs','CacheInvalidationEvent'); await import('./check-sprint15-foundation.mjs');
