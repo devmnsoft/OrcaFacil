@@ -87,6 +87,11 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<AutomationRule> AutomationRules => Set<AutomationRule>();
     public DbSet<AutomationRun> AutomationRuns => Set<AutomationRun>();
     public DbSet<ProductivityEvent> ProductivityEvents => Set<ProductivityEvent>();
+    public DbSet<IntegrationSetting> IntegrationSettings => Set<IntegrationSetting>();
+    public DbSet<WebhookEndpoint> WebhookEndpoints => Set<WebhookEndpoint>();
+    public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
+    public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+    public DbSet<DataExport> DataExports => Set<DataExport>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

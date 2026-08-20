@@ -82,7 +82,13 @@
     "check:scoring-rules": "node scripts/check-scoring-rules.mjs",
     "check:automation-rules": "node scripts/check-automation-rules.mjs",
     "check:executive-reports": "node scripts/check-executive-reports.mjs",
-    "check:productivity-panel": "node scripts/check-productivity-panel.mjs"
+    "check:productivity-panel": "node scripts/check-productivity-panel.mjs",
+    "check:integrations": "node scripts/check-integrations.mjs",
+    "check:webhooks": "node scripts/check-webhooks.mjs",
+    "check:api-keys": "node scripts/check-api-keys.mjs",
+    "check:import-export": "node scripts/check-import-export.mjs",
+    "check:notifications": "node scripts/check-notifications.mjs",
+    "check:secrets-masking": "node scripts/check-secrets-masking.mjs"
   },
   "engines": {
     "node": ">=18"

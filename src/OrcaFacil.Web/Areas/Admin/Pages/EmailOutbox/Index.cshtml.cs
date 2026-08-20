@@ -35,4 +35,20 @@ public sealed class IndexModel(OrcaFacilDbContext db, IAuditService audit) : Pag
         TempData["Success"] = "Mensagem devolvida à fila com segurança.";
         return RedirectToPage();
     }
+
+    public async Task<IActionResult> OnPostCancelAsync(Guid id, CancellationToken ct)
+    {
+        var message = await db.EmailOutboxMessages.SingleOrDefaultAsync(x => x.Id == id, ct);
+        if (message is null) return NotFound();
+        if (message.Status is not (EmailOutboxStatus.Pending or EmailOutboxStatus.Failed))
+        { TempData["Error"] = "Somente mensagens pendentes ou falhas podem ser canceladas."; return RedirectToPage(); }
+        var previous = message.Status;
+        message.Status = EmailOutboxStatus.Canceled;
+        message.ProcessingInstanceId = null;
+        message.ProcessingStartedAt = null;
+        await audit.RegisterAsync(null, "EmailOutbox.Cancel", nameof(EmailOutboxMessage), id.ToString(), new { Status = previous }, new { message.Status }, null, ct, message.AccountId);
+        await db.SaveChangesAsync(ct);
+        TempData["Success"] = "Mensagem cancelada; ela não será processada.";
+        return RedirectToPage();
+    }
 }

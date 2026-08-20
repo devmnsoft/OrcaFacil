@@ -37,6 +37,7 @@ using OrcaFacil.Persistence.Services;
 using OrcaFacil.Application.Receipts;
 using OrcaFacil.Application.Clients;
 using OrcaFacil.Application.Pricing;
+using OrcaFacil.Application.Integrations;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddOrcaFacilLocalConfiguration();
@@ -146,6 +147,7 @@ builder.Services.AddScoped<TrialProService>();
 builder.Services.Configure<PlanOptions>(builder.Configuration.GetSection("Plans"));
 builder.Services.AddScoped<BillingStatusService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddSingleton<IApiKeyService, ApiKeyService>();
 builder.Services.Configure<MercadoPagoOptions>(builder.Configuration.GetSection("MercadoPago"));
 builder.Services.Configure<BillingOptions>(builder.Configuration.GetSection("Billing"));
 builder.Services.AddScoped<IPaymentGateway, MercadoPagoPaymentGateway>();
