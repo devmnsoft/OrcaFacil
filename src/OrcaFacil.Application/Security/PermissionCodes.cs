@@ -91,6 +91,19 @@ public static class PermissionCodes
     public const string WorkOrdersPrint = "WorkOrders.Print";
     public const string ContractsPrint = "Contracts.Print";
     public const string BrandingManage = "Branding.Manage";
+    public const string PrivacyView = "Privacy.View";
+    public const string PrivacyManage = "Privacy.Manage";
+    public const string PrivacyExportData = "Privacy.ExportData";
+    public const string PrivacyAnonymizeData = "Privacy.AnonymizeData";
+    public const string PrivacyManageRetention = "Privacy.ManageRetention";
+    public const string AuditExport = "Audit.Export";
+    public const string SensitiveDataView = "SensitiveData.View";
+    public const string SecurityViewSessions = "Security.ViewSessions";
+    public const string SecurityManageSessions = "Security.ManageSessions";
+    public const string SecurityManageUsers = "Security.ManageUsers";
+    public const string TokensRevoke = "Tokens.Revoke";
+    public const string FilesDownloadPrivate = "Files.DownloadPrivate";
+    public const string FilesManageVisibility = "Files.ManageVisibility";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -109,6 +122,9 @@ public static class PermissionCodes
         ScoresView, ScoresFinancialDetails, IntegrationsView, IntegrationsManage, WebhooksView, WebhooksManage,
         ApiKeysManage, ImportsManage, ExportsManage, NotificationsManage, CommunicationPreferencesManage,
         FilesView, FilesUpload, FilesDownload, FilesDelete, DocumentTemplatesView, DocumentTemplatesManage,
-        DocumentsPrint, DocumentsExportPdf, ReceiptsPrint, ReceiptsExportPdf, WorkOrdersPrint, ContractsPrint, BrandingManage
+        DocumentsPrint, DocumentsExportPdf, ReceiptsPrint, ReceiptsExportPdf, WorkOrdersPrint, ContractsPrint, BrandingManage,
+        PrivacyView, PrivacyManage, PrivacyExportData, PrivacyAnonymizeData, PrivacyManageRetention, AuditExport,
+        SensitiveDataView, SecurityViewSessions, SecurityManageSessions, SecurityManageUsers, TokensRevoke,
+        FilesDownloadPrivate, FilesManageVisibility
     };
 }

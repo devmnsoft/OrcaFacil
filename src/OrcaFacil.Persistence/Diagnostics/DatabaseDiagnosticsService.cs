@@ -21,7 +21,9 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
         "support_tickets", "support_ticket_messages", "user_feedback", "knowledge_base_articles", "release_notes",
         "recommendation_cards", "automation_rules", "automation_runs", "productivity_events",
         "file_assets", "file_asset_links", "company_branding_profiles", "document_templates",
-        "document_template_versions", "document_audit_events"
+        "document_template_versions", "document_audit_events", "privacy_consents", "data_subject_requests",
+        "data_export_jobs", "data_retention_policies", "data_retention_runs", "sensitive_data_access_logs",
+        "security_events", "session_records", "public_token_access_logs", "account_security_settings", "audit_export_jobs"
     ];
 
     private readonly IConfiguration _configuration;
@@ -99,7 +101,10 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
                 "support_tickets.related_page", "support_tickets.correlation_id", "support_tickets.browser_info",
                 "user_feedback.page_url", "user_feedback.rating", "recommendation_cards.account_id",
                 "automation_rules.account_id", "productivity_events.account_id", "knowledge_base_articles.slug",
-                "knowledge_base_articles.is_published", "release_notes.version", "release_notes.is_published"
+                "knowledge_base_articles.is_published", "release_notes.version", "release_notes.is_published",
+                "audit_logs.summary", "audit_logs.correlation_id", "data_subject_requests.client_id",
+                "data_subject_requests.resolution_notes", "data_subject_requests.reviewed_at",
+                "privacy_consents.account_id", "session_records.session_hash", "sensitive_data_access_logs.correlation_id"
             };
             var columns = (await connection.QueryAsync<string>(new CommandDefinition("select table_name || '.' || column_name from information_schema.columns where table_schema=@Schema", new { Schema = ExpectedSchema }, cancellationToken: ct))).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var missingColumns = requiredColumns.Where(x => !columns.Contains(x)).ToArray();
@@ -108,7 +113,8 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
                 "ix_documents_account_client", "ux_public_document_access_token_hash", "ix_work_orders_schedule",
                 "ix_account_onboarding_states_account_id_user_id",
                 "ix_account_onboarding_states_current_step_last_seen_at",
-                "ix_recommendation_cards_account_status_priority", "ix_productivity_events_account_occurred"
+                "ix_recommendation_cards_account_status_priority", "ix_productivity_events_account_occurred",
+                "ix_privacy_consents_account_user", "ix_sensitive_access_account_entity", "ix_sessions_account_user"
             };
             var indexes = (await connection.QueryAsync<string>(new CommandDefinition("select indexname from pg_indexes where schemaname=@Schema", new { Schema = ExpectedSchema }, cancellationToken: ct))).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var missingIndexes = requiredIndexes.Where(x => !indexes.Contains(x)).ToArray();

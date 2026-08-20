@@ -1,5 +1,5 @@
-using System.Text.Json;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Security;
 using OrcaFacil.Domain.Entities;
 
 namespace OrcaFacil.Persistence;
@@ -7,8 +7,13 @@ namespace OrcaFacil.Persistence;
 public class AuditService : IAuditService
 {
     private readonly OrcaFacilDbContext _db;
+    private readonly ISensitiveDataSanitizer _sanitizer;
 
-    public AuditService(OrcaFacilDbContext db) => _db = db;
+    public AuditService(OrcaFacilDbContext db, ISensitiveDataSanitizer sanitizer)
+    {
+        _db = db;
+        _sanitizer = sanitizer;
+    }
 
     public Task RegisterAsync(Guid? userId, string action, string entityType, string? entityId, object? before,
         object? after, object? metadata, CancellationToken ct = default, Guid? accountId = null)
@@ -20,9 +25,11 @@ public class AuditService : IAuditService
             Action = action,
             EntityType = entityType,
             EntityId = entityId,
-            BeforeJson = before is null ? null : JsonSerializer.Serialize(before),
-            AfterJson = after is null ? null : JsonSerializer.Serialize(after),
-            MetadataJson = metadata is null ? null : JsonSerializer.Serialize(metadata),
+            Summary = $"{action} em {entityType}",
+            CorrelationId = Guid.NewGuid(),
+            BeforeJson = before is null ? null : _sanitizer.SanitizeJson(before),
+            AfterJson = after is null ? null : _sanitizer.SanitizeJson(after),
+            MetadataJson = metadata is null ? null : _sanitizer.SanitizeJson(metadata),
         });
         return Task.CompletedTask;
     }

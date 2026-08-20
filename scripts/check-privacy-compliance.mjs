@@ -1,0 +1,2 @@
+import { requireFiles } from './check-sprint14-common.mjs';
+requireFiles('Privacidade/LGPD', ['src/OrcaFacil.Application/Privacy/ConsentService.cs','src/OrcaFacil.Application/Privacy/DataExportService.cs','src/OrcaFacil.Application/Privacy/AnonymizationService.cs','src/OrcaFacil.Application/Security/SensitiveDataSanitizer.cs','src/OrcaFacil.Web/Pages/Settings/Privacy/Index.cshtml'], ['AcceptedAt','RevokedAt','[REDACTED]','ANONIMIZAR DEFINITIVAMENTE']);

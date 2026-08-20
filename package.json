@@ -93,7 +93,13 @@
     "check:document-templates": "node scripts/check-document-templates.mjs",
     "check:print-layouts": "node scripts/check-print-layouts.mjs",
     "check:pdf-real": "node scripts/check-pdf-real.mjs",
-    "check:public-document-safety": "node scripts/check-public-document-safety.mjs"
+    "check:public-document-safety": "node scripts/check-public-document-safety.mjs",
+    "check:privacy-compliance": "node scripts/check-privacy-compliance.mjs",
+    "check:lgpd-flows": "node scripts/check-lgpd-flows.mjs",
+    "check:audit-sanitization": "node scripts/check-audit-sanitization.mjs",
+    "check:sensitive-data": "node scripts/check-sensitive-data.mjs",
+    "check:token-security": "node scripts/check-token-security.mjs",
+    "check:session-security": "node scripts/check-session-security.mjs"
   },
   "engines": {
     "node": ">=18"

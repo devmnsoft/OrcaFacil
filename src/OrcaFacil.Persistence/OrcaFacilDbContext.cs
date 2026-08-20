@@ -98,6 +98,16 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<DocumentTemplate> DocumentTemplates => Set<DocumentTemplate>();
     public DbSet<DocumentTemplateVersion> DocumentTemplateVersions => Set<DocumentTemplateVersion>();
     public DbSet<DocumentAuditEvent> DocumentAuditEvents => Set<DocumentAuditEvent>();
+    public DbSet<PrivacyConsent> PrivacyConsents => Set<PrivacyConsent>();
+    public DbSet<DataExportJob> DataExportJobs => Set<DataExportJob>();
+    public DbSet<DataRetentionPolicy> DataRetentionPolicies => Set<DataRetentionPolicy>();
+    public DbSet<DataRetentionRun> DataRetentionRuns => Set<DataRetentionRun>();
+    public DbSet<SensitiveDataAccessLog> SensitiveDataAccessLogs => Set<SensitiveDataAccessLog>();
+    public DbSet<SecurityEvent> SecurityEvents => Set<SecurityEvent>();
+    public DbSet<SessionRecord> SessionRecords => Set<SessionRecord>();
+    public DbSet<PublicTokenAccessLog> PublicTokenAccessLogs => Set<PublicTokenAccessLog>();
+    public DbSet<AccountSecuritySetting> AccountSecuritySettings => Set<AccountSecuritySetting>();
+    public DbSet<AuditExportJob> AuditExportJobs => Set<AuditExportJob>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
