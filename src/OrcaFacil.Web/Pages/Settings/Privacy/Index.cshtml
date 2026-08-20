@@ -1,0 +1,31 @@
+@page
+@model OrcaFacil.Web.Pages.Settings.Privacy.IndexModel
+@using OrcaFacil.Domain.Entities
+@{ ViewData["Title"] = "Privacidade e LGPD"; }
+@section Styles { <link rel="stylesheet" href="~/css/privacy-governance.css" asp-append-version="true" /> }
+<partial name="_SettingsNav" />
+<header class="privacy-hero">
+  <div><span class="privacy-eyebrow">Governança V1.5</span><h1>Privacidade e LGPD</h1><p>Entenda os dados mantidos pela conta, registre consentimentos e exerça direitos com rastreabilidade.</p></div>
+  <span class="risk-badge risk-ok">Dados protegidos por conta</span>
+</header>
+@if (TempData["Success"] is string success) { <div class="privacy-notice" role="status">@success</div> }
+<section class="privacy-metrics" aria-label="Resumo dos dados pessoais">
+  <article><strong>@Model.ClientsWithDocument</strong><span>clientes com documento</span></article>
+  <article><strong>@Model.ClientsWithEmail</strong><span>clientes com e-mail</span></article>
+  <article><strong>@Model.ClientsWithPhone</strong><span>clientes com telefone</span></article>
+  <article><strong>@Model.AttachedFiles</strong><span>arquivos privados</span></article>
+  <article><strong>@Model.ActivePublicLinks</strong><span>links públicos ativos</span></article>
+  <article><strong>@Model.OpenRequests</strong><span>solicitações abertas</span></article>
+</section>
+<div class="privacy-columns">
+<section class="privacy-panel"><div class="panel-heading"><div><h2>Seus consentimentos</h2><p>Nenhum aceite é feito automaticamente.</p></div></div>
+@if (Model.Consents.Count == 0) { <div class="empty-state"><strong>Nenhum aceite registrado</strong><span>Revise cada finalidade antes de aceitar.</span></div> }
+else { <ul class="privacy-list">@foreach (var item in Model.Consents) { <li><div><strong>@item.ConsentType</strong><span>Versão @item.Version · @item.AcceptedAt.ToLocalTime().ToString("g")</span></div><span class="risk-badge @(item.RevokedAt is null ? "risk-ok" : "risk-neutral")">@(item.RevokedAt is null ? "Ativo" : "Revogado")</span></li> }</ul> }
+<form method="post" asp-page-handler="Accept" class="privacy-form"><label>Finalidade<select name="type"><option value="TermsOfUse">Termos de Uso</option><option value="PrivacyPolicy">Política de Privacidade</option><option value="EmailCommunication">Comunicação por e-mail</option><option value="WhatsAppCommunication">Comunicação por WhatsApp</option><option value="AccountOperation">Operação da conta</option></select></label><input type="hidden" name="version" value="1.5" /><button type="submit" class="of-btn of-btn-primary">Registrar aceite da versão 1.5</button></form>
+</section>
+<section class="privacy-panel"><div class="panel-heading"><div><h2>Solicitações LGPD</h2><p>A exclusão física nunca é automática; obrigações legais e financeiras são preservadas.</p></div><span class="risk-badge risk-attention">@Model.OpenRequests abertas</span></div>
+@if (Model.Requests.Count == 0) { <div class="empty-state"><strong>Nenhuma solicitação</strong><span>Use o formulário para exercer um direito.</span></div> }
+else { <ul class="privacy-list">@foreach (var item in Model.Requests) { <li><div><strong>@item.Type</strong><span>@item.RequestedAt.ToLocalTime().ToString("g")</span></div><span class="risk-badge risk-neutral">@item.Status</span></li> }</ul> }
+<form method="post" asp-page-handler="Request" class="privacy-form"><label>Direito solicitado<select name="type"><option value="Access">Acesso aos dados</option><option value="Correction">Correção</option><option value="Portability">Exportação</option><option value="Deletion">Exclusão quando permitida</option><option value="ConsentRevocation">Revogação de consentimento</option></select></label><label>Descrição<textarea name="description" required maxlength="4000" rows="3"></textarea></label><button type="submit" class="of-btn of-btn-primary">Enviar solicitação</button></form>
+</section></div>
+<section class="privacy-panel privacy-guidance"><h2>Como protegemos sua conta</h2><div><p><strong>Exportações</strong><br />São vinculadas à conta, expiram e nunca incluem senha, hash, token ou segredo.</p><p><strong>Anonimização</strong><br />Exige permissão e confirmação forte, sem eliminar recibos nem histórico financeiro.</p><p><strong>Auditoria</strong><br />Downloads e ações sensíveis registram quem, quando e o resultado — não o valor acessado.</p></div></section>

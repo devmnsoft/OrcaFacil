@@ -14,4 +14,6 @@ public class AuditLog : Entity
     public string? MetadataJson { get; set; }
     public string? IpAddress { get; set; }
     public string? UserAgent { get; set; }
+    public string Summary { get; set; } = string.Empty;
+    public Guid CorrelationId { get; set; }
 }

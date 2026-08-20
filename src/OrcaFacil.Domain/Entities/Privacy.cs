@@ -79,6 +79,9 @@ public class DataSubjectRequest : Entity
     public Guid? AssignedToUserId { get; set; }
     public Guid CorrelationId { get; set; }
     public Guid? DeliveryFileId { get; set; }
+    public Guid? ClientId { get; set; }
+    public string? ResolutionNotes { get; set; }
+    public DateTime? ReviewedAt { get; set; }
 }
 
 public class PrivacyVendor : Entity
