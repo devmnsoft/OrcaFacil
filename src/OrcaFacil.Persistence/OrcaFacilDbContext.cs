@@ -47,6 +47,12 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<SubscriptionEvent> SubscriptionEvents => Set<SubscriptionEvent>();
     public DbSet<PlanOverride> PlanOverrides => Set<PlanOverride>();
     public DbSet<BillingInvoice> BillingInvoices => Set<BillingInvoice>();
+    public DbSet<BillingInvoiceItem> BillingInvoiceItems => Set<BillingInvoiceItem>();
+    public DbSet<BillingPayment> BillingPayments => Set<BillingPayment>();
+    public DbSet<SubscriptionChangeRequest> SubscriptionChangeRequests => Set<SubscriptionChangeRequest>();
+    public DbSet<PlanAddon> PlanAddons => Set<PlanAddon>();
+    public DbSet<AccountAddon> AccountAddons => Set<AccountAddon>();
+    public DbSet<AccountEntitlement> AccountEntitlements => Set<AccountEntitlement>();
     public DbSet<SupportAccessSession> SupportAccessSessions => Set<SupportAccessSession>();
     public DbSet<ActivityEvent> ActivityEvents => Set<ActivityEvent>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();

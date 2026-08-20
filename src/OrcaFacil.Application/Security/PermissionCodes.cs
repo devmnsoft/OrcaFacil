@@ -112,6 +112,15 @@ public static class PermissionCodes
     public const string VisibilityRulesManage = "VisibilityRules.Manage";
     public const string WhiteLabelView = "WhiteLabel.View"; public const string WhiteLabelManage = "WhiteLabel.Manage";
     public const string ReportsByUnit = "Reports.ByUnit"; public const string ReportsByTeam = "Reports.ByTeam";
+    public const string BillingViewOwn = "Billing.ViewOwn"; public const string BillingManageOwn = "Billing.ManageOwn";
+    public const string BillingAdminView = "Billing.AdminView"; public const string BillingAdminManage = "Billing.AdminManage";
+    public const string PlansView = "Plans.View"; public const string PlansManage = "Plans.Manage";
+    public const string SubscriptionsView = "Subscriptions.View"; public const string SubscriptionsManage = "Subscriptions.Manage";
+    public const string SubscriptionRequestsCreate = "SubscriptionRequests.Create"; public const string SubscriptionRequestsManage = "SubscriptionRequests.Manage";
+    public const string InvoicesViewOwn = "Invoices.ViewOwn"; public const string InvoicesManage = "Invoices.Manage";
+    public const string BillingPaymentsManage = "BillingPayments.Manage"; public const string AddonsView = "Addons.View"; public const string AddonsManage = "Addons.Manage";
+    public const string EntitlementsView = "Entitlements.View"; public const string EntitlementsManage = "Entitlements.Manage";
+    public const string AccountAccessManage = "AccountAccess.Manage"; public const string TrialsManage = "Trials.Manage";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -135,6 +144,10 @@ public static class PermissionCodes
         SensitiveDataView, SecurityViewSessions, SecurityManageSessions, SecurityManageUsers, TokensRevoke,
         FilesDownloadPrivate, FilesManageVisibility, BusinessUnitsView, BusinessUnitsManage, TeamsView, TeamsManage,
         RolesView, RolesManage, ApprovalsView, ApprovalsRequest, ApprovalsDecide, DiscountPoliciesView,
-        DiscountPoliciesManage, VisibilityRulesManage, WhiteLabelView, WhiteLabelManage, ReportsByUnit, ReportsByTeam
+        DiscountPoliciesManage, VisibilityRulesManage, WhiteLabelView, WhiteLabelManage, ReportsByUnit, ReportsByTeam,
+        BillingViewOwn, BillingManageOwn, BillingAdminView, BillingAdminManage, PlansView, PlansManage,
+        SubscriptionsView, SubscriptionsManage, SubscriptionRequestsCreate, SubscriptionRequestsManage,
+        InvoicesViewOwn, InvoicesManage, BillingPaymentsManage, AddonsView, AddonsManage, EntitlementsView,
+        EntitlementsManage, AccountAccessManage, TrialsManage
     };
 }

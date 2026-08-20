@@ -1,3 +1,3 @@
 namespace OrcaFacil.Domain.Enums;
 
-public enum TrialStatus { NotStarted, Active, Expired, Converted }
+public enum TrialStatus { NotStarted, Active, Expired, Converted, Canceled }

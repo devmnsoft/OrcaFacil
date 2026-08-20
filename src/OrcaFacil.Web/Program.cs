@@ -164,6 +164,7 @@ builder.Services.AddScoped<IPlanCatalogService, EfPlanCatalogService>();
 builder.Services.AddScoped<TrialProService>();
 builder.Services.Configure<PlanOptions>(builder.Configuration.GetSection("Plans"));
 builder.Services.AddScoped<BillingStatusService>();
+builder.Services.AddScoped<BillingPaymentService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddSingleton<IApiKeyService, ApiKeyService>();
 builder.Services.Configure<MercadoPagoOptions>(builder.Configuration.GetSection("MercadoPago"));
@@ -256,7 +257,10 @@ builder.Services.AddRateLimiter(options => options.AddFixedWindowLimiter("public
 }));
 builder.Services.AddControllers();
 builder.Services.AddRazorPages(options =>
-    options.Conventions.AddPageRoute("/Diagnostico", "/Admin/SystemHealth"));
+{
+    options.Conventions.AddPageRoute("/Diagnostico", "/Admin/SystemHealth");
+    options.Conventions.AddPageRoute("/Subscription/Index", "/MeuPlano");
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 

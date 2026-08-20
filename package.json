@@ -121,7 +121,15 @@
     "check:notifications-mobile": "node scripts/check-notifications-mobile.mjs",
     "check:offline-policy": "node scripts/check-offline-policy.mjs",
     "check:work-orders-mobile": "node scripts/check-work-orders-mobile.mjs",
-    "check:public-quote-mobile": "node scripts/check-public-quote-mobile.mjs"
+    "check:public-quote-mobile": "node scripts/check-public-quote-mobile.mjs",
+    "check:billing-flow": "node scripts/check-saas-billing-v19.mjs",
+    "check:subscription-lifecycle": "node scripts/check-saas-billing-v19.mjs",
+    "check:trial-flow": "node scripts/check-saas-billing-v19.mjs",
+    "check:plan-entitlements": "node scripts/check-saas-billing-v19.mjs",
+    "check:quota-enforcement": "node scripts/check-saas-billing-v19.mjs",
+    "check:upgrade-requests": "node scripts/check-saas-billing-v19.mjs",
+    "check:admin-billing": "node scripts/check-saas-billing-v19.mjs",
+    "check:no-fake-checkout": "node scripts/check-saas-billing-v19.mjs"
   },
   "engines": {
     "node": ">=18"
