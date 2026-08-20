@@ -38,6 +38,8 @@ using OrcaFacil.Application.Receipts;
 using OrcaFacil.Application.Clients;
 using OrcaFacil.Application.Pricing;
 using OrcaFacil.Application.Integrations;
+using OrcaFacil.Application.Files;
+using OrcaFacil.Infrastructure.Files;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddOrcaFacilLocalConfiguration();
@@ -168,6 +170,8 @@ builder.Services.AddScoped<IEmailSender, GmailSmtpEmailSender>();
 builder.Services.AddHostedService<EmailOutboxWorker>();
 builder.Services.AddHostedService<ProductionConfigurationValidator>();
 builder.Services.AddScoped<IPdfService, QuestPdfDocumentService>();
+builder.Services.AddSingleton<IFileStorageService>(_ => new LocalFileStorageService(
+    Path.Combine(builder.Environment.ContentRootPath, "App_Data", "private-files")));
 builder.Services.AddScoped<INumberToWordsService, NumberToWordsPtBrService>();
 builder.Services.AddSingleton<IDatabaseDiagnosticsService, DatabaseDiagnosticsService>();
 builder.Services.AddSingleton<DatabaseDiagnosticsService>();

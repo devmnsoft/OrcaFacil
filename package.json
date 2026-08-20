@@ -88,7 +88,12 @@
     "check:api-keys": "node scripts/check-api-keys.mjs",
     "check:import-export": "node scripts/check-import-export.mjs",
     "check:notifications": "node scripts/check-notifications.mjs",
-    "check:secrets-masking": "node scripts/check-secrets-masking.mjs"
+    "check:secrets-masking": "node scripts/check-secrets-masking.mjs",
+    "check:file-security": "node scripts/check-file-security.mjs",
+    "check:document-templates": "node scripts/check-document-templates.mjs",
+    "check:print-layouts": "node scripts/check-print-layouts.mjs",
+    "check:pdf-real": "node scripts/check-pdf-real.mjs",
+    "check:public-document-safety": "node scripts/check-public-document-safety.mjs"
   },
   "engines": {
     "node": ">=18"

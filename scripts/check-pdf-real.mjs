@@ -1,0 +1,1 @@
+import fs from 'node:fs';const p=fs.readFileSync('src/OrcaFacil.Infrastructure/Pdf/QuestPdfDocumentService.cs','utf8');if(!p.includes('GenerateDocumentPdfAsync'))throw new Error('Real server PDF provider missing');console.log('Real QuestPDF provider detected.');

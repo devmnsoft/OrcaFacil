@@ -78,6 +78,19 @@ public static class PermissionCodes
     public const string ExportsManage = "Exports.Manage";
     public const string NotificationsManage = "Notifications.Manage";
     public const string CommunicationPreferencesManage = "CommunicationPreferences.Manage";
+    public const string FilesView = "Files.View";
+    public const string FilesUpload = "Files.Upload";
+    public const string FilesDownload = "Files.Download";
+    public const string FilesDelete = "Files.Delete";
+    public const string DocumentTemplatesView = "DocumentTemplates.View";
+    public const string DocumentTemplatesManage = "DocumentTemplates.Manage";
+    public const string DocumentsPrint = "Documents.Print";
+    public const string DocumentsExportPdf = "Documents.ExportPdf";
+    public const string ReceiptsPrint = "Receipts.Print";
+    public const string ReceiptsExportPdf = "Receipts.ExportPdf";
+    public const string WorkOrdersPrint = "WorkOrders.Print";
+    public const string ContractsPrint = "Contracts.Print";
+    public const string BrandingManage = "Branding.Manage";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -94,6 +107,8 @@ public static class PermissionCodes
         FeedbackView, FeedbackCreate, KnowledgeBaseManage, ReleaseNotesManage, SetupChecklistView, SetupChecklistManage,
         RecommendationsView, AutomationRulesView, AutomationRulesManage, ProductivityView, ExecutiveReportsView,
         ScoresView, ScoresFinancialDetails, IntegrationsView, IntegrationsManage, WebhooksView, WebhooksManage,
-        ApiKeysManage, ImportsManage, ExportsManage, NotificationsManage, CommunicationPreferencesManage
+        ApiKeysManage, ImportsManage, ExportsManage, NotificationsManage, CommunicationPreferencesManage,
+        FilesView, FilesUpload, FilesDownload, FilesDelete, DocumentTemplatesView, DocumentTemplatesManage,
+        DocumentsPrint, DocumentsExportPdf, ReceiptsPrint, ReceiptsExportPdf, WorkOrdersPrint, ContractsPrint, BrandingManage
     };
 }
