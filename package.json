@@ -113,7 +113,15 @@
     "check:approval-workflow": "node scripts/check-sprint16.mjs",
     "check:discount-policies": "node scripts/check-sprint16.mjs",
     "check:visibility-rules": "node scripts/check-sprint16.mjs",
-    "check:white-label": "node scripts/check-sprint16.mjs"
+    "check:white-label": "node scripts/check-sprint16.mjs",
+    "check:pwa-readiness": "node scripts/check-pwa-readiness.mjs",
+    "check:service-worker-safety": "node scripts/check-service-worker-safety.mjs",
+    "check:mobile-ux": "node scripts/check-mobile-ux.mjs",
+    "check:accessibility-advanced": "node scripts/check-accessibility-advanced.mjs",
+    "check:notifications-mobile": "node scripts/check-notifications-mobile.mjs",
+    "check:offline-policy": "node scripts/check-offline-policy.mjs",
+    "check:work-orders-mobile": "node scripts/check-work-orders-mobile.mjs",
+    "check:public-quote-mobile": "node scripts/check-public-quote-mobile.mjs"
   },
   "engines": {
     "node": ">=18"
