@@ -1,0 +1,12 @@
+@page
+@model OrcaFacil.Web.Pages.Reports.ExecutiveModel
+@{ ViewData["Title"] = "Relatório executivo"; ViewData["Section"] = "Relatórios"; }
+<header class="of-workbench-intro"><div><p class="of-eyebrow">V1.2 · visão consolidada</p><h1>Relatório executivo</h1><p>Indicadores comerciais e financeiros calculados em leitura, sempre dentro da conta selecionada.</p></div></header>
+<form method="get" class="of-card of-filter-bar"><label>De <input asp-for="From" type="date" /></label><label>Até <input asp-for="To" type="date" /></label><button class="of-button-primary" type="submit">Aplicar período</button></form>
+@foreach (var section in Model.Sections)
+{
+    <section class="of-card" aria-labelledby="section-@section.Title.Replace(" ", "-")"><h2 id="section-@section.Title.Replace(" ", "-")">@section.Title</h2>
+      <div class="metric-grid">@foreach (var metric in section.Metrics) { <article class="metric-card"><span>@metric.Label</span><strong>@(metric.Value < 0 ? "Sem base" : metric.IsMoney ? metric.Value.ToString("C") : $"{metric.Value:0.#}{metric.Suffix}")</strong></article> }</div>
+      @if (section.Rows.Count == 0) { <p>Nenhum dado real encontrado no período selecionado.</p> }
+    </section>
+}
