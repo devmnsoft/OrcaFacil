@@ -1,0 +1,19 @@
+@page
+@model OrcaFacil.Web.Pages.Analytics.ExecutiveModel
+@{ ViewData["Title"] = "BI Executivo"; ViewData["Section"] = "Analytics"; }
+<link rel="stylesheet" href="~/css/analytics.css" asp-append-version="true" />
+<header class="analytics-hero"><div><p class="of-eyebrow">Analytics V2.1 · dados da conta selecionada</p><h1>BI Executivo</h1><p>Desempenho comercial, financeiro e operacional calculado diretamente dos registros do período.</p></div><a class="of-button-secondary" asp-page="/Analytics/Forecast">Abrir forecast</a></header>
+<form method="get" class="analytics-filters"><label>De <input asp-for="From" type="date" /></label><label>Até <input asp-for="To" type="date" /></label><button type="submit" class="of-button-primary">Aplicar período</button></form>
+<div asp-validation-summary="All" class="of-validation-summary"></div>
+<section class="analytics-grid" aria-label="Indicadores principais">
+ <article class="analytics-kpi"><span>Propostas criadas</span><strong>@Model.Dashboard.Current.QuotesCreated</strong><small>Período selecionado</small></article>
+ <article class="analytics-kpi"><span>Valor aprovado</span><strong>@Model.Dashboard.Current.ApprovedValue.ToString("C")</strong><small>@(Model.Dashboard.ApprovedComparison.PercentageChange.HasValue ? $"{Model.Dashboard.ApprovedComparison.PercentageChange:+0.##;-0.##;0}% vs. anterior" : Model.Dashboard.ApprovedComparison.Label)</small></article>
+ <article class="analytics-kpi"><span>Receita recebida</span><strong>@Model.Dashboard.Current.Received.ToString("C")</strong><small>@Model.Dashboard.ReceivedComparison.Label</small></article>
+ <article class="analytics-kpi analytics-kpi--risk"><span>Vencido</span><strong>@Model.Dashboard.Current.Overdue.ToString("C")</strong><small>Saldo real em aberto</small></article>
+ <article class="analytics-kpi"><span>OS concluídas</span><strong>@Model.Dashboard.Current.WorkOrdersCompleted</strong><small>@Model.Dashboard.Current.WorkOrdersLate OS em atraso</small></article>
+ <article class="analytics-kpi"><span>Ticket médio</span><strong>@Model.Dashboard.Current.AverageTicket.ToString("C")</strong><small>Propostas aprovadas</small></article>
+</section>
+<div class="analytics-columns">
+ <section class="analytics-panel"><h2>Ranking de clientes</h2>@if(Model.Dashboard.Clients.Count == 0){<p class="analytics-empty">Nenhuma aprovação no período. Ajuste o filtro ou acompanhe propostas abertas.</p>}else{<ol class="analytics-ranking">@foreach(var row in Model.Dashboard.Clients){<li><span>@row.Label</span><strong>@row.Value.ToString("C")</strong></li>}</ol>}</section>
+ <section class="analytics-panel"><h2>Forecast comercial</h2><strong class="analytics-forecast">@Model.Dashboard.CommercialForecast.WeightedValue.ToString("C")</strong><span class="analytics-badge">Confiança @Model.Dashboard.CommercialForecast.Confidence</span><p>@Model.Dashboard.CommercialForecast.Explanation</p><p class="analytics-note">Estimativa, não garantia de fechamento.</p></section>
+</div>

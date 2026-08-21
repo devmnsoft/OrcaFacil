@@ -126,6 +126,13 @@ public static class PermissionCodes
     public const string GuidedToursView = "GuidedTours.View"; public const string GuidedToursManage = "GuidedTours.Manage";
     public const string OnboardingManage = "Onboarding.Manage"; public const string ActivityView = "Activity.View";
     public const string ShortcutsManageOwn = "Shortcuts.ManageOwn"; public const string FavoritesManageOwn = "Favorites.ManageOwn";
+    public const string AnalyticsView = "Analytics.View"; public const string AnalyticsExecutive = "Analytics.Executive";
+    public const string AnalyticsFinancial = "Analytics.Financial"; public const string AnalyticsOperational = "Analytics.Operational";
+    public const string AnalyticsForecast = "Analytics.Forecast"; public const string AnalyticsExport = "Analytics.Export";
+    public const string GoalsView = "Goals.View"; public const string GoalsManage = "Goals.Manage";
+    public const string DataQualityView = "DataQuality.View"; public const string DataQualityManage = "DataQuality.Manage";
+    public const string AccountHealthView = "AccountHealth.View"; public const string ExecutiveAlertsView = "ExecutiveAlerts.View";
+    public const string DashboardCustomize = "Dashboard.Customize";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -155,6 +162,8 @@ public static class PermissionCodes
         InvoicesViewOwn, InvoicesManage, BillingPaymentsManage, AddonsView, AddonsManage, EntitlementsView,
         EntitlementsManage, AccountAccessManage, TrialsManage, SearchGlobal, CommandCenterUse, AssistantUse,
         KnowledgeBaseView, GuidedToursView, GuidedToursManage, OnboardingManage, ActivityView,
-        ShortcutsManageOwn, FavoritesManageOwn
+        ShortcutsManageOwn, FavoritesManageOwn, AnalyticsView, AnalyticsExecutive, AnalyticsFinancial,
+        AnalyticsOperational, AnalyticsForecast, AnalyticsExport, GoalsView, GoalsManage, DataQualityView,
+        DataQualityManage, AccountHealthView, ExecutiveAlertsView, DashboardCustomize
     };
 }

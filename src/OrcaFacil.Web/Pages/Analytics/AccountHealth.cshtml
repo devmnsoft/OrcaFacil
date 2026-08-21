@@ -1,0 +1,6 @@
+@page
+@model OrcaFacil.Web.Pages.Analytics.AccountHealthModel
+@{ViewData["Title"]="Saúde da Conta";ViewData["Section"]="Analytics";}
+<link rel="stylesheet" href="~/css/analytics.css" asp-append-version="true" />
+<header class="analytics-hero"><div><p class="of-eyebrow">Score explicável</p><h1>Saúde da Conta</h1><p>Cada ponto vem de uma condição operacional verificável.</p></div><div class="health-score"><strong>@Model.Health.Score</strong><span>/ 100 · @Model.Health.Classification</span></div></header>
+<div class="analytics-columns"><section class="analytics-panel"><h2>Fatores positivos</h2><ul>@foreach(var item in Model.Health.Positives){<li>@item</li>}</ul></section><section class="analytics-panel"><h2>Pontos de atenção</h2>@if(Model.Health.Attention.Count==0){<p>Nenhum fator de atenção nas regras atuais.</p>}else{<ul>@foreach(var item in Model.Health.Attention){<li>@item</li>}</ul>}<h3>Ações recomendadas</h3><ul>@foreach(var item in Model.Health.Actions){<li>@item</li>}</ul></section></div>

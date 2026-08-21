@@ -1,0 +1,7 @@
+@page
+@model OrcaFacil.Web.Pages.Analytics.ForecastModel
+@{ ViewData["Title"]="Forecast"; ViewData["Section"]="Analytics"; }
+<link rel="stylesheet" href="~/css/analytics.css" asp-append-version="true" />
+<header class="analytics-hero"><div><p class="of-eyebrow">Horizonte de 30 dias</p><h1>Forecast comercial e financeiro</h1><p>Estimativas determinísticas, explicáveis e baseadas apenas nos registros reais da conta.</p></div></header>
+<section class="analytics-grid"><article class="analytics-kpi"><span>Receita provável</span><strong>@Model.Dashboard.CommercialForecast.WeightedValue.ToString("C")</strong><small>Confiança @Model.Dashboard.CommercialForecast.Confidence</small></article><article class="analytics-kpi"><span>A receber</span><strong>@Model.Dashboard.Current.Receivable.ToString("C")</strong><small>Recebíveis não quitados</small></article><article class="analytics-kpi analytics-kpi--risk"><span>Vencido</span><strong>@Model.Dashboard.Current.Overdue.ToString("C")</strong><small>Requer ação de cobrança</small></article><article class="analytics-kpi"><span>Pipeline aberto</span><strong>@Model.Dashboard.Current.OpenValue.ToString("C")</strong><small>Sem promessa de fechamento</small></article></section>
+<section class="analytics-panel"><h2>Como calculamos</h2><p>@Model.Dashboard.CommercialForecast.Explanation</p><p>A projeção pondera o valor de cada proposta aberta pelo score derivado do estágio observável. Sem histórico suficiente, a confiança é reduzida explicitamente.</p></section>

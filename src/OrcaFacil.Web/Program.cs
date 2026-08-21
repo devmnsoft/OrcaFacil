@@ -110,6 +110,7 @@ builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
 builder.Services.AddScoped<IInternalAssistantService, InternalAssistantService>();
 builder.Services.AddSingleton<INavigationMapService, NavigationMapService>();
 builder.Services.AddScoped<IIntelligenceReportService, IntelligenceReportService>();
+builder.Services.AddScoped<AnalyticsV21Service>();
 builder.Services.AddScoped<IOperationalAlertService, OperationalAlertService>();
 builder.Services.AddScoped<IAdminShellViewModelFactory, AdminShellViewModelFactory>();
 builder.Services.AddScoped<IUserSignInService, CookieUserSignInService>();
