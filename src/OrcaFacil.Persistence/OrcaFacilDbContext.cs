@@ -137,6 +137,13 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<WhiteLabelSetting> WhiteLabelSettings => Set<WhiteLabelSetting>();
     public DbSet<UnitBrandingProfile> UnitBrandingProfiles => Set<UnitBrandingProfile>();
     public DbSet<DocumentVisibilityRule> DocumentVisibilityRules => Set<DocumentVisibilityRule>();
+    public DbSet<BusinessGoal> BusinessGoals => Set<BusinessGoal>();
+    public DbSet<GoalProgressSnapshot> GoalProgressSnapshots => Set<GoalProgressSnapshot>();
+    public DbSet<AnalyticsSnapshot> AnalyticsSnapshots => Set<AnalyticsSnapshot>();
+    public DbSet<AnalyticsSnapshotItem> AnalyticsSnapshotItems => Set<AnalyticsSnapshotItem>();
+    public DbSet<ForecastSnapshot> ForecastSnapshots => Set<ForecastSnapshot>();
+    public DbSet<DataQualityFinding> DataQualityFindings => Set<DataQualityFinding>();
+    public DbSet<DashboardWidgetPreference> DashboardWidgetPreferences => Set<DashboardWidgetPreference>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

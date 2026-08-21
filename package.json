@@ -137,7 +137,15 @@
     "check:guided-tours": "node scripts/check-guided-tours.mjs",
     "check:onboarding-playbooks": "node scripts/check-onboarding-playbooks.mjs",
     "check:productivity-actions": "node scripts/check-productivity-actions.mjs",
-    "check:no-fake-assistant": "node scripts/check-no-fake-assistant.mjs"
+    "check:no-fake-assistant": "node scripts/check-no-fake-assistant.mjs",
+    "check:analytics-kpis": "node scripts/check-analytics-kpis.mjs",
+    "check:goals-flow": "node scripts/check-goals-flow.mjs",
+    "check:forecast-rules": "node scripts/check-forecast-rules.mjs",
+    "check:data-quality": "node scripts/check-data-quality.mjs",
+    "check:account-health": "node scripts/check-account-health.mjs",
+    "check:executive-alerts": "node scripts/check-executive-alerts.mjs",
+    "check:dashboard-widgets": "node scripts/check-dashboard-widgets.mjs",
+    "check:no-fake-analytics": "node scripts/check-no-fake-analytics.mjs"
   },
   "engines": {
     "node": ">=18"

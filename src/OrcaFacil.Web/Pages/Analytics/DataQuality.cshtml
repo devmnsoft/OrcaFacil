@@ -1,0 +1,6 @@
+@page
+@model OrcaFacil.Web.Pages.Analytics.DataQualityModel
+@{ViewData["Title"]="Qualidade dos Dados";ViewData["Section"]="Analytics";}
+<link rel="stylesheet" href="~/css/analytics.css" asp-append-version="true" />
+<header class="analytics-hero"><div><p class="of-eyebrow">Qualidade contínua</p><h1>Qualidade dos Dados</h1><p>Inconsistências detectadas em tempo real, isoladas pela conta e com ação de correção.</p></div><span class="analytics-badge">@Model.Findings.Count achado(s)</span></header>
+<section class="analytics-panel">@if(Model.Findings.Count==0){<div class="analytics-empty"><strong>Nenhuma inconsistência nas regras avaliadas.</strong><p>Clientes, propostas e OS estão completos nas verificações atuais.</p></div>}else{<div class="quality-list">@foreach(var finding in Model.Findings){<article><span class="analytics-badge analytics-badge--risk">@finding.Severity</span><div><h2>@finding.Title</h2><p>@finding.Description</p></div><a class="of-button-secondary" href="@finding.ActionUrl">Corrigir</a></article>}</div>}</section>
