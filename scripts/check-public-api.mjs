@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+const read = p => fs.readFileSync(p, 'utf8');
+const api = read('src/OrcaFacil.Web/Api/PublicApiV1.cs');
+const auth = read('src/OrcaFacil.Web/Api/ApiKeyAuthenticationHandler.cs');
+const entities = read('src/OrcaFacil.Domain/Entities/Integrations.cs');
+const program = read('src/OrcaFacil.Web/Program.cs');
+const required = ['/api/v1', '/clients', '/services', '/webhooks/events', 'clients.read', 'clients.write', 'services.read', 'Idempotency-Key', 'scope_required', 'account_id'];
+const missing = required.filter(x => !api.includes(x));
+if (missing.length) throw new Error(`API pública incompleta: ${missing.join(', ')}`);
+if (!auth.includes('SHA256.HashData') || auth.includes('PlaintextKey =')) throw new Error('Autenticação não preserva chave somente em hash.');
+if (!entities.includes('ApiRequestLog') || !entities.includes('ApiIdempotencyKey')) throw new Error('Persistência operacional ausente.');
+if (!program.includes('MapPublicApiV1') || !program.includes('ApiKeyAuthenticationHandler')) throw new Error('API não registrada.');
+console.log('OK: contrato da API pública V1, tenant, scopes, hash e idempotência presentes.');

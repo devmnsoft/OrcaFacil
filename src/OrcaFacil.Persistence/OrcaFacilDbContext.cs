@@ -108,6 +108,8 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<WebhookEndpoint> WebhookEndpoints => Set<WebhookEndpoint>();
     public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+    public DbSet<ApiRequestLog> ApiRequestLogs => Set<ApiRequestLog>();
+    public DbSet<ApiIdempotencyKey> ApiIdempotencyKeys => Set<ApiIdempotencyKey>();
     public DbSet<DataExport> DataExports => Set<DataExport>();
     public DbSet<FileAsset> FileAssets => Set<FileAsset>();
     public DbSet<FileAssetLink> FileAssetLinks => Set<FileAssetLink>();

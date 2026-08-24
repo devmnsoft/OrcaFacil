@@ -1,0 +1,1 @@
+import fs from 'node:fs';const s=fs.readFileSync('src/OrcaFacil.Web/Program.cs','utf8');if(!s.includes('GetFixedWindowLimiter')||!s.includes('api_key_id'))throw new Error('Rate limit por chave ausente');console.log('OK: rate limit particionado por chave/IP presente.');

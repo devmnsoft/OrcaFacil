@@ -60,6 +60,31 @@ public sealed class ApiKey : Entity
     public Guid CreatedByUserId { get; set; }
 }
 
+public sealed class ApiRequestLog : Entity
+{
+    public Guid AccountId { get; set; }
+    public Guid ApiKeyId { get; set; }
+    public string Route { get; set; } = string.Empty;
+    public string Method { get; set; } = string.Empty;
+    public int StatusCode { get; set; }
+    public long ElapsedMilliseconds { get; set; }
+    public string? IpAddress { get; set; }
+    public string? UserAgent { get; set; }
+    public string CorrelationId { get; set; } = string.Empty;
+    public string? ErrorCode { get; set; }
+}
+
+public sealed class ApiIdempotencyKey : Entity
+{
+    public Guid AccountId { get; set; }
+    public Guid ApiKeyId { get; set; }
+    public string KeyHash { get; set; } = string.Empty;
+    public string RequestHash { get; set; } = string.Empty;
+    public int ResponseStatusCode { get; set; }
+    public string ResponseJson { get; set; } = string.Empty;
+    public DateTime ExpiresAt { get; set; }
+}
+
 public sealed class DataExport : Entity
 {
     public Guid AccountId { get; set; }
