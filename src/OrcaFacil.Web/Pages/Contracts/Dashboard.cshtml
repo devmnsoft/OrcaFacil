@@ -1,0 +1,13 @@
+@page
+@model OrcaFacil.Web.Pages.Contracts.DashboardModel
+@{ ViewData["Title"] = "Dashboard de contratos"; }
+<link rel="stylesheet" href="~/css/contracts.css" asp-append-version="true" />
+<section class="contracts-dashboard">
+<header class="contracts-hero"><div><span class="eyebrow">Operação V2.3</span><h1>Dashboard de contratos</h1><p>SLA, recorrência e renovações com dados reais da conta.</p></div><a class="btn btn-primary" asp-page="/Contracts/Index">Ver contratos</a></header>
+<div class="contract-kpis">
+<article><span>Ativos</span><strong>@Model.Active</strong></article><article><span>Vencendo em 90 dias</span><strong>@Model.Expiring</strong></article><article><span>Vencidos</span><strong>@Model.Expired</strong></article><article><span>Suspensos</span><strong>@Model.Suspended</strong></article><article><span>SLA violado</span><strong>@Model.SlaBreaches</strong></article><article><span>Franquia excedida</span><strong>@Model.UsageExceeded</strong></article><article class="financial"><span>MRR operacional</span><strong>@Model.MonthlyRevenue.ToString("C")</strong></article>
+</div>
+<section class="contract-panel"><div class="panel-heading"><div><span class="eyebrow">Prioridade operacional</span><h2>Contratos em risco</h2></div></div>
+@if(Model.AtRisk.Count==0){<div class="contract-empty"><strong>Nenhum contrato crítico calculado.</strong><p>Os snapshots de saúde aparecerão aqui após processamento com dados operacionais.</p></div>}
+else {<div class="contract-table-wrap"><table><thead><tr><th>Contrato</th><th>Saúde</th><th>Próxima ação</th><th></th></tr></thead><tbody>@foreach(var row in Model.AtRisk){<tr><td><strong>@row.Number</strong><small>@row.Title</small></td><td><span class="health-badge health-@row.Score">@row.Score · @row.Classification</span></td><td>@row.NextAction</td><td><a asp-page="/Contracts/Details" asp-route-id="@row.Id">Abrir 360</a></td></tr>}</tbody></table></div>}
+</section></section>
