@@ -1,0 +1,31 @@
+using Microsoft.EntityFrameworkCore.Migrations;
+#nullable disable
+namespace OrcaFacil.Persistence.Migrations;
+public partial class AddAdvancedFinanceV25 : Migration
+{
+ protected override void Up(MigrationBuilder migrationBuilder) => migrationBuilder.Sql(Sql);
+ protected override void Down(MigrationBuilder migrationBuilder) { }
+ private const string Sql = """
+BEGIN;
+CREATE SCHEMA IF NOT EXISTS orcafacil;
+CREATE TABLE IF NOT EXISTS orcafacil.financial_categories (id uuid PRIMARY KEY, account_id uuid NOT NULL, parent_category_id uuid NULL, name varchar(160) NOT NULL, type integer NOT NULL, code varchar(40) NOT NULL, description text NULL, is_system boolean NOT NULL DEFAULT false, is_active boolean NOT NULL DEFAULT true, is_deleted boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_financial_categories_account_code ON orcafacil.financial_categories(account_id, code) WHERE is_deleted=false;
+CREATE TABLE IF NOT EXISTS orcafacil.cost_centers (id uuid PRIMARY KEY, account_id uuid NOT NULL, business_unit_id uuid NULL, name varchar(160) NOT NULL, code varchar(40) NOT NULL, description text NULL, responsible_user_id uuid NULL, is_active boolean NOT NULL DEFAULT true, is_deleted boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_cost_centers_account_code ON orcafacil.cost_centers(account_id, code) WHERE is_deleted=false;
+CREATE TABLE IF NOT EXISTS orcafacil.bank_accounts (id uuid PRIMARY KEY, account_id uuid NOT NULL, name varchar(160) NOT NULL, bank_name varchar(160) NOT NULL, agency varchar(30), account_number_masked varchar(50) NOT NULL, pix_key_masked varchar(160), opening_balance numeric(18,2) NOT NULL DEFAULT 0, current_balance numeric(18,2) NOT NULL DEFAULT 0, is_default boolean NOT NULL DEFAULT false, is_active boolean NOT NULL DEFAULT true, is_deleted boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NULL);
+CREATE INDEX IF NOT EXISTS ix_bank_accounts_account ON orcafacil.bank_accounts(account_id);
+CREATE TABLE IF NOT EXISTS orcafacil.cash_movements (id uuid PRIMARY KEY, account_id uuid NOT NULL, bank_account_id uuid NOT NULL, type integer NOT NULL, amount numeric(18,2) NOT NULL CHECK(amount > 0), movement_date timestamptz NOT NULL, description varchar(300) NOT NULL, reason text, reverses_movement_id uuid, idempotency_key varchar(160), created_by_user_id uuid NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_cash_movements_idempotency ON orcafacil.cash_movements(account_id,idempotency_key) WHERE idempotency_key IS NOT NULL;
+CREATE TABLE IF NOT EXISTS orcafacil.payables (id uuid PRIMARY KEY, account_id uuid NOT NULL, supplier_id uuid, client_id uuid, purchase_order_id uuid, work_order_id uuid, contract_id uuid, category_id uuid, cost_center_id uuid, description varchar(300) NOT NULL, status integer NOT NULL, issue_date timestamptz NOT NULL, due_date timestamptz NOT NULL, competence_date timestamptz, total_amount numeric(18,2) NOT NULL CHECK(total_amount > 0), paid_amount numeric(18,2) NOT NULL DEFAULT 0, balance_amount numeric(18,2) NOT NULL, payment_method varchar(80), notes text, is_deleted boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NULL);
+CREATE INDEX IF NOT EXISTS ix_payables_account_due ON orcafacil.payables(account_id,due_date) WHERE is_deleted=false;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_payables_purchase ON orcafacil.payables(account_id,purchase_order_id) WHERE purchase_order_id IS NOT NULL AND is_deleted=false;
+CREATE TABLE IF NOT EXISTS orcafacil.payable_payments (id uuid PRIMARY KEY, account_id uuid NOT NULL, payable_id uuid NOT NULL, bank_account_id uuid NOT NULL, amount numeric(18,2) NOT NULL CHECK(amount > 0), payment_date timestamptz NOT NULL, payment_method varchar(80) NOT NULL, reference varchar(160), notes text, status integer NOT NULL, created_by_user_id uuid NOT NULL, cash_movement_id uuid, idempotency_key varchar(160) NOT NULL, is_deleted boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_payable_payments_idempotency ON orcafacil.payable_payments(account_id,idempotency_key);
+CREATE TABLE IF NOT EXISTS orcafacil.payable_recurrences (id uuid PRIMARY KEY, account_id uuid NOT NULL, supplier_id uuid, category_id uuid, cost_center_id uuid, description varchar(300) NOT NULL, amount numeric(18,2) NOT NULL CHECK(amount > 0), frequency integer NOT NULL, start_date timestamptz NOT NULL, end_date timestamptz, next_due_date timestamptz NOT NULL, is_active boolean NOT NULL DEFAULT true, is_deleted boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NULL);
+CREATE TABLE IF NOT EXISTS orcafacil.financial_period_closings (id uuid PRIMARY KEY, account_id uuid NOT NULL, period_start timestamptz NOT NULL, period_end timestamptz NOT NULL, closed_at timestamptz NOT NULL, closed_by_user_id uuid NOT NULL, reopened_at timestamptz, reopened_by_user_id uuid, reopen_reason text, is_closed boolean NOT NULL DEFAULT true, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_financial_period ON orcafacil.financial_period_closings(account_id,period_start,period_end);
+CREATE TABLE IF NOT EXISTS orcafacil.fiscal_document_requests (id uuid PRIMARY KEY, account_id uuid NOT NULL, client_id uuid, receivable_id uuid, payment_id uuid, receipt_id uuid, status integer NOT NULL, fiscal_document_type varchar(30) NOT NULL, requested_at timestamptz NOT NULL, issued_at timestamptz, canceled_at timestamptz, external_number varchar(100), external_key_masked varchar(160), provider_name varchar(100), notes text, is_deleted boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NULL);
+CREATE INDEX IF NOT EXISTS ix_fiscal_requests_account_status ON orcafacil.fiscal_document_requests(account_id,status) WHERE is_deleted=false;
+COMMIT;
+""";
+}

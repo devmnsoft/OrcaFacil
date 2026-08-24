@@ -171,7 +171,16 @@
     "check:cost-composition": "node scripts/check-cost-composition.mjs",
     "check:margin-policies": "node scripts/check-margin-policies.mjs",
     "check:public-proposal-cost-safety": "node scripts/check-public-proposal-cost-safety.mjs",
-    "check:no-fake-inventory": "node scripts/check-no-fake-inventory.mjs"
+    "check:no-fake-inventory": "node scripts/check-no-fake-inventory.mjs",
+    "check:finance-advanced": "node scripts/check-finance-advanced.mjs",
+    "check:payables-flow": "node scripts/check-payables-flow.mjs",
+    "check:bank-accounts": "node scripts/check-bank-accounts.mjs",
+    "check:reconciliation-flow": "node scripts/check-reconciliation-flow.mjs",
+    "check:dre-cashflow": "node scripts/check-dre-cashflow.mjs",
+    "check:cost-centers": "node scripts/check-cost-centers.mjs",
+    "check:financial-period-closing": "node scripts/check-financial-period-closing.mjs",
+    "check:fiscal-control": "node scripts/check-fiscal-control.mjs",
+    "check:no-fake-fiscal": "node scripts/check-no-fake-fiscal.mjs"
   },
   "engines": {
     "node": ">=18"

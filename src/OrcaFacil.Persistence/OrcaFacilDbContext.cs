@@ -180,6 +180,15 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<DocumentCostSnapshot> DocumentCostSnapshots => Set<DocumentCostSnapshot>();
     public DbSet<DocumentMarginSnapshot> DocumentMarginSnapshots => Set<DocumentMarginSnapshot>();
     public DbSet<MarginPolicy> MarginPolicies => Set<MarginPolicy>();
+    public DbSet<FinancialCategory> FinancialCategories => Set<FinancialCategory>();
+    public DbSet<CostCenter> CostCenters => Set<CostCenter>();
+    public DbSet<BankAccount> BankAccounts => Set<BankAccount>();
+    public DbSet<CashMovement> CashMovements => Set<CashMovement>();
+    public DbSet<Payable> Payables => Set<Payable>();
+    public DbSet<PayablePayment> PayablePayments => Set<PayablePayment>();
+    public DbSet<PayableRecurrence> PayableRecurrences => Set<PayableRecurrence>();
+    public DbSet<FinancialPeriodClosing> FinancialPeriodClosings => Set<FinancialPeriodClosing>();
+    public DbSet<FiscalDocumentRequest> FiscalDocumentRequests => Set<FiscalDocumentRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -198,6 +207,15 @@ public class OrcaFacilDbContext : DbContext
         modelBuilder.Entity<CostCompositionItem>().ToTable("cost_composition_items");
         modelBuilder.Entity<DocumentCostSnapshot>().ToTable("document_cost_snapshots");
         modelBuilder.Entity<DocumentMarginSnapshot>().ToTable("document_margin_snapshots");
+        modelBuilder.Entity<FinancialCategory>().ToTable("financial_categories").HasIndex(x => new { x.AccountId, x.Code }).IsUnique();
+        modelBuilder.Entity<CostCenter>().ToTable("cost_centers").HasIndex(x => new { x.AccountId, x.Code }).IsUnique();
+        modelBuilder.Entity<BankAccount>().ToTable("bank_accounts");
+        modelBuilder.Entity<CashMovement>().ToTable("cash_movements").HasIndex(x => new { x.AccountId, x.IdempotencyKey }).IsUnique();
+        modelBuilder.Entity<Payable>().ToTable("payables");
+        modelBuilder.Entity<PayablePayment>().ToTable("payable_payments").HasIndex(x => new { x.AccountId, x.IdempotencyKey }).IsUnique();
+        modelBuilder.Entity<PayableRecurrence>().ToTable("payable_recurrences");
+        modelBuilder.Entity<FinancialPeriodClosing>().ToTable("financial_period_closings").HasIndex(x => new { x.AccountId, x.PeriodStart, x.PeriodEnd }).IsUnique();
+        modelBuilder.Entity<FiscalDocumentRequest>().ToTable("fiscal_document_requests");
         ApplySnakeCaseColumnNames(modelBuilder);
     }
 
