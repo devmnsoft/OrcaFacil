@@ -216,11 +216,45 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<PartnerCostSnapshot> PartnerCostSnapshots => Set<PartnerCostSnapshot>();
     public DbSet<PartnerRating> PartnerRatings => Set<PartnerRating>();
     public DbSet<PartnerTermsAcceptance> PartnerTermsAcceptances => Set<PartnerTermsAcceptance>();
+    public DbSet<CustomFieldDefinition> CustomFieldDefinitions => Set<CustomFieldDefinition>();
+    public DbSet<CustomFieldValue> CustomFieldValues => Set<CustomFieldValue>();
+    public DbSet<DynamicFormDefinition> DynamicFormDefinitions => Set<DynamicFormDefinition>();
+    public DbSet<DynamicFormVersion> DynamicFormVersions => Set<DynamicFormVersion>();
+    public DbSet<DynamicFormSubmission> DynamicFormSubmissions => Set<DynamicFormSubmission>();
+    public DbSet<WorkflowDefinition> WorkflowDefinitions => Set<WorkflowDefinition>();
+    public DbSet<WorkflowVersion> WorkflowVersions => Set<WorkflowVersion>();
+    public DbSet<WorkflowState> WorkflowStates => Set<WorkflowState>();
+    public DbSet<WorkflowTransition> WorkflowTransitions => Set<WorkflowTransition>();
+    public DbSet<WorkflowInstance> WorkflowInstances => Set<WorkflowInstance>();
+    public DbSet<WorkflowInstanceEvent> WorkflowInstanceEvents => Set<WorkflowInstanceEvent>();
+    public DbSet<AutomationRuleDefinition> AutomationRuleDefinitions => Set<AutomationRuleDefinition>();
+    public DbSet<AutomationRuleRun> AutomationRuleRuns => Set<AutomationRuleRun>();
+    public DbSet<ChecklistTemplate> ChecklistTemplates => Set<ChecklistTemplate>();
+    public DbSet<ChecklistTemplateItem> ChecklistTemplateItems => Set<ChecklistTemplateItem>();
+    public DbSet<ConfigurablePipeline> ConfigurablePipelines => Set<ConfigurablePipeline>();
+    public DbSet<ConfigurablePipelineStage> ConfigurablePipelineStages => Set<ConfigurablePipelineStage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("orcafacil");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(OrcaFacilDbContext).Assembly);
+        modelBuilder.Entity<CustomFieldDefinition>().ToTable("custom_field_definitions").HasIndex(x => new { x.AccountId, x.EntityType, x.Code }).IsUnique();
+        modelBuilder.Entity<CustomFieldValue>().ToTable("custom_field_values").HasIndex(x => new { x.AccountId, x.CustomFieldDefinitionId, x.EntityType, x.EntityId }).IsUnique();
+        modelBuilder.Entity<DynamicFormDefinition>().ToTable("dynamic_form_definitions");
+        modelBuilder.Entity<DynamicFormVersion>().ToTable("dynamic_form_versions").HasIndex(x => new { x.FormDefinitionId, x.VersionNumber }).IsUnique();
+        modelBuilder.Entity<DynamicFormSubmission>().ToTable("dynamic_form_submissions");
+        modelBuilder.Entity<WorkflowDefinition>().ToTable("workflow_definitions");
+        modelBuilder.Entity<WorkflowVersion>().ToTable("workflow_versions").HasIndex(x => new { x.WorkflowDefinitionId, x.VersionNumber }).IsUnique();
+        modelBuilder.Entity<WorkflowState>().ToTable("workflow_states").HasIndex(x => new { x.AccountId, x.WorkflowVersionId, x.Code }).IsUnique();
+        modelBuilder.Entity<WorkflowTransition>().ToTable("workflow_transitions");
+        modelBuilder.Entity<WorkflowInstance>().ToTable("workflow_instances").HasIndex(x => new { x.AccountId, x.EntityType, x.EntityId }).IsUnique();
+        modelBuilder.Entity<WorkflowInstanceEvent>().ToTable("workflow_instance_events");
+        modelBuilder.Entity<AutomationRuleDefinition>().ToTable("automation_rule_definitions");
+        modelBuilder.Entity<AutomationRuleRun>().ToTable("automation_rule_runs").HasIndex(x => new { x.AccountId, x.AutomationRuleDefinitionId, x.EventId }).IsUnique();
+        modelBuilder.Entity<ChecklistTemplate>().ToTable("checklist_templates");
+        modelBuilder.Entity<ChecklistTemplateItem>().ToTable("checklist_template_items");
+        modelBuilder.Entity<ConfigurablePipeline>().ToTable("configurable_pipelines");
+        modelBuilder.Entity<ConfigurablePipelineStage>().ToTable("configurable_pipeline_stages").HasIndex(x => new { x.AccountId, x.PipelineId, x.Code }).IsUnique();
         modelBuilder.Entity<MaterialUnit>().ToTable("material_units");
         modelBuilder.Entity<MaterialCategory>().ToTable("material_categories");
         modelBuilder.Entity<MaterialSupplierPrice>().ToTable("material_supplier_prices");

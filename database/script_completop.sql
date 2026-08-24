@@ -1150,3 +1150,5 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_api_idempotency_tenant_key ON orcafacil.api
 CREATE INDEX IF NOT EXISTS ix_api_idempotency_expiry ON orcafacil.api_idempotency_keys(expires_at);
 INSERT INTO orcafacil.permissions(code,display_name,is_platform_permission) SELECT code,code,false FROM unnest(ARRAY['DeveloperPortal.View','DeveloperPortal.Manage','ApiKeys.View','ApiLogs.View','Webhooks.Replay','ExternalApps.View','ExternalApps.Manage','Connectors.View','Connectors.Manage','IntegrationHealth.View','Admin.ApiGlobalView']) code ON CONFLICT(code) DO NOTHING;
 INSERT INTO orcafacil.role_permissions(role_id,permission_id,created_at,is_deleted) SELECT r.id,p.id,now(),false FROM orcafacil.roles r CROSS JOIN orcafacil.permissions p WHERE r.code IN ('Owner','Administrator') AND p.code IN ('DeveloperPortal.View','DeveloperPortal.Manage','ApiKeys.View','ApiLogs.View','Webhooks.Replay','ExternalApps.View','ExternalApps.Manage','Connectors.View','Connectors.Manage','IntegrationHealth.View') ON CONFLICT(role_id,permission_id) DO NOTHING;
+
+-- Sprint 28 is applied from database/sprint28_process_customization.sql after this baseline.
