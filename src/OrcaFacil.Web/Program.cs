@@ -44,6 +44,8 @@ using OrcaFacil.Application.Privacy;
 using OrcaFacil.Application.Retention;
 using OrcaFacil.Application.Security;
 using OrcaFacil.Application.Jobs;
+using OrcaFacil.Web.Api;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddOrcaFacilLocalConfiguration();
@@ -232,7 +234,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
             await context.HttpContext.SignOutAsync();
         }
     };
-});
+}).AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationHandler.Scheme, _ => { });
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("SuperAdmin", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin"));
@@ -257,6 +259,10 @@ builder.Services.AddRateLimiter(options => options.AddFixedWindowLimiter("public
     limiter.PermitLimit = 20;
     limiter.Window = TimeSpan.FromMinutes(1);
 }));
+builder.Services.Configure<RateLimiterOptions>(options => options.AddPolicy("api", context =>
+    RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirstValue("api_key_id") ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 })));
 builder.Services.AddControllers();
 builder.Services.AddRazorPages(options =>
 {
@@ -298,6 +304,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
+app.UseMiddleware<ApiRequestLoggingMiddleware>();
 app.UseMiddleware<MaintenanceModeMiddleware>();
 app.UseAuthorization();
 static Task WritePublicHealth(HttpContext context, HealthReport report)
@@ -369,6 +376,7 @@ app.MapGet("/Internal/Help/{code}", async Task<IResult> (string code, IContextua
     return content is null ? Results.NotFound(new { message = "Ajuda não encontrada para esta página." }) : Results.Ok(content);
 }).RequireAuthorization();
 app.MapControllers();
+app.MapPublicApiV1();
 app.MapRazorPages();
 app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (Guid id, OrcaFacil.Application.Abstractions.ICurrentUserService currentUser, OrcaFacil.Application.Abstractions.IPdfService pdf, OrcaFacil.Persistence.OrcaFacilDbContext db, CancellationToken ct) =>
 {

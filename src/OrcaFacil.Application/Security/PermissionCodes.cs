@@ -100,6 +100,12 @@ public static class PermissionCodes
     public const string WebhooksView = "Webhooks.View";
     public const string WebhooksManage = "Webhooks.Manage";
     public const string ApiKeysManage = "ApiKeys.Manage";
+    public const string ApiKeysView = "ApiKeys.View";
+    public const string DeveloperPortalView = "DeveloperPortal.View"; public const string DeveloperPortalManage = "DeveloperPortal.Manage";
+    public const string ApiLogsView = "ApiLogs.View"; public const string WebhooksReplay = "Webhooks.Replay";
+    public const string ExternalAppsView = "ExternalApps.View"; public const string ExternalAppsManage = "ExternalApps.Manage";
+    public const string ConnectorsView = "Connectors.View"; public const string ConnectorsManage = "Connectors.Manage";
+    public const string IntegrationHealthView = "IntegrationHealth.View"; public const string AdminApiGlobalView = "Admin.ApiGlobalView";
     public const string ImportsManage = "Imports.Manage";
     public const string ExportsManage = "Exports.Manage";
     public const string NotificationsManage = "Notifications.Manage";
@@ -198,7 +204,9 @@ public static class PermissionCodes
         FeedbackView, FeedbackCreate, KnowledgeBaseManage, ReleaseNotesManage, SetupChecklistView, SetupChecklistManage,
         RecommendationsView, AutomationRulesView, AutomationRulesManage, ProductivityView, ExecutiveReportsView,
         ScoresView, ScoresFinancialDetails, IntegrationsView, IntegrationsManage, WebhooksView, WebhooksManage,
-        ApiKeysManage, ImportsManage, ExportsManage, NotificationsManage, CommunicationPreferencesManage,
+        ApiKeysManage, ApiKeysView, DeveloperPortalView, DeveloperPortalManage, ApiLogsView, WebhooksReplay,
+        ExternalAppsView, ExternalAppsManage, ConnectorsView, ConnectorsManage, IntegrationHealthView, AdminApiGlobalView,
+        ImportsManage, ExportsManage, NotificationsManage, CommunicationPreferencesManage,
         FilesView, FilesUpload, FilesDownload, FilesDelete, DocumentTemplatesView, DocumentTemplatesManage,
         DocumentsPrint, DocumentsExportPdf, ReceiptsPrint, ReceiptsExportPdf, WorkOrdersPrint, ContractsPrint, BrandingManage,
         PrivacyView, PrivacyManage, PrivacyExportData, PrivacyAnonymizeData, PrivacyManageRetention, AuditExport,

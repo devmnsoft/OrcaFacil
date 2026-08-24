@@ -1,0 +1,1 @@
+import fs from 'node:fs';const s=fs.readFileSync('src/OrcaFacil.Web/Api/PublicApiV1.cs','utf8');if(!s.includes('RequiredScope')||!s.includes('scope_required'))throw new Error('Escopos ausentes');console.log('OK: endpoints exigem escopos.');

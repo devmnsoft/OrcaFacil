@@ -15,11 +15,15 @@ public interface IApiKeyService
 public sealed class ApiKeyService : IApiKeyService
 {
     public static readonly IReadOnlySet<string> AllowedScopes = new HashSet<string>(StringComparer.Ordinal)
-    { "clients.read", "clients.write", "quotes.read", "quotes.write", "payments.read", "receipts.read", "webhooks.write" };
+    { "clients.read", "clients.write", "services.read", "quotes.read", "quotes.write", "work_orders.read",
+      "receipts.read", "contracts.read", "webhooks.read", "webhooks.manage", "files.read", "analytics.read" };
 
     public CreatedApiKey Create(Guid accountId, Guid userId, string name, IEnumerable<string> scopes, DateTime? expiresAt)
     {
         var selected = scopes.Distinct(StringComparer.Ordinal).ToArray();
+        if (accountId == Guid.Empty || userId == Guid.Empty) throw new ArgumentException("Conta e usuário são obrigatórios.");
+        if (string.IsNullOrWhiteSpace(name) || name.Trim().Length > 120) throw new ArgumentException("Informe um nome com até 120 caracteres.", nameof(name));
+        if (expiresAt.HasValue && expiresAt <= DateTime.UtcNow) throw new ArgumentException("A expiração deve estar no futuro.", nameof(expiresAt));
         if (selected.Length == 0 || selected.Any(x => !AllowedScopes.Contains(x))) throw new ArgumentException("Selecione somente escopos permitidos.", nameof(scopes));
         var raw = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
         var plaintext = $"of_live_{raw}";
