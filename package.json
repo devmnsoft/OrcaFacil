@@ -196,7 +196,17 @@
     "check:api-security": "node scripts/check-api-security.mjs",
     "check:api-scopes": "node scripts/check-api-scopes.mjs",
     "check:api-idempotency": "node scripts/check-api-idempotency.mjs",
-    "check:api-rate-limit": "node scripts/check-api-rate-limit.mjs"
+    "check:api-rate-limit": "node scripts/check-api-rate-limit.mjs",
+    "check:custom-fields": "node scripts/check-sprint28.mjs",
+    "check:dynamic-forms": "node scripts/check-sprint28.mjs",
+    "check:form-security": "node scripts/check-sprint28.mjs",
+    "check:checklist-templates": "node scripts/check-sprint28.mjs",
+    "check:configurable-pipelines": "node scripts/check-sprint28.mjs",
+    "check:workflows": "node scripts/check-sprint28.mjs",
+    "check:workflow-safety": "node scripts/check-sprint28.mjs",
+    "check:process-templates": "node scripts/check-sprint28.mjs",
+    "check:validation-rules": "node scripts/check-sprint28.mjs",
+    "check:no-fake-workflows": "node scripts/check-sprint28.mjs"
   },
   "engines": {
     "node": ">=18"

@@ -1,0 +1,55 @@
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace OrcaFacil.Persistence.Migrations;
+
+public partial class AddProcessCustomizationV29 : Migration
+{
+    protected override void Up(MigrationBuilder migrationBuilder) => migrationBuilder.Sql("""
+-- Sprint 28 / V2.9: schema idempotente, aditivo e segregado por conta.
+CREATE SCHEMA IF NOT EXISTS orcafacil;
+
+CREATE TABLE IF NOT EXISTS orcafacil.custom_field_definitions (
+ id uuid PRIMARY KEY, account_id uuid NOT NULL, entity_type varchar(80) NOT NULL, code varchar(80) NOT NULL,
+ label varchar(160) NOT NULL, description text, field_type integer NOT NULL, is_required boolean NOT NULL DEFAULT false,
+ is_searchable boolean NOT NULL DEFAULT false, is_visible_in_list boolean NOT NULL DEFAULT false,
+ is_visible_in_portal boolean NOT NULL DEFAULT false, is_sensitive boolean NOT NULL DEFAULT false,
+ display_order integer NOT NULL DEFAULT 0, validation_json jsonb, default_value text, is_active boolean NOT NULL DEFAULT true,
+ created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_custom_fields_account_entity_code ON orcafacil.custom_field_definitions(account_id, entity_type, code) WHERE NOT is_deleted;
+
+CREATE TABLE IF NOT EXISTS orcafacil.custom_field_values (
+ id uuid PRIMARY KEY, account_id uuid NOT NULL, custom_field_definition_id uuid NOT NULL REFERENCES orcafacil.custom_field_definitions(id),
+ entity_type varchar(80) NOT NULL, entity_id uuid NOT NULL, value_text text, value_number numeric(20,4), value_date timestamptz,
+ value_bool boolean, value_json jsonb, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_custom_values_entity ON orcafacil.custom_field_values(account_id,custom_field_definition_id,entity_type,entity_id) WHERE NOT is_deleted;
+
+CREATE TABLE IF NOT EXISTS orcafacil.dynamic_form_definitions (id uuid PRIMARY KEY, account_id uuid NOT NULL, name varchar(160) NOT NULL, description text, form_type varchar(60) NOT NULL, target_entity_type varchar(80) NOT NULL, is_published boolean NOT NULL DEFAULT false, current_version_id uuid, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE TABLE IF NOT EXISTS orcafacil.dynamic_form_versions (id uuid PRIMARY KEY, form_definition_id uuid NOT NULL REFERENCES orcafacil.dynamic_form_definitions(id), version_number integer NOT NULL, title varchar(160) NOT NULL, description text, schema_json jsonb NOT NULL DEFAULT '{}', published_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false, UNIQUE(form_definition_id,version_number));
+CREATE TABLE IF NOT EXISTS orcafacil.dynamic_form_sections (id uuid PRIMARY KEY, account_id uuid NOT NULL, form_version_id uuid NOT NULL REFERENCES orcafacil.dynamic_form_versions(id), title varchar(160), display_order integer NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE TABLE IF NOT EXISTS orcafacil.dynamic_form_fields (id uuid PRIMARY KEY, account_id uuid NOT NULL, form_version_id uuid NOT NULL REFERENCES orcafacil.dynamic_form_versions(id), section_id uuid, code varchar(80) NOT NULL, label varchar(160) NOT NULL, field_type varchar(40) NOT NULL, is_required boolean NOT NULL DEFAULT false, settings_json jsonb NOT NULL DEFAULT '{}', display_order integer NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE TABLE IF NOT EXISTS orcafacil.dynamic_form_submissions (id uuid PRIMARY KEY, account_id uuid NOT NULL, form_definition_id uuid NOT NULL, form_version_id uuid NOT NULL, target_entity_type varchar(80), target_entity_id uuid, submitted_by_user_id uuid, submitted_by_portal_user_id uuid, submitted_by_partner_user_id uuid, status varchar(30) NOT NULL, submitted_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE TABLE IF NOT EXISTS orcafacil.dynamic_form_submission_values (id uuid PRIMARY KEY, account_id uuid NOT NULL, submission_id uuid NOT NULL REFERENCES orcafacil.dynamic_form_submissions(id), form_field_id uuid NOT NULL, value_json jsonb, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+
+CREATE TABLE IF NOT EXISTS orcafacil.workflow_definitions (id uuid PRIMARY KEY, account_id uuid NOT NULL, entity_type varchar(80) NOT NULL, name varchar(160) NOT NULL, description text, is_active boolean NOT NULL DEFAULT false, current_version_id uuid, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE TABLE IF NOT EXISTS orcafacil.workflow_versions (id uuid PRIMARY KEY, workflow_definition_id uuid NOT NULL REFERENCES orcafacil.workflow_definitions(id), version_number integer NOT NULL, published_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false, UNIQUE(workflow_definition_id,version_number));
+CREATE TABLE IF NOT EXISTS orcafacil.workflow_states (id uuid PRIMARY KEY, account_id uuid NOT NULL, workflow_version_id uuid NOT NULL, code varchar(80) NOT NULL, name varchar(160) NOT NULL, description text, is_initial boolean NOT NULL DEFAULT false, is_final boolean NOT NULL DEFAULT false, is_canceled boolean NOT NULL DEFAULT false, display_order integer NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_workflow_initial ON orcafacil.workflow_states(account_id,workflow_version_id) WHERE is_initial AND NOT is_deleted;
+CREATE TABLE IF NOT EXISTS orcafacil.workflow_transitions (id uuid PRIMARY KEY, account_id uuid NOT NULL, workflow_version_id uuid NOT NULL, from_state_code varchar(80) NOT NULL, to_state_code varchar(80) NOT NULL, name varchar(160) NOT NULL, description text, requires_permission varchar(120), requires_approval boolean NOT NULL DEFAULT false, requires_comment boolean NOT NULL DEFAULT false, requires_confirmation boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE TABLE IF NOT EXISTS orcafacil.workflow_instances (id uuid PRIMARY KEY, account_id uuid NOT NULL, workflow_version_id uuid NOT NULL, entity_type varchar(80) NOT NULL, entity_id uuid NOT NULL, current_state_code varchar(80) NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE TABLE IF NOT EXISTS orcafacil.workflow_instance_events (id uuid PRIMARY KEY, account_id uuid NOT NULL, workflow_instance_id uuid NOT NULL, from_state_code varchar(80), to_state_code varchar(80) NOT NULL, actor_user_id uuid NOT NULL, comment text, correlation_id varchar(100) NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+
+DO $$ DECLARE t text; BEGIN FOREACH t IN ARRAY ARRAY['workflow_transition_conditions','workflow_transition_actions','workflow_rule_definitions','workflow_rule_executions','automation_rule_conditions','automation_rule_actions','process_templates','process_template_versions','validation_rule_definitions','notification_rule_definitions','entity_checklist_instances','entity_checklist_items'] LOOP EXECUTE format('CREATE TABLE IF NOT EXISTS orcafacil.%I (id uuid PRIMARY KEY, account_id uuid NOT NULL, definition_json jsonb NOT NULL DEFAULT ''{}'', created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false)',t); END LOOP; END $$;
+CREATE TABLE IF NOT EXISTS orcafacil.automation_rule_definitions (id uuid PRIMARY KEY, account_id uuid NOT NULL, name varchar(160) NOT NULL, trigger varchar(100) NOT NULL, conditions_json jsonb NOT NULL DEFAULT '[]', actions_json jsonb NOT NULL DEFAULT '[]', is_active boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE TABLE IF NOT EXISTS orcafacil.automation_rule_runs (id uuid PRIMARY KEY, account_id uuid NOT NULL, automation_rule_definition_id uuid NOT NULL, event_id varchar(160) NOT NULL, status varchar(30) NOT NULL, correlation_id varchar(100) NOT NULL, error_summary text, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_automation_run_event ON orcafacil.automation_rule_runs(account_id,automation_rule_definition_id,event_id);
+CREATE TABLE IF NOT EXISTS orcafacil.checklist_templates (id uuid PRIMARY KEY, account_id uuid NOT NULL, name varchar(160) NOT NULL, target_entity_type varchar(80) NOT NULL, is_default boolean NOT NULL DEFAULT false, is_active boolean NOT NULL DEFAULT true, version integer NOT NULL DEFAULT 1, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE TABLE IF NOT EXISTS orcafacil.checklist_template_items (id uuid PRIMARY KEY, account_id uuid NOT NULL, checklist_template_id uuid NOT NULL, title varchar(200) NOT NULL, is_required boolean NOT NULL DEFAULT false, requires_evidence boolean NOT NULL DEFAULT false, display_order integer NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE TABLE IF NOT EXISTS orcafacil.configurable_pipelines (id uuid PRIMARY KEY, account_id uuid NOT NULL, entity_type varchar(80) NOT NULL, name varchar(160) NOT NULL, is_default boolean NOT NULL DEFAULT false, is_active boolean NOT NULL DEFAULT true, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE TABLE IF NOT EXISTS orcafacil.configurable_pipeline_stages (id uuid PRIMARY KEY, account_id uuid NOT NULL, pipeline_id uuid NOT NULL, code varchar(80) NOT NULL, name varchar(160) NOT NULL, display_order integer NOT NULL, is_initial boolean NOT NULL DEFAULT false, is_final boolean NOT NULL DEFAULT false, is_canceled boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+""");
+
+    // Additive release: rollback is intentionally non-destructive to preserve published versions and execution history.
+    protected override void Down(MigrationBuilder migrationBuilder) { }
+}

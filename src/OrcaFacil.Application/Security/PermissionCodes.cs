@@ -3,6 +3,14 @@ namespace OrcaFacil.Application.Security;
 /// <summary>Canonical permission identifiers used by backend authorization.</summary>
 public static class PermissionCodes
 {
+    public const string CustomizationView = "Customization.View"; public const string CustomizationManage = "Customization.Manage";
+    public const string CustomFieldsView = "CustomFields.View"; public const string CustomFieldsManage = "CustomFields.Manage";
+    public const string DynamicFormsView = "DynamicForms.View"; public const string DynamicFormsManage = "DynamicForms.Manage"; public const string DynamicFormsSubmit = "DynamicForms.Submit";
+    public const string ChecklistsView = "Checklists.View"; public const string ChecklistsManage = "Checklists.Manage";
+    public const string PipelinesView = "Pipelines.View"; public const string PipelinesManage = "Pipelines.Manage";
+    public const string WorkflowsView = "Workflows.View"; public const string WorkflowsManage = "Workflows.Manage";
+    public const string ProcessTemplatesView = "ProcessTemplates.View"; public const string ProcessTemplatesApply = "ProcessTemplates.Apply";
+    public const string ValidationRulesManage = "ValidationRules.Manage"; public const string NotificationRulesManage = "NotificationRules.Manage"; public const string ProcessLogsView = "ProcessLogs.View";
     public const string PartnersView = "Partners.View"; public const string PartnersManage = "Partners.Manage"; public const string PartnersInvite = "Partners.Invite";
     public const string PartnersDocumentsView = "Partners.DocumentsView"; public const string PartnersDocumentsManage = "Partners.DocumentsManage"; public const string PartnersPerformanceView = "Partners.PerformanceView";
     public const string PartnerPortalManage = "PartnerPortal.Manage";
@@ -191,6 +199,9 @@ public static class PermissionCodes
         DocumentsCreate, DocumentsEdit, DocumentsGeneratePublicLink, DocumentsConvertToWorkOrder,
         CommercialPipelineView, CommercialActionsManage,
         WorkOrdersView, WorkOrdersManage, WorkOrdersCreate, WorkOrdersEdit, WorkOrdersSchedule,
+        CustomizationView, CustomizationManage, CustomFieldsView, CustomFieldsManage, DynamicFormsView, DynamicFormsManage,
+        DynamicFormsSubmit, ChecklistsView, ChecklistsManage, PipelinesView, PipelinesManage, WorkflowsView, WorkflowsManage,
+        ProcessTemplatesView, ProcessTemplatesApply, ValidationRulesManage, NotificationRulesManage, ProcessLogsView,
         WorkOrdersChangeStatus, WorkOrdersCancel, WorkOrdersComplete, WorkOrdersManageChecklist,
         ScheduleView, ScheduleManage, ReportsOperational, PaymentsView, PaymentsManage, PaymentsReverse,
         ReceivablesView, ReceivablesManage, ReceiptsView, ReceiptsManage, ReceiptsCancel,
