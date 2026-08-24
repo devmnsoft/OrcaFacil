@@ -201,6 +201,7 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
         };
 
         var index = Array.IndexOf(stages, stage);
+
         return index >= 0 ? index : 99;
     }
 }
