@@ -189,6 +189,11 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<PayableRecurrence> PayableRecurrences => Set<PayableRecurrence>();
     public DbSet<FinancialPeriodClosing> FinancialPeriodClosings => Set<FinancialPeriodClosing>();
     public DbSet<FiscalDocumentRequest> FiscalDocumentRequests => Set<FiscalDocumentRequest>();
+    public DbSet<BankTransaction> BankTransactions => Set<BankTransaction>();
+    public DbSet<BankReconciliationSession> BankReconciliationSessions => Set<BankReconciliationSession>();
+    public DbSet<BankReconciliationMatch> BankReconciliationMatches => Set<BankReconciliationMatch>();
+    public DbSet<FinancialImportBatch> FinancialImportBatches => Set<FinancialImportBatch>();
+    public DbSet<FinancialImportRow> FinancialImportRows => Set<FinancialImportRow>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -216,6 +221,11 @@ public class OrcaFacilDbContext : DbContext
         modelBuilder.Entity<PayableRecurrence>().ToTable("payable_recurrences");
         modelBuilder.Entity<FinancialPeriodClosing>().ToTable("financial_period_closings").HasIndex(x => new { x.AccountId, x.PeriodStart, x.PeriodEnd }).IsUnique();
         modelBuilder.Entity<FiscalDocumentRequest>().ToTable("fiscal_document_requests");
+        modelBuilder.Entity<BankTransaction>().ToTable("bank_transactions").HasIndex(x => new { x.AccountId, x.Fingerprint }).IsUnique();
+        modelBuilder.Entity<BankReconciliationSession>().ToTable("bank_reconciliation_sessions");
+        modelBuilder.Entity<BankReconciliationMatch>().ToTable("bank_reconciliation_matches").HasIndex(x => new { x.AccountId, x.BankTransactionId }).IsUnique().HasFilter("reversed_at IS NULL AND is_deleted=false");
+        modelBuilder.Entity<FinancialImportBatch>().ToTable("financial_import_batches").HasIndex(x => new { x.AccountId, x.BankAccountId, x.FileHash }).IsUnique();
+        modelBuilder.Entity<FinancialImportRow>().ToTable("financial_import_rows").HasIndex(x => new { x.AccountId, x.BatchId, x.RowNumber }).IsUnique();
         ApplySnakeCaseColumnNames(modelBuilder);
     }
 

@@ -1,4 +1,6 @@
 using OrcaFacil.Domain.Entities;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace OrcaFacil.Application.Finance;
 
@@ -54,4 +56,33 @@ public static class AdvancedFinanceRules
     { if (closings.Any(x => x.AccountId == accountId && x.IsClosed && date.Date >= x.PeriodStart.Date && date.Date <= x.PeriodEnd.Date)) throw new InvalidOperationException("O período financeiro está fechado."); }
     public static void EnsureSameAccount(Guid expected, Guid actual) { RequireAccount(expected); if (expected != actual) throw new UnauthorizedAccessException("O recurso não pertence à conta ativa."); }
     private static void RequireAccount(Guid accountId) { if (accountId == Guid.Empty) throw new InvalidOperationException("AccountId é obrigatório."); }
+
+    public static string BankTransactionFingerprint(Guid accountId, Guid bankAccountId, DateTime date, decimal amount, BankTransactionType type, string? reference)
+    {
+        RequireAccount(accountId);
+        if (bankAccountId == Guid.Empty) throw new InvalidOperationException("Conta bancária é obrigatória.");
+        if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount));
+        var canonical = $"{accountId:N}|{bankAccountId:N}|{date:yyyy-MM-dd}|{amount:0.00}|{type}|{reference?.Trim().ToUpperInvariant()}";
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical))).ToLowerInvariant();
+    }
+
+    public static BankReconciliationMatch ConfirmReconciliation(BankReconciliationSession session, BankTransaction transaction, Guid? payablePaymentId, Guid? receivablePaymentId, Guid userId)
+    {
+        EnsureSameAccount(session.AccountId, transaction.AccountId);
+        if (session.BankAccountId != transaction.BankAccountId) throw new InvalidOperationException("A transação não pertence à conta bancária da sessão.");
+        if (session.Status != ReconciliationSessionStatus.Open) throw new InvalidOperationException("A sessão de conciliação não está aberta.");
+        if (transaction.IsReconciled) throw new InvalidOperationException("A transação já está conciliada.");
+        if (payablePaymentId.HasValue == receivablePaymentId.HasValue) throw new InvalidOperationException("Informe exatamente um lançamento financeiro para conciliar.");
+        transaction.IsReconciled = true; transaction.Touch();
+        return new BankReconciliationMatch { AccountId = session.AccountId, SessionId = session.Id, BankTransactionId = transaction.Id, PayablePaymentId = payablePaymentId, ReceivablePaymentId = receivablePaymentId, ConfirmedAt = DateTime.UtcNow, ConfirmedByUserId = userId };
+    }
+
+    public static void UndoReconciliation(BankReconciliationMatch match, BankTransaction transaction, Guid userId, string reason)
+    {
+        EnsureSameAccount(match.AccountId, transaction.AccountId);
+        if (match.BankTransactionId != transaction.Id || match.ReversedAt.HasValue) throw new InvalidOperationException("Conciliação inválida ou já desfeita.");
+        if (string.IsNullOrWhiteSpace(reason)) throw new InvalidOperationException("Desfazer a conciliação exige motivo.");
+        match.ReversedAt = DateTime.UtcNow; match.ReversedByUserId = userId; match.ReversalReason = reason.Trim(); match.Touch();
+        transaction.IsReconciled = false; transaction.Touch();
+    }
 }
