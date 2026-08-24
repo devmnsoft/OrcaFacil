@@ -27,6 +27,19 @@ public sealed class AdvancedFinanceRulesTests
     }
 
     [Fact]
+    public void Payment_must_reference_the_selected_bank_account_and_an_open_payable()
+    {
+        var account = Guid.NewGuid(); var payable = NewPayable(account, 50); AdvancedFinanceRules.Initialize(payable);
+        var bank = new BankAccount { AccountId = account, IsActive = true };
+        Assert.Throws<InvalidOperationException>(() =>
+            AdvancedFinanceRules.ApplyPayment(payable, NewPayment(account, payable.Id, Guid.NewGuid(), 10), bank));
+
+        payable.Status = PayableStatus.Canceled;
+        Assert.Throws<InvalidOperationException>(() =>
+            AdvancedFinanceRules.ApplyPayment(payable, NewPayment(account, payable.Id, bank.Id, 10), bank));
+    }
+
+    [Fact]
     public void Reversal_requires_reason_and_restores_bank_and_payable()
     {
         var account = Guid.NewGuid(); var payable = NewPayable(account, 50); AdvancedFinanceRules.Initialize(payable);
@@ -35,6 +48,23 @@ public sealed class AdvancedFinanceRulesTests
         Assert.Throws<InvalidOperationException>(() => AdvancedFinanceRules.Reverse(payable, payment, bank, Guid.NewGuid(), ""));
         var reversal = AdvancedFinanceRules.Reverse(payable, payment, bank, Guid.NewGuid(), "lançamento duplicado");
         Assert.Equal(CashMovementType.Reversal, reversal.Type); Assert.Equal(50, payable.BalanceAmount); Assert.Equal(100, bank.CurrentBalance);
+    }
+
+    [Fact]
+    public void Reversing_one_of_multiple_payments_preserves_partially_paid_status()
+    {
+        var account = Guid.NewGuid(); var payable = NewPayable(account, 100); AdvancedFinanceRules.Initialize(payable);
+        var bank = new BankAccount { AccountId = account, IsActive = true, CurrentBalance = 200 };
+        var first = NewPayment(account, payable.Id, bank.Id, 30);
+        var second = NewPayment(account, payable.Id, bank.Id, 20);
+        AdvancedFinanceRules.ApplyPayment(payable, first, bank);
+        AdvancedFinanceRules.ApplyPayment(payable, second, bank);
+
+        AdvancedFinanceRules.Reverse(payable, second, bank, Guid.NewGuid(), "pagamento lançado na data errada");
+
+        Assert.Equal(PayableStatus.PartiallyPaid, payable.Status);
+        Assert.Equal(30, payable.PaidAmount);
+        Assert.Equal(70, payable.BalanceAmount);
     }
 
     [Fact]
