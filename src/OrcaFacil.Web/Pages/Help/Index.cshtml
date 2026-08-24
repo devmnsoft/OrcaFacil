@@ -1,5 +1,71 @@
 @page "/Help"
 @model OrcaFacil.Web.Pages.Help.IndexModel
-@{Layout="/Pages/Shared/_PublicLayout.cshtml";ViewData["Title"]="Central de Ajuda";}
-<section class="of-help-hero"><div class="of-container"><p class="of-eyebrow">Central de Ajuda</p><h1>Encontre a resposta e siga em frente</h1><p>Orientações diretas para configurar sua conta, criar orçamentos e acompanhar o trabalho.</p><form method="get" class="of-help-search"><label for="q">O que você quer fazer?</label><div><input id="q" name="q" value="@Model.Query" type="search" placeholder="Ex.: enviar uma proposta"/><button class="of-button of-button-primary" type="submit">Buscar</button></div></form></div></section>
-<section class="of-section"><div class="of-container"><div class="of-help-grid">@foreach(var item in new[]{("Primeiros passos","Crie sua conta e complete os dados da empresa.","/Auth/Register"),("Clientes","Cadastre clientes para reutilizar dados nas propostas.","/Clients/Index"),("Serviços","Monte seu catálogo e agilize novos orçamentos.","/Services/Index"),("Orçamentos","Crie, revise, envie e acompanhe propostas.","/Documents/New"),("Aprovação","O cliente analisa a proposta pelo link público seguro.","/Support/Index"),("Pagamentos e recibos","Registre recebimentos e emita comprovantes.","/Payments/Index"),("Planos","Consulte limites e escolha o plano adequado.","/Precos"),("Suporte","Abra um chamado e acompanhe as respostas.","/Support/Tickets")){<article class="of-card" data-help-item><span class="of-eyebrow">Guia</span><h2>@item.Item1</h2><p>@item.Item2</p><a class="of-text-link" href="@item.Item3">Acessar recurso →</a></article>}</div>@if(Model.Articles.Count>0){<h2>Artigos publicados</h2><div class="of-help-grid">@foreach(var article in Model.Articles){<article class="of-card"><span class="of-eyebrow">@article.Category</span><h3>@article.Title</h3><p>@article.Summary</p><a asp-page="Article" asp-route-slug="@article.Slug">Ler artigo</a></article>}</div>}else if(!string.IsNullOrWhiteSpace(Model.Query)){<div class="of-empty-state"><h2>Nenhum artigo para “@Model.Query”</h2><p>Tente outra palavra ou fale com o suporte.</p><a class="of-button of-button-primary" asp-page="/Support/Index">Falar com suporte</a></div>}</div></section>
+@{
+    Layout = "/Pages/Shared/_PublicLayout.cshtml";
+    ViewData["Title"] = "Central de Ajuda";
+}
+
+<section class="of-help-hero">
+    <div class="of-container">
+        <p class="of-eyebrow">Central de Ajuda</p>
+        <h1>Encontre a resposta e siga em frente</h1>
+        <p>Orientações diretas para configurar sua conta, criar orçamentos e acompanhar o trabalho.</p>
+        <form method="get" class="of-help-search">
+            <label for="q">O que você quer fazer?</label>
+            <div>
+                <input id="q" name="q" value="@Model.Query" type="search" placeholder="Ex.: enviar uma proposta" />
+                <button class="of-button of-button-primary" type="submit">Buscar</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<section class="of-section">
+    <div class="of-container">
+        <div class="of-help-grid">
+            @foreach (var item in new[]
+            {
+                ("Primeiros passos", "Crie sua conta e complete os dados da empresa.", "/Auth/Register"),
+                ("Clientes", "Cadastre clientes para reutilizar dados nas propostas.", "/Clients/Index"),
+                ("Serviços", "Monte seu catálogo e agilize novos orçamentos.", "/Services/Index"),
+                ("Orçamentos", "Crie, revise, envie e acompanhe propostas.", "/Documents/New"),
+                ("Aprovação", "O cliente analisa a proposta pelo link público seguro.", "/Support/Index"),
+                ("Pagamentos e recibos", "Registre recebimentos e emita comprovantes.", "/Payments/Index"),
+                ("Planos", "Consulte limites e escolha o plano adequado.", "/Precos"),
+                ("Suporte", "Abra um chamado e acompanhe as respostas.", "/Support/Tickets")
+            })
+            {
+                <article class="of-card" data-help-item>
+                    <span class="of-eyebrow">Guia</span>
+                    <h2>@item.Item1</h2>
+                    <p>@item.Item2</p>
+                    <a class="of-text-link" href="@item.Item3">Acessar recurso →</a>
+                </article>
+            }
+        </div>
+
+        @if (Model.Articles.Count > 0)
+        {
+            <h2>Artigos publicados</h2>
+            <div class="of-help-grid">
+                @foreach (var article in Model.Articles)
+                {
+                    <article class="of-card">
+                        <span class="of-eyebrow">@article.Category</span>
+                        <h3>@article.Title</h3>
+                        <p>@article.Summary</p>
+                        <a asp-page="/Help/Article" asp-route-slug="@article.Slug">Ler artigo</a>
+                    </article>
+                }
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(Model.Query))
+        {
+            <div class="of-empty-state">
+                <h2>Nenhum artigo para “@Model.Query”</h2>
+                <p>Tente outra palavra ou fale com o suporte.</p>
+                <a class="of-button of-button-primary" asp-page="/Support/Index">Falar com suporte</a>
+            </div>
+        }
+    </div>
+</section>
