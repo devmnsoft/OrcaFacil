@@ -62,7 +62,7 @@ public static class OutsourcingRules
     {
         var scores = new[] { rating.QualityScore, rating.PunctualityScore, rating.CommunicationScore, rating.DeadlineScore, rating.DocumentationScore, rating.CostBenefitScore, rating.ClientSatisfactionScore };
         if (scores.Any(x => x is < 1 or > 5)) throw new InvalidOperationException("Notas devem estar entre 1 e 5.");
-        return decimal.Round(scores.Average(), 2);
+        return decimal.Round((decimal)scores.Average(), 2);
     }
 
     private static void DemandAssignment(OutsourcingAssignment assignment, Guid accountId, Guid partnerId)
