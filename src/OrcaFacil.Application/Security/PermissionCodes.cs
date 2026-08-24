@@ -37,6 +37,17 @@ public static class PermissionCodes
     public const string ReceiptsCancel = "Receipts.Cancel";
     public const string FinanceView = "Finance.View";
     public const string FinanceManage = "Finance.Manage";
+    public const string FinanceAdvancedView = "Finance.AdvancedView"; public const string FinanceAdvancedManage = "Finance.AdvancedManage";
+    public const string FinanceCategoriesView = "Finance.CategoriesView"; public const string FinanceCategoriesManage = "Finance.CategoriesManage";
+    public const string FinanceCostCentersView = "Finance.CostCentersView"; public const string FinanceCostCentersManage = "Finance.CostCentersManage";
+    public const string FinanceBankAccountsView = "Finance.BankAccountsView"; public const string FinanceBankAccountsManage = "Finance.BankAccountsManage";
+    public const string FinanceCashMovementsView = "Finance.CashMovementsView"; public const string FinanceCashMovementsManage = "Finance.CashMovementsManage";
+    public const string FinancePayablesView = "Finance.PayablesView"; public const string FinancePayablesManage = "Finance.PayablesManage"; public const string FinancePayablesPay = "Finance.PayablesPay";
+    public const string FinanceReconciliationView = "Finance.ReconciliationView"; public const string FinanceReconciliationManage = "Finance.ReconciliationManage";
+    public const string FinanceDreView = "Finance.DreView"; public const string FinanceCashflowView = "Finance.CashflowView";
+    public const string FinancePeriodClosingManage = "Finance.PeriodClosingManage";
+    public const string FinanceFiscalView = "Finance.FiscalView"; public const string FinanceFiscalManage = "Finance.FiscalManage";
+    public const string FinanceImportBankStatement = "Finance.ImportBankStatement"; public const string FinanceExportReports = "Finance.ExportReports";
     public const string ContractsView = "Contracts.View";
     public const string ContractsManage = "Contracts.Manage";
     public const string ContractChargesGenerate = "ContractCharges.Generate";

@@ -1107,3 +1107,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_active_reservation ON orcafacil.inventory_r
 CREATE UNIQUE INDEX IF NOT EXISTS ux_purchase_order_number ON orcafacil.purchase_orders(account_id,purchase_order_number) WHERE is_deleted=false;
 CREATE INDEX IF NOT EXISTS ix_supplier_price_current ON orcafacil.material_supplier_prices(account_id,material_id,valid_until,is_preferred) WHERE is_deleted=false;
 COMMIT;
+
+-- Sprint 24 / V2.5: execute the idempotent advanced-finance patch after this baseline.
+-- Source: database/patch_sprint24_advanced_finance_v25.sql (kept separate for safe upgrades).
