@@ -151,6 +151,15 @@ public static class PermissionCodes
     public const string RetentionView = "Retention.View"; public const string RetentionManage = "Retention.Manage";
     public const string UpsellView = "Upsell.View"; public const string UpsellManage = "Upsell.Manage";
     public const string CommunicationOptOutManage = "CommunicationOptOut.Manage";
+    public const string SuppliersView = "Suppliers.View"; public const string SuppliersManage = "Suppliers.Manage";
+    public const string MaterialsView = "Materials.View"; public const string MaterialsManage = "Materials.Manage";
+    public const string InventoryView = "Inventory.View"; public const string InventoryManage = "Inventory.Manage";
+    public const string InventoryAdjust = "Inventory.Adjust"; public const string InventoryReserve = "Inventory.Reserve"; public const string InventoryConsume = "Inventory.Consume";
+    public const string PurchasesView = "Purchases.View"; public const string PurchasesManage = "Purchases.Manage"; public const string PurchasesApprove = "Purchases.Approve"; public const string PurchasesReceive = "Purchases.Receive";
+    public const string CostingView = "Costing.View"; public const string CostingManage = "Costing.Manage";
+    public const string MarginsView = "Margins.View"; public const string MarginsManagePolicies = "Margins.ManagePolicies";
+    public const string PricingRulesView = "PricingRules.View"; public const string PricingRulesManage = "PricingRules.Manage";
+    public const string ReportsCosts = "Reports.Costs"; public const string ReportsMargins = "Reports.Margins";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -190,6 +199,9 @@ public static class PermissionCodes
         CrmView, CrmManage, CrmSegmentsView, CrmSegmentsManage, CrmInteractionsView, CrmInteractionsManage,
         CrmCampaignsView, CrmCampaignsManage, CrmSurveysView, CrmSurveysManage, NpsView, NpsManage,
         CustomerSuccessView, CustomerSuccessManage, RetentionView, RetentionManage, UpsellView, UpsellManage,
-        CommunicationOptOutManage
+        CommunicationOptOutManage, SuppliersView, SuppliersManage, MaterialsView, MaterialsManage,
+        InventoryView, InventoryManage, InventoryAdjust, InventoryReserve, InventoryConsume,
+        PurchasesView, PurchasesManage, PurchasesApprove, PurchasesReceive, CostingView, CostingManage,
+        MarginsView, MarginsManagePolicies, PricingRulesView, PricingRulesManage, ReportsCosts, ReportsMargins
     };
 }
