@@ -108,15 +108,30 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
         var accountId = AccountId;
         var services = await db.ServiceCatalogItems.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted).Select(x => new { x.Id, x.Name }).ToListAsync(ct);
         var canViewMargin = account.AccountRoleCode is "Owner" or "Administrator";
-        var itemQuery = from item in db.DocumentItems.AsNoTracking()
-                        join doc in db.Documents.AsNoTracking() on item.DocumentId equals doc.Id
-                        where doc.AccountId == accountId
-                        where !doc.IsDeleted
-                        where !item.IsDeleted
-                        where doc.Type == DocumentType.Budget
-                        where doc.CreatedAt >= from
-                        where doc.CreatedAt < to
-                        select new { item.ServiceCatalogItemId, item.Quantity, item.UnitPrice, item.Discount, item.EstimatedCostSnapshot, doc.ClientId, doc.Status, doc.ClientDecision };
+        var itemQuery = db.DocumentItems
+            .AsNoTracking()
+            .Join(
+                db.Documents.AsNoTracking(),
+                item => item.DocumentId,
+                document => document.Id,
+                (item, document) => new { Item = item, Document = document })
+            .Where(x => x.Document.AccountId == accountId)
+            .Where(x => !x.Document.IsDeleted)
+            .Where(x => !x.Item.IsDeleted)
+            .Where(x => x.Document.Type == DocumentType.Budget)
+            .Where(x => x.Document.CreatedAt >= from)
+            .Where(x => x.Document.CreatedAt < to)
+            .Select(x => new
+            {
+                x.Item.ServiceCatalogItemId,
+                x.Item.Quantity,
+                x.Item.UnitPrice,
+                x.Item.Discount,
+                x.Item.EstimatedCostSnapshot,
+                x.Document.ClientId,
+                x.Document.Status,
+                x.Document.ClientDecision
+            });
         if (f.ClientId is { } clientId) itemQuery = itemQuery.Where(x => x.ClientId == clientId);
         if (!string.IsNullOrWhiteSpace(f.Status)) itemQuery = itemQuery.Where(x => x.Status == f.Status);
         var items = await itemQuery.ToListAsync(ct);
