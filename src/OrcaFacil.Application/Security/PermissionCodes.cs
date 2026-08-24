@@ -133,6 +133,16 @@ public static class PermissionCodes
     public const string DataQualityView = "DataQuality.View"; public const string DataQualityManage = "DataQuality.Manage";
     public const string AccountHealthView = "AccountHealth.View"; public const string ExecutiveAlertsView = "ExecutiveAlerts.View";
     public const string DashboardCustomize = "Dashboard.Customize";
+    public const string CrmView = "Crm.View"; public const string CrmManage = "Crm.Manage";
+    public const string CrmSegmentsView = "CrmSegments.View"; public const string CrmSegmentsManage = "CrmSegments.Manage";
+    public const string CrmInteractionsView = "CrmInteractions.View"; public const string CrmInteractionsManage = "CrmInteractions.Manage";
+    public const string CrmCampaignsView = "CrmCampaigns.View"; public const string CrmCampaignsManage = "CrmCampaigns.Manage";
+    public const string CrmSurveysView = "CrmSurveys.View"; public const string CrmSurveysManage = "CrmSurveys.Manage";
+    public const string NpsView = "Nps.View"; public const string NpsManage = "Nps.Manage";
+    public const string CustomerSuccessView = "CustomerSuccess.View"; public const string CustomerSuccessManage = "CustomerSuccess.Manage";
+    public const string RetentionView = "Retention.View"; public const string RetentionManage = "Retention.Manage";
+    public const string UpsellView = "Upsell.View"; public const string UpsellManage = "Upsell.Manage";
+    public const string CommunicationOptOutManage = "CommunicationOptOut.Manage";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -164,6 +174,10 @@ public static class PermissionCodes
         KnowledgeBaseView, GuidedToursView, GuidedToursManage, OnboardingManage, ActivityView,
         ShortcutsManageOwn, FavoritesManageOwn, AnalyticsView, AnalyticsExecutive, AnalyticsFinancial,
         AnalyticsOperational, AnalyticsForecast, AnalyticsExport, GoalsView, GoalsManage, DataQualityView,
-        DataQualityManage, AccountHealthView, ExecutiveAlertsView, DashboardCustomize
+        DataQualityManage, AccountHealthView, ExecutiveAlertsView, DashboardCustomize,
+        CrmView, CrmManage, CrmSegmentsView, CrmSegmentsManage, CrmInteractionsView, CrmInteractionsManage,
+        CrmCampaignsView, CrmCampaignsManage, CrmSurveysView, CrmSurveysManage, NpsView, NpsManage,
+        CustomerSuccessView, CustomerSuccessManage, RetentionView, RetentionManage, UpsellView, UpsellManage,
+        CommunicationOptOutManage
     };
 }

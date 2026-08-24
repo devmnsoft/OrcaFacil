@@ -144,6 +144,13 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<ForecastSnapshot> ForecastSnapshots => Set<ForecastSnapshot>();
     public DbSet<DataQualityFinding> DataQualityFindings => Set<DataQualityFinding>();
     public DbSet<DashboardWidgetPreference> DashboardWidgetPreferences => Set<DashboardWidgetPreference>();
+    public DbSet<ClientRelationshipProfile> ClientRelationshipProfiles => Set<ClientRelationshipProfile>();
+    public DbSet<ClientInteraction> ClientInteractions => Set<ClientInteraction>();
+    public DbSet<ClientHealthScore> ClientHealthScores => Set<ClientHealthScore>();
+    public DbSet<CommunicationOptOut> CommunicationOptOuts => Set<CommunicationOptOut>();
+    public DbSet<NpsResponse> NpsResponses => Set<NpsResponse>();
+    public DbSet<RetentionRiskEvent> RetentionRiskEvents => Set<RetentionRiskEvent>();
+    public DbSet<CrmOpportunity> CrmOpportunities => Set<CrmOpportunity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

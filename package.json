@@ -145,7 +145,16 @@
     "check:account-health": "node scripts/check-account-health.mjs",
     "check:executive-alerts": "node scripts/check-executive-alerts.mjs",
     "check:dashboard-widgets": "node scripts/check-dashboard-widgets.mjs",
-    "check:no-fake-analytics": "node scripts/check-no-fake-analytics.mjs"
+    "check:no-fake-analytics": "node scripts/check-no-fake-analytics.mjs",
+    "check:crm-dashboard": "node scripts/check-crm-v22.mjs",
+    "check:client-relationship": "node scripts/check-crm-v22.mjs",
+    "check:crm-segments": "node scripts/check-crm-v22.mjs",
+    "check:crm-campaigns": "node scripts/check-crm-v22.mjs",
+    "check:communication-consent": "node scripts/check-crm-v22.mjs",
+    "check:surveys-nps": "node scripts/check-crm-v22.mjs",
+    "check:retention-rules": "node scripts/check-crm-v22.mjs",
+    "check:upsell-opportunities": "node scripts/check-crm-v22.mjs",
+    "check:no-fake-crm": "node scripts/check-crm-v22.mjs"
   },
   "engines": {
     "node": ">=18"
