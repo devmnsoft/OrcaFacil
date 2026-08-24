@@ -46,6 +46,43 @@ public sealed class AdvancedFinanceRulesTests
         Assert.Throws<InvalidOperationException>(() => AdvancedFinanceRules.EnsurePeriodOpen(account, date, [new FinancialPeriodClosing { AccountId = account, PeriodStart = new(2026,8,1), PeriodEnd = new(2026,8,31), IsClosed = true }]));
     }
 
+    [Fact]
+    public void Bank_import_fingerprint_is_stable_and_scoped_to_account()
+    {
+        var account = Guid.NewGuid(); var bank = Guid.NewGuid(); var date = new DateTime(2026, 8, 24, 15, 30, 0, DateTimeKind.Utc);
+        var first = AdvancedFinanceRules.BankTransactionFingerprint(account, bank, date, 125.50m, BankTransactionType.Credit, " pix-42 ");
+        var refresh = AdvancedFinanceRules.BankTransactionFingerprint(account, bank, date.AddHours(2), 125.50m, BankTransactionType.Credit, "PIX-42");
+        var otherTenant = AdvancedFinanceRules.BankTransactionFingerprint(Guid.NewGuid(), bank, date, 125.50m, BankTransactionType.Credit, "PIX-42");
+        Assert.Equal(first, refresh);
+        Assert.NotEqual(first, otherTenant);
+        Assert.Equal(64, first.Length);
+    }
+
+    [Fact]
+    public void Reconciliation_requires_same_account_and_explicit_single_target()
+    {
+        var account = Guid.NewGuid(); var bank = Guid.NewGuid();
+        var session = new BankReconciliationSession { AccountId = account, BankAccountId = bank, Status = ReconciliationSessionStatus.Open };
+        var transaction = new BankTransaction { AccountId = account, BankAccountId = bank, Amount = 10, Type = BankTransactionType.Debit };
+        Assert.Throws<InvalidOperationException>(() => AdvancedFinanceRules.ConfirmReconciliation(session, transaction, null, null, Guid.NewGuid()));
+        transaction.AccountId = Guid.NewGuid();
+        Assert.Throws<UnauthorizedAccessException>(() => AdvancedFinanceRules.ConfirmReconciliation(session, transaction, Guid.NewGuid(), null, Guid.NewGuid()));
+    }
+
+    [Fact]
+    public void Confirmed_reconciliation_can_only_be_undone_with_reason()
+    {
+        var account = Guid.NewGuid(); var bank = Guid.NewGuid();
+        var session = new BankReconciliationSession { AccountId = account, BankAccountId = bank, Status = ReconciliationSessionStatus.Open };
+        var transaction = new BankTransaction { AccountId = account, BankAccountId = bank, Amount = 10, Type = BankTransactionType.Debit };
+        var match = AdvancedFinanceRules.ConfirmReconciliation(session, transaction, Guid.NewGuid(), null, Guid.NewGuid());
+        Assert.True(transaction.IsReconciled);
+        Assert.Throws<InvalidOperationException>(() => AdvancedFinanceRules.UndoReconciliation(match, transaction, Guid.NewGuid(), ""));
+        AdvancedFinanceRules.UndoReconciliation(match, transaction, Guid.NewGuid(), "correspondência incorreta");
+        Assert.False(transaction.IsReconciled);
+        Assert.NotNull(match.ReversedAt);
+    }
+
     private static Payable NewPayable(Guid account, decimal amount) => new() { AccountId = account, Description = "Fornecedor", TotalAmount = amount, IssueDate = DateTime.UtcNow, DueDate = DateTime.UtcNow.AddDays(10) };
     private static PayablePayment NewPayment(Guid account, Guid payable, Guid bank, decimal amount) => new() { AccountId = account, PayableId = payable, BankAccountId = bank, Amount = amount, PaymentDate = DateTime.UtcNow, IdempotencyKey = Guid.NewGuid().ToString(), PaymentMethod = "Pix" };
 }
