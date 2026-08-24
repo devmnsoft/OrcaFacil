@@ -162,7 +162,16 @@
     "check:contract-recurrence": "node scripts/check-contract-recurrence.mjs",
     "check:contract-renewals": "node scripts/check-contract-renewals.mjs",
     "check:contract-health": "node scripts/check-contract-health.mjs",
-    "check:no-fake-contracts": "node scripts/check-no-fake-contracts.mjs"
+    "check:no-fake-contracts": "node scripts/check-no-fake-contracts.mjs",
+    "check:suppliers": "node scripts/check-suppliers.mjs",
+    "check:materials": "node scripts/check-materials.mjs",
+    "check:inventory-flow": "node scripts/check-inventory-flow.mjs",
+    "check:stock-movements": "node scripts/check-stock-movements.mjs",
+    "check:purchase-flow": "node scripts/check-purchase-flow.mjs",
+    "check:cost-composition": "node scripts/check-cost-composition.mjs",
+    "check:margin-policies": "node scripts/check-margin-policies.mjs",
+    "check:public-proposal-cost-safety": "node scripts/check-public-proposal-cost-safety.mjs",
+    "check:no-fake-inventory": "node scripts/check-no-fake-inventory.mjs"
   },
   "engines": {
     "node": ">=18"

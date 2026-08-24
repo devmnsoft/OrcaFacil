@@ -162,11 +162,42 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<NpsResponse> NpsResponses => Set<NpsResponse>();
     public DbSet<RetentionRiskEvent> RetentionRiskEvents => Set<RetentionRiskEvent>();
     public DbSet<CrmOpportunity> CrmOpportunities => Set<CrmOpportunity>();
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<MaterialUnit> MaterialUnits => Set<MaterialUnit>();
+    public DbSet<MaterialCategory> MaterialCategories => Set<MaterialCategory>();
+    public DbSet<Material> Materials => Set<Material>();
+    public DbSet<MaterialSupplierPrice> MaterialSupplierPrices => Set<MaterialSupplierPrice>();
+    public DbSet<InventoryLocation> InventoryLocations => Set<InventoryLocation>();
+    public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+    public DbSet<InventoryStockMovement> InventoryStockMovements => Set<InventoryStockMovement>();
+    public DbSet<InventoryReservation> InventoryReservations => Set<InventoryReservation>();
+    public DbSet<PurchaseRequest> PurchaseRequests => Set<PurchaseRequest>();
+    public DbSet<PurchaseRequestItem> PurchaseRequestItems => Set<PurchaseRequestItem>();
+    public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
+    public DbSet<PurchaseOrderItem> PurchaseOrderItems => Set<PurchaseOrderItem>();
+    public DbSet<CostComposition> CostCompositions => Set<CostComposition>();
+    public DbSet<CostCompositionItem> CostCompositionItems => Set<CostCompositionItem>();
+    public DbSet<DocumentCostSnapshot> DocumentCostSnapshots => Set<DocumentCostSnapshot>();
+    public DbSet<DocumentMarginSnapshot> DocumentMarginSnapshots => Set<DocumentMarginSnapshot>();
+    public DbSet<MarginPolicy> MarginPolicies => Set<MarginPolicy>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("orcafacil");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(OrcaFacilDbContext).Assembly);
+        modelBuilder.Entity<MaterialUnit>().ToTable("material_units");
+        modelBuilder.Entity<MaterialCategory>().ToTable("material_categories");
+        modelBuilder.Entity<MaterialSupplierPrice>().ToTable("material_supplier_prices");
+        modelBuilder.Entity<InventoryLocation>().ToTable("inventory_locations");
+        modelBuilder.Entity<InventoryReservation>().ToTable("inventory_reservations");
+        modelBuilder.Entity<PurchaseRequest>().ToTable("purchase_requests");
+        modelBuilder.Entity<PurchaseRequestItem>().ToTable("purchase_request_items");
+        modelBuilder.Entity<PurchaseOrder>().ToTable("purchase_orders");
+        modelBuilder.Entity<PurchaseOrderItem>().ToTable("purchase_order_items");
+        modelBuilder.Entity<CostComposition>().ToTable("cost_compositions");
+        modelBuilder.Entity<CostCompositionItem>().ToTable("cost_composition_items");
+        modelBuilder.Entity<DocumentCostSnapshot>().ToTable("document_cost_snapshots");
+        modelBuilder.Entity<DocumentMarginSnapshot>().ToTable("document_margin_snapshots");
         ApplySnakeCaseColumnNames(modelBuilder);
     }
 
