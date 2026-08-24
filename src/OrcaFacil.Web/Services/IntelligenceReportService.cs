@@ -110,7 +110,12 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
         var canViewMargin = account.AccountRoleCode is "Owner" or "Administrator";
         var itemQuery = from item in db.DocumentItems.AsNoTracking()
                         join doc in db.Documents.AsNoTracking() on item.DocumentId equals doc.Id
-                        where doc.AccountId == accountId && !doc.IsDeleted && !item.IsDeleted && doc.Type == DocumentType.Budget && doc.CreatedAt >= from && doc.CreatedAt < to
+                        where doc.AccountId == accountId
+                        where !doc.IsDeleted
+                        where !item.IsDeleted
+                        where doc.Type == DocumentType.Budget
+                        where doc.CreatedAt >= from
+                        where doc.CreatedAt < to
                         select new { item.ServiceCatalogItemId, item.Quantity, item.UnitPrice, item.Discount, item.EstimatedCostSnapshot, doc.ClientId, doc.Status, doc.ClientDecision };
         if (f.ClientId is { } clientId) itemQuery = itemQuery.Where(x => x.ClientId == clientId);
         if (!string.IsNullOrWhiteSpace(f.Status)) itemQuery = itemQuery.Where(x => x.Status == f.Status);
@@ -123,9 +128,13 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
             var approvedItems = used.Where(x => x.ClientDecision == ClientDecision.Approved).ToArray();
             var approved = approvedItems.Sum(x => Math.Max(0, x.Quantity * x.UnitPrice - x.Discount));
             var hasCompleteCostData = approvedItems.Length > 0 && approvedItems.All(x => x.EstimatedCostSnapshot > 0);
-            decimal? margin = canViewMargin && hasCompleteCostData
-                ? approved - approvedItems.Sum(x => x.Quantity * x.EstimatedCostSnapshot)
-                : null;
+            decimal? margin = null;
+
+            if (canViewMargin && hasCompleteCostData)
+            {
+                margin = approved - approvedItems.Sum(x => x.Quantity * x.EstimatedCostSnapshot);
+            }
+
             return new ReportRow(s.Name, used.Length, total, approved, 0, margin);
         }).OrderByDescending(x => x.Approved).ToArray();
         return new("Serviços", [new("Serviços cadastrados", services.Count), new("Nunca usados", rows.Count(x => x.Count == 0)), new("Valor vendido", rows.Sum(x => x.Approved), true), new("Itens em propostas", rows.Sum(x => x.Count))], rows);
@@ -202,6 +211,11 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
 
         var index = Array.IndexOf(stages, stage);
 
-        return index >= 0 ? index : 99;
+        if (index >= 0)
+        {
+            return index;
+        }
+
+        return 99;
     }
 }
