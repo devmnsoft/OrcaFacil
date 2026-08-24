@@ -154,7 +154,15 @@
     "check:surveys-nps": "node scripts/check-crm-v22.mjs",
     "check:retention-rules": "node scripts/check-crm-v22.mjs",
     "check:upsell-opportunities": "node scripts/check-crm-v22.mjs",
-    "check:no-fake-crm": "node scripts/check-crm-v22.mjs"
+    "check:no-fake-crm": "node scripts/check-crm-v22.mjs",
+    "check:contracts-advanced": "node scripts/check-contracts-advanced.mjs",
+    "check:contract-sla": "node scripts/check-contract-sla.mjs",
+    "check:contract-warranty": "node scripts/check-contract-warranty.mjs",
+    "check:preventive-maintenance": "node scripts/check-preventive-maintenance.mjs",
+    "check:contract-recurrence": "node scripts/check-contract-recurrence.mjs",
+    "check:contract-renewals": "node scripts/check-contract-renewals.mjs",
+    "check:contract-health": "node scripts/check-contract-health.mjs",
+    "check:no-fake-contracts": "node scripts/check-no-fake-contracts.mjs"
   },
   "engines": {
     "node": ">=18"

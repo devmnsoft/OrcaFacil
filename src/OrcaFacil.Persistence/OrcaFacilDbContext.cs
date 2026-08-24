@@ -89,6 +89,17 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<ContractItem> ContractItems => Set<ContractItem>();
     public DbSet<ContractPayment> ContractPayments => Set<ContractPayment>();
     public DbSet<ContractEvent> ContractEvents => Set<ContractEvent>();
+    public DbSet<ContractSlaPolicy> ContractSlaPolicies => Set<ContractSlaPolicy>();
+    public DbSet<ContractSlaEvent> ContractSlaEvents => Set<ContractSlaEvent>();
+    public DbSet<ServiceLevelBreach> ServiceLevelBreaches => Set<ServiceLevelBreach>();
+    public DbSet<ContractWarrantyTerm> ContractWarrantyTerms => Set<ContractWarrantyTerm>();
+    public DbSet<ContractPreventiveSchedule> ContractPreventiveSchedules => Set<ContractPreventiveSchedule>();
+    public DbSet<ContractRecurrenceRun> ContractRecurrenceRuns => Set<ContractRecurrenceRun>();
+    public DbSet<ContractUsageAllowance> ContractUsageAllowances => Set<ContractUsageAllowance>();
+    public DbSet<ContractAmendment> ContractAmendments => Set<ContractAmendment>();
+    public DbSet<ContractAdjustment> ContractAdjustments => Set<ContractAdjustment>();
+    public DbSet<ContractRenewalEvent> ContractRenewalEvents => Set<ContractRenewalEvent>();
+    public DbSet<ContractHealthSnapshot> ContractHealthSnapshots => Set<ContractHealthSnapshot>();
     public DbSet<RecommendationCard> RecommendationCards => Set<RecommendationCard>();
     public DbSet<AutomationRule> AutomationRules => Set<AutomationRule>();
     public DbSet<AutomationRun> AutomationRuns => Set<AutomationRun>();

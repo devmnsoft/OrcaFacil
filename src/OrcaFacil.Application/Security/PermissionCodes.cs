@@ -40,6 +40,14 @@ public static class PermissionCodes
     public const string ContractsView = "Contracts.View";
     public const string ContractsManage = "Contracts.Manage";
     public const string ContractChargesGenerate = "ContractCharges.Generate";
+    public const string ContractsAdvancedView = "Contracts.AdvancedView"; public const string ContractsAdvancedManage = "Contracts.AdvancedManage";
+    public const string ContractsSlaView = "Contracts.SlaView"; public const string ContractsSlaManage = "Contracts.SlaManage";
+    public const string ContractsWarrantyView = "Contracts.WarrantyView"; public const string ContractsWarrantyManage = "Contracts.WarrantyManage";
+    public const string ContractsPreventiveMaintenanceView = "Contracts.PreventiveMaintenanceView"; public const string ContractsPreventiveMaintenanceManage = "Contracts.PreventiveMaintenanceManage";
+    public const string ContractsRenewalView = "Contracts.RenewalView"; public const string ContractsRenewalManage = "Contracts.RenewalManage";
+    public const string ContractsAdjustmentsView = "Contracts.AdjustmentsView"; public const string ContractsAdjustmentsManage = "Contracts.AdjustmentsManage";
+    public const string ContractsAmendmentsView = "Contracts.AmendmentsView"; public const string ContractsAmendmentsManage = "Contracts.AmendmentsManage";
+    public const string ContractsUsageView = "Contracts.UsageView"; public const string ContractsHealthView = "Contracts.HealthView"; public const string ContractsReportsView = "Contracts.ReportsView";
     public const string CashFlowView = "CashFlow.View";
     public const string ReportsFinancial = "Reports.Financial";
     public const string ReportsView = "Reports.View";
@@ -153,7 +161,11 @@ public static class PermissionCodes
         WorkOrdersChangeStatus, WorkOrdersCancel, WorkOrdersComplete, WorkOrdersManageChecklist,
         ScheduleView, ScheduleManage, ReportsOperational, PaymentsView, PaymentsManage, PaymentsReverse,
         ReceivablesView, ReceivablesManage, ReceiptsView, ReceiptsManage, ReceiptsCancel,
-        FinanceView, FinanceManage, ContractsView, ContractsManage, ContractChargesGenerate, CashFlowView, ReportsFinancial,
+        FinanceView, FinanceManage, ContractsView, ContractsManage, ContractChargesGenerate, ContractsAdvancedView,
+        ContractsAdvancedManage, ContractsSlaView, ContractsSlaManage, ContractsWarrantyView, ContractsWarrantyManage,
+        ContractsPreventiveMaintenanceView, ContractsPreventiveMaintenanceManage, ContractsRenewalView, ContractsRenewalManage,
+        ContractsAdjustmentsView, ContractsAdjustmentsManage, ContractsAmendmentsView, ContractsAmendmentsManage,
+        ContractsUsageView, ContractsHealthView, ContractsReportsView, CashFlowView, ReportsFinancial,
         ReportsView, ReportsExport, SettingsView, SettingsManage, UsersManage, PlanManage, AdminAccess,
         DiagnosticsView, LogsView, AuditView, SupportView, SupportManage, SupportCreateTicket, SupportManageTickets,
         FeedbackView, FeedbackCreate, KnowledgeBaseManage, ReleaseNotesManage, SetupChecklistView, SetupChecklistManage,
