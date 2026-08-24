@@ -180,7 +180,18 @@
     "check:cost-centers": "node scripts/check-cost-centers.mjs",
     "check:financial-period-closing": "node scripts/check-financial-period-closing.mjs",
     "check:fiscal-control": "node scripts/check-fiscal-control.mjs",
-    "check:no-fake-fiscal": "node scripts/check-no-fake-fiscal.mjs"
+    "check:no-fake-fiscal": "node scripts/check-no-fake-fiscal.mjs",
+    "check:partners": "node scripts/check-partners.mjs",
+    "check:partner-portal": "node scripts/check-partner-portal.mjs",
+    "check:partner-portal-auth": "node scripts/check-partner-portal-auth.mjs",
+    "check:partner-portal-security": "node scripts/check-partner-portal-security.mjs",
+    "check:outsourcing-flow": "node scripts/check-outsourcing-flow.mjs",
+    "check:outsourcing-quotes": "node scripts/check-outsourcing-quotes.mjs",
+    "check:outsourced-workorders": "node scripts/check-outsourced-workorders.mjs",
+    "check:partner-evidences": "node scripts/check-partner-evidences.mjs",
+    "check:partner-payments": "node scripts/check-partner-payments.mjs",
+    "check:partner-performance": "node scripts/check-partner-performance.mjs",
+    "check:no-fake-partners": "node scripts/check-no-fake-partners.mjs"
   },
   "engines": {
     "node": ">=18"

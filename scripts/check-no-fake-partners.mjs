@@ -1,0 +1,2 @@
+import fs from 'node:fs'; const roots=['src/OrcaFacil.Application/Partners','src/OrcaFacil.Application/Outsourcing','src/OrcaFacil.Domain/Entities/Partners.cs'];
+for(const root of roots){ const files=fs.statSync(root).isDirectory()?fs.readdirSync(root).map(x=>`${root}/${x}`):[root]; for(const file of files){const s=fs.readFileSync(file,'utf8'); if(/Math\.random|NotImplementedException|TODO/i.test(s)) throw new Error(`Implementação falsa/incompleta: ${file}`);}} console.log('Nenhum marcador fake no módulo de parceiros.');

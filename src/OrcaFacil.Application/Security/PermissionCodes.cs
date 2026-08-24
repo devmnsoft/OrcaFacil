@@ -3,6 +3,13 @@ namespace OrcaFacil.Application.Security;
 /// <summary>Canonical permission identifiers used by backend authorization.</summary>
 public static class PermissionCodes
 {
+    public const string PartnersView = "Partners.View"; public const string PartnersManage = "Partners.Manage"; public const string PartnersInvite = "Partners.Invite";
+    public const string PartnersDocumentsView = "Partners.DocumentsView"; public const string PartnersDocumentsManage = "Partners.DocumentsManage"; public const string PartnersPerformanceView = "Partners.PerformanceView";
+    public const string PartnerPortalManage = "PartnerPortal.Manage";
+    public const string OutsourcingView = "Outsourcing.View"; public const string OutsourcingManage = "Outsourcing.Manage"; public const string OutsourcingRequest = "Outsourcing.Request";
+    public const string OutsourcingQuote = "Outsourcing.Quote"; public const string OutsourcingAssign = "Outsourcing.Assign"; public const string OutsourcingReview = "Outsourcing.Review"; public const string OutsourcingApproveCost = "Outsourcing.ApproveCost";
+    public const string PartnerPaymentsView = "PartnerPayments.View"; public const string PartnerPaymentsManage = "PartnerPayments.Manage";
+    public const string PartnerMessagesView = "PartnerMessages.View"; public const string PartnerMessagesManage = "PartnerMessages.Manage"; public const string ReportsPartners = "Reports.Partners";
     public const string DashboardView = "Dashboard.View";
     public const string ClientsView = "Clients.View";
     public const string ClientsManage = "Clients.Manage";

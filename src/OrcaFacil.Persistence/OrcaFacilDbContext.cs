@@ -194,6 +194,26 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<BankReconciliationMatch> BankReconciliationMatches => Set<BankReconciliationMatch>();
     public DbSet<FinancialImportBatch> FinancialImportBatches => Set<FinancialImportBatch>();
     public DbSet<FinancialImportRow> FinancialImportRows => Set<FinancialImportRow>();
+    public DbSet<PartnerProfile> PartnerProfiles => Set<PartnerProfile>();
+    public DbSet<PartnerContact> PartnerContacts => Set<PartnerContact>();
+    public DbSet<PartnerCapability> PartnerCapabilities => Set<PartnerCapability>();
+    public DbSet<PartnerServiceArea> PartnerServiceAreas => Set<PartnerServiceArea>();
+    public DbSet<PartnerDocument> PartnerDocuments => Set<PartnerDocument>();
+    public DbSet<PartnerPortalUser> PartnerPortalUsers => Set<PartnerPortalUser>();
+    public DbSet<PartnerPortalInvitation> PartnerPortalInvitations => Set<PartnerPortalInvitation>();
+    public DbSet<PartnerPortalSession> PartnerPortalSessions => Set<PartnerPortalSession>();
+    public DbSet<PartnerPortalSecurityEvent> PartnerPortalSecurityEvents => Set<PartnerPortalSecurityEvent>();
+    public DbSet<OutsourcingRequest> OutsourcingRequests => Set<OutsourcingRequest>();
+    public DbSet<OutsourcingRequestItem> OutsourcingRequestItems => Set<OutsourcingRequestItem>();
+    public DbSet<OutsourcingQuote> OutsourcingQuotes => Set<OutsourcingQuote>();
+    public DbSet<OutsourcingQuoteItem> OutsourcingQuoteItems => Set<OutsourcingQuoteItem>();
+    public DbSet<OutsourcingAssignment> OutsourcingAssignments => Set<OutsourcingAssignment>();
+    public DbSet<PartnerWorkOrderUpdate> PartnerWorkOrderUpdates => Set<PartnerWorkOrderUpdate>();
+    public DbSet<PartnerWorkOrderEvidence> PartnerWorkOrderEvidences => Set<PartnerWorkOrderEvidence>();
+    public DbSet<PartnerPaymentRequest> PartnerPaymentRequests => Set<PartnerPaymentRequest>();
+    public DbSet<PartnerCostSnapshot> PartnerCostSnapshots => Set<PartnerCostSnapshot>();
+    public DbSet<PartnerRating> PartnerRatings => Set<PartnerRating>();
+    public DbSet<PartnerTermsAcceptance> PartnerTermsAcceptances => Set<PartnerTermsAcceptance>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
