@@ -5,9 +5,9 @@ namespace OrcaFacil.Persistence.Migrations;
 
 public partial class AddProductivityIntelligence : Migration
 {
-    protected override void Up(MigrationBuilder migrationBuilder) => migrationBuilder.Sql("""
+    protected override void Up(MigrationBuilder migrationBuilder) => migrationBuilder.Sql(@"""
 
--- Sprint 11 / V1.2: inteligência produtiva baseada exclusivamente em dados da conta.
+ 
 CREATE TABLE IF NOT EXISTS orcafacil.recommendation_cards (
  id uuid PRIMARY KEY, account_id uuid NOT NULL, client_id uuid, document_id uuid, public_quote_id uuid, work_order_id uuid, receivable_id uuid, contract_id uuid,
  type varchar(60) NOT NULL, priority varchar(20) NOT NULL, title varchar(180) NOT NULL, description varchar(800) NOT NULL,
