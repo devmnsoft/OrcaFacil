@@ -1,0 +1,12 @@
+using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;using Microsoft.AspNetCore.Mvc;using Microsoft.AspNetCore.Mvc.RazorPages;using Microsoft.EntityFrameworkCore;
+using OrcaFacil.Application.Abstractions;using OrcaFacil.Application.Marketplace;using OrcaFacil.Domain.Entities;using OrcaFacil.Persistence;using OrcaFacil.Persistence.Marketplace;
+namespace OrcaFacil.Web.Pages.Marketplace;
+[Authorize] public sealed class DetailsModel(OrcaFacilDbContext db,ICurrentAccountService current,PackagePreviewService previewService,PackageInstallationService installer):PageModel
+{
+ public MarketplacePackage Package{get;private set;}=default!;public MarketplacePackageVersion Version{get;private set;}=default!;public PackagePreview Preview{get;private set;}=default!;[BindProperty]public bool ConfirmInstallation{get;set;}
+ public async Task<IActionResult> OnGetAsync(Guid id,CancellationToken ct){if(current.AccountId is not Guid a||!await current.HasPermissionAsync(MarketplacePermissions.View,ct))return Forbid();return await Load(id,a,ct)?Page():NotFound();}
+ public async Task<IActionResult> OnPostInstallAsync(Guid id,CancellationToken ct){if(current.AccountId is not Guid a||!await current.HasPermissionAsync(MarketplacePermissions.Install,ct))return Forbid();if(!ConfirmInstallation){ModelState.AddModelError(nameof(ConfirmInstallation),"Confirme a instalação depois de revisar todos os itens.");await Load(id,a,ct);return Page();}try{var result=await installer.InstallAsync(a,current.UserId,id,await Features(a,ct),"current",true,ct);TempData["Success"]=$"Pacote instalado: {result.Applied} item(ns) aplicado(s) e {result.Ignored} ignorado(s).";return RedirectToPage("/Marketplace/Installations");}catch(InvalidOperationException ex){ModelState.AddModelError(string.Empty,ex.Message);await Load(id,a,ct);return Page();}}
+ private async Task<bool> Load(Guid id,Guid accountId,CancellationToken ct){Package=await db.MarketplacePackages.AsNoTracking().SingleOrDefaultAsync(x=>x.Id==id&&x.IsActive&&x.IsPublished&&!x.IsDeleted,ct);if(Package is null)return false;Version=await db.MarketplacePackageVersions.AsNoTracking().SingleAsync(x=>x.Id==Package.CurrentVersionId,ct);Preview=await previewService.PreviewAsync(accountId,id,await Features(accountId,ct),"current",ct);return true;}
+ private async Task<IReadOnlySet<string>> Features(Guid a,CancellationToken ct)=>(await db.AddonEntitlements.AsNoTracking().Where(x=>x.AccountId==a&&x.IsActive&&!x.IsDeleted).Select(x=>x.FeatureCode).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+}

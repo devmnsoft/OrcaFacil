@@ -3,6 +3,8 @@ namespace OrcaFacil.Application.Security;
 /// <summary>Canonical permission identifiers used by backend authorization.</summary>
 public static class PermissionCodes
 {
+    public const string MarketplaceView="Marketplace.View"; public const string MarketplaceInstall="Marketplace.Install"; public const string MarketplaceRollback="Marketplace.Rollback"; public const string MarketplaceUpdate="Marketplace.Update"; public const string MarketplaceReview="Marketplace.Review"; public const string MarketplaceAdminView="Marketplace.AdminView"; public const string MarketplaceAdminManage="Marketplace.AdminManage";
+    public const string TemplatesLibraryView="Templates.LibraryView"; public const string TemplatesLibraryManage="Templates.LibraryManage"; public const string ConfigurationExport="Configuration.Export"; public const string ConfigurationImport="Configuration.Import"; public const string SetupWizardUse="SetupWizard.Use"; public const string AddonsInstall="Addons.Install"; public const string AddonsRemove="Addons.Remove";
     public const string CustomizationView = "Customization.View"; public const string CustomizationManage = "Customization.Manage";
     public const string CustomFieldsView = "CustomFields.View"; public const string CustomFieldsManage = "CustomFields.Manage";
     public const string DynamicFormsView = "DynamicForms.View"; public const string DynamicFormsManage = "DynamicForms.Manage"; public const string DynamicFormsSubmit = "DynamicForms.Submit";
@@ -195,6 +197,7 @@ public static class PermissionCodes
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
+        MarketplaceView, MarketplaceInstall, MarketplaceRollback, MarketplaceUpdate, MarketplaceReview, MarketplaceAdminView, MarketplaceAdminManage, TemplatesLibraryView, TemplatesLibraryManage, ConfigurationExport, ConfigurationImport, SetupWizardUse, AddonsInstall, AddonsRemove,
         DashboardView, ClientsView, ClientsManage, ServicesView, ServicesManage, DocumentsView,
         DocumentsCreate, DocumentsEdit, DocumentsGeneratePublicLink, DocumentsConvertToWorkOrder,
         CommercialPipelineView, CommercialActionsManage,

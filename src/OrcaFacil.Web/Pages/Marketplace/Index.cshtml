@@ -1,0 +1,9 @@
+@page
+@model OrcaFacil.Web.Pages.Marketplace.IndexModel
+@{ViewData["Title"]="Marketplace";}
+<link rel="stylesheet" href="~/css/marketplace.css" asp-append-version="true" />
+<header class="marketplace-hero"><div><p class="of-eyebrow">Ecossistema OrçaFácil V3.0</p><h1>Marketplace de processos</h1><p>Instale configurações versionadas para o seu segmento. Sempre revise a prévia antes de confirmar.</p></div><a class="btn btn-outline-primary" asp-page="/Marketplace/Installations">Minhas instalações</a></header>
+<main class="marketplace-grid" aria-label="Pacotes disponíveis">
+@if(Model.Packages.Count==0){<section class="of-card empty"><h2>Nenhum pacote disponível</h2><p>Não há pacotes publicados compatíveis neste momento.</p></section>}
+@foreach(var package in Model.Packages){<article class="marketplace-card"><div class="marketplace-card__badges"><span class="badge">@package.Category</span>@if(package.Installed){<span class="badge badge--success">Instalado</span>}</div><h2>@package.Name</h2><p>@package.Description</p><dl><div><dt>Segmento</dt><dd>@package.Segment</dd></div><div><dt>Versão</dt><dd>@package.Version</dd></div><div><dt>Origem</dt><dd>@package.Author</dd></div></dl><a class="btn btn-primary" asp-page="/Marketplace/Details" asp-route-id="@package.Id">@(package.Installed?"Ver instalação":"Ver detalhes e prévia")</a></article>}
+</main>

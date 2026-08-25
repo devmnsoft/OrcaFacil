@@ -233,6 +233,18 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<ChecklistTemplateItem> ChecklistTemplateItems => Set<ChecklistTemplateItem>();
     public DbSet<ConfigurablePipeline> ConfigurablePipelines => Set<ConfigurablePipeline>();
     public DbSet<ConfigurablePipelineStage> ConfigurablePipelineStages => Set<ConfigurablePipelineStage>();
+    public DbSet<MarketplacePackage> MarketplacePackages => Set<MarketplacePackage>();
+    public DbSet<MarketplacePackageVersion> MarketplacePackageVersions => Set<MarketplacePackageVersion>();
+    public DbSet<MarketplacePackageInstallation> MarketplacePackageInstallations => Set<MarketplacePackageInstallation>();
+    public DbSet<MarketplacePackageInstallationItem> MarketplacePackageInstallationItems => Set<MarketplacePackageInstallationItem>();
+    public DbSet<MarketplacePackageInstallationEvent> MarketplacePackageInstallationEvents => Set<MarketplacePackageInstallationEvent>();
+    public DbSet<MarketplacePackageReview> MarketplacePackageReviews => Set<MarketplacePackageReview>();
+    public DbSet<AddonCatalogItem> AddonCatalog => Set<AddonCatalogItem>();
+    public DbSet<AddonInstallation> AddonInstallations => Set<AddonInstallation>();
+    public DbSet<AddonEntitlement> AddonEntitlements => Set<AddonEntitlement>();
+    public DbSet<TemplateLibraryItem> TemplateLibraryItems => Set<TemplateLibraryItem>();
+    public DbSet<TemplateLibraryVersion> TemplateLibraryVersions => Set<TemplateLibraryVersion>();
+    public DbSet<SetupWizardProgress> SetupWizardProgress => Set<SetupWizardProgress>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -255,6 +267,18 @@ public class OrcaFacilDbContext : DbContext
         modelBuilder.Entity<ChecklistTemplateItem>().ToTable("checklist_template_items");
         modelBuilder.Entity<ConfigurablePipeline>().ToTable("configurable_pipelines");
         modelBuilder.Entity<ConfigurablePipelineStage>().ToTable("configurable_pipeline_stages").HasIndex(x => new { x.AccountId, x.PipelineId, x.Code }).IsUnique();
+        modelBuilder.Entity<MarketplacePackage>().ToTable("marketplace_packages").HasIndex(x => x.Code).IsUnique();
+        modelBuilder.Entity<MarketplacePackageVersion>().ToTable("marketplace_package_versions").HasIndex(x => new { x.PackageId, x.Version }).IsUnique();
+        modelBuilder.Entity<MarketplacePackageInstallation>().ToTable("marketplace_package_installations").HasIndex(x => new { x.AccountId, x.PackageId }).IsUnique().HasFilter("is_deleted=false AND status <> 6");
+        modelBuilder.Entity<MarketplacePackageInstallationItem>().ToTable("marketplace_package_installation_items").HasIndex(x => new { x.AccountId, x.InstallationId, x.OriginKey }).IsUnique();
+        modelBuilder.Entity<MarketplacePackageInstallationEvent>().ToTable("marketplace_package_installation_events");
+        modelBuilder.Entity<MarketplacePackageReview>().ToTable("marketplace_package_reviews").HasIndex(x => new { x.AccountId, x.PackageId }).IsUnique().HasFilter("is_deleted=false");
+        modelBuilder.Entity<AddonCatalogItem>().ToTable("addon_catalog").HasIndex(x => x.Code).IsUnique();
+        modelBuilder.Entity<AddonInstallation>().ToTable("addon_installations").HasIndex(x => new { x.AccountId, x.AddonId }).IsUnique().HasFilter("is_deleted=false AND is_active=true");
+        modelBuilder.Entity<AddonEntitlement>().ToTable("addon_entitlements").HasIndex(x => new { x.AccountId, x.FeatureCode }).IsUnique().HasFilter("is_deleted=false AND is_active=true");
+        modelBuilder.Entity<TemplateLibraryItem>().ToTable("template_library_items").HasIndex(x => new { x.AccountId, x.Code }).IsUnique().HasFilter("is_deleted=false");
+        modelBuilder.Entity<TemplateLibraryVersion>().ToTable("template_library_versions").HasIndex(x => new { x.TemplateId, x.VersionNumber }).IsUnique();
+        modelBuilder.Entity<SetupWizardProgress>().ToTable("setup_wizard_progress").HasIndex(x => new { x.AccountId, x.UserId }).IsUnique().HasFilter("is_deleted=false");
         modelBuilder.Entity<MaterialUnit>().ToTable("material_units");
         modelBuilder.Entity<MaterialCategory>().ToTable("material_categories");
         modelBuilder.Entity<MaterialSupplierPrice>().ToTable("material_supplier_prices");
