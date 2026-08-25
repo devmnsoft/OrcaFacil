@@ -226,11 +226,6 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
 
         var index = Array.IndexOf(stages, stage);
 
-        if (index >= 0)
-        {
-            return index;
-        }
-
-        return 99;
+        return index >= 0 ? index : 99;
     }
 }

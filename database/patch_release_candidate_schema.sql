@@ -426,3 +426,5 @@ INSERT INTO orcafacil.role_permissions(role_id,permission_id,created_at,is_delet
 
 -- Sprint 30 governed AI schema is maintained in sprint30_governed_ai.sql and must be applied additively.
 \ir sprint30_governed_ai.sql
+
+-- Sprint 33 is applied by database/sprint33_growth_v34.sql (kept separate for idempotent release runners).
