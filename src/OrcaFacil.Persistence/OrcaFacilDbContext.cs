@@ -9,6 +9,8 @@ public class OrcaFacilDbContext : DbContext
     public OrcaFacilDbContext(DbContextOptions<OrcaFacilDbContext> options) : base(options) { }
 
     public DbSet<UserAccount> Users => Set<UserAccount>();
+    public DbSet<GrowthLead> GrowthLeads => Set<GrowthLead>();
+    public DbSet<GrowthLeadEvent> GrowthLeadEvents => Set<GrowthLeadEvent>();
     public DbSet<IssuerProfile> IssuerProfiles => Set<IssuerProfile>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<DocumentItem> DocumentItems => Set<DocumentItem>();

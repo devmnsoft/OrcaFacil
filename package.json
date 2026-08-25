@@ -240,7 +240,19 @@
     "check:adoption-metrics": "node scripts/check-adoption-metrics.mjs",
     "check:go-live-review": "node scripts/check-go-live-review.mjs",
     "check:assisted-operation": "node scripts/check-assisted-operation.mjs",
-    "check:no-fake-onboarding": "node scripts/check-no-fake-onboarding.mjs"
+    "check:no-fake-onboarding": "node scripts/check-no-fake-onboarding.mjs",
+    "check:growth-leads": "node scripts/check-growth-leads.mjs",
+    "check:public-lead-capture": "node scripts/check-public-lead-capture.mjs",
+    "check:growth-attribution": "node scripts/check-growth-attribution.mjs",
+    "check:growth-pipeline": "node scripts/check-growth-pipeline.mjs",
+    "check:demo-requests": "node scripts/check-demo-requests.mjs",
+    "check:trial-conversion": "node scripts/check-trial-conversion.mjs",
+    "check:growth-campaigns": "node scripts/check-growth-campaigns.mjs",
+    "check:coupons": "node scripts/check-coupons.mjs",
+    "check:referrals": "node scripts/check-referrals.mjs",
+    "check:resellers": "node scripts/check-resellers.mjs",
+    "check:growth-revenue": "node scripts/check-growth-revenue.mjs",
+    "check:no-fake-growth": "node scripts/check-no-fake-growth.mjs"
   },
   "engines": {
     "node": ">=18"
