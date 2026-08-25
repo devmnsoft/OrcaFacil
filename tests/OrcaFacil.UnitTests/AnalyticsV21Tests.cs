@@ -1,5 +1,6 @@
 using OrcaFacil.Application.Analytics;
 using OrcaFacil.Domain.Entities;
+using Xunit;
 
 namespace OrcaFacil.UnitTests;
 

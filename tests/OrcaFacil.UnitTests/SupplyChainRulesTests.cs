@@ -1,6 +1,6 @@
 using OrcaFacil.Application.Inventory;
 using OrcaFacil.Domain.Entities;
-
+using Xunit;
 namespace OrcaFacil.UnitTests;
 
 public sealed class SupplyChainRulesTests

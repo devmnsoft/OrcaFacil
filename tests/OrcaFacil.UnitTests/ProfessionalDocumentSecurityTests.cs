@@ -1,6 +1,7 @@
 using OrcaFacil.Application.DocumentTemplates;
 using OrcaFacil.Application.Files;
 using OrcaFacil.Infrastructure.Files;
+using Xunit;
 
 namespace OrcaFacil.UnitTests;
 public sealed class ProfessionalDocumentSecurityTests

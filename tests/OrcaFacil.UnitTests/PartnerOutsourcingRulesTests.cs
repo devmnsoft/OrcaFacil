@@ -1,6 +1,7 @@
 using OrcaFacil.Application.Outsourcing;
 using OrcaFacil.Application.Partners;
 using OrcaFacil.Domain.Entities;
+using Xunit;
 
 namespace OrcaFacil.UnitTests;
 
