@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using OrcaFacil.Application;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Auth;
 using OrcaFacil.Application.Documents;
@@ -14,6 +15,8 @@ using OrcaFacil.Persistence.Repositories;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddApplication();
 
 builder.Logging.ClearProviders();
 builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(context.Configuration).Enrich.FromLogContext());

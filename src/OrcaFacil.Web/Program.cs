@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using OrcaFacil.Application;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Auth;
 using OrcaFacil.Application.Documents;
@@ -49,6 +50,7 @@ using OrcaFacil.Web.Api;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddApplication();
 builder.AddOrcaFacilLocalConfiguration();
 // Operational aliases keep Windows service/IIS configuration concise while the
 // regular ASP.NET double-underscore variables remain supported.
@@ -118,7 +120,6 @@ builder.Services.AddScoped<IOperationalAlertService, OperationalAlertService>();
 builder.Services.AddScoped<IAdminShellViewModelFactory, AdminShellViewModelFactory>();
 builder.Services.AddScoped<IUserSignInService, CookieUserSignInService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
-builder.Services.AddSingleton<ISensitiveDataSanitizer, SensitiveDataSanitizer>();
 builder.Services.AddScoped<ConsentService>();
 builder.Services.AddScoped<DataSubjectRequestService>();
 builder.Services.AddScoped<DataExportService>();
