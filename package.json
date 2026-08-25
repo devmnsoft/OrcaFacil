@@ -229,7 +229,18 @@
     "check:ai-suggestions": "node scripts/check-ai-suggestions.mjs",
     "check:ai-action-safety": "node scripts/check-ai-action-safety.mjs",
     "check:ai-no-fake": "node scripts/check-ai-no-fake.mjs",
-    "check:ai-no-secret-leak": "node scripts/check-ai-no-secret-leak.mjs"
+    "check:ai-no-secret-leak": "node scripts/check-ai-no-secret-leak.mjs",
+    "check:tenant-provisioning": "node scripts/check-tenant-provisioning.mjs",
+    "check:launch-checklist": "node scripts/check-launch-checklist.mjs",
+    "check:implementation-flow": "node scripts/check-implementation-flow.mjs",
+    "check:data-migration": "node scripts/check-data-migration.mjs",
+    "check:demo-accounts": "node scripts/check-demo-accounts.mjs",
+    "check:training-flow": "node scripts/check-training-flow.mjs",
+    "check:readiness-score": "node scripts/check-readiness-score.mjs",
+    "check:adoption-metrics": "node scripts/check-adoption-metrics.mjs",
+    "check:go-live-review": "node scripts/check-go-live-review.mjs",
+    "check:assisted-operation": "node scripts/check-assisted-operation.mjs",
+    "check:no-fake-onboarding": "node scripts/check-no-fake-onboarding.mjs"
   },
   "engines": {
     "node": ">=18"
