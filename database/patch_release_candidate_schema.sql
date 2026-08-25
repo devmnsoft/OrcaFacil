@@ -423,3 +423,6 @@ INSERT INTO orcafacil.role_permissions(role_id,permission_id,created_at,is_delet
 -- Sprint 28 is applied from database/sprint28_process_customization.sql during release deployment.
 
 -- Sprint 29 is applied from database/sprint29_marketplace.sql during release deployment.
+
+-- Sprint 30 governed AI schema is maintained in sprint30_governed_ai.sql and must be applied additively.
+\ir sprint30_governed_ai.sql

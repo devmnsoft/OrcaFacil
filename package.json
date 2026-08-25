@@ -217,7 +217,19 @@
     "check:setup-wizard": "node scripts/check-setup-wizard.mjs",
     "check:addons-store": "node scripts/check-addons-store.mjs",
     "check:entitlements-addons": "node scripts/check-entitlements-addons.mjs",
-    "check:no-fake-marketplace": "node scripts/check-no-fake-marketplace.mjs"
+    "check:no-fake-marketplace": "node scripts/check-no-fake-marketplace.mjs",
+    "check:ai-settings": "node scripts/check-ai-settings.mjs",
+    "check:ai-governance": "node scripts/check-ai-governance.mjs",
+    "check:ai-redaction": "node scripts/check-ai-redaction.mjs",
+    "check:copilot": "node scripts/check-copilot.mjs",
+    "check:rag-safety": "node scripts/check-rag-safety.mjs",
+    "check:semantic-search": "node scripts/check-semantic-search.mjs",
+    "check:document-analysis": "node scripts/check-document-analysis.mjs",
+    "check:ai-drafts": "node scripts/check-ai-drafts.mjs",
+    "check:ai-suggestions": "node scripts/check-ai-suggestions.mjs",
+    "check:ai-action-safety": "node scripts/check-ai-action-safety.mjs",
+    "check:ai-no-fake": "node scripts/check-ai-no-fake.mjs",
+    "check:ai-no-secret-leak": "node scripts/check-ai-no-secret-leak.mjs"
   },
   "engines": {
     "node": ">=18"
