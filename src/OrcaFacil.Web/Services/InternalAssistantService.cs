@@ -47,7 +47,7 @@ public sealed class InternalAssistantService(ICurrentAccountService account, Orc
             var count = await db.ManualPayments.AsNoTracking().CountAsync(x => x.AccountId == accountId && !x.IsDeleted && !db.Receipts.Any(r => r.AccountId == accountId && !r.IsDeleted && r.PaymentId == x.Id), ct);
             return Rule($"Há {count} pagamento(s) manual(is) sem recibo localizado nesta conta.", "/Receipts/Index", "Revisar recibos");
         }
-        return Rule("Posso orientar sobre o uso do OrçaFácil e consultar pendências permitidas, mas não encontrei uma regra segura para essa pergunta. Use a busca global ou a central de ajuda.", "/Search", "Abrir busca global", new("Central de ajuda", "/Help"));
+        return Rule("Posso orientar sobre o uso do OrçaFácil e consultar pendências permitidas, mas não encontrei uma regra segura para essa pergunta. Use a busca global ou a central de ajuda.", "/Search", "Abrir busca global", new AssistantLink("Central de ajuda", "/Help"));
     }
     private const string Source = "Resposta baseada nas regras do OrçaFácil";
     private static AssistantAnswer Rule(string answer, string url, string label, params AssistantLink[] extra) => new(answer, Source, [new(label,url), ..extra]);
