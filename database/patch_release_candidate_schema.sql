@@ -421,3 +421,5 @@ INSERT INTO orcafacil.permissions(code,display_name,is_platform_permission) SELE
 INSERT INTO orcafacil.role_permissions(role_id,permission_id,created_at,is_deleted) SELECT r.id,p.id,now(),false FROM orcafacil.roles r CROSS JOIN orcafacil.permissions p WHERE r.code IN ('Owner','Administrator') AND p.code IN ('DeveloperPortal.View','DeveloperPortal.Manage','ApiKeys.View','ApiLogs.View','Webhooks.Replay','ExternalApps.View','ExternalApps.Manage','Connectors.View','Connectors.Manage','IntegrationHealth.View') ON CONFLICT(role_id,permission_id) DO NOTHING;
 
 -- Sprint 28 is applied from database/sprint28_process_customization.sql during release deployment.
+
+-- Sprint 29 is applied from database/sprint29_marketplace.sql during release deployment.

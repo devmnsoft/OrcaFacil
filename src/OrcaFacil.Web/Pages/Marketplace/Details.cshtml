@@ -1,0 +1,11 @@
+@page "{id:guid}"
+@model OrcaFacil.Web.Pages.Marketplace.DetailsModel
+@{ViewData["Title"]=Model.Package.Name;}
+<link rel="stylesheet" href="~/css/marketplace.css" asp-append-version="true" />
+<header class="marketplace-hero"><div><p class="of-eyebrow">@Model.Package.Category · @Model.Package.TargetSegment</p><h1>@Model.Package.Name</h1><p>@Model.Package.Description</p></div><span class="badge">v@Model.Version.Version</span></header>
+<div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+<section class="preview-panel"><h2>Prévia da instalação</h2><p>Nenhuma alteração foi aplicada. Revise o impacto real desta conta.</p><ul class="preview-list">@foreach(var item in Model.Preview.Items){<li><div><strong>@item.Name</strong><small>@item.Type · @item.Code</small></div><span class="badge @(item.Action=="Create"?"badge--success":"")">@(item.Action=="Create"?"Será criado":"Já existe — ignorar")</span></li>}</ul>
+@if(Model.Preview.MissingFeatures.Count>0){<div class="alert alert-warning">@OrcaFacil.Application.Marketplace.PackagePreview.IncompatiblePlanMessage</div>}
+@if(Model.Preview.MissingDependencies.Count>0){<div class="alert alert-warning">Dependências ausentes: @string.Join(", ",Model.Preview.MissingDependencies)</div>}
+@if(Model.Preview.CanInstall){<form method="post" asp-page-handler="Install" data-marketplace-confirm><div class="strong-confirm"><input asp-for="ConfirmInstallation"/><label asp-for="ConfirmInstallation">Revisei os itens e autorizo criar estas configurações na minha conta.</label></div><span asp-validation-for="ConfirmInstallation"></span><button type="submit" class="btn btn-primary">Confirmar instalação</button></form>}
+</section><script src="~/js/marketplace.js" asp-append-version="true" defer></script>

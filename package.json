@@ -206,7 +206,18 @@
     "check:workflow-safety": "node scripts/check-sprint28.mjs",
     "check:process-templates": "node scripts/check-sprint28.mjs",
     "check:validation-rules": "node scripts/check-sprint28.mjs",
-    "check:no-fake-workflows": "node scripts/check-sprint28.mjs"
+    "check:no-fake-workflows": "node scripts/check-sprint28.mjs",
+    "check:marketplace": "node scripts/check-marketplace.mjs",
+    "check:marketplace-packages": "node scripts/check-marketplace-packages.mjs",
+    "check:package-manifest": "node scripts/check-package-manifest.mjs",
+    "check:package-installation": "node scripts/check-package-installation.mjs",
+    "check:package-rollback": "node scripts/check-package-rollback.mjs",
+    "check:template-library": "node scripts/check-template-library.mjs",
+    "check:configuration-import-export": "node scripts/check-configuration-import-export.mjs",
+    "check:setup-wizard": "node scripts/check-setup-wizard.mjs",
+    "check:addons-store": "node scripts/check-addons-store.mjs",
+    "check:entitlements-addons": "node scripts/check-entitlements-addons.mjs",
+    "check:no-fake-marketplace": "node scripts/check-no-fake-marketplace.mjs"
   },
   "engines": {
     "node": ">=18"
