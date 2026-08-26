@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Persistence;
+using OrcaFacil.Persistence.Diagnostics;
 using OrcaFacil.Web.Security;
 
 namespace OrcaFacil.Web.Email;
@@ -12,6 +13,7 @@ public sealed class EmailOutboxWorker(
     IServiceScopeFactory scopes,
     IDataProtectionProvider protection,
     IOptions<EmailOutboxOptions> options,
+    IDatabaseConfigurationState databaseConfiguration,
     ILogger<EmailOutboxWorker> logger) : BackgroundService
 {
     private readonly string _instance = $"{Environment.MachineName}:{Guid.NewGuid():N}";
@@ -22,15 +24,25 @@ public sealed class EmailOutboxWorker(
     {
         logger.LogInformation("EMAIL_OUTBOX_WORKER_STARTED Instance {Instance}", _instance);
         var consecutiveIdleCycles = 0;
+        var consecutiveFailures = 0;
         try
         {
             while (!stoppingToken.IsCancellationRequested)
             {
+                if (!databaseConfiguration.IsValid)
+                {
+                    logger.LogWarning("EMAIL_OUTBOX_WORKER_SKIPPED_DATABASE_NOT_CONFIGURED Code {Code}", databaseConfiguration.ValidationCode);
+                    await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                    continue;
+                }
                 var delay = TimeSpan.FromSeconds(_options.ActivePollingSeconds);
                 try
                 {
                     await RecoverStuckMessagesWhenDueAsync(stoppingToken);
                     var processed = await ProcessBatchAsync(stoppingToken);
+                    if (consecutiveFailures > 0)
+                        logger.LogInformation("EMAIL_OUTBOX_WORKER_RECOVERED Failures {Failures}", consecutiveFailures);
+                    consecutiveFailures = 0;
                     if (processed > 0)
                     {
                         consecutiveIdleCycles = 0;
@@ -50,9 +62,13 @@ public sealed class EmailOutboxWorker(
                 }
                 catch (Exception exception)
                 {
-                    logger.LogError(exception, "EMAIL_OUTBOX_CYCLE_FAILED");
-                    delay = TimeSpan.FromSeconds(Math.Min(_options.MaximumIdlePollingSeconds,
-                        _options.ActivePollingSeconds * Math.Pow(2, Math.Min(consecutiveIdleCycles + 1, 4))));
+                    consecutiveFailures++;
+                    delay = BackoffFor(consecutiveFailures);
+                    if (consecutiveFailures == 1)
+                        logger.LogError(exception, "EMAIL_OUTBOX_WORKER_DATABASE_UNAVAILABLE_RETRYING DelaySeconds {DelaySeconds}", delay.TotalSeconds);
+                    else
+                        logger.LogWarning("EMAIL_OUTBOX_WORKER_DATABASE_UNAVAILABLE_RETRYING FailureType {FailureType} DelaySeconds {DelaySeconds}",
+                            exception.GetType().Name, delay.TotalSeconds);
                 }
 
                 await Task.Delay(delay, stoppingToken);
@@ -64,6 +80,15 @@ public sealed class EmailOutboxWorker(
             logger.LogInformation("EMAIL_OUTBOX_WORKER_STOPPED Instance {Instance}", _instance);
         }
     }
+
+    internal static TimeSpan BackoffFor(int failures) => failures switch
+    {
+        <= 1 => TimeSpan.FromSeconds(5),
+        2 => TimeSpan.FromSeconds(10),
+        3 => TimeSpan.FromSeconds(30),
+        4 => TimeSpan.FromSeconds(60),
+        _ => TimeSpan.FromMinutes(Math.Min(5, failures - 3))
+    };
 
     private async Task RecoverStuckMessagesWhenDueAsync(CancellationToken cancellationToken)
     {

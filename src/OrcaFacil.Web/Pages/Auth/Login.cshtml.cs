@@ -114,7 +114,9 @@ public class LoginModel : PageModel
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "LOGIN_UNEXPECTED_ERROR CorrelationId {CorrelationId} Operation {Operation}", HttpContext.TraceIdentifier, "Login");
+            // Do not emit provider messages here: they may contain server or connection metadata.
+            _logger.LogError("LOGIN_UNEXPECTED_ERROR CorrelationId {CorrelationId} Operation {Operation} FailureType {FailureType}",
+                HttpContext.TraceIdentifier, "Login", ex.GetType().Name);
             ModelState.AddModelError(string.Empty, "Não foi possível concluir seu acesso agora. Tente novamente em instantes ou fale com a MNSOFT.");
             TempData.Error("Não foi possível concluir seu acesso agora. Tente novamente em instantes ou fale com a MNSOFT.");
             return Page();

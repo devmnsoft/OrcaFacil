@@ -55,6 +55,7 @@ using OrcaFacil.Application.Localization;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
 builder.AddOrcaFacilLocalConfiguration();
+DatabaseConnectionStringResolver.ApplyOperationalAlias(builder.Configuration);
 // Operational aliases keep Windows service/IIS configuration concise while the
 // regular ASP.NET double-underscore variables remain supported.
 if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ORCAFACIL_DATAPROTECTION_PATH")))
@@ -67,7 +68,6 @@ if (builder.Configuration.GetValue("Diagnostics:EnableEfCommandLogging", false))
 builder.Logging.ClearProviders();
 builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(context.Configuration).Enrich.FromLogContext());
 
-var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection");
 var databaseConfigured = DatabaseConnectionOptions.TryCreate(builder.Configuration, out var databaseOptions, out var databaseConfigurationError);
 var localSettingsPath = Path.Combine(builder.Environment.ContentRootPath, LocalConfigurationExtensions.FileName);
 var databaseConfigurationState = DatabaseConfigurationState.Create(builder.Configuration, localSettingsPath);
@@ -77,13 +77,8 @@ if (!databaseConfigured)
 }
 builder.Services.AddSingleton<IDatabaseConfigurationState>(databaseConfigurationState);
 if (databaseOptions is not null && databaseConfigured) builder.Services.AddSingleton(databaseOptions);
-var configuredConnection = databaseConfigured && databaseConfigurationState.IsValid && !string.IsNullOrWhiteSpace(defaultConnection)
-    ? defaultConnection
-    : null;
-const string fallbackConnection = "Host=127.0.0.1;Port=1;Database=unavailable;Username=unavailable;Password=unavailable;Pooling=false;Timeout=1;Command Timeout=1";
 builder.Services.AddDbContext<OrcaFacilDbContext>(options => options
-    // A non-secret placeholder lets liveness and friendly error pages start when local settings are absent.
-    .UseNpgsql(configuredConnection ?? fallbackConnection)
+    .UseNpgsql(DatabaseConnectionStringResolver.ResolveRequired(builder.Configuration))
     .EnableSensitiveDataLogging(false)
     .EnableDetailedErrors(builder.Environment.IsDevelopment() && builder.Configuration.GetValue("Diagnostics:EnableEfDetailedErrors", false)));
 var configuredKeyPath = builder.Configuration["DataProtection:KeysPath"];
@@ -302,6 +297,9 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+if (!app.Environment.IsDevelopment() && !databaseConfigurationState.IsValid)
+    throw new InvalidOperationException("DefaultConnection inválida. A aplicação não pode iniciar em Production sem banco configurado.");
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
@@ -329,6 +327,8 @@ app.UseStatusCodePagesWithReExecute("/Error/{0}");
 app.UseMiddleware<DatabaseReadinessMiddleware>();
 app.UseSerilogRequestLogging();
 app.UseStaticFiles();
+app.MapGet("/favicon.ico", () => Results.Redirect("/favicon.svg", permanent: true));
+app.MapGet("/diagnostico", () => Results.Redirect("/SystemHealth/Database", permanent: true));
 app.UseRouting();
 app.UseRequestLocalization();
 app.UseRateLimiter();

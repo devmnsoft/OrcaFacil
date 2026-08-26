@@ -43,6 +43,17 @@ public sealed class DatabaseConnectionOptionsTests
         Assert.DoesNotContain("INFORME", error);
     }
 
+    [Theory]
+    [InlineData("Host=localhost;Port=1;Database=orca;Username=app;Password=secret;Pooling=true")]
+    [InlineData("Host=localhost;Port=5432;Database=unavailable;Username=app;Password=secret;Pooling=true")]
+    public void Sentinel_database_configurations_are_rejected(string connectionString)
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+            { ["ConnectionStrings:DefaultConnection"] = connectionString }).Build();
+        Assert.False(DatabaseConnectionOptions.TryCreate(configuration, out _, out _));
+        Assert.False(DatabaseConfigurationState.Create(configuration, "/tmp/local.json").IsValid);
+    }
+
     [Fact]
     public void Special_characters_in_password_are_accepted_and_never_retained_by_state()
     {

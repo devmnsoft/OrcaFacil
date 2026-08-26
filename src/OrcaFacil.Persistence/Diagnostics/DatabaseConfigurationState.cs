@@ -53,7 +53,8 @@ public sealed record DatabaseConfigurationState(
             var validPassword = DatabaseConnectionOptionsValidator.IsPasswordValid(cs.Password);
             var placeholder = hasAnyPassword && !validPassword;
             var metadataValid = !string.IsNullOrWhiteSpace(cs.Host) && !string.IsNullOrWhiteSpace(cs.Database) &&
-                                !string.IsNullOrWhiteSpace(cs.Username) && cs.Port is > 0 and <= 65535;
+                                !string.IsNullOrWhiteSpace(cs.Username) && cs.Port is > 1 and <= 65535 &&
+                                !cs.Database.Equals("unavailable", StringComparison.OrdinalIgnoreCase);
             var fingerprint = Fingerprints(cs.Host, cs.Port, cs.Database, cs.Username, cs.SslMode.ToString());
 
             if (!metadataValid)
