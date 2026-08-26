@@ -49,6 +49,23 @@ public static class PermissionCodes
     public const string PaymentsView = "Payments.View";
     public const string PaymentsManage = "Payments.Manage";
     public const string PaymentsReverse = "Payments.Reverse";
+    public const string PaymentsConfigureProvider = "Payments.ConfigureProvider";
+    public const string PaymentsCheckoutView = "Payments.CheckoutView";
+    public const string PaymentsManualConfirm = "Payments.ManualConfirm";
+    public const string PaymentsReconcile = "Payments.Reconcile";
+    public const string PaymentsRefund = "Payments.Refund";
+    public const string PaymentsDisputesView = "Payments.DisputesView";
+    public const string PaymentsDisputesManage = "Payments.DisputesManage";
+    public const string PaymentsReportsView = "Payments.ReportsView";
+    public const string PaymentsWebhooksView = "Payments.WebhooksView";
+    public const string PaymentsWebhooksManage = "Payments.WebhooksManage";
+    public const string BillingInvoicesView = "Billing.InvoicesView";
+    public const string BillingInvoicesManage = "Billing.InvoicesManage";
+    public const string BillingDunningView = "Billing.DunningView";
+    public const string BillingDunningManage = "Billing.DunningManage";
+    public const string BillingSuspensionManage = "Billing.SuspensionManage";
+    public const string PortalPaymentsView = "Portal.PaymentsView";
+    public const string PartnerPortalCommissionsView = "PartnerPortal.CommissionsView";
     public const string ReceivablesView = "Receivables.View";
     public const string ReceivablesManage = "Receivables.Manage";
     public const string ReceiptsView = "Receipts.View";
@@ -245,6 +262,10 @@ public static class PermissionCodes
         ProcessTemplatesView, ProcessTemplatesApply, ValidationRulesManage, NotificationRulesManage, ProcessLogsView,
         WorkOrdersChangeStatus, WorkOrdersCancel, WorkOrdersComplete, WorkOrdersManageChecklist,
         ScheduleView, ScheduleManage, ReportsOperational, PaymentsView, PaymentsManage, PaymentsReverse,
+        PaymentsConfigureProvider, PaymentsCheckoutView, PaymentsManualConfirm, PaymentsReconcile, PaymentsRefund,
+        PaymentsDisputesView, PaymentsDisputesManage, PaymentsReportsView, PaymentsWebhooksView, PaymentsWebhooksManage,
+        BillingInvoicesView, BillingInvoicesManage, BillingDunningView, BillingDunningManage, BillingSuspensionManage,
+        PortalPaymentsView, PartnerPortalCommissionsView,
         ReceivablesView, ReceivablesManage, ReceiptsView, ReceiptsManage, ReceiptsCancel,
         FinanceView, FinanceManage, ContractsView, ContractsManage, ContractChargesGenerate, ContractsAdvancedView,
         ContractsAdvancedManage, ContractsSlaView, ContractsSlaManage, ContractsWarrantyView, ContractsWarrantyManage,

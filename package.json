@@ -312,7 +312,19 @@
     "check:omnichannel-no-fake": "node scripts/check-omnichannel-no-fake.mjs",
     "check:database-connection-config": "node scripts/check-database-connection-config.mjs",
     "check:no-unavailable-database": "node scripts/check-no-unavailable-database.mjs",
-    "check:worker-resilience": "node scripts/check-worker-resilience.mjs"
+    "check:worker-resilience": "node scripts/check-worker-resilience.mjs",
+    "check:payments-provider": "node scripts/check-payments-provider.mjs",
+    "check:payments-checkout": "node scripts/check-payments-checkout.mjs",
+    "check:payments-pix": "node scripts/check-payments-pix.mjs",
+    "check:payments-bank-slip": "node scripts/check-payments-bank-slip.mjs",
+    "check:payments-card-safety": "node scripts/check-payments-card-safety.mjs",
+    "check:payments-webhooks": "node scripts/check-payments-webhooks.mjs",
+    "check:payments-idempotency": "node scripts/check-payments-idempotency.mjs",
+    "check:payments-reconciliation": "node scripts/check-payments-reconciliation.mjs",
+    "check:payments-no-fake": "node scripts/check-payments-no-fake.mjs",
+    "check:payments-no-card-storage": "node scripts/check-payments-no-card-storage.mjs",
+    "check:payments-no-secrets": "node scripts/check-payments-no-secrets.mjs",
+    "check:billing-dunning": "node scripts/check-billing-dunning.mjs"
   },
   "engines": {
     "node": ">=18"
