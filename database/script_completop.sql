@@ -1200,3 +1200,4 @@ CREATE INDEX IF NOT EXISTS ix_tenant_domain_audit_account_date ON orcafacil.tena
 COMMIT;
 
 -- Sprint 37 is maintained in database/sprint37_support_desk_v38.sql and applied by patch_release_candidate_schema.sql.
+-- Sprint 38 is maintained in database/sprint38_omnichannel_v39.sql and applied by patch_release_candidate_schema.sql.

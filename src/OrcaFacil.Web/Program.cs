@@ -165,6 +165,11 @@ builder.Services.AddSingleton<OrcaFacil.Application.Services.IServiceUnitCatalog
 builder.Services.AddScoped<IDocumentNumberService, DocumentNumberService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<SupportDeskService>();
+builder.Services.AddScoped<OmnichannelService>();
+builder.Services.AddScoped<WebChatSessionService>();
+builder.Services.AddScoped<InboundEmailService>();
+builder.Services.AddScoped<OmnichannelWhatsAppService>();
+builder.Services.AddScoped<OmnichannelOptOutService>();
 builder.Services.AddScoped<PlanLimitService>();
 builder.Services.AddScoped<PlanEntitlementService>();
 builder.Services.AddScoped<PackagePreviewService>();

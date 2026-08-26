@@ -101,6 +101,16 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<SupportKnowledgeArticle> SupportKnowledgeArticles => Set<SupportKnowledgeArticle>();
     public DbSet<SupportMacro> SupportMacros => Set<SupportMacro>();
     public DbSet<SupportShiftSchedule> SupportShiftSchedules => Set<SupportShiftSchedule>();
+    public DbSet<OmnichannelChannel> OmnichannelChannels => Set<OmnichannelChannel>();
+    public DbSet<OmnichannelConversation> OmnichannelConversations => Set<OmnichannelConversation>();
+    public DbSet<OmnichannelParticipant> OmnichannelParticipants => Set<OmnichannelParticipant>();
+    public DbSet<OmnichannelMessage> OmnichannelMessages => Set<OmnichannelMessage>();
+    public DbSet<OmnichannelDeliveryLog> OmnichannelDeliveryLogs => Set<OmnichannelDeliveryLog>();
+    public DbSet<OmnichannelWebChatSession> OmnichannelWebChatSessions => Set<OmnichannelWebChatSession>();
+    public DbSet<OmnichannelInboundEmailAccount> OmnichannelInboundEmailAccounts => Set<OmnichannelInboundEmailAccount>();
+    public DbSet<OmnichannelOptOutEvent> OmnichannelOptOutEvents => Set<OmnichannelOptOutEvent>();
+    public DbSet<OmnichannelSlaEvent> OmnichannelSlaEvents => Set<OmnichannelSlaEvent>();
+    public DbSet<OmnichannelCsatResponse> OmnichannelCsatResponses => Set<OmnichannelCsatResponse>();
     public DbSet<UserFeedback> UserFeedback => Set<UserFeedback>();
     public DbSet<KnowledgeBaseArticle> KnowledgeBaseArticles => Set<KnowledgeBaseArticle>();
     public DbSet<ReleaseNote> ReleaseNotes => Set<ReleaseNote>();
