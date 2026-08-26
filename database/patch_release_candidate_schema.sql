@@ -467,3 +467,6 @@ CREATE TABLE IF NOT EXISTS orcafacil.tenant_domain_audit_events (
 );
 CREATE INDEX IF NOT EXISTS ix_tenant_domain_audit_account_date ON orcafacil.tenant_domain_audit_events(account_id,created_at DESC);
 COMMIT;
+
+-- Sprint 37 / V3.8: execute the idempotent Service Desk evolution.
+\ir sprint37_support_desk_v38.sql

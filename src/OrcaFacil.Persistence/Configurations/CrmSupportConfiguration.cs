@@ -43,6 +43,7 @@ public sealed class SupportTicketConfiguration : IEntityTypeConfiguration<Suppor
         b.Property(x => x.Category).HasConversion<string>().HasMaxLength(24); b.Property(x => x.Status).HasConversion<string>().HasMaxLength(24); b.Property(x => x.Priority).HasConversion<string>().HasMaxLength(16);
         b.Property(x => x.Subject).HasMaxLength(180).IsRequired(); b.Property(x => x.Description).HasMaxLength(5000).IsRequired(); b.Property(x => x.InternalNotes).HasMaxLength(4000);
         b.Property(x => x.RelatedPage).HasMaxLength(300); b.Property(x => x.CorrelationId).HasMaxLength(100); b.Property(x => x.BrowserInfo).HasMaxLength(500);
+        b.Property(x => x.Source).HasMaxLength(32); b.Property(x => x.Impact).HasMaxLength(24); b.Property(x => x.Urgency).HasMaxLength(24);
         b.HasIndex(x => x.Protocol).IsUnique(); b.HasIndex(x => new { x.AccountId, x.Status, x.CreatedAt });
         b.HasOne<BusinessAccount>().WithMany().HasForeignKey(x => x.AccountId).OnDelete(DeleteBehavior.Restrict); b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.OpenedByUserId).OnDelete(DeleteBehavior.Restrict);
     }
@@ -65,7 +66,7 @@ public sealed class SupportTicketMessageConfiguration : IEntityTypeConfiguration
 {
     public void Configure(EntityTypeBuilder<SupportTicketMessage> b)
     {
-        b.ToTable("support_ticket_messages", "orcafacil"); b.ConfigureBase(); b.Property(x => x.Body).HasMaxLength(5000).IsRequired(); b.HasIndex(x => new { x.TicketId, x.CreatedAt });
+        b.ToTable("support_ticket_messages", "orcafacil"); b.ConfigureBase(); b.Property(x => x.Body).HasMaxLength(5000).IsRequired(); b.Property(x=>x.Type).HasConversion<string>().HasMaxLength(24); b.HasIndex(x => new { x.TicketId, x.CreatedAt });
         b.HasOne<SupportTicket>().WithMany().HasForeignKey(x => x.TicketId).OnDelete(DeleteBehavior.Cascade); b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.AuthorUserId).OnDelete(DeleteBehavior.Restrict);
     }
 }

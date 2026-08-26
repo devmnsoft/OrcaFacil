@@ -82,6 +82,34 @@ public static class PermissionCodes
     public const string ReportsView = "Reports.View";
     public const string ReportsExport = "Reports.Export";
     public const string SupportManage = "Support.Manage";
+    public const string SupportDeskView = "SupportDesk.View";
+    public const string SupportDeskManage = "SupportDesk.Manage";
+    public const string SupportQueuesView = "SupportQueues.View";
+    public const string SupportQueuesManage = "SupportQueues.Manage";
+    public const string SupportAgentsView = "SupportAgents.View";
+    public const string SupportAgentsManage = "SupportAgents.Manage";
+    public const string SupportTicketsView = "SupportTickets.View";
+    public const string SupportTicketsManage = "SupportTickets.Manage";
+    public const string SupportTicketsAssign = "SupportTickets.Assign";
+    public const string SupportTicketsEscalate = "SupportTickets.Escalate";
+    public const string SupportTicketsInternalNotes = "SupportTickets.InternalNotes";
+    public const string SupportTicketsReply = "SupportTickets.Reply";
+    public const string SupportTicketsClose = "SupportTickets.Close";
+    public const string SupportSlaView = "SupportSla.View";
+    public const string SupportSlaManage = "SupportSla.Manage";
+    public const string SupportIncidentsView = "SupportIncidents.View";
+    public const string SupportIncidentsManage = "SupportIncidents.Manage";
+    public const string SupportProblemsView = "SupportProblems.View";
+    public const string SupportProblemsManage = "SupportProblems.Manage";
+    public const string SupportMacrosView = "SupportMacros.View";
+    public const string SupportMacrosManage = "SupportMacros.Manage";
+    public const string SupportKnowledgeView = "SupportKnowledge.View";
+    public const string SupportKnowledgeManage = "SupportKnowledge.Manage";
+    public const string SupportCsatView = "SupportCsat.View";
+    public const string SupportCsatManage = "SupportCsat.Manage";
+    public const string SupportReportsView = "SupportReports.View";
+    public const string SupportWorkloadView = "SupportWorkload.View";
+    public const string SupportShiftsManage = "SupportShifts.Manage";
     public const string SettingsView = "Settings.View";
     public const string SettingsManage = "Settings.Manage";
     public const string UsersManage = "Users.Manage";
@@ -223,7 +251,7 @@ public static class PermissionCodes
         ContractsAdjustmentsView, ContractsAdjustmentsManage, ContractsAmendmentsView, ContractsAmendmentsManage,
         ContractsUsageView, ContractsHealthView, ContractsReportsView, CashFlowView, ReportsFinancial,
         ReportsView, ReportsExport, SettingsView, SettingsManage, UsersManage, PlanManage, AdminAccess,
-        DiagnosticsView, LogsView, AuditView, SupportView, SupportManage, SupportCreateTicket, SupportManageTickets,
+        DiagnosticsView, LogsView, AuditView, SupportView, SupportManage, SupportCreateTicket, SupportManageTickets, SupportDeskView, SupportDeskManage, SupportQueuesView, SupportQueuesManage, SupportAgentsView, SupportAgentsManage, SupportTicketsView, SupportTicketsManage, SupportTicketsAssign, SupportTicketsEscalate, SupportTicketsInternalNotes, SupportTicketsReply, SupportTicketsClose, SupportSlaView, SupportSlaManage, SupportIncidentsView, SupportIncidentsManage, SupportProblemsView, SupportProblemsManage, SupportMacrosView, SupportMacrosManage, SupportKnowledgeView, SupportKnowledgeManage, SupportCsatView, SupportCsatManage, SupportReportsView, SupportWorkloadView, SupportShiftsManage,
         FeedbackView, FeedbackCreate, KnowledgeBaseManage, ReleaseNotesManage, SetupChecklistView, SetupChecklistManage,
         RecommendationsView, AutomationRulesView, AutomationRulesManage, ProductivityView, ExecutiveReportsView,
         ScoresView, ScoresFinancialDetails, IntegrationsView, IntegrationsManage, WebhooksView, WebhooksManage,
