@@ -26,7 +26,9 @@ public sealed class DatabaseReadinessMiddleware(RequestDelegate next)
         var message = context.Request.Path.StartsWithSegments("/Auth/Register", StringComparison.OrdinalIgnoreCase)
             ? "Não conseguimos concluir seu cadastro porque o serviço de dados ainda não está configurado corretamente. Nenhum dado foi salvo."
             : context.Request.Path.StartsWithSegments("/Auth/Login", StringComparison.OrdinalIgnoreCase)
-                ? "Não foi possível entrar porque o serviço de dados ainda não está disponível."
+                ? (environment.IsDevelopment()
+                    ? "Banco de dados indisponível ou connection string inválida. Verifique DefaultConnection."
+                    : "Serviço temporariamente indisponível. Tente novamente em instantes.")
                 : state.PublicMessage;
         var hint = environment.IsDevelopment()
             ? "<p><strong>Desenvolvimento:</strong> Edite src/OrcaFacil.Web/appsettings.Local.json e reinicie a aplicação.</p>"

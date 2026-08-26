@@ -12,16 +12,19 @@ using OrcaFacil.Infrastructure.Pdf;
 using OrcaFacil.Persistence;
 using OrcaFacil.Persistence.Queries;
 using OrcaFacil.Persistence.Repositories;
+using OrcaFacil.Persistence.Diagnostics;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
+DatabaseConnectionStringResolver.ApplyOperationalAlias(builder.Configuration);
 
 builder.Logging.ClearProviders();
 builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(context.Configuration).Enrich.FromLogContext());
 
-builder.Services.AddDbContext<OrcaFacilDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+var connectionString = DatabaseConnectionStringResolver.ResolveRequired(builder.Configuration);
+builder.Services.AddDbContext<OrcaFacilDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();

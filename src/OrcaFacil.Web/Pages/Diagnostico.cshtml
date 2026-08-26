@@ -1,4 +1,4 @@
-@page "/diagnostico"
+@page "/SystemHealth/Database"
 @model OrcaFacil.Web.Pages.DiagnosticoModel
 @using OrcaFacil.Persistence.Diagnostics
 @{ ViewData["Title"] = "Diagnóstico"; var db = Model.Database; }
@@ -8,6 +8,9 @@
   <li>Ambiente: @Model.EnvironmentName</li>
   <li>Modo: @(Model.EnvironmentName == "Development" ? "Development" : "Production")</li>
   <li>Banco: @(db?.CanConnect == true ? "OK" : "Falha")</li>
+  <li>Configuração: @Model.ConfigurationState.Source (@Model.ConfigurationState.ValidationCode)</li>
+  <li>Destino: @Model.ConfigurationState.Host:@Model.ConfigurationState.Port / @Model.ConfigurationState.Database</li>
+  <li>Fingerprint seguro: @Model.ConfigurationState.Fingerprint</li>
   <li>Nome do banco: @db?.DatabaseName</li>
   <li>Schema: @DatabaseDiagnosticsService.ExpectedSchema (@(db?.SchemaExists == true ? "encontrado" : "não encontrado"))</li>
   <li>Tabelas ausentes: @(db?.MissingTables.Count ?? 0)</li>

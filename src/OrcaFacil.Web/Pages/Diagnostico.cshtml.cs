@@ -10,12 +10,15 @@ public class DiagnosticoModel : PageModel
 {
     private readonly IWebHostEnvironment _environment;
     private readonly IDatabaseDiagnosticsService _diagnostics;
+    public IDatabaseConfigurationState ConfigurationState { get; }
     public DatabaseDiagnosticsDto? Database { get; private set; }
     public string EnvironmentName => _environment.EnvironmentName;
-    public DiagnosticoModel(IWebHostEnvironment environment, IDatabaseDiagnosticsService diagnostics)
+    public DiagnosticoModel(IWebHostEnvironment environment, IDatabaseDiagnosticsService diagnostics,
+        IDatabaseConfigurationState configurationState)
     {
         _environment = environment;
         _diagnostics = diagnostics;
+        ConfigurationState = configurationState;
     }
     public async Task OnGetAsync(CancellationToken ct) => Database = await _diagnostics.CheckAsync(ct);
 }

@@ -309,7 +309,10 @@
     "check:conversation-to-lead": "node scripts/check-conversation-to-lead.mjs",
     "check:omnichannel-csat": "node scripts/check-omnichannel-csat.mjs",
     "check:omnichannel-health": "node scripts/check-omnichannel-health.mjs",
-    "check:omnichannel-no-fake": "node scripts/check-omnichannel-no-fake.mjs"
+    "check:omnichannel-no-fake": "node scripts/check-omnichannel-no-fake.mjs",
+    "check:database-connection-config": "node scripts/check-database-connection-config.mjs",
+    "check:no-unavailable-database": "node scripts/check-no-unavailable-database.mjs",
+    "check:worker-resilience": "node scripts/check-worker-resilience.mjs"
   },
   "engines": {
     "node": ">=18"
