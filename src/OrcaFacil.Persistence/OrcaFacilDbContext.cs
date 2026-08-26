@@ -9,6 +9,11 @@ public class OrcaFacilDbContext : DbContext
     public OrcaFacilDbContext(DbContextOptions<OrcaFacilDbContext> options) : base(options) { }
 
     public DbSet<UserAccount> Users => Set<UserAccount>();
+    public DbSet<TenantDomain> TenantDomains => Set<TenantDomain>();
+    public DbSet<TenantDomainVerification> TenantDomainVerifications => Set<TenantDomainVerification>();
+    public DbSet<TenantDomainSslCheck> TenantDomainSslChecks => Set<TenantDomainSslCheck>();
+    public DbSet<TenantEmailDomain> TenantEmailDomains => Set<TenantEmailDomain>();
+    public DbSet<TenantDomainAuditEvent> TenantDomainAuditEvents => Set<TenantDomainAuditEvent>();
     public DbSet<GrowthLead> GrowthLeads => Set<GrowthLead>();
     public DbSet<GrowthLeadEvent> GrowthLeadEvents => Set<GrowthLeadEvent>();
     public DbSet<IssuerProfile> IssuerProfiles => Set<IssuerProfile>();

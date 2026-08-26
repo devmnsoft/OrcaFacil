@@ -278,7 +278,16 @@
     "check:sitemap-hreflang": "node scripts/check-localization.mjs",
     "check:regional-formatting": "node scripts/check-localization.mjs",
     "check:legal-i18n": "node scripts/check-localization.mjs",
-    "check:no-fake-translations": "node scripts/check-translation-coverage.mjs"
+    "check:no-fake-translations": "node scripts/check-translation-coverage.mjs",
+    "check:custom-domains": "node scripts/check-custom-domains.mjs",
+    "check:domain-verification": "node scripts/check-domain-verification.mjs",
+    "check:domain-routing": "node scripts/check-domain-routing.mjs",
+    "check:host-security": "node scripts/check-host-security.mjs",
+    "check:white-label-domains": "node scripts/check-white-label-domains.mjs",
+    "check:email-domains": "node scripts/check-email-domains.mjs",
+    "check:domain-entitlements": "node scripts/check-domain-entitlements.mjs",
+    "check:domain-public-urls": "node scripts/check-domain-public-urls.mjs",
+    "check:domain-no-fake": "node scripts/check-domain-no-fake.mjs"
   },
   "engines": {
     "node": ">=18"

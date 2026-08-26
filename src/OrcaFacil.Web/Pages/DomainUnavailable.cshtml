@@ -1,0 +1,17 @@
+@page "/DomainUnavailable"
+@model OrcaFacil.Web.Pages.DomainUnavailableModel
+@{ Layout = "/Pages/Shared/_PublicLayout.cshtml"; ViewData["Title"] = "Domínio não configurado"; }
+<section class="of-section of-section-light" aria-labelledby="domain-title">
+  <div class="container">
+    <article class="of-card mx-auto domain-unavailable-card">
+      <p class="of-eyebrow">Domínio customizado</p>
+      <h1 id="domain-title">Este endereço ainda não está configurado no OrçaFácil.</h1>
+      <p>O domínio pode estar aguardando validação DNS, ativação ou configuração do certificado no servidor.</p>
+      <p class="of-muted">Código de atendimento: <strong>@Model.CorrelationId</strong></p>
+      <a class="btn btn-primary" asp-page="/Index">Acessar o endereço padrão</a>
+    </article>
+  </div>
+</section>
+<style>
+  .domain-unavailable-card { max-width: 46rem; margin-block: clamp(2rem,8vw,7rem); padding: clamp(1.5rem,5vw,3.5rem); overflow-wrap:anywhere; }
+</style>
