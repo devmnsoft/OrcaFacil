@@ -1,0 +1,6 @@
+{
+  "Common.Save": "Salvar", "Common.Cancel": "Cancelar", "Common.Delete": "Excluir", "Common.Edit": "Editar", "Common.Search": "Pesquisar",
+  "Auth.Login": "Entrar", "Auth.Logout": "Sair", "Dashboard.Title": "Visão geral", "Clients.Title": "Clientes",
+  "Quotes.Title": "Orçamentos", "WorkOrders.Title": "Ordens de serviço", "Finance.Title": "Financeiro",
+  "Reports.Title": "Relatórios", "Portal.Title": "Portal", "Public.Home.HeroTitle": "Orçamentos profissionais, sem complicação"
+}

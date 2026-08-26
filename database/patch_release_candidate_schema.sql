@@ -428,3 +428,4 @@ INSERT INTO orcafacil.role_permissions(role_id,permission_id,created_at,is_delet
 \ir sprint30_governed_ai.sql
 
 -- Sprint 33 is applied by database/sprint33_growth_v34.sql (kept separate for idempotent release runners).
+-- Sprint 35 localization rollout: execute database/sprint35_localization_v36.sql; it is additive and idempotent.
