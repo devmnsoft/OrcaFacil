@@ -1159,3 +1159,4 @@ INSERT INTO orcafacil.role_permissions(role_id,permission_id,created_at,is_delet
 \ir sprint30_governed_ai.sql
 
 -- Sprint 33 is applied by database/sprint33_growth_v34.sql after this baseline schema.
+-- Sprint 35 localization rollout: execute database/sprint35_localization_v36.sql after this baseline.

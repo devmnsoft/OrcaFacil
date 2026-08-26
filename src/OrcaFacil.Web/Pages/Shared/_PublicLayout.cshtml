@@ -1,5 +1,7 @@
 <!doctype html>
-<html lang="pt-BR">
+@using OrcaFacil.Application.Localization
+@{ var currentLocale = System.Globalization.CultureInfo.CurrentUICulture.Name; }
+<html lang="@currentLocale" dir="ltr">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -44,6 +46,15 @@
         <a asp-page="/Segmentos/Index">Segmentos</a>
         <a asp-page="/Precos">Preços</a>
         <a asp-page="/Blog/Index">Blog</a><a asp-page="/Recursos/Materiais">Materiais</a><a asp-page="/Seguranca">Segurança</a><a asp-page="/Status">Status</a><a asp-page="/Contato">Contato</a>
+        <form method="post" action="/locale" class="of-locale-selector">
+          <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+          <label class="of-sr-only" for="public-locale">Idioma</label>
+          <select id="public-locale" name="culture" aria-label="Idioma" onchange="this.form.submit()">
+            @foreach (var locale in SupportedLocales.All.Values.Where(x => x.IsActive && x.IsPublicEnabled))
+            { <option value="@locale.Code" selected="@(locale.Code == currentLocale)">@locale.NativeName</option> }
+          </select>
+          <noscript><button type="submit" class="of-button of-button-secondary">Aplicar idioma</button></noscript>
+        </form>
         <span class="of-public-menu-actions"><a class="of-button of-button-secondary of-button-on-dark" asp-page="/Auth/Login">Entrar</a><a class="of-button of-button-primary" asp-page="/Auth/Register">Começar grátis</a></span>
       </div>
     </nav>

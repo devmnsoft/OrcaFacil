@@ -48,6 +48,9 @@ using OrcaFacil.Application.Security;
 using OrcaFacil.Application.Jobs;
 using OrcaFacil.Web.Api;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
+using OrcaFacil.Application.Localization;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
@@ -269,6 +272,20 @@ builder.Services.Configure<RateLimiterOptions>(options => options.AddPolicy("api
         context.User.FindFirstValue("api_key_id") ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 })));
 builder.Services.AddControllers();
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var cultures = SupportedLocales.All.Keys.Select(CultureInfo.GetCultureInfo).ToArray();
+    options.DefaultRequestCulture = new RequestCulture(SupportedLocales.Default);
+    options.SupportedCultures = cultures;
+    options.SupportedUICultures = cultures;
+    options.FallBackToParentCultures = false;
+    options.FallBackToParentUICultures = false;
+    options.RequestCultureProviders =
+    [
+        new CookieRequestCultureProvider(),
+        new AcceptLanguageHeaderRequestCultureProvider()
+    ];
+});
 builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AddPageRoute("/Diagnostico", "/Admin/SystemHealth");
@@ -307,11 +324,27 @@ app.UseMiddleware<DatabaseReadinessMiddleware>();
 app.UseSerilogRequestLogging();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseRequestLocalization();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseMiddleware<ApiRequestLoggingMiddleware>();
 app.UseMiddleware<MaintenanceModeMiddleware>();
 app.UseAuthorization();
+app.MapPost("/locale", async (HttpContext context) =>
+{
+    var form = await context.Request.ReadFormAsync(context.RequestAborted);
+    var culture = form["culture"].ToString();
+    var returnUrl = form["returnUrl"].ToString();
+    var normalized = SupportedLocales.Normalize(culture);
+    context.Response.Cookies.Append(
+        CookieRequestCultureProvider.DefaultCookieName,
+        CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(normalized)),
+        new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), HttpOnly = true, IsEssential = true,
+            SameSite = SameSiteMode.Lax, Secure = context.Request.IsHttps });
+    var safeReturnUrl = !string.IsNullOrWhiteSpace(returnUrl) && Uri.IsWellFormedUriString(returnUrl, UriKind.Relative) && returnUrl.StartsWith('/')
+        ? returnUrl : "/";
+    return Results.LocalRedirect(safeReturnUrl);
+}).DisableAntiforgery();
 static Task WritePublicHealth(HttpContext context, HealthReport report)
 {
     context.Response.ContentType = "application/json";

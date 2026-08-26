@@ -195,6 +195,13 @@ public static class PermissionCodes
     public const string MarginsView = "Margins.View"; public const string MarginsManagePolicies = "Margins.ManagePolicies";
     public const string PricingRulesView = "PricingRules.View"; public const string PricingRulesManage = "PricingRules.Manage";
     public const string ReportsCosts = "Reports.Costs"; public const string ReportsMargins = "Reports.Margins";
+    public const string LocalizationView = "Localization.View"; public const string LocalizationManage = "Localization.Manage";
+    public const string LocalizationImport = "Localization.Import"; public const string LocalizationExport = "Localization.Export";
+    public const string LocalizationReview = "Localization.Review"; public const string LocaleSettingsView = "LocaleSettings.View";
+    public const string LocaleSettingsManage = "LocaleSettings.Manage"; public const string PublicTranslationsView = "PublicTranslations.View";
+    public const string PublicTranslationsManage = "PublicTranslations.Manage"; public const string LegalTranslationsManage = "LegalTranslations.Manage";
+    public const string SeoTranslationsManage = "SeoTranslations.Manage"; public const string TranslationJobsView = "TranslationJobs.View";
+    public const string TranslationJobsManage = "TranslationJobs.Manage";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -244,6 +251,9 @@ public static class PermissionCodes
         CommunicationOptOutManage, SuppliersView, SuppliersManage, MaterialsView, MaterialsManage,
         InventoryView, InventoryManage, InventoryAdjust, InventoryReserve, InventoryConsume,
         PurchasesView, PurchasesManage, PurchasesApprove, PurchasesReceive, CostingView, CostingManage,
-        MarginsView, MarginsManagePolicies, PricingRulesView, PricingRulesManage, ReportsCosts, ReportsMargins
+        MarginsView, MarginsManagePolicies, PricingRulesView, PricingRulesManage, ReportsCosts, ReportsMargins,
+        LocalizationView, LocalizationManage, LocalizationImport, LocalizationExport, LocalizationReview,
+        LocaleSettingsView, LocaleSettingsManage, PublicTranslationsView, PublicTranslationsManage,
+        LegalTranslationsManage, SeoTranslationsManage, TranslationJobsView, TranslationJobsManage
     };
 }
