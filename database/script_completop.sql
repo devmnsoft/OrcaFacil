@@ -1198,3 +1198,5 @@ CREATE TABLE IF NOT EXISTS orcafacil.tenant_domain_audit_events (
 );
 CREATE INDEX IF NOT EXISTS ix_tenant_domain_audit_account_date ON orcafacil.tenant_domain_audit_events(account_id,created_at DESC);
 COMMIT;
+
+-- Sprint 37 is maintained in database/sprint37_support_desk_v38.sql and applied by patch_release_candidate_schema.sql.

@@ -7,18 +7,32 @@ public sealed class SupportTicket : Entity
 {
     public Guid AccountId { get; set; }
     public Guid OpenedByUserId { get; set; }
+    public Guid? ClientId { get; set; }
+    public Guid? PortalUserId { get; set; }
+    public Guid? PartnerId { get; set; }
+    public Guid? AssignedToUserId { get; set; }
+    public Guid? QueueId { get; set; }
+    public Guid? CategoryId { get; set; }
+    public Guid? PriorityId { get; set; }
+    public Guid? SlaPolicyId { get; set; }
     public string Protocol { get; set; } = string.Empty;
     public SupportTicketCategory Category { get; set; }
     public SupportTicketStatus Status { get; set; } = SupportTicketStatus.Open;
     public SupportTicketPriority Priority { get; set; } = SupportTicketPriority.Normal;
     public string Subject { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+    public string Source { get; set; } = "Internal";
+    public string Impact { get; set; } = "SingleUser";
+    public string Urgency { get; set; } = "Normal";
     public string? RelatedPage { get; set; }
     public string? CorrelationId { get; set; }
     public string? BrowserInfo { get; set; }
     public string? InternalNotes { get; set; }
     public DateTime? ResolvedAt { get; set; }
     public DateTime? ClosedAt { get; set; }
+    public DateTime? FirstResponseDueAt { get; set; }
+    public DateTime? ResolutionDueAt { get; set; }
+    public DateTime? FirstRespondedAt { get; set; }
 }
 
 public sealed class UserFeedback : Entity
@@ -62,4 +76,5 @@ public sealed class SupportTicketMessage : Entity
     public string Body { get; set; } = string.Empty;
     public bool IsAdminReply { get; set; }
     public bool IsInternal { get; set; }
+    public SupportMessageType Type { get; set; } = SupportMessageType.PublicReply;
 }

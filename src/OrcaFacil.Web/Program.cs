@@ -164,6 +164,7 @@ builder.Services.AddScoped<OrcaFacil.Application.Services.IServiceCatalogApplica
 builder.Services.AddSingleton<OrcaFacil.Application.Services.IServiceUnitCatalog, OrcaFacil.Application.Services.ServiceUnitCatalog>();
 builder.Services.AddScoped<IDocumentNumberService, DocumentNumberService>();
 builder.Services.AddScoped<ProfileService>();
+builder.Services.AddScoped<SupportDeskService>();
 builder.Services.AddScoped<PlanLimitService>();
 builder.Services.AddScoped<PlanEntitlementService>();
 builder.Services.AddScoped<PackagePreviewService>();

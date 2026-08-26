@@ -287,7 +287,17 @@
     "check:email-domains": "node scripts/check-email-domains.mjs",
     "check:domain-entitlements": "node scripts/check-domain-entitlements.mjs",
     "check:domain-public-urls": "node scripts/check-domain-public-urls.mjs",
-    "check:domain-no-fake": "node scripts/check-domain-no-fake.mjs"
+    "check:domain-no-fake": "node scripts/check-domain-no-fake.mjs",
+    "check:support-desk": "node scripts/check-support-desk.mjs",
+    "check:support-tickets": "node scripts/check-support-desk.mjs",
+    "check:support-sla": "node scripts/check-support-desk.mjs",
+    "check:support-escalation": "node scripts/check-support-desk.mjs",
+    "check:support-portals": "node scripts/check-support-desk.mjs",
+    "check:support-attachments": "node scripts/check-support-desk.mjs",
+    "check:support-incidents": "node scripts/check-support-desk.mjs",
+    "check:support-csat": "node scripts/check-support-desk.mjs",
+    "check:support-knowledge": "node scripts/check-support-desk.mjs",
+    "check:support-no-fake": "node scripts/check-support-no-fake.mjs"
   },
   "engines": {
     "node": ">=18"
