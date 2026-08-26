@@ -1,0 +1,5 @@
+@page "/Recursos/{slug?}"
+@model OrcaFacil.Web.Pages.Recursos.IndexModel
+@{ Layout="/Pages/Shared/_PublicLayout.cshtml"; ViewData["Title"]=Model.Title; ViewData["Description"]=Model.Description; }
+<section class="of-public-hero of-commercial-hero"><div class="of-container"><span class="of-eyebrow">Recursos disponíveis</span><h1>@Model.Title</h1><p>@Model.Description</p><div class="of-home-actions"><a class="of-button of-button-primary" asp-page="/Auth/Register">Começar grátis</a><a class="of-button of-button-secondary" asp-page="/Demo">Pedir demonstração</a></div></div></section>
+<section class="of-public-section"><div class="of-container"><h2>Da necessidade ao acompanhamento</h2><p>@Model.HowItWorks</p><div class="of-feature-grid">@foreach(var benefit in Model.Benefits){<article><h3>@benefit.Key</h3><p>@benefit.Value</p></article>}</div><h2>Perguntas frequentes</h2><div class="of-faq-list"><details><summary>Este recurso está disponível para qualquer plano?</summary><p>A disponibilidade e os limites dependem do catálogo de planos publicado. Confirme em <a asp-page="/Precos">Preços</a>.</p></details></div></div></section>

@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+const read = p => fs.readFileSync(p, 'utf8');
+const required = ['src/OrcaFacil.Web/Pages/Recursos/Index.cshtml','src/OrcaFacil.Web/Pages/Segmentos/Index.cshtml','src/OrcaFacil.Web/Pages/Blog/Index.cshtml','src/OrcaFacil.Web/Pages/Trust/Index.cshtml','src/OrcaFacil.Web/Pages/Status.cshtml','src/OrcaFacil.Web/wwwroot/js/cookie-consent.js'];
+const missing = required.filter(p => !fs.existsSync(p));
+if (missing.length) throw new Error(`Arquivos públicos ausentes: ${missing.join(', ')}`);
+const layout=read('src/OrcaFacil.Web/Pages/Shared/_PublicLayout.cshtml'); const program=read('src/OrcaFacil.Web/Program.cs');
+for(const marker of ['rel="canonical"','og:title','twitter:card','application/ld+json','/Blog/Index','/Status']) if(!layout.includes(marker)) throw new Error(`Layout sem ${marker}`);
+for(const marker of ['/sitemap.xml','/robots.txt','Disallow: /Admin','Disallow: /Portal']) if(!program.includes(marker)) throw new Error(`SEO técnico sem ${marker}`);
+const publicPages=fs.readdirSync('src/OrcaFacil.Web/Pages',{recursive:true}).filter(x=>x.endsWith('.cshtml')).map(x=>read(`src/OrcaFacil.Web/Pages/${x}`)).join('\n');
+for(const forbidden of ['href="#"','javascript:void']) if(publicPages.includes(forbidden)) throw new Error(`Navegação insegura: ${forbidden}`);
+console.log('Sprint 34 public site: estrutura, SEO, navegação, trust, status e consentimento validados.');

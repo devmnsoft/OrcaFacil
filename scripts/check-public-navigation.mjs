@@ -11,6 +11,7 @@ const publicFiles = [
   'Auth/Register.cshtml',
   'Termos.cshtml',
   'Privacidade.cshtml'
+  ,'Recursos/Index.cshtml','Segmentos/Index.cshtml','Blog/Index.cshtml','Trust/Index.cshtml','Status.cshtml'
 ];
 
 const failures = [];
@@ -32,18 +33,15 @@ for (const relativePath of publicFiles) {
 const layout = await readFile(join(pagesRoot, 'Shared/_PublicLayout.cshtml'), 'utf8');
 const home = await readFile(join(pagesRoot, 'Index.cshtml'), 'utf8');
 const footerSource = layout.match(/<footer[\s\S]*?<\/footer>/i)?.[0] ?? '';
-for (const requiredPage of ['/Index', '/Precos', '/Auth/Login', '/Auth/Register', '/Support/Index', '/Termos', '/Privacidade'])
+for (const requiredPage of ['/Index', '/Recursos/Index', '/Segmentos/Index', '/Precos', '/Auth/Login', '/Auth/Register', '/Termos', '/Privacidade', '/Cookies', '/Trust/Index', '/Status'])
   if (!footerSource.includes(`asp-page="${requiredPage}"`)) failures.push(`footer não aponta para ${requiredPage}`);
 if (!footerSource.includes('href="mailto:')) failures.push('footer não possui e-mail comercial acionável');
 
 for (const requiredLabel of ['Criar meu primeiro orçamento', 'Ver planos', 'Ver Profissional', 'Ver Negócio', 'Falar com suporte'])
   if (!home.includes(requiredLabel)) failures.push(`CTA obrigatório ausente na Home: ${requiredLabel}`);
 
-for (const fragment of ['como-funciona', 'recursos', 'para-quem']) {
-  if (!layout.includes(`asp-page="/Index" asp-fragment="${fragment}"`))
-    failures.push(`menu público não usa Tag Helper para #${fragment}`);
-  if (!home.includes(`id="${fragment}"`)) failures.push(`seção #${fragment} não existe na Home`);
-}
+for (const requiredMenuPage of ['/Recursos/Index', '/Segmentos/Index', '/Blog/Index', '/Status', '/Contato'])
+  if (!layout.includes(`asp-page="${requiredMenuPage}"`)) failures.push(`menu público não aponta para ${requiredMenuPage}`);
 
 if (failures.length) {
   console.error(`Falha na navegação pública:\n- ${failures.join('\n- ')}`);
