@@ -1,4 +1,5 @@
 using OrcaFacil.Application.Localization;
+using Xunit;
 
 namespace OrcaFacil.UnitTests;
 

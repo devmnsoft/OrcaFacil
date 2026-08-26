@@ -1,5 +1,6 @@
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
+using Xunit;
 
 namespace OrcaFacil.UnitTests;
 
