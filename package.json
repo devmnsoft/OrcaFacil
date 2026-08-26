@@ -297,7 +297,19 @@
     "check:support-incidents": "node scripts/check-support-desk.mjs",
     "check:support-csat": "node scripts/check-support-desk.mjs",
     "check:support-knowledge": "node scripts/check-support-desk.mjs",
-    "check:support-no-fake": "node scripts/check-support-no-fake.mjs"
+    "check:support-no-fake": "node scripts/check-support-no-fake.mjs",
+    "check:omnichannel-inbox": "node scripts/check-omnichannel-inbox.mjs",
+    "check:omnichannel-conversations": "node scripts/check-omnichannel-conversations.mjs",
+    "check:web-chat": "node scripts/check-web-chat.mjs",
+    "check:inbound-email": "node scripts/check-inbound-email.mjs",
+    "check:whatsapp-control": "node scripts/check-whatsapp-control.mjs",
+    "check:omnichannel-routing": "node scripts/check-omnichannel-routing.mjs",
+    "check:omnichannel-sla": "node scripts/check-omnichannel-sla.mjs",
+    "check:conversation-to-ticket": "node scripts/check-conversation-to-ticket.mjs",
+    "check:conversation-to-lead": "node scripts/check-conversation-to-lead.mjs",
+    "check:omnichannel-csat": "node scripts/check-omnichannel-csat.mjs",
+    "check:omnichannel-health": "node scripts/check-omnichannel-health.mjs",
+    "check:omnichannel-no-fake": "node scripts/check-omnichannel-no-fake.mjs"
   },
   "engines": {
     "node": ">=18"
