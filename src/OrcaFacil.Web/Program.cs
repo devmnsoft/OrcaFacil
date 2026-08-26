@@ -382,6 +382,20 @@ app.MapGet("/Internal/Help/{code}", async Task<IResult> (string code, IContextua
 }).RequireAuthorization();
 app.MapControllers();
 app.MapPublicApiV1();
+app.MapGet("/robots.txt", (IConfiguration configuration) =>
+{
+    var baseUrl = configuration["PublicSite:BaseUrl"]?.TrimEnd('/');
+    var sitemap = string.IsNullOrWhiteSpace(baseUrl) ? "/sitemap.xml" : $"{baseUrl}/sitemap.xml";
+    return Results.Text($"User-agent: *\nAllow: /\nDisallow: /Admin\nDisallow: /Internal\nDisallow: /Portal\nDisallow: /PublicQuotes\nSitemap: {sitemap}\n", "text/plain; charset=utf-8");
+});
+app.MapGet("/sitemap.xml", (HttpContext context, IConfiguration configuration) =>
+{
+    var root = configuration["PublicSite:BaseUrl"]?.TrimEnd('/');
+    if (string.IsNullOrWhiteSpace(root)) root = $"{context.Request.Scheme}://{context.Request.Host}";
+    string[] routes = ["/", "/Recursos", "/Segmentos", "/Precos", "/Contato", "/Demo", "/Comecar", "/Seguranca", "/Integracoes", "/Implantacao", "/Sobre", "/Blog", "/Recursos/Materiais", "/Trust", "/Status", "/Termos", "/Privacidade", "/Cookies", "/LGPD"];
+    var urls = string.Join(string.Empty, routes.Select(route => $"<url><loc>{System.Net.WebUtility.HtmlEncode(root + route)}</loc></url>"));
+    return Results.Text($"<?xml version=\"1.0\" encoding=\"UTF-8\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">{urls}</urlset>", "application/xml; charset=utf-8");
+});
 app.MapRazorPages();
 app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (Guid id, OrcaFacil.Application.Abstractions.ICurrentUserService currentUser, OrcaFacil.Application.Abstractions.IPdfService pdf, OrcaFacil.Persistence.OrcaFacilDbContext db, CancellationToken ct) =>
 {

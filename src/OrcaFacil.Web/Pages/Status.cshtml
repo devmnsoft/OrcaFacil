@@ -1,0 +1,4 @@
+@page
+@model OrcaFacil.Web.Pages.StatusModel
+@{Layout="/Pages/Shared/_PublicLayout.cshtml";ViewData["Title"]="Status do sistema";ViewData["Description"]="Condição atual obtida dos health checks reais e públicos do OrçaFácil.";}
+<section class="of-public-hero of-commercial-hero"><div class="of-container"><span class="of-eyebrow">Status do sistema</span><h1>@Model.Headline</h1><p>Atualizado em <time datetime="@Model.CheckedAt.ToString("O")">@Model.CheckedAt.ToString("dd/MM/yyyy HH:mm 'UTC'")</time>. Nenhum detalhe interno ou stack trace é publicado.</p></div></section><section class="of-public-section"><div class="of-container"><div class="of-status-list" aria-live="polite">@foreach(var item in Model.Components){<article><h2>@item.Name</h2><span class="of-status-badge @item.Css">@item.Label</span></article>}</div><p>Componentes sem health check público não recebem um estado presumido. Para suporte, <a asp-page="/Contato">entre em contato</a>.</p></div></section>

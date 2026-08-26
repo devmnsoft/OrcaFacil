@@ -252,7 +252,20 @@
     "check:referrals": "node scripts/check-referrals.mjs",
     "check:resellers": "node scripts/check-resellers.mjs",
     "check:growth-revenue": "node scripts/check-growth-revenue.mjs",
-    "check:no-fake-growth": "node scripts/check-no-fake-growth.mjs"
+    "check:no-fake-growth": "node scripts/check-no-fake-growth.mjs",
+    "check:public-site": "node scripts/check-public-site.mjs",
+    "check:seo-technical": "node scripts/check-seo-technical.mjs",
+    "check:sitemap-robots": "node scripts/check-sitemap-robots.mjs",
+    "check:structured-data": "node scripts/check-structured-data.mjs",
+    "check:blog-content": "node scripts/check-blog-content.mjs",
+    "check:landing-pages": "node scripts/check-landing-pages.mjs",
+    "check:trust-center": "node scripts/check-trust-center.mjs",
+    "check:status-page": "node scripts/check-status-page.mjs",
+    "check:cookie-consent": "node scripts/check-cookie-consent.mjs",
+    "check:public-lead-forms": "node scripts/check-public-lead-forms.mjs",
+    "check:public-performance": "node scripts/check-public-performance.mjs",
+    "check:public-accessibility": "node scripts/check-public-accessibility.mjs",
+    "check:no-fake-public-site": "node scripts/check-no-fake-public-site.mjs"
   },
   "engines": {
     "node": ">=18"
