@@ -471,3 +471,6 @@ COMMIT;
 -- Sprint 37 / V3.8: execute the idempotent Service Desk evolution.
 \ir sprint37_support_desk_v38.sql
 \ir sprint38_omnichannel_v39.sql
+
+-- Sprint 42 / V4.3 is applied by database/sprint42_field_operations_v43.sql.
+\ir sprint42_field_operations_v43.sql
