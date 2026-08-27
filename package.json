@@ -350,7 +350,23 @@
     "check:workflow-rules": "node scripts/check-workflow-rules.mjs",
     "check:git-safety": "node scripts/check-git-safety.mjs",
     "check:buttons-aria": "node scripts/check-buttons-aria.mjs",
-    "check:heading-order": "node scripts/check-heading-order.mjs"
+    "check:heading-order": "node scripts/check-heading-order.mjs",
+    "check:field-teams": "node scripts/check-field-teams.mjs",
+    "check:field-dispatch": "node scripts/check-field-dispatch.mjs",
+    "check:field-schedule": "node scripts/check-field-schedule.mjs",
+    "check:field-routes": "node scripts/check-field-routes.mjs",
+    "check:field-checkin": "node scripts/check-field-checkin.mjs",
+    "check:field-checklists": "node scripts/check-field-checklists.mjs",
+    "check:field-evidences": "node scripts/check-field-evidences.mjs",
+    "check:field-signature": "node scripts/check-field-signature.mjs",
+    "check:field-materials": "node scripts/check-field-materials.mjs",
+    "check:field-time-entries": "node scripts/check-field-time-entries.mjs",
+    "check:field-offline": "node scripts/check-field-offline.mjs",
+    "check:field-portal-security": "node scripts/check-field-portal-security.mjs",
+    "check:field-reports": "node scripts/check-field-reports.mjs",
+    "check:field-design": "node scripts/check-field-design.mjs",
+    "check:field-no-fake": "node scripts/check-field-no-fake.mjs",
+    "check:mobile-field": "node scripts/check-mobile-field.mjs"
   },
   "engines": {
     "node": ">=18"

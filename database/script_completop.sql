@@ -1201,3 +1201,6 @@ COMMIT;
 
 -- Sprint 37 is maintained in database/sprint37_support_desk_v38.sql and applied by patch_release_candidate_schema.sql.
 -- Sprint 38 is maintained in database/sprint38_omnichannel_v39.sql and applied by patch_release_candidate_schema.sql.
+
+-- Sprint 42 / V4.3 is applied by database/sprint42_field_operations_v43.sql.
+\ir sprint42_field_operations_v43.sql
