@@ -1,0 +1,18 @@
+/* OrçaFácil V4.1 — primitives shared by every authenticated and public journey. */
+.of-page-header { display:flex; align-items:flex-end; justify-content:space-between; gap:var(--of-space-5); margin-block-end:var(--of-space-7); }
+.of-page-header__copy { max-width:var(--of-reading-width); }
+.of-page-header h1 { margin:0; font-size:clamp(1.75rem, 2vw + 1rem, 2.6rem); letter-spacing:-.035em; line-height:1.08; }
+.of-page-header p { margin:.65rem 0 0; color:var(--of-text-secondary); }
+.of-page-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:var(--of-space-3); }
+.of-kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr)); gap:var(--of-space-4); }
+.of-kpi { position:relative; min-width:0; overflow:hidden; border:1px solid var(--of-border); border-radius:var(--of-radius-lg); background:var(--of-surface); box-shadow:var(--of-shadow-sm); padding:var(--of-space-5); }
+.of-kpi::after { content:""; position:absolute; inset:0 0 auto; height:3px; background:var(--of-brand-gradient); opacity:.78; }
+.of-kpi__label { color:var(--of-text-secondary); font-size:var(--of-text-sm); font-weight:650; }
+.of-kpi__value { margin-block:.45rem; color:var(--of-navy); font-size:clamp(1.65rem,3vw,2.25rem); font-weight:780; letter-spacing:-.04em; }
+.of-empty-state { display:grid; justify-items:center; gap:var(--of-space-3); min-height:14rem; padding:var(--of-space-8); border:1px dashed var(--of-border-strong); border-radius:var(--of-radius-lg); background:linear-gradient(180deg,var(--of-surface),var(--of-subtle)); text-align:center; }
+.of-empty-state p { max-width:34rem; margin:0; color:var(--of-text-secondary); }
+.of-skeleton { overflow:hidden; border-radius:var(--of-radius-sm); background:var(--of-skeleton); color:transparent; position:relative; }
+.of-skeleton::after { content:""; position:absolute; inset:0; translate:-100% 0; background:linear-gradient(90deg,transparent,rgb(255 255 255 / 70%),transparent); animation:of-shimmer 1.45s infinite; }
+@keyframes of-shimmer { to { translate:100% 0; } }
+@media (prefers-reduced-motion:reduce) { .of-skeleton::after { display:none; } }
+@media (forced-colors:active) { .of-kpi,.of-empty-state { border:1px solid CanvasText; } }

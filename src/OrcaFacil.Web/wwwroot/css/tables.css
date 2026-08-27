@@ -1,0 +1,9 @@
+.of-table-wrap { max-width:100%; overflow:auto; border:1px solid var(--of-border); border-radius:var(--of-radius); background:var(--of-surface); box-shadow:var(--of-shadow-sm); scrollbar-gutter:stable; }
+.of-table { width:100%; border-collapse:separate; border-spacing:0; font-size:var(--of-text-sm); }
+.of-table th { position:sticky; top:0; z-index:1; padding:.85rem 1rem; border-bottom:1px solid var(--of-border-strong); color:var(--of-text-secondary); background:var(--of-subtle); font-size:.72rem; font-weight:780; letter-spacing:.045em; text-align:left; text-transform:uppercase; }
+.of-table td { padding:1rem; border-bottom:1px solid var(--of-border); vertical-align:middle; }
+.of-table tbody tr:last-child td { border-bottom:0; }
+.of-table tbody tr:hover { background:color-mix(in srgb,var(--of-primary-soft) 42%,white); }
+.of-table tbody tr:focus-within { outline:2px solid var(--of-focus); outline-offset:-2px; }
+.of-table-actions { display:flex; justify-content:flex-end; gap:var(--of-space-2); white-space:nowrap; }
+@media (max-width:640px) { .of-table { min-width:42rem; } .of-table-wrap { border-radius:var(--of-radius-sm); } .of-table th,.of-table td { padding:.75rem; } }
