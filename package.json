@@ -324,7 +324,21 @@
     "check:payments-no-fake": "node scripts/check-payments-no-fake.mjs",
     "check:payments-no-card-storage": "node scripts/check-payments-no-card-storage.mjs",
     "check:payments-no-secrets": "node scripts/check-payments-no-secrets.mjs",
-    "check:billing-dunning": "node scripts/check-billing-dunning.mjs"
+    "check:billing-dunning": "node scripts/check-billing-dunning.mjs",
+    "check:design-system": "node scripts/check-design-system.mjs",
+    "check:no-bootstrap-tailwind": "node scripts/check-no-bootstrap-tailwind.mjs",
+    "check:no-fake-buttons": "node scripts/check-no-fake-buttons.mjs",
+    "check:buttons-types": "node scripts/check-buttons-types.mjs",
+    "check:empty-links": "node scripts/check-empty-links.mjs",
+    "check:form-labels": "node scripts/check-form-labels.mjs",
+    "check:responsive-css": "node scripts/check-responsive-css.mjs",
+    "check:accessibility-basic": "node scripts/check-accessibility-basic.mjs",
+    "check:focus-visible": "node scripts/check-focus-visible.mjs",
+    "check:icon-consistency": "node scripts/check-icon-consistency.mjs",
+    "check:public-design": "node scripts/check-public-design.mjs",
+    "check:authenticated-design": "node scripts/check-authenticated-design.mjs",
+    "check:portal-design": "node scripts/check-portal-design.mjs",
+    "check:design-no-raw-pages": "node scripts/check-design-no-raw-pages.mjs"
   },
   "engines": {
     "node": ">=18"

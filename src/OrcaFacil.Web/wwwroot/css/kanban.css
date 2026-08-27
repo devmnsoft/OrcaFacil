@@ -1,0 +1,5 @@
+.of-kanban { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(17rem,1fr); gap:var(--of-space-4); max-width:100%; padding-block-end:var(--of-space-3); overflow-x:auto; overscroll-behavior-inline:contain; scroll-snap-type:inline proximity; }
+.of-kanban__column { scroll-snap-align:start; padding:var(--of-space-3); border:1px solid var(--of-border); border-radius:var(--of-radius); background:var(--of-subtle); }
+.of-kanban__header { display:flex; align-items:center; justify-content:space-between; gap:var(--of-space-2); margin-block-end:var(--of-space-3); }
+.of-kanban__cards { display:grid; gap:var(--of-space-3); }
+.of-kanban__card { padding:var(--of-space-4); border:1px solid var(--of-border); border-radius:var(--of-radius-sm); background:var(--of-surface); box-shadow:var(--of-shadow-sm); }

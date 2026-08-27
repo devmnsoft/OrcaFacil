@@ -1,0 +1,9 @@
+@media (max-width:767px) {
+  .of-page-header { align-items:stretch; flex-direction:column; margin-block-end:var(--of-space-5); }
+  .of-page-actions { justify-content:stretch; }
+  .of-page-actions > * { flex:1 1 100%; justify-content:center; }
+  .of-kpi-grid { grid-template-columns:1fr; }
+  .of-empty-state { min-height:11rem; padding:var(--of-space-6) var(--of-space-4); }
+  dialog,[role="dialog"] { width:calc(100vw - 1.5rem); max-height:calc(100dvh - 1.5rem); margin:.75rem; }
+}
+@media (pointer:coarse) { button,a,input,select,textarea { scroll-margin-block:5rem; } .of-button { min-height:44px; } }
