@@ -2,14 +2,21 @@ using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Receipts;
 using OrcaFacil.Domain.Enums;
+using OrcaFacil.Persistence;
 using OrcaFacil.Web.ViewModels.Receipts;
 
 namespace OrcaFacil.Web.Pages.Receipts;
 
 [Authorize]
-public sealed class IndexModel(IReceiptQueryService receipts) : PageModel
+public sealed class IndexModel(
+    IReceiptQueryService receipts,
+    ICurrentAccountService account,
+    OrcaFacilDbContext db) : PageModel
 {
     private const string DefaultSort = "recent";
 
@@ -67,6 +74,8 @@ public sealed class IndexModel(IReceiptQueryService receipts) : PageModel
 
     public IReadOnlyList<ReceiptListItem> Receipts => Result.Items;
 
+    public IReadOnlyList<SelectListItem> Clients { get; private set; } = [];
+
     public int TotalPages => Result.TotalPages;
 
     public bool HasPreviousPage => PageNumber > 1;
@@ -79,6 +88,18 @@ public sealed class IndexModel(IReceiptQueryService receipts) : PageModel
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
+        if (!account.HasAccount)
+        {
+            return Forbid();
+        }
+
+        Clients = await db.Clients
+            .AsNoTracking()
+            .Where(client => client.AccountId == account.AccountId && client.IsActive && !client.IsDeleted)
+            .OrderBy(client => client.Name)
+            .Select(client => new SelectListItem(client.Name, client.Id.ToString()))
+            .ToListAsync(ct);
+
         ValidateFilters();
 
         PageNumber = Math.Max(1, PageNumber);

@@ -49,8 +49,10 @@
             </div>
             <div class="receipt-filter-field">
                 <label asp-for="ClientId">Cliente</label>
-                <input asp-for="ClientId" type="text" aria-describedby="client-help client-error" />
-                <small id="client-help">Use o identificador do cadastro.</small>
+                <select asp-for="ClientId" asp-items="Model.Clients" aria-describedby="client-help client-error">
+                    <option value="">Todos os clientes</option>
+                </select>
+                <small id="client-help">Selecione um cliente da sua conta.</small>
                 <span id="client-error" asp-validation-for="ClientId"></span>
             </div>
             <div class="receipt-filter-field">

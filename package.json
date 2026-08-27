@@ -338,7 +338,19 @@
     "check:public-design": "node scripts/check-public-design.mjs",
     "check:authenticated-design": "node scripts/check-authenticated-design.mjs",
     "check:portal-design": "node scripts/check-portal-design.mjs",
-    "check:design-no-raw-pages": "node scripts/check-design-no-raw-pages.mjs"
+    "check:design-no-raw-pages": "node scripts/check-design-no-raw-pages.mjs",
+    "check:functional-flows": "node scripts/check-functional-flows.mjs",
+    "check:business-rules": "node scripts/check-business-rules.mjs",
+    "check:no-technical-id-inputs": "node scripts/check-no-technical-id-inputs.mjs",
+    "check:commerce-flow": "node scripts/check-commerce-flow.mjs",
+    "check:portal-security": "node scripts/check-portal-security.mjs",
+    "check:support-flow": "node scripts/check-support-flow.mjs",
+    "check:omnichannel-flow": "node scripts/check-omnichannel-flow.mjs",
+    "check:bi-reports": "node scripts/check-bi-reports.mjs",
+    "check:workflow-rules": "node scripts/check-workflow-rules.mjs",
+    "check:git-safety": "node scripts/check-git-safety.mjs",
+    "check:buttons-aria": "node scripts/check-buttons-aria.mjs",
+    "check:heading-order": "node scripts/check-heading-order.mjs"
   },
   "engines": {
     "node": ">=18"
