@@ -160,6 +160,7 @@ builder.Services.AddSingleton<OrcaFacil.Application.Services.IServiceUnitCatalog
 builder.Services.AddScoped<IDocumentNumberService, DocumentNumberService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<SupportDeskService>();
+builder.Services.AddScoped<AssetOperationsService>();
 builder.Services.AddScoped<OmnichannelService>();
 builder.Services.AddScoped<WebChatSessionService>();
 builder.Services.AddScoped<InboundEmailService>();

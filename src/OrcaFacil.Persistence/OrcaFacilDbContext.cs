@@ -276,11 +276,47 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<TemplateLibraryItem> TemplateLibraryItems => Set<TemplateLibraryItem>();
     public DbSet<TemplateLibraryVersion> TemplateLibraryVersions => Set<TemplateLibraryVersion>();
     public DbSet<SetupWizardProgress> SetupWizardProgress => Set<SetupWizardProgress>();
+    public DbSet<AssetCategory> AssetCategories => Set<AssetCategory>();
+    public DbSet<AssetModel> AssetModels => Set<AssetModel>();
+    public DbSet<CustomerAsset> CustomerAssets => Set<CustomerAsset>();
+    public DbSet<CustomerAssetLocation> CustomerAssetLocations => Set<CustomerAssetLocation>();
+    public DbSet<CustomerAssetWarranty> CustomerAssetWarranties => Set<CustomerAssetWarranty>();
+    public DbSet<MaintenancePlan> MaintenancePlans => Set<MaintenancePlan>();
+    public DbSet<MaintenancePlanAsset> MaintenancePlanAssets => Set<MaintenancePlanAsset>();
+    public DbSet<MaintenanceGeneratedWorkOrder> MaintenanceGeneratedWorkOrders => Set<MaintenanceGeneratedWorkOrder>();
+    public DbSet<InspectionTemplate> InspectionTemplates => Set<InspectionTemplate>();
+    public DbSet<InspectionTemplateItem> InspectionTemplateItems => Set<InspectionTemplateItem>();
+    public DbSet<AssetInspection> AssetInspections => Set<AssetInspection>();
+    public DbSet<AssetInspectionAnswer> AssetInspectionAnswers => Set<AssetInspectionAnswer>();
+    public DbSet<NonConformity> NonConformities => Set<NonConformity>();
+    public DbSet<CorrectiveActionPlan> CorrectiveActionPlans => Set<CorrectiveActionPlan>();
+    public DbSet<CorrectiveActionItem> CorrectiveActionItems => Set<CorrectiveActionItem>();
+    public DbSet<TechnicalReport> TechnicalReports => Set<TechnicalReport>();
+    public DbSet<AssetQrCode> AssetQrCodes => Set<AssetQrCode>();
+    public DbSet<AssetQrAccessLog> AssetQrAccessLogs => Set<AssetQrAccessLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("orcafacil");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(OrcaFacilDbContext).Assembly);
+        modelBuilder.Entity<AssetCategory>().ToTable("asset_categories").HasIndex(x => new { x.AccountId, x.Name }).IsUnique().HasFilter("is_deleted=false");
+        modelBuilder.Entity<AssetModel>().ToTable("asset_models").HasIndex(x => new { x.AccountId, x.CategoryId, x.Manufacturer, x.Name }).IsUnique().HasFilter("is_deleted=false");
+        modelBuilder.Entity<CustomerAsset>().ToTable("customer_assets").HasIndex(x => new { x.AccountId, x.ClientId, x.SerialNumber }).IsUnique().HasFilter("is_deleted=false AND serial_number IS NOT NULL");
+        modelBuilder.Entity<CustomerAssetLocation>().ToTable("customer_asset_locations");
+        modelBuilder.Entity<CustomerAssetWarranty>().ToTable("customer_asset_warranties");
+        modelBuilder.Entity<MaintenancePlan>().ToTable("maintenance_plans");
+        modelBuilder.Entity<MaintenancePlanAsset>().ToTable("maintenance_plan_assets").HasIndex(x => new { x.AccountId, x.PlanId, x.AssetId }).IsUnique().HasFilter("is_deleted=false");
+        modelBuilder.Entity<MaintenanceGeneratedWorkOrder>().ToTable("maintenance_generated_work_orders").HasIndex(x => new { x.AccountId, x.PlanId, x.AssetId, x.PeriodStart }).IsUnique().HasFilter("is_deleted=false");
+        modelBuilder.Entity<InspectionTemplate>().ToTable("inspection_templates");
+        modelBuilder.Entity<InspectionTemplateItem>().ToTable("inspection_template_items");
+        modelBuilder.Entity<AssetInspection>().ToTable("asset_inspections");
+        modelBuilder.Entity<AssetInspectionAnswer>().ToTable("asset_inspection_answers").HasIndex(x => new { x.InspectionId, x.TemplateItemId }).IsUnique().HasFilter("is_deleted=false");
+        modelBuilder.Entity<NonConformity>().ToTable("non_conformities");
+        modelBuilder.Entity<CorrectiveActionPlan>().ToTable("corrective_action_plans");
+        modelBuilder.Entity<CorrectiveActionItem>().ToTable("corrective_action_items");
+        modelBuilder.Entity<TechnicalReport>().ToTable("technical_reports").HasIndex(x => new { x.AccountId, x.OriginType, x.OriginId, x.Version }).IsUnique().HasFilter("is_deleted=false");
+        modelBuilder.Entity<AssetQrCode>().ToTable("asset_qr_codes").HasIndex(x => x.TokenHash).IsUnique();
+        modelBuilder.Entity<AssetQrAccessLog>().ToTable("asset_qr_access_logs");
         modelBuilder.Entity<CustomFieldDefinition>().ToTable("custom_field_definitions").HasIndex(x => new { x.AccountId, x.EntityType, x.Code }).IsUnique();
         modelBuilder.Entity<CustomFieldValue>().ToTable("custom_field_values").HasIndex(x => new { x.AccountId, x.CustomFieldDefinitionId, x.EntityType, x.EntityId }).IsUnique();
         modelBuilder.Entity<DynamicFormDefinition>().ToTable("dynamic_form_definitions");

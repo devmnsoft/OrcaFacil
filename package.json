@@ -366,7 +366,22 @@
     "check:field-reports": "node scripts/check-field-reports.mjs",
     "check:field-design": "node scripts/check-field-design.mjs",
     "check:field-no-fake": "node scripts/check-field-no-fake.mjs",
-    "check:mobile-field": "node scripts/check-mobile-field.mjs"
+    "check:mobile-field": "node scripts/check-mobile-field.mjs",
+    "check:assets-module": "node scripts/check-assets-v44.mjs",
+    "check:asset-business-rules": "node scripts/check-assets-v44.mjs",
+    "check:maintenance-plans": "node scripts/check-assets-v44.mjs",
+    "check:maintenance-generation": "node scripts/check-assets-v44.mjs",
+    "check:inspections": "node scripts/check-assets-v44.mjs",
+    "check:inspection-templates": "node scripts/check-assets-v44.mjs",
+    "check:non-conformities": "node scripts/check-assets-v44.mjs",
+    "check:action-plans": "node scripts/check-assets-v44.mjs",
+    "check:technical-reports": "node scripts/check-assets-v44.mjs",
+    "check:asset-health-score": "node scripts/check-assets-v44.mjs",
+    "check:asset-qrcode-security": "node scripts/check-assets-v44.mjs",
+    "check:asset-portal-security": "node scripts/check-assets-v44.mjs",
+    "check:asset-reports": "node scripts/check-assets-v44.mjs",
+    "check:assets-design": "node scripts/check-assets-v44.mjs",
+    "check:assets-no-fake": "node scripts/check-assets-v44.mjs"
   },
   "engines": {
     "node": ">=18"
