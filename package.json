@@ -381,7 +381,21 @@
     "check:asset-portal-security": "node scripts/check-assets-v44.mjs",
     "check:asset-reports": "node scripts/check-assets-v44.mjs",
     "check:assets-design": "node scripts/check-assets-v44.mjs",
-    "check:assets-no-fake": "node scripts/check-assets-v44.mjs"
+    "check:assets-no-fake": "node scripts/check-assets-v44.mjs",
+    "check:service-catalog": "node scripts/check-pricing-v45.mjs",
+    "check:service-catalog-rules": "node scripts/check-pricing-v45.mjs",
+    "check:pricing-tables": "node scripts/check-pricing-v45.mjs",
+    "check:pricing-rules": "node scripts/check-pricing-v45.mjs",
+    "check:pricing-simulator": "node scripts/check-pricing-v45.mjs",
+    "check:guided-quote-builder": "node scripts/check-pricing-v45.mjs",
+    "check:quote-pricing-snapshots": "node scripts/check-pricing-v45.mjs",
+    "check:commercial-approvals": "node scripts/check-pricing-v45.mjs",
+    "check:pricing-packages": "node scripts/check-pricing-v45.mjs",
+    "check:recurring-services-pricing": "node scripts/check-pricing-v45.mjs",
+    "check:pricing-permissions": "node scripts/check-pricing-v45.mjs",
+    "check:pricing-reports": "node scripts/check-pricing-v45.mjs",
+    "check:pricing-design": "node scripts/check-pricing-v45.mjs",
+    "check:pricing-no-fake": "node scripts/check-pricing-v45.mjs"
   },
   "engines": {
     "node": ">=18"
