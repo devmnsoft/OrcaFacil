@@ -36,6 +36,12 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<ServiceCatalogItem> ServiceCatalogItems => Set<ServiceCatalogItem>();
     public DbSet<ServiceCategory> ServiceCategories => Set<ServiceCategory>();
     public DbSet<ServicePriceHistory> ServicePriceHistories => Set<ServicePriceHistory>();
+    public DbSet<ServicePriceTable> ServicePriceTables => Set<ServicePriceTable>();
+    public DbSet<ServicePriceTableItem> ServicePriceTableItems => Set<ServicePriceTableItem>();
+    public DbSet<PricingMarginPolicy> PricingMarginPolicies => Set<PricingMarginPolicy>();
+    public DbSet<PricingDiscountPolicy> PricingDiscountPolicies => Set<PricingDiscountPolicy>();
+    public DbSet<PricingQuoteSnapshot> PricingQuoteSnapshots => Set<PricingQuoteSnapshot>();
+    public DbSet<PricingApprovalEvent> PricingApprovalEvents => Set<PricingApprovalEvent>();
     public DbSet<BillingCustomerProfile> BillingCustomerProfiles => Set<BillingCustomerProfile>();
     public DbSet<PlanFeature> PlanFeatures => Set<PlanFeature>();
     public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
