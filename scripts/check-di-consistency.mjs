@@ -1,0 +1,1 @@
+import { readFile } from 'node:fs/promises'; const p=await readFile('src/OrcaFacil.Web/Program.cs','utf8'); for(const x of ['FunctionalQualityService','ModuleReadinessService','SourceCodeFindingService']) if(!p.includes(x)){console.error(`DI ausente: ${x}`);process.exitCode=1;} if(!process.exitCode)console.log('DI consistency: OK');

@@ -1,0 +1,37 @@
+@page
+@model OrcaFacil.Web.Pages.Admin.Quality.IndexModel
+@using OrcaFacil.Application.Quality
+@{
+    ViewData["Title"] = "Central de Qualidade";
+    ViewData["Section"] = "Administração";
+    var section = ViewContext.HttpContext.Request.Path.Value?.Split('/').LastOrDefault() ?? "Quality";
+}
+<link rel="stylesheet" href="~/css/quality.css" asp-append-version="true" />
+<main class="quality-shell">
+    <header class="quality-hero">
+        <div><p class="of-eyebrow">OrçaFácil V4.6</p><h1>Central de Qualidade Funcional</h1><p>Prontidão calculada a partir das rotas, proteções e achados presentes no código ASP.NET implantado.</p></div>
+        <div class="quality-score" aria-label="Módulos prontos"><strong>@Model.Snapshot.ReadyModules</strong><span>de @Model.Snapshot.Modules.Count prontos</span></div>
+    </header>
+    <nav class="quality-tabs" aria-label="Visões da central de qualidade">
+        <a asp-page="/Admin/Quality/Index">Visão geral</a><a asp-page="/Admin/Quality/Modules">Módulos</a><a asp-page="/Admin/Quality/Findings">Achados</a><a asp-page="/Admin/Quality/BusinessRules">Regras de negócio</a><a asp-page="/Admin/Quality/Readiness">Prontidão</a><a asp-page="/Admin/Quality/SourceAudit">Código-fonte</a>
+    </nav>
+    <section class="quality-kpis" aria-label="Resumo da auditoria">
+        <article><span>P0</span><strong>@Model.Snapshot.Findings.Count(x => x.Severity == FindingSeverity.P0)</strong><small>bloqueios críticos</small></article>
+        <article><span>P1</span><strong>@Model.Snapshot.Findings.Count(x => x.Severity == FindingSeverity.P1)</strong><small>riscos funcionais</small></article>
+        <article><span>P2</span><strong>@Model.Snapshot.Findings.Count(x => x.Severity == FindingSeverity.P2)</strong><small>inconsistências</small></article>
+        <article><span>Validado</span><strong>@Model.Snapshot.GeneratedAt.ToString("HH:mm")</strong><small>UTC, verificação atual</small></article>
+    </section>
+    @if (section is "Findings" or "SourceAudit")
+    {
+        <section class="quality-panel"><div class="quality-heading"><div><p class="of-eyebrow">Evidências</p><h2>Achados do código-fonte</h2></div><span class="quality-pill">@Model.Snapshot.Findings.Count registros</span></div>
+        @if (Model.Snapshot.Findings.Count == 0) { <div class="quality-empty"><strong>Nenhum padrão bloqueante encontrado.</strong><p>A varredura determinística não encontrou ocorrências nas regras ativas.</p></div> }
+        else { <div class="quality-table-wrap"><table><thead><tr><th>Severidade</th><th>Arquivo</th><th>Categoria</th><th>Risco e recomendação</th></tr></thead><tbody>@foreach (var finding in Model.Snapshot.Findings) { <tr><td><span class="quality-pill quality-pill--@finding.Severity.ToString().ToLowerInvariant()">@finding.Severity</span></td><td><code>@finding.File:@finding.Line</code></td><td>@finding.Category</td><td>@finding.Risk <small>@finding.Recommendation</small></td></tr> }</tbody></table></div>}
+        </section>
+    }
+    else
+    {
+        <section class="quality-panel"><div class="quality-heading"><div><p class="of-eyebrow">Prontidão operacional</p><h2>@(section == "BusinessRules" ? "Validador de regras e fluxos" : "Módulos avaliados")</h2></div><span class="quality-pill">checks reais</span></div>
+        <div class="quality-modules">@foreach (var module in Model.Snapshot.Modules) { <article class="quality-module"><div><span class="quality-pill quality-pill--@module.Status.ToString().ToLowerInvariant()">@module.Status</span><h3>@module.Module</h3><p>@module.Recommendation</p></div><div class="quality-progress"><span style="width:@(module.Total == 0 ? 0 : module.Passed * 100 / module.Total)%"></span></div><footer><span>@module.Passed/@module.Total controles</span><span>P0 @module.P0 · P1 @module.P1 · P2 @module.P2</span></footer>@if (section == "BusinessRules") { <ul>@foreach (var check in module.Checks) { <li class="@(check.Passed ? "is-pass" : "is-fail")"><span aria-hidden="true">@(check.Passed ? "✓" : "!")</span><div><strong>@check.Name</strong><small>@check.Evidence</small></div></li> }</ul> }</article> }</div>
+        </section>
+    }
+</main>

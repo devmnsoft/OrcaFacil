@@ -1204,3 +1204,6 @@ COMMIT;
 
 -- Sprint 42 / V4.3 is applied by database/sprint42_field_operations_v43.sql.
 \ir sprint42_field_operations_v43.sql
+
+-- Sprint 45 / V4.6 permissions and quality dashboard.
+\ir patch_sprint45_quality_v46.sql

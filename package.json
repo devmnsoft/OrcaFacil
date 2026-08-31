@@ -395,7 +395,20 @@
     "check:pricing-permissions": "node scripts/check-pricing-v45.mjs",
     "check:pricing-reports": "node scripts/check-pricing-v45.mjs",
     "check:pricing-design": "node scripts/check-pricing-v45.mjs",
-    "check:pricing-no-fake": "node scripts/check-pricing-v45.mjs"
+    "check:pricing-no-fake": "node scripts/check-pricing-v45.mjs",
+    "check:source-code-audit": "node scripts/check-source-code-audit.mjs",
+    "check:method-consistency": "node scripts/check-method-consistency.mjs",
+    "check:conversion-safety": "node scripts/check-conversion-safety.mjs",
+    "check:reference-consistency": "node scripts/check-reference-consistency.mjs",
+    "check:di-consistency": "node scripts/check-di-consistency.mjs",
+    "check:query-safety": "node scripts/check-query-safety.mjs",
+    "check:dapper-mapping": "node scripts/check-dapper-mapping.mjs",
+    "check:razor-safety": "node scripts/check-razor-safety.mjs",
+    "check:js-component-safety": "node scripts/check-js-component-safety.mjs",
+    "check:business-rule-consistency": "node scripts/check-business-rule-consistency.mjs",
+    "check:module-readiness": "node scripts/check-module-readiness.mjs",
+    "check:no-fake-flows": "node scripts/check-no-fake-flows.mjs",
+    "check:quality-dashboard": "node scripts/check-quality-dashboard.mjs"
   },
   "engines": {
     "node": ">=18"
