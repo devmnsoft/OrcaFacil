@@ -1,6 +1,13 @@
 @page
 @model OrcaFacil.Web.Pages.Analytics.DataQualityModel
-@{ViewData["Title"]="Qualidade dos Dados";ViewData["Section"]="Analytics";}
+@{ ViewData["Title"] = "Qualidade dos Dados"; ViewData["Section"] = "Analytics"; }
 <link rel="stylesheet" href="~/css/analytics.css" asp-append-version="true" />
-<header class="analytics-hero"><div><p class="of-eyebrow">Qualidade contínua</p><h1>Qualidade dos Dados</h1><p>Inconsistências detectadas em tempo real, isoladas pela conta e com ação de correção.</p></div><span class="analytics-badge">@Model.Findings.Count achado(s)</span></header>
-<section class="analytics-panel">@if(Model.Findings.Count==0){<div class="analytics-empty"><strong>Nenhuma inconsistência nas regras avaliadas.</strong><p>Clientes, propostas e OS estão completos nas verificações atuais.</p></div>}else{<div class="quality-list">@foreach(var finding in Model.Findings){<article><span class="analytics-badge analytics-badge--risk">@finding.Severity</span><div><h2>@finding.Title</h2><p>@finding.Description</p></div><a class="of-button-secondary" href="@finding.ActionUrl">Corrigir</a></article>}</div>}</section>
+<header class="analytics-hero"><div><p class="of-eyebrow">Governança de dados · V5.3</p><h1>Qualidade dos Dados</h1><p>Diagnóstico explicável, calculado sobre cadastros reais e sempre isolado pela conta.</p></div><span class="analytics-badge">@Model.Findings.Count pendência(s)</span></header>
+<section class="analytics-grid" aria-label="Resumo da qualidade cadastral">
+  <article class="analytics-kpi quality-score"><small>Score geral</small><strong>@Model.Score.Value</strong><span class="analytics-badge">@Model.Score.Classification</span><p class="analytics-note">@Model.Score.Evaluated registros avaliados · @Model.Score.WeightedIssues pontos de impacto</p></article>
+  <article class="analytics-kpi"><small>Pendências abertas</small><strong>@Model.Findings.Count</strong><p class="analytics-note">Cada item aponta para o cadastro de origem.</p></article>
+  <article class="analytics-kpi"><small>Módulos afetados</small><strong>@Model.Modules.Count</strong><p class="analytics-note">Sem amostragem aleatória ou dado sintético.</p></article>
+</section>
+@if (Model.Modules.Count > 0) { <section class="analytics-panel"><h2>Qualidade por módulo</h2><div class="quality-modules">@foreach (var module in Model.Modules.OrderByDescending(x => x.Value)) { <div><span>@module.Key</span><strong>@module.Value</strong><small>pendência(s)</small></div> }</div></section> }
+<section class="analytics-panel">@if (Model.Findings.Count == 0) { <div class="analytics-empty"><strong>Nenhuma inconsistência nas regras avaliadas.</strong><p>Clientes, propostas e OS estão completos nas verificações atuais.</p></div> } else { <div class="quality-list">@foreach (var finding in Model.Findings) { <article><span class="analytics-badge analytics-badge--risk">@finding.Severity</span><div><h2>@finding.Title</h2><p>@finding.Description</p></div><a class="of-button-secondary" href="@finding.ActionUrl">Corrigir</a></article> }</div> }</section>
+<script src="~/js/data-quality.js" asp-append-version="true" defer></script>

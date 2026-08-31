@@ -6,6 +6,7 @@ using OrcaFacil.Application.Payments;
 using OrcaFacil.Application.Field;
 using OrcaFacil.Application.Quality;
 using OrcaFacil.Application.Automation;
+using OrcaFacil.Application.DataGovernance;
 
 namespace OrcaFacil.Application;
 
@@ -53,6 +54,25 @@ public static class DependencyInjection
         services.TryAddSingleton<AutomationEventQueueService>();
         services.TryAddSingleton<AutomationApprovalService>();
         services.TryAddSingleton<AutomationTemplateService>();
+        services.TryAddSingleton<DataQualityRuleService>();
+        services.TryAddSingleton<DataQualityEngine>();
+        services.TryAddSingleton<DataQualityCheckService>();
+        services.TryAddSingleton<DataQualityFindingService>();
+        services.TryAddSingleton<DataQualityScoreService>();
+        services.TryAddSingleton<DuplicateDetectionService>();
+        services.TryAddSingleton<MasterDataMergeService>();
+        services.TryAddSingleton<ClientMergeService>();
+        services.TryAddSingleton<DataNormalizationService>();
+        services.TryAddSingleton<DataImportPreviewService>();
+        services.TryAddSingleton<DataImportService>();
+        services.TryAddSingleton<DataImportCommitService>();
+        services.TryAddSingleton<DataImportRollbackService>();
+        services.TryAddSingleton<DataIntegrityService>();
+        services.TryAddSingleton<SensitiveDataChangeReviewService>();
+        services.TryAddSingleton<ModuleDataQualityService>();
+        services.TryAddSingleton<DataQualityFixService>();
+        services.TryAddSingleton<DataQualityAutomationIntegrationService>();
+        services.TryAddSingleton<GovernedDataQualityAiService>();
 
         return services;
     }
