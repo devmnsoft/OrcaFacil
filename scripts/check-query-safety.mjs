@@ -1,0 +1,1 @@
+import { readFile } from 'node:fs/promises'; const p=await readFile('src/OrcaFacil.Web/Services/GlobalSearchService.cs','utf8'); if(!p.includes('AccountId')){console.error('Busca global sem isolamento de conta');process.exitCode=1;}else console.log('query safety: OK');

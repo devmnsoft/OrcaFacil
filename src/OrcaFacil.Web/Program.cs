@@ -51,9 +51,16 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Localization;
 using System.Globalization;
 using OrcaFacil.Application.Localization;
+using OrcaFacil.Application.Quality;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
+var repositoryRoot = Directory.GetParent(builder.Environment.ContentRootPath)?.Parent?.FullName
+    ?? builder.Environment.ContentRootPath;
+builder.Services.AddSingleton(new SourceCodeFindingService(repositoryRoot));
+builder.Services.AddSingleton<ModuleReadinessService>(serviceProvider => new(
+    repositoryRoot, serviceProvider.GetRequiredService<BusinessRuleAuditService>()));
+builder.Services.AddSingleton<FunctionalQualityService>();
 builder.AddOrcaFacilLocalConfiguration();
 DatabaseConnectionStringResolver.ApplyOperationalAlias(builder.Configuration);
 // Operational aliases keep Windows service/IIS configuration concise while the

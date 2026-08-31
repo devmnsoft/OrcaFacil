@@ -229,6 +229,10 @@ public static class PermissionCodes
     public const string AnalyticsForecast = "Analytics.Forecast"; public const string AnalyticsExport = "Analytics.Export";
     public const string GoalsView = "Goals.View"; public const string GoalsManage = "Goals.Manage";
     public const string DataQualityView = "DataQuality.View"; public const string DataQualityManage = "DataQuality.Manage";
+    public const string QualityView = "Quality.View"; public const string QualityManage = "Quality.Manage";
+    public const string QualitySourceAuditView = "Quality.SourceAuditView"; public const string QualityBusinessRulesView = "Quality.BusinessRulesView";
+    public const string QualityReadinessView = "Quality.ReadinessView"; public const string QualityResolveFindings = "Quality.ResolveFindings";
+    public const string QualityExportReports = "Quality.ExportReports";
     public const string AccountHealthView = "AccountHealth.View"; public const string ExecutiveAlertsView = "ExecutiveAlerts.View";
     public const string DashboardCustomize = "Dashboard.Customize";
     public const string CrmView = "Crm.View"; public const string CrmManage = "Crm.Manage";
@@ -303,7 +307,8 @@ public static class PermissionCodes
         KnowledgeBaseView, GuidedToursView, GuidedToursManage, OnboardingManage, ActivityView,
         ShortcutsManageOwn, FavoritesManageOwn, AnalyticsView, AnalyticsExecutive, AnalyticsFinancial,
         AnalyticsOperational, AnalyticsForecast, AnalyticsExport, GoalsView, GoalsManage, DataQualityView,
-        DataQualityManage, AccountHealthView, ExecutiveAlertsView, DashboardCustomize,
+        DataQualityManage, QualityView, QualityManage, QualitySourceAuditView, QualityBusinessRulesView,
+        QualityReadinessView, QualityResolveFindings, QualityExportReports, AccountHealthView, ExecutiveAlertsView, DashboardCustomize,
         CrmView, CrmManage, CrmSegmentsView, CrmSegmentsManage, CrmInteractionsView, CrmInteractionsManage,
         CrmCampaignsView, CrmCampaignsManage, CrmSurveysView, CrmSurveysManage, NpsView, NpsManage,
         CustomerSuccessView, CustomerSuccessManage, RetentionView, RetentionManage, UpsellView, UpsellManage,

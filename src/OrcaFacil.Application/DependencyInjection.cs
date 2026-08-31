@@ -4,6 +4,7 @@ using OrcaFacil.Application.Security;
 using OrcaFacil.Application.Localization;
 using OrcaFacil.Application.Payments;
 using OrcaFacil.Application.Field;
+using OrcaFacil.Application.Quality;
 
 namespace OrcaFacil.Application;
 
@@ -33,6 +34,7 @@ public static class DependencyInjection
         services.TryAddScoped<FieldQualityReviewService>();
         services.TryAddScoped<FieldVisitExpenseService>();
         services.TryAddScoped<FieldReportService>();
+        services.TryAddSingleton<BusinessRuleAuditService>();
 
         return services;
     }

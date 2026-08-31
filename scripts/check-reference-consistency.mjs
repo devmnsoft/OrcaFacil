@@ -1,0 +1,1 @@
+import { requirePaths } from './source-audit-lib.mjs'; await requirePaths(['OrcaFacil.sln','src/OrcaFacil.Application/OrcaFacil.Application.csproj','src/OrcaFacil.Web/OrcaFacil.Web.csproj'], 'reference consistency');
