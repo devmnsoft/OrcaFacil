@@ -486,7 +486,21 @@
     "check:screen-quality": "node scripts/check-screen-quality.mjs",
     "check:mobile-refinement": "node scripts/check-mobile-refinement.mjs",
     "check:business-rule-refinement": "node scripts/check-business-rule-refinement.mjs",
-    "check:method-refinement": "node scripts/check-method-refinement.mjs"
+    "check:method-refinement": "node scripts/check-method-refinement.mjs",
+    "check:data-quality-module": "node scripts/check-data-quality-module.mjs",
+    "check:data-quality-rules": "node scripts/check-data-quality-rules.mjs",
+    "check:data-quality-scores": "node scripts/check-data-quality-scores.mjs",
+    "check:duplicate-detection": "node scripts/check-duplicate-detection.mjs",
+    "check:master-data-merge": "node scripts/check-master-data-merge.mjs",
+    "check:data-normalization": "node scripts/check-data-normalization.mjs",
+    "check:data-import": "node scripts/check-data-import.mjs",
+    "check:data-import-preview": "node scripts/check-data-import-preview.mjs",
+    "check:data-import-rollback": "node scripts/check-data-import-rollback.mjs",
+    "check:data-integrity": "node scripts/check-data-integrity.mjs",
+    "check:sensitive-data-review": "node scripts/check-sensitive-data-review.mjs",
+    "check:data-quality-permissions": "node scripts/check-data-quality-permissions.mjs",
+    "check:data-quality-design": "node scripts/check-data-quality-design.mjs",
+    "check:data-quality-no-fake": "node scripts/check-data-quality-no-fake.mjs"
   },
   "engines": {
     "node": ">=18"

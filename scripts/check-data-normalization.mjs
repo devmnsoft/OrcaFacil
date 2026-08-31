@@ -1,2 +1,1 @@
-import './sprint41-check-core.mjs';
 import './check-data-governance-v53.mjs';

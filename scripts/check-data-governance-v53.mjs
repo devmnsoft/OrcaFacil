@@ -1,0 +1,21 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+const root = process.cwd();
+const read = file => fs.readFileSync(path.join(root, file), 'utf8');
+const requireFile = file => { if (!fs.existsSync(path.join(root, file))) throw new Error(`Arquivo obrigatório ausente: ${file}`); return read(file); };
+const core = requireFile('src/OrcaFacil.Application/DataGovernance/DataGovernanceServices.cs');
+const sql = requireFile('database/sprint52_data_governance_v53.sql');
+const page = requireFile('src/OrcaFacil.Web/Pages/Analytics/DataQuality.cshtml');
+const tests = requireFile('tests/OrcaFacil.UnitTests/DataGovernanceServicesTests.cs');
+const requiredServices = ['DataQualityRuleService','DataQualityEngine','DataQualityScoreService','DuplicateDetectionService','MasterDataMergeService','DataNormalizationService','DataImportPreviewService','DataImportCommitService','DataImportRollbackService','DataIntegrityService','SensitiveDataChangeReviewService','ModuleDataQualityService'];
+const requiredTables = ['data_quality_rules','data_quality_checks','data_quality_findings_v53','master_data_merge_candidates','master_data_merge_reviews','master_data_merge_events','data_import_previews','data_import_rollback_points','sensitive_data_change_events'];
+for (const token of requiredServices) if (!core.includes(`class ${token}`)) throw new Error(`Serviço obrigatório ausente: ${token}`);
+for (const token of requiredTables) if (!sql.includes(`orcafacil.${token}`)) throw new Error(`Tabela obrigatória ausente: ${token}`);
+for (const token of ['Score geral','Qualidade por módulo','href="@finding.ActionUrl"']) if (!page.includes(token)) throw new Error(`Dashboard incompleto: ${token}`);
+for (const token of ['Cross_tenant_merge_is_rejected','Commit_without_preview_is_rejected','Sensitive_value_is_masked']) if (!tests.includes(token)) throw new Error(`Cobertura crítica ausente: ${token}`);
+const governedFiles = [core, page, requireFile('src/OrcaFacil.Web/wwwroot/js/data-quality.js')].join('\n');
+for (const forbidden of [/Math\.random/i,/NotImplementedException/,/href=["']#["']/,/javascript:void/i]) if (forbidden.test(governedFiles)) throw new Error(`Padrão proibido encontrado: ${forbidden}`);
+if (!core.includes('PhysicallyDeleted') || !core.includes('false)')) throw new Error('A mesclagem deve preservar o registro secundário.');
+if (!core.includes('A importação exige prévia.')) throw new Error('Commit sem prévia não está bloqueado.');
+console.log('Data governance V5.3: OK');
