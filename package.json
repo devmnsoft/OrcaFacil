@@ -423,7 +423,26 @@
     "check:fiscal-portal-security": "node scripts/check-fiscal-portal-security.mjs",
     "check:fiscal-accounting-export": "node scripts/check-fiscal-accounting-export.mjs",
     "check:fiscal-reports": "node scripts/check-fiscal-reports.mjs",
-    "check:fiscal-design": "node scripts/check-fiscal-design.mjs"
+    "check:fiscal-design": "node scripts/check-fiscal-design.mjs",
+    "check:finance-management": "node scripts/check-finance-v48.mjs",
+    "check:finance-chart-accounts": "node scripts/check-finance-v48.mjs",
+    "check:finance-cost-centers": "node scripts/check-finance-v48.mjs",
+    "check:finance-bank-accounts": "node scripts/check-finance-v48.mjs",
+    "check:finance-entries": "node scripts/check-finance-v48.mjs",
+    "check:finance-cashflow": "node scripts/check-finance-v48.mjs",
+    "check:finance-projection": "node scripts/check-finance-v48.mjs",
+    "check:finance-budget": "node scripts/check-finance-v48.mjs",
+    "check:finance-forecast": "node scripts/check-finance-v48.mjs",
+    "check:finance-dre": "node scripts/check-finance-v48.mjs",
+    "check:finance-accrual-cash": "node scripts/check-finance-v48.mjs",
+    "check:finance-allocations": "node scripts/check-finance-v48.mjs",
+    "check:finance-closing": "node scripts/check-finance-v48.mjs",
+    "check:finance-profitability": "node scripts/check-finance-v48.mjs",
+    "check:finance-alerts": "node scripts/check-finance-v48.mjs",
+    "check:finance-reports": "node scripts/check-finance-v48.mjs",
+    "check:finance-permissions": "node scripts/check-finance-v48.mjs",
+    "check:finance-design": "node scripts/check-finance-v48.mjs",
+    "check:finance-no-fake": "node scripts/check-finance-v48.mjs"
   },
   "engines": {
     "node": ">=18"

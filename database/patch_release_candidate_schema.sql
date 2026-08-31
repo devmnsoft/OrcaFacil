@@ -474,3 +474,6 @@ COMMIT;
 
 -- Sprint 42 / V4.3 is applied by database/sprint42_field_operations_v43.sql.
 \ir sprint42_field_operations_v43.sql
+
+-- Sprint 47 / V4.8: run the additive financial management patch.
+\ir patch_sprint47_financial_management_v48.sql
