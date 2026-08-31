@@ -1,0 +1,36 @@
+@page
+@model OrcaFacil.Web.Pages.Admin.JourneyRefinement.IndexModel
+@{
+    ViewData["Title"] = "Refinamento de Jornadas";
+    ViewData["Section"] = "Administração";
+}
+<link rel="stylesheet" href="~/css/quality.css" asp-append-version="true" />
+<main class="quality-shell">
+    <header class="quality-hero">
+        <div><p class="of-eyebrow">OrçaFácil V5.1</p><h1>Refinamento de Jornadas</h1><p>Regras, navegação e UX avaliadas diretamente no código ASP.NET atual.</p></div>
+        <div class="quality-score" aria-label="Jornadas avaliadas"><strong>@Model.Journeys.Count</strong><span>jornadas verificadas</span></div>
+    </header>
+    <nav class="quality-tabs" aria-label="Jornadas avaliadas">
+        <a asp-page="/Admin/JourneyRefinement/Index" asp-route-journey="Commercial">Comercial</a><a asp-page="/Admin/JourneyRefinement/Index" asp-route-journey="Operational">Operacional</a><a asp-page="/Admin/JourneyRefinement/Index" asp-route-journey="Financial">Financeira</a><a asp-page="/Admin/JourneyRefinement/Index" asp-route-journey="Fiscal">Fiscal</a><a asp-page="/Admin/JourneyRefinement/Index" asp-route-journey="Projects">Projetos</a><a asp-page="/Admin/JourneyRefinement/Index" asp-route-journey="Assets">Ativos</a><a asp-page="/Admin/JourneyRefinement/Index" asp-route-journey="Portals">Portais</a><a asp-page="/Admin/JourneyRefinement/Index" asp-route-journey="Design">Design</a>
+    </nav>
+    <section class="quality-panel" aria-labelledby="journeys-title">
+        <div class="quality-heading"><div><p class="of-eyebrow">Validação determinística</p><h2 id="journeys-title">Qualidade por jornada</h2></div><span class="quality-pill">sem dados simulados</span></div>
+        @if (Model.Journeys.Count == 0)
+        {
+            <div class="quality-empty" role="status"><strong>Nenhuma jornada disponível.</strong><p>Execute novamente a auditoria após confirmar o diretório da aplicação.</p></div>
+        }
+        else
+        {
+            <div class="quality-modules">
+            @foreach (var journey in Model.Journeys)
+            {
+                <article class="quality-module" id="@journey.Journey.ToString().ToLowerInvariant()">
+                    <div><span class="quality-pill">@journey.RuleScore.Score%</span><h3>@journey.Journey</h3><p>@journey.RecommendedAction</p></div>
+                    <div class="quality-progress" aria-label="@journey.RuleScore.Passed de @journey.RuleScore.Total controles aprovados"><span style="width:@journey.RuleScore.Score%"></span></div>
+                    <footer><span>@journey.RuleScore.Passed/@journey.RuleScore.Total controles</span><span>@journey.OpenFindings achados · @journey.CriticalFindings críticos</span></footer>
+                </article>
+            }
+            </div>
+        }
+    </section>
+</main>

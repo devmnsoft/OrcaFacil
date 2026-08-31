@@ -50,6 +50,8 @@ public sealed class NavigationMapService : INavigationMapService
             Item("import", "Importação", "Importe dados para a conta", "upload", "/Import/Index", 30, "arquivos"),
             Item("settings", "Configurações", "Empresa, documentos e segurança", "settings", "/Settings/Index", 40, "preferências"),
             Item("quality", "Qualidade funcional", "Auditoria e prontidão dos módulos", "health", "/Admin/Quality/Index", 50, false, "Quality.View", "auditoria", "prontidão")),
+        Group("refinement", "Refinamento", 65,
+            Item("journey-refinement", "Refinamento de Jornadas", "Regras, UX e pendências derivadas de checks reais", "health", "/Admin/JourneyRefinement/Index", 10, false, "JourneyRefinement.View", "jornadas", "qualidade", "regras")),
         Group("account", "Conta", 70,
             Item("profile", "Dados do emitente", "Identidade da empresa", "account", "/Profile/Index", 10, "perfil"),
             Item("notifications", "Notificações", "Central de atividades", "notification", "/Notifications/Index", 20, "avisos"),

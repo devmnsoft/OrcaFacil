@@ -457,7 +457,20 @@
     "check:fiscal-flow-consistency": "node scripts/check-sprint49-refinement.mjs",
     "check:project-flow-consistency": "node scripts/check-sprint49-refinement.mjs",
     "check:portal-isolation": "node scripts/check-sprint49-refinement.mjs",
-    "check:design-refinement": "node scripts/check-sprint49-refinement.mjs"
+    "check:design-refinement": "node scripts/check-sprint49-refinement.mjs",
+    "check:journey-refinement": "node scripts/check-journey-refinement.mjs",
+    "check:commercial-journey": "node scripts/check-commercial-journey.mjs",
+    "check:operational-journey": "node scripts/check-operational-journey.mjs",
+    "check:financial-journey": "node scripts/check-financial-journey.mjs",
+    "check:fiscal-journey": "node scripts/check-fiscal-journey.mjs",
+    "check:project-journey": "node scripts/check-project-journey.mjs",
+    "check:portal-journey": "node scripts/check-portal-journey.mjs",
+    "check:friendly-errors": "node scripts/check-friendly-errors.mjs",
+    "check:navigation-quality": "node scripts/check-navigation-quality.mjs",
+    "check:screen-quality": "node scripts/check-screen-quality.mjs",
+    "check:mobile-refinement": "node scripts/check-mobile-refinement.mjs",
+    "check:business-rule-refinement": "node scripts/check-business-rule-refinement.mjs",
+    "check:method-refinement": "node scripts/check-method-refinement.mjs"
   },
   "engines": {
     "node": ">=18"

@@ -142,3 +142,72 @@ public sealed class ModuleRefinementScoreService
         return new((int)decimal.Round(passed * 100m / checks.Length, 0, MidpointRounding.AwayFromZero), passed, checks.Length);
     }
 }
+
+public enum JourneyKind { Commercial, Operational, Financial, Fiscal, Projects, Assets, Portals, Design }
+public sealed record JourneyRefinementResult(
+    JourneyKind Journey, IReadOnlyList<ModuleReadiness> Modules, ModuleRefinementScore RuleScore,
+    int OpenFindings, int CriticalFindings, string RecommendedAction);
+
+/// <summary>Projects the live source audit into journey-level, deterministic quality results.</summary>
+public sealed class UserJourneyReviewService(FunctionalQualityService quality, ModuleRefinementScoreService scores)
+{
+    private static readonly IReadOnlyDictionary<JourneyKind, string[]> Modules = new Dictionary<JourneyKind, string[]>
+    {
+        [JourneyKind.Commercial] = ["Comercial", "Clientes", "Orçamentos", "Propostas", "Precificação"],
+        [JourneyKind.Operational] = ["OS", "Campo", "Manutenção"],
+        [JourneyKind.Financial] = ["Financeiro", "Pagamentos", "Contratos"],
+        [JourneyKind.Fiscal] = ["Financeiro", "Pagamentos"],
+        [JourneyKind.Projects] = ["Projetos", "Contratos"],
+        [JourneyKind.Assets] = ["Ativos", "Manutenção", "Campo"],
+        [JourneyKind.Portals] = ["Portal do Cliente", "Portal do Parceiro"],
+        [JourneyKind.Design] = ["Admin", "Relatórios", "Suporte", "Omnichannel"]
+    };
+
+    public IReadOnlyList<JourneyRefinementResult> Review(DateTimeOffset now)
+    {
+        var snapshot = quality.Evaluate(now);
+        return Modules.Select(entry =>
+        {
+            var modules = snapshot.Modules.Where(x => entry.Value.Contains(x.Module, StringComparer.OrdinalIgnoreCase)).ToArray();
+            var checks = modules.SelectMany(x => x.Checks).Select(x => new RefinementCheck(x.Name, x.Passed));
+            var score = scores.Calculate(checks);
+            var moduleFolders = modules.Select(x => x.Route.Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()).Where(x => x is not null).ToArray();
+            var findings = snapshot.Findings.Where(x => moduleFolders.Any(folder => x.File.Contains($"/{folder}/", StringComparison.OrdinalIgnoreCase))).ToArray();
+            var action = findings.FirstOrDefault()?.Recommendation
+                ?? modules.FirstOrDefault(x => x.Status != QualityStatus.Ready)?.Recommendation
+                ?? "Manter os controles automatizados e revisar a jornada após cada mudança.";
+            return new JourneyRefinementResult(entry.Key, modules, score, findings.Length,
+                findings.Count(x => x.Severity is FindingSeverity.P0 or FindingSeverity.P1), action);
+        }).ToArray();
+    }
+}
+
+public sealed class FriendlyErrorMessageService
+{
+    private static readonly IReadOnlyDictionary<string, string> Messages = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["required_checklist"] = "Não foi possível concluir a OS porque ainda existem itens obrigatórios no checklist.",
+        ["expired_proposal"] = "A proposta expirou. Reabra uma nova versão antes de solicitar a aprovação.",
+        ["pending_payment"] = "O recibo estará disponível após a confirmação do pagamento.",
+        ["fiscal_profile"] = "Complete os dados fiscais da empresa e do cliente antes de emitir a nota.",
+        ["duplicate_operation"] = "Esta operação já foi registrada. Atualize a página para consultar o resultado."
+    };
+
+    public string Get(string code) => Messages.TryGetValue(code, out var message)
+        ? message
+        : "Não foi possível concluir esta ação. Revise os dados informados e tente novamente.";
+}
+
+public static class JourneyRuleValidationService
+{
+    public static void EnsureQuoteCanAdvance(Guid clientId, int itemCount)
+    {
+        if (clientId == Guid.Empty) throw new ArgumentException("Selecione um cliente antes de avançar.", nameof(clientId));
+        if (itemCount <= 0) throw new InvalidOperationException("Adicione pelo menos um item válido ao orçamento antes de avançar.");
+    }
+
+    public static void EnsureProposalCanApprove(DateOnly validUntil, DateOnly today, bool reopened)
+    {
+        if (validUntil < today && !reopened) throw new InvalidOperationException("A proposta expirou e precisa ser reaberta em uma nova versão.");
+    }
+}
