@@ -96,6 +96,15 @@ public static class PermissionCodes
     public const string FinanceReconciliationView = "Finance.ReconciliationView"; public const string FinanceReconciliationManage = "Finance.ReconciliationManage";
     public const string FinanceDreView = "Finance.DreView"; public const string FinanceCashflowView = "Finance.CashflowView";
     public const string FinancePeriodClosingManage = "Finance.PeriodClosingManage";
+    public const string FinanceManagementView = "FinanceManagement.View"; public const string FinanceManagementManage = "FinanceManagement.Manage";
+    public const string FinanceChartAccountsView = "Finance.ChartAccountsView"; public const string FinanceChartAccountsManage = "Finance.ChartAccountsManage";
+    public const string FinanceEntriesView = "Finance.EntriesView"; public const string FinanceEntriesManage = "Finance.EntriesManage"; public const string FinanceManualAdjustments = "Finance.ManualAdjustments";
+    public const string FinanceCashFlowProjectionView = "Finance.CashFlowProjectionView";
+    public const string FinanceBudgetView = "Finance.BudgetView"; public const string FinanceBudgetManage = "Finance.BudgetManage";
+    public const string FinanceForecastView = "Finance.ForecastView"; public const string FinanceDreManage = "Finance.DreManage"; public const string FinanceAccrualView = "Finance.AccrualView";
+    public const string FinanceAllocationsManage = "Finance.AllocationsManage"; public const string FinanceMonthlyClosingView = "Finance.MonthlyClosingView"; public const string FinanceMonthlyClosingManage = "Finance.MonthlyClosingManage";
+    public const string FinanceProfitabilityView = "Finance.ProfitabilityView"; public const string FinanceFinancialAlertsView = "Finance.FinancialAlertsView"; public const string FinanceReportsView = "Finance.ReportsView";
+    public const string FinanceExport = "Finance.Export"; public const string FinanceCostsAndMarginsView = "Finance.CostsAndMarginsView";
     public const string FinanceFiscalView = "Finance.FiscalView"; public const string FinanceFiscalManage = "Finance.FiscalManage";
     public const string FinanceImportBankStatement = "Finance.ImportBankStatement"; public const string FinanceExportReports = "Finance.ExportReports";
     public const string ContractsView = "Contracts.View";

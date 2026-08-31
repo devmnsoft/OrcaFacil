@@ -1,0 +1,48 @@
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+namespace OrcaFacil.Persistence.Migrations;
+
+public partial class AddFinancialManagementV48 : Migration
+{
+    protected override void Up(MigrationBuilder migrationBuilder) => migrationBuilder.Sql(Sql);
+    protected override void Down(MigrationBuilder migrationBuilder) { }
+
+    private const string Sql = """
+    CREATE SCHEMA IF NOT EXISTS orcafacil;
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_chart_accounts (id uuid PRIMARY KEY, account_id uuid NOT NULL, parent_id uuid, code varchar(40) NOT NULL, name varchar(160) NOT NULL, account_type varchar(40) NOT NULL, nature varchar(40) NOT NULL, display_order integer NOT NULL DEFAULT 0, notes text, is_active boolean NOT NULL DEFAULT true, is_deleted boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz);
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_financial_chart_accounts_scope_code ON orcafacil.financial_chart_accounts(account_id,code) WHERE is_deleted=false;
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_chart_account_versions (id uuid PRIMARY KEY, account_id uuid NOT NULL, chart_account_id uuid NOT NULL, version integer NOT NULL, snapshot jsonb NOT NULL, changed_by_user_id uuid NOT NULL, reason text NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_financial_chart_versions ON orcafacil.financial_chart_account_versions(account_id,chart_account_id,version);
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_cost_centers (id uuid PRIMARY KEY, account_id uuid NOT NULL, parent_id uuid, code varchar(40) NOT NULL, name varchar(160) NOT NULL, center_type varchar(40) NOT NULL, responsible_user_id uuid, description text, is_active boolean NOT NULL DEFAULT true, is_deleted boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz);
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_financial_cost_centers_scope_code ON orcafacil.financial_cost_centers(account_id,code) WHERE is_deleted=false;
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_management_entries (id uuid PRIMARY KEY, account_id uuid NOT NULL, entry_type varchar(40) NOT NULL, bank_account_id uuid, chart_account_id uuid NOT NULL, cost_center_id uuid, competence_date date NOT NULL, due_date date NOT NULL, realization_date date, amount numeric(18,2) NOT NULL, status varchar(40) NOT NULL, origin_type varchar(60), origin_id uuid, manual_reason text, created_by_user_id uuid NOT NULL, is_deleted boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz, CONSTRAINT ck_financial_management_entry_origin CHECK (origin_id IS NOT NULL OR length(trim(coalesce(manual_reason,''))) > 0));
+    CREATE INDEX IF NOT EXISTS ix_financial_management_entries_scope_dates ON orcafacil.financial_management_entries(account_id,competence_date,realization_date) WHERE is_deleted=false;
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_entry_allocations (id uuid PRIMARY KEY, account_id uuid NOT NULL, entry_id uuid NOT NULL, cost_center_id uuid NOT NULL, percentage numeric(7,4) NOT NULL, amount numeric(18,2) NOT NULL, allocation_type varchar(40) NOT NULL, manual_reason text, created_by_user_id uuid NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_financial_entry_allocations ON orcafacil.financial_entry_allocations(account_id,entry_id,cost_center_id);
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_cashflow_projection_runs (id uuid PRIMARY KEY, account_id uuid NOT NULL, period_start date NOT NULL, period_end date NOT NULL, assumptions jsonb NOT NULL, generated_by_user_id uuid NOT NULL, generated_at timestamptz NOT NULL DEFAULT now());
+    CREATE INDEX IF NOT EXISTS ix_financial_projection_runs_scope ON orcafacil.financial_cashflow_projection_runs(account_id,generated_at DESC);
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_cashflow_projection_items (id uuid PRIMARY KEY, account_id uuid NOT NULL, run_id uuid NOT NULL, source_type varchar(60) NOT NULL, source_id uuid, due_date date NOT NULL, amount numeric(18,2) NOT NULL, direction varchar(10) NOT NULL, confidence varchar(20) NOT NULL, risk_factor numeric(7,4) NOT NULL DEFAULT 1, basis text NOT NULL);
+    CREATE INDEX IF NOT EXISTS ix_financial_projection_items_scope_due ON orcafacil.financial_cashflow_projection_items(account_id,due_date);
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_budget_plans (id uuid PRIMARY KEY, account_id uuid NOT NULL, name varchar(160) NOT NULL, period_start date NOT NULL, period_end date NOT NULL, version integer NOT NULL, status varchar(30) NOT NULL, responsible_user_id uuid NOT NULL, cancellation_reason text, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz);
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_financial_budget_version ON orcafacil.financial_budget_plans(account_id,name,version);
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_budget_plan_items (id uuid PRIMARY KEY, account_id uuid NOT NULL, budget_plan_id uuid NOT NULL, chart_account_id uuid NOT NULL, cost_center_id uuid, budgeted_amount numeric(18,2) NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+    CREATE INDEX IF NOT EXISTS ix_financial_budget_items_scope ON orcafacil.financial_budget_plan_items(account_id,budget_plan_id);
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_forecast_runs (id uuid PRIMARY KEY, account_id uuid NOT NULL, period_start date NOT NULL, period_end date NOT NULL, scenario varchar(30) NOT NULL, basis jsonb NOT NULL, confidence varchar(30) NOT NULL, generated_at timestamptz NOT NULL DEFAULT now(), generated_by_user_id uuid NOT NULL);
+    CREATE INDEX IF NOT EXISTS ix_financial_forecast_scope ON orcafacil.financial_forecast_runs(account_id,generated_at DESC);
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_dre_snapshots (id uuid PRIMARY KEY, account_id uuid NOT NULL, period_start date NOT NULL, period_end date NOT NULL, regime varchar(20) NOT NULL, rules_version varchar(40) NOT NULL, generated_at timestamptz NOT NULL DEFAULT now(), generated_by_user_id uuid NOT NULL, closing_id uuid);
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_financial_dre_snapshot ON orcafacil.financial_dre_snapshots(account_id,period_start,period_end,regime,generated_at);
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_dre_snapshot_lines (id uuid PRIMARY KEY, account_id uuid NOT NULL, snapshot_id uuid NOT NULL, line_code varchar(40) NOT NULL, line_name varchar(160) NOT NULL, amount numeric(18,2) NOT NULL, revenue_percentage numeric(9,4), display_order integer NOT NULL);
+    CREATE INDEX IF NOT EXISTS ix_financial_dre_lines_scope ON orcafacil.financial_dre_snapshot_lines(account_id,snapshot_id);
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_monthly_closings (id uuid PRIMARY KEY, account_id uuid NOT NULL, period_start date NOT NULL, period_end date NOT NULL, status varchar(30) NOT NULL, checklist jsonb NOT NULL, closed_at timestamptz, closed_by_user_id uuid, reopened_at timestamptz, reopened_by_user_id uuid, reopen_reason text, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz);
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_financial_monthly_closing_period ON orcafacil.financial_monthly_closings(account_id,period_start,period_end);
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_closing_adjustments (id uuid PRIMARY KEY, account_id uuid NOT NULL, closing_id uuid NOT NULL, entry_id uuid NOT NULL, reason text NOT NULL, authorized_by_user_id uuid NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+    CREATE INDEX IF NOT EXISTS ix_financial_closing_adjustments_scope ON orcafacil.financial_closing_adjustments(account_id,closing_id);
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_profitability_snapshots (id uuid PRIMARY KEY, account_id uuid NOT NULL, period_start date NOT NULL, period_end date NOT NULL, rules_version varchar(40) NOT NULL, cost_complete boolean NOT NULL, generated_at timestamptz NOT NULL DEFAULT now());
+    CREATE INDEX IF NOT EXISTS ix_financial_profitability_scope ON orcafacil.financial_profitability_snapshots(account_id,generated_at DESC);
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_risk_alerts (id uuid PRIMARY KEY, account_id uuid NOT NULL, alert_type varchar(60) NOT NULL, source_type varchar(60) NOT NULL, source_id uuid, severity varchar(20) NOT NULL, reason text NOT NULL, target_path varchar(300) NOT NULL, fingerprint varchar(128) NOT NULL, resolved_at timestamptz, created_at timestamptz NOT NULL DEFAULT now());
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_financial_risk_alert_active ON orcafacil.financial_risk_alerts(account_id,fingerprint) WHERE resolved_at IS NULL;
+    CREATE TABLE IF NOT EXISTS orcafacil.financial_audit_events (id uuid PRIMARY KEY, account_id uuid NOT NULL, entity_type varchar(80) NOT NULL, entity_id uuid NOT NULL, action varchar(80) NOT NULL, reason text, actor_user_id uuid NOT NULL, payload jsonb, occurred_at timestamptz NOT NULL DEFAULT now());
+    CREATE INDEX IF NOT EXISTS ix_financial_audit_scope_entity ON orcafacil.financial_audit_events(account_id,entity_type,entity_id,occurred_at DESC);
+    """;
+}
