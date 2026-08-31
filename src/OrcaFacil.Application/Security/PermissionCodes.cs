@@ -247,6 +247,12 @@ public static class PermissionCodes
     public const string QualitySourceAuditView = "Quality.SourceAuditView"; public const string QualityBusinessRulesView = "Quality.BusinessRulesView";
     public const string QualityReadinessView = "Quality.ReadinessView"; public const string QualityResolveFindings = "Quality.ResolveFindings";
     public const string QualityExportReports = "Quality.ExportReports";
+    public const string JourneyRefinementView = "JourneyRefinement.View"; public const string JourneyRefinementManage = "JourneyRefinement.Manage";
+    public const string JourneyRefinementCommercialView = "JourneyRefinement.CommercialView"; public const string JourneyRefinementOperationalView = "JourneyRefinement.OperationalView";
+    public const string JourneyRefinementFinancialView = "JourneyRefinement.FinancialView"; public const string JourneyRefinementFiscalView = "JourneyRefinement.FiscalView";
+    public const string JourneyRefinementProjectView = "JourneyRefinement.ProjectView"; public const string JourneyRefinementPortalView = "JourneyRefinement.PortalView";
+    public const string JourneyRefinementDesignView = "JourneyRefinement.DesignView"; public const string JourneyRefinementResolveFindings = "JourneyRefinement.ResolveFindings";
+    public const string JourneyRefinementExportReports = "JourneyRefinement.ExportReports";
     public const string AccountHealthView = "AccountHealth.View"; public const string ExecutiveAlertsView = "ExecutiveAlerts.View";
     public const string DashboardCustomize = "Dashboard.Customize";
     public const string CrmView = "Crm.View"; public const string CrmManage = "Crm.Manage";
@@ -323,6 +329,9 @@ public static class PermissionCodes
         AnalyticsOperational, AnalyticsForecast, AnalyticsExport, GoalsView, GoalsManage, DataQualityView,
         DataQualityManage, QualityView, QualityManage, QualitySourceAuditView, QualityBusinessRulesView,
         QualityReadinessView, QualityResolveFindings, QualityExportReports, AccountHealthView, ExecutiveAlertsView, DashboardCustomize,
+        JourneyRefinementView, JourneyRefinementManage, JourneyRefinementCommercialView, JourneyRefinementOperationalView,
+        JourneyRefinementFinancialView, JourneyRefinementFiscalView, JourneyRefinementProjectView, JourneyRefinementPortalView,
+        JourneyRefinementDesignView, JourneyRefinementResolveFindings, JourneyRefinementExportReports,
         CrmView, CrmManage, CrmSegmentsView, CrmSegmentsManage, CrmInteractionsView, CrmInteractionsManage,
         CrmCampaignsView, CrmCampaignsManage, CrmSurveysView, CrmSurveysManage, NpsView, NpsManage,
         CustomerSuccessView, CustomerSuccessManage, RetentionView, RetentionManage, UpsellView, UpsellManage,

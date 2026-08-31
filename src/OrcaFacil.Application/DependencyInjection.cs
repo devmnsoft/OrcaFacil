@@ -40,6 +40,8 @@ public static class DependencyInjection
         services.TryAddSingleton<DueDatePolicyService>();
         services.TryAddSingleton<PortalIsolationGuardService>();
         services.TryAddSingleton<ModuleRefinementScoreService>();
+        services.TryAddSingleton<UserJourneyReviewService>();
+        services.TryAddSingleton<FriendlyErrorMessageService>();
 
         return services;
     }
