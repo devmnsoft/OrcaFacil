@@ -5,6 +5,7 @@ using OrcaFacil.Application.Localization;
 using OrcaFacil.Application.Payments;
 using OrcaFacil.Application.Field;
 using OrcaFacil.Application.Quality;
+using OrcaFacil.Application.Automation;
 
 namespace OrcaFacil.Application;
 
@@ -42,6 +43,16 @@ public static class DependencyInjection
         services.TryAddSingleton<ModuleRefinementScoreService>();
         services.TryAddSingleton<UserJourneyReviewService>();
         services.TryAddSingleton<FriendlyErrorMessageService>();
+        services.TryAddSingleton<AutomationTriggerCatalogService>();
+        services.TryAddSingleton<AutomationConditionCatalogService>();
+        services.TryAddSingleton<AutomationActionCatalogService>();
+        services.TryAddSingleton<AutomationConditionEvaluator>();
+        services.TryAddSingleton<AutomationSafetyPolicyService>();
+        services.TryAddSingleton<AutomationRuleBuilderService>();
+        services.TryAddSingleton<AutomationDryRunService>();
+        services.TryAddSingleton<AutomationEventQueueService>();
+        services.TryAddSingleton<AutomationApprovalService>();
+        services.TryAddSingleton<AutomationTemplateService>();
 
         return services;
     }
