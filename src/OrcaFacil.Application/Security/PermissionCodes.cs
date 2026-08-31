@@ -3,6 +3,11 @@ namespace OrcaFacil.Application.Security;
 /// <summary>Canonical permission identifiers used by backend authorization.</summary>
 public static class PermissionCodes
 {
+    public const string FiscalView="Fiscal.View"; public const string FiscalManage="Fiscal.Manage";
+    public const string FiscalConfigureCompany="Fiscal.ConfigureCompany"; public const string FiscalConfigureProvider="Fiscal.ConfigureProvider"; public const string FiscalConfigureCertificate="Fiscal.ConfigureCertificate";
+    public const string FiscalServiceCodesView="Fiscal.ServiceCodesView"; public const string FiscalServiceCodesManage="Fiscal.ServiceCodesManage"; public const string FiscalTaxProfilesView="Fiscal.TaxProfilesView"; public const string FiscalTaxProfilesManage="Fiscal.TaxProfilesManage";
+    public const string FiscalIssue="Fiscal.Issue"; public const string FiscalManualRegister="Fiscal.ManualRegister"; public const string FiscalCancel="Fiscal.Cancel"; public const string FiscalCorrect="Fiscal.Correct"; public const string FiscalSubstitute="Fiscal.Substitute";
+    public const string FiscalDownloadXml="Fiscal.DownloadXml"; public const string FiscalDownloadPdf="Fiscal.DownloadPdf"; public const string FiscalExportAccounting="Fiscal.ExportAccounting"; public const string FiscalReportsView="Fiscal.ReportsView"; public const string FiscalHealthView="Fiscal.HealthView"; public const string PortalFiscalDocumentsView="Portal.FiscalDocumentsView";
     public const string CatalogView = "Catalog.View"; public const string CatalogManage = "Catalog.Manage"; public const string CatalogPublish = "Catalog.Publish";
     public const string PricingView = "Pricing.View"; public const string PricingManage = "Pricing.Manage";
     public const string PricingTablesView = "Pricing.TablesView"; public const string PricingTablesManage = "Pricing.TablesManage";

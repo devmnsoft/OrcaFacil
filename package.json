@@ -408,7 +408,22 @@
     "check:business-rule-consistency": "node scripts/check-business-rule-consistency.mjs",
     "check:module-readiness": "node scripts/check-module-readiness.mjs",
     "check:no-fake-flows": "node scripts/check-no-fake-flows.mjs",
-    "check:quality-dashboard": "node scripts/check-quality-dashboard.mjs"
+    "check:quality-dashboard": "node scripts/check-quality-dashboard.mjs",
+    "check:fiscal-module": "node scripts/check-fiscal-module.mjs",
+    "check:fiscal-provider": "node scripts/check-fiscal-provider.mjs",
+    "check:fiscal-certificate-safety": "node scripts/check-fiscal-certificate-safety.mjs",
+    "check:fiscal-company-profile": "node scripts/check-fiscal-company-profile.mjs",
+    "check:fiscal-service-codes": "node scripts/check-fiscal-service-codes.mjs",
+    "check:fiscal-tax-profiles": "node scripts/check-fiscal-tax-profiles.mjs",
+    "check:fiscal-issue-flow": "node scripts/check-fiscal-issue-flow.mjs",
+    "check:nfse-no-fake": "node scripts/check-nfse-no-fake.mjs",
+    "check:rps-batches": "node scripts/check-rps-batches.mjs",
+    "check:fiscal-webhooks": "node scripts/check-fiscal-webhooks.mjs",
+    "check:fiscal-files-security": "node scripts/check-fiscal-files-security.mjs",
+    "check:fiscal-portal-security": "node scripts/check-fiscal-portal-security.mjs",
+    "check:fiscal-accounting-export": "node scripts/check-fiscal-accounting-export.mjs",
+    "check:fiscal-reports": "node scripts/check-fiscal-reports.mjs",
+    "check:fiscal-design": "node scripts/check-fiscal-design.mjs"
   },
   "engines": {
     "node": ">=18"
