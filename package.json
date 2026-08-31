@@ -442,7 +442,22 @@
     "check:finance-reports": "node scripts/check-finance-v48.mjs",
     "check:finance-permissions": "node scripts/check-finance-v48.mjs",
     "check:finance-design": "node scripts/check-finance-v48.mjs",
-    "check:finance-no-fake": "node scripts/check-finance-v48.mjs"
+    "check:finance-no-fake": "node scripts/check-finance-v48.mjs",
+    "check:business-rule-catalog": "node scripts/check-sprint49-refinement.mjs",
+    "check:business-rule-transitions": "node scripts/check-sprint49-refinement.mjs",
+    "check:method-naming": "node scripts/check-sprint49-refinement.mjs",
+    "check:method-exception-safety": "node scripts/check-sprint49-refinement.mjs",
+    "check:money-calculations": "node scripts/check-sprint49-refinement.mjs",
+    "check:date-time-safety": "node scripts/check-sprint49-refinement.mjs",
+    "check:tenant-permission-guards": "node scripts/check-sprint49-refinement.mjs",
+    "check:functional-flow-consistency": "node scripts/check-sprint49-refinement.mjs",
+    "check:commercial-flow-consistency": "node scripts/check-sprint49-refinement.mjs",
+    "check:operational-flow-consistency": "node scripts/check-sprint49-refinement.mjs",
+    "check:financial-flow-consistency": "node scripts/check-sprint49-refinement.mjs",
+    "check:fiscal-flow-consistency": "node scripts/check-sprint49-refinement.mjs",
+    "check:project-flow-consistency": "node scripts/check-sprint49-refinement.mjs",
+    "check:portal-isolation": "node scripts/check-sprint49-refinement.mjs",
+    "check:design-refinement": "node scripts/check-sprint49-refinement.mjs"
   },
   "engines": {
     "node": ">=18"

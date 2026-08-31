@@ -35,6 +35,11 @@ public static class DependencyInjection
         services.TryAddScoped<FieldVisitExpenseService>();
         services.TryAddScoped<FieldReportService>();
         services.TryAddSingleton<BusinessRuleAuditService>();
+        services.TryAddSingleton<BusinessStatusCatalogService>();
+        services.TryAddSingleton<BusinessTransitionRuleService>();
+        services.TryAddSingleton<DueDatePolicyService>();
+        services.TryAddSingleton<PortalIsolationGuardService>();
+        services.TryAddSingleton<ModuleRefinementScoreService>();
 
         return services;
     }
