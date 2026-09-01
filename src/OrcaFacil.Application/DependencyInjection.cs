@@ -14,8 +14,10 @@ namespace OrcaFacil.Application;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+    public static IServiceCollection AddApplication(this IServiceCollection services, string repositoryRoot)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(repositoryRoot);
+
         services.TryAddSingleton<ISensitiveDataSanitizer, SensitiveDataSanitizer>();
         services.TryAddSingleton<LocalePreferenceService>();
         services.TryAddSingleton<RegionalFormatService>();
@@ -38,13 +40,17 @@ public static class DependencyInjection
         services.TryAddScoped<FieldQualityReviewService>();
         services.TryAddScoped<FieldVisitExpenseService>();
         services.TryAddScoped<FieldReportService>();
-        services.TryAddSingleton<BusinessRuleAuditService>();
+        services.TryAddScoped<BusinessRuleAuditService>();
         services.TryAddSingleton<BusinessStatusCatalogService>();
         services.TryAddSingleton<BusinessTransitionRuleService>();
         services.TryAddSingleton<DueDatePolicyService>();
         services.TryAddSingleton<PortalIsolationGuardService>();
-        services.TryAddSingleton<ModuleRefinementScoreService>();
-        services.TryAddSingleton<UserJourneyReviewService>();
+        services.TryAddScoped(_ => new SourceCodeFindingService(repositoryRoot));
+        services.TryAddScoped(serviceProvider => new ModuleReadinessService(
+            repositoryRoot, serviceProvider.GetRequiredService<BusinessRuleAuditService>()));
+        services.TryAddScoped<FunctionalQualityService>();
+        services.TryAddScoped<ModuleRefinementScoreService>();
+        services.TryAddScoped<UserJourneyReviewService>();
         services.TryAddSingleton<FriendlyErrorMessageService>();
         services.TryAddSingleton<AutomationTriggerCatalogService>();
         services.TryAddSingleton<AutomationConditionCatalogService>();
