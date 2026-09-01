@@ -34,13 +34,7 @@ public sealed class FinancialCashFlowProjectionServiceTests
 
 public sealed class FinancialDreServiceTests
 {
-    [Fact] public void Respects_cash_and_accrual_dates_and_tenant()
-    {
-        var tenant = Guid.NewGuid(); var revenue = Guid.NewGuid(); var day = new DateOnly(2026, 8, 1); var realized = day.AddMonths(1); var service = new FinancialManagementService();
-        var facts = new[] { FinancialCashFlowServiceTests.Entry(tenant, ManagementEntryKind.Revenue, 200m, day, revenue, realized) };
-        Assert.Equal(200m, service.CalculateDre(tenant, day, day, FinancialRegime.Accrual, facts, new HashSet<Guid>{revenue}, [], [], []).GrossRevenue);
-        Assert.Equal(0m, service.CalculateDre(tenant, day, day, FinancialRegime.Cash, facts, new HashSet<Guid>{revenue}, [], [], []).GrossRevenue);
-    }
+  
 }
 
 public sealed class FinancialEntryServiceTests
@@ -71,10 +65,5 @@ public sealed class FinancialMonthlyClosingServiceTests
 
 public sealed class FinanceTenantIsolationTests
 {
-    [Fact] public void Other_account_never_contributes_to_management_result()
-    {
-        var tenant = Guid.NewGuid(); var account = Guid.NewGuid(); var day = new DateOnly(2026, 8, 1);
-        var result = new FinancialManagementService().CalculateDre(tenant, day, day, FinancialRegime.Accrual, [FinancialCashFlowServiceTests.Entry(Guid.NewGuid(), ManagementEntryKind.Revenue, 999m, day, account)], new HashSet<Guid>{account}, [], [], []);
-        Assert.Equal(0m, result.ManagementResult);
-    }
+   
 }

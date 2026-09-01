@@ -1,4 +1,5 @@
 using OrcaFacil.Application.Automation;
+using Xunit;
 
 namespace OrcaFacil.UnitTests;
 

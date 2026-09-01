@@ -1,4 +1,5 @@
 using OrcaFacil.Application.Quality;
+using Xunit;
 
 namespace OrcaFacil.UnitTests;
 
