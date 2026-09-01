@@ -298,7 +298,6 @@ public static class PermissionCodes
     public const string CrmCampaignsView = "CrmCampaigns.View"; public const string CrmCampaignsManage = "CrmCampaigns.Manage";
     public const string CrmSurveysView = "CrmSurveys.View"; public const string CrmSurveysManage = "CrmSurveys.Manage";
     public const string NpsView = "Nps.View"; public const string NpsManage = "Nps.Manage";
-    public const string CustomerSuccessView = "CustomerSuccess.View"; public const string CustomerSuccessManage = "CustomerSuccess.Manage";
     public const string RetentionView = "Retention.View"; public const string RetentionManage = "Retention.Manage";
     public const string UpsellView = "Upsell.View"; public const string UpsellManage = "Upsell.Manage";
     public const string CommunicationOptOutManage = "CommunicationOptOut.Manage";
