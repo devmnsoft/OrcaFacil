@@ -17,7 +17,9 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddApplication();
+var repositoryRoot = Directory.GetParent(builder.Environment.ContentRootPath)?.Parent?.FullName
+    ?? builder.Environment.ContentRootPath;
+builder.Services.AddApplication(repositoryRoot);
 DatabaseConnectionStringResolver.ApplyOperationalAlias(builder.Configuration);
 
 builder.Logging.ClearProviders();
