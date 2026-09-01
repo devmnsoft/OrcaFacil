@@ -8,6 +8,7 @@ using OrcaFacil.Application.Quality;
 using OrcaFacil.Application.Automation;
 using OrcaFacil.Application.DataGovernance;
 using OrcaFacil.Application.Bi;
+using OrcaFacil.Application.CustomerSuccess;
 
 namespace OrcaFacil.Application;
 
@@ -83,6 +84,24 @@ public static class DependencyInjection
         services.TryAddSingleton<BiForecastService>();
         services.TryAddSingleton<BiDashboardService>();
         services.TryAddSingleton<BiInsightService>();
+        services.TryAddSingleton<CustomerHealthRuleService>();
+        services.TryAddSingleton<CustomerHealthScoreService>();
+        services.TryAddSingleton<CustomerChurnRiskService>();
+        services.TryAddSingleton<CustomerRetentionPlanService>();
+        services.TryAddSingleton<CustomerExpansionOpportunityService>();
+        services.TryAddSingleton<CustomerRenewalService>();
+        services.TryAddSingleton<CustomerNpsService>();
+        services.TryAddSingleton<CustomerQbrService>();
+        services.TryAddSingleton<CustomerSuccessPlaybookService>();
+        services.TryAddSingleton<CustomerSuccessPlaybookRunService>();
+        services.TryAddSingleton<CustomerTouchpointService>();
+        services.TryAddSingleton<CustomerSuccessAlertService>();
+        services.TryAddSingleton<CustomerSuccessTenantIsolationService>();
+        services.TryAddSingleton<CustomerSuccessAccountService>();
+        services.TryAddSingleton<CustomerSuccessPlanService>();
+        services.TryAddSingleton<CustomerAdoptionAnalyticsService>();
+        services.TryAddSingleton<CustomerSuccessEscalationService>();
+        services.TryAddSingleton<CustomerSuccessReportService>();
 
         return services;
     }
