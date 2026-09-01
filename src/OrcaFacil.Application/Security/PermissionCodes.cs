@@ -3,6 +3,16 @@ namespace OrcaFacil.Application.Security;
 /// <summary>Canonical permission identifiers used by backend authorization.</summary>
 public static class PermissionCodes
 {
+    public const string BiView = "BI.View"; public const string BiManage = "BI.Manage"; public const string BiCockpitView = "BI.CockpitView";
+    public const string BiDashboardsView = "BI.DashboardsView"; public const string BiDashboardsManage = "BI.DashboardsManage";
+    public const string BiMetricsView = "BI.MetricsView"; public const string BiMetricsManage = "BI.MetricsManage";
+    public const string BiGoalsView = "BI.GoalsView"; public const string BiGoalsManage = "BI.GoalsManage";
+    public const string BiOkrsView = "BI.OkrsView"; public const string BiOkrsManage = "BI.OkrsManage";
+    public const string BiAlertsView = "BI.AlertsView"; public const string BiAlertsManage = "BI.AlertsManage";
+    public const string BiReportsView = "BI.ReportsView"; public const string BiReportsExport = "BI.ReportsExport";
+    public const string BiDataMartView = "BI.DataMartView"; public const string BiDataMartManage = "BI.DataMartManage";
+    public const string BiForecastView = "BI.ForecastView"; public const string BiInsightsView = "BI.InsightsView";
+    public const string BiSensitiveFinancialMetricsView = "BI.SensitiveFinancialMetricsView"; public const string BiGlobalView = "BI.GlobalView";
     public const string AutomationView="Automation.View"; public const string AutomationManage="Automation.Manage"; public const string AutomationCreate="Automation.Create"; public const string AutomationEdit="Automation.Edit"; public const string AutomationPublish="Automation.Publish"; public const string AutomationPause="Automation.Pause"; public const string AutomationDelete="Automation.Delete"; public const string AutomationSimulate="Automation.Simulate"; public const string AutomationExecuteManual="Automation.ExecuteManual";
     public const string AutomationApprovalsView="Automation.ApprovalsView"; public const string AutomationApprovalsManage="Automation.ApprovalsManage"; public const string AutomationTemplatesView="Automation.TemplatesView"; public const string AutomationTemplatesManage="Automation.TemplatesManage"; public const string AutomationExecutionsView="Automation.ExecutionsView"; public const string AutomationGovernanceView="Automation.GovernanceView"; public const string AutomationGovernanceManage="Automation.GovernanceManage"; public const string AutomationMetricsView="Automation.MetricsView"; public const string AutomationDeadLettersView="Automation.DeadLettersView"; public const string AutomationDeadLettersManage="Automation.DeadLettersManage";
     public const string FiscalView="Fiscal.View"; public const string FiscalManage="Fiscal.Manage";

@@ -7,6 +7,7 @@ using OrcaFacil.Application.Field;
 using OrcaFacil.Application.Quality;
 using OrcaFacil.Application.Automation;
 using OrcaFacil.Application.DataGovernance;
+using OrcaFacil.Application.Bi;
 
 namespace OrcaFacil.Application;
 
@@ -73,6 +74,15 @@ public static class DependencyInjection
         services.TryAddSingleton<DataQualityFixService>();
         services.TryAddSingleton<DataQualityAutomationIntegrationService>();
         services.TryAddSingleton<GovernedDataQualityAiService>();
+        services.TryAddSingleton<BiMetricPermissionService>();
+        services.TryAddSingleton<BiTrendAnalysisService>();
+        services.TryAddSingleton<BiGoalService>();
+        services.TryAddSingleton<OkrService>();
+        services.TryAddSingleton<BiAlertService>();
+        services.TryAddSingleton<BiDataMartService>();
+        services.TryAddSingleton<BiForecastService>();
+        services.TryAddSingleton<BiDashboardService>();
+        services.TryAddSingleton<BiInsightService>();
 
         return services;
     }
