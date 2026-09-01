@@ -501,7 +501,24 @@
     "check:data-quality-permissions": "node scripts/check-data-quality-permissions.mjs",
     "check:data-quality-design": "node scripts/check-data-quality-design.mjs",
     "check:data-quality-no-fake": "node scripts/check-data-quality-no-fake.mjs",
-    "check:bi-no-fake-kpis": "node scripts/check-bi-no-fake-kpis.mjs"
+    "check:bi-no-fake-kpis": "node scripts/check-bi-no-fake-kpis.mjs",
+    "check:customer-success-module": "node scripts/check-customer-success-module.mjs",
+    "check:customer-health-score": "node scripts/check-customer-success-module.mjs",
+    "check:customer-health-no-fake": "node scripts/check-customer-success-module.mjs",
+    "check:customer-churn-risk": "node scripts/check-customer-success-module.mjs",
+    "check:customer-retention-plans": "node scripts/check-customer-success-module.mjs",
+    "check:customer-expansion": "node scripts/check-customer-success-module.mjs",
+    "check:customer-renewals": "node scripts/check-customer-success-module.mjs",
+    "check:customer-nps": "node scripts/check-customer-success-module.mjs",
+    "check:customer-qbr": "node scripts/check-customer-success-module.mjs",
+    "check:customer-playbooks": "node scripts/check-customer-success-module.mjs",
+    "check:customer-touchpoints": "node scripts/check-customer-success-module.mjs",
+    "check:customer-success-plans": "node scripts/check-customer-success-module.mjs",
+    "check:customer-adoption": "node scripts/check-customer-success-module.mjs",
+    "check:customer-success-permissions": "node scripts/check-customer-success-module.mjs",
+    "check:customer-success-reports": "node scripts/check-customer-success-module.mjs",
+    "check:customer-success-design": "node scripts/check-customer-success-module.mjs",
+    "check:customer-success-no-fake": "node scripts/check-customer-success-no-fake.mjs"
   },
   "engines": {
     "node": ">=18"

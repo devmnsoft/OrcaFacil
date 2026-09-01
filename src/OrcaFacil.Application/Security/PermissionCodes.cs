@@ -3,6 +3,15 @@ namespace OrcaFacil.Application.Security;
 /// <summary>Canonical permission identifiers used by backend authorization.</summary>
 public static class PermissionCodes
 {
+    public const string CustomerSuccessView = "CustomerSuccess.View"; public const string CustomerSuccessManage = "CustomerSuccess.Manage";
+    public const string CustomerSuccessAccountsView = "CustomerSuccess.AccountsView"; public const string CustomerSuccessHealthScoreView = "CustomerSuccess.HealthScoreView"; public const string CustomerSuccessHealthRulesManage = "CustomerSuccess.HealthRulesManage";
+    public const string CustomerSuccessChurnRiskView = "CustomerSuccess.ChurnRiskView"; public const string CustomerSuccessRetentionPlansView = "CustomerSuccess.RetentionPlansView"; public const string CustomerSuccessRetentionPlansManage = "CustomerSuccess.RetentionPlansManage";
+    public const string CustomerSuccessExpansionView = "CustomerSuccess.ExpansionView"; public const string CustomerSuccessExpansionManage = "CustomerSuccess.ExpansionManage"; public const string CustomerSuccessRenewalsView = "CustomerSuccess.RenewalsView"; public const string CustomerSuccessRenewalsManage = "CustomerSuccess.RenewalsManage";
+    public const string CustomerSuccessNpsView = "CustomerSuccess.NpsView"; public const string CustomerSuccessNpsManage = "CustomerSuccess.NpsManage"; public const string CustomerSuccessQbrView = "CustomerSuccess.QbrView"; public const string CustomerSuccessQbrManage = "CustomerSuccess.QbrManage";
+    public const string CustomerSuccessPlaybooksView = "CustomerSuccess.PlaybooksView"; public const string CustomerSuccessPlaybooksManage = "CustomerSuccess.PlaybooksManage"; public const string CustomerSuccessTouchpointsView = "CustomerSuccess.TouchpointsView"; public const string CustomerSuccessTouchpointsManage = "CustomerSuccess.TouchpointsManage";
+    public const string CustomerSuccessSuccessPlansView = "CustomerSuccess.SuccessPlansView"; public const string CustomerSuccessSuccessPlansManage = "CustomerSuccess.SuccessPlansManage"; public const string CustomerSuccessAdoptionView = "CustomerSuccess.AdoptionView";
+    public const string CustomerSuccessEscalationsView = "CustomerSuccess.EscalationsView"; public const string CustomerSuccessEscalationsManage = "CustomerSuccess.EscalationsManage"; public const string CustomerSuccessAlertsView = "CustomerSuccess.AlertsView"; public const string CustomerSuccessReportsView = "CustomerSuccess.ReportsView"; public const string CustomerSuccessFinancialSensitiveView = "CustomerSuccess.FinancialSensitiveView";
+
     public const string BiView = "BI.View"; public const string BiManage = "BI.Manage"; public const string BiCockpitView = "BI.CockpitView";
     public const string BiDashboardsView = "BI.DashboardsView"; public const string BiDashboardsManage = "BI.DashboardsManage";
     public const string BiMetricsView = "BI.MetricsView"; public const string BiMetricsManage = "BI.MetricsManage";
