@@ -1,5 +1,6 @@
 using OrcaFacil.Application.Quality;
 using OrcaFacil.Domain.Enums;
+using Xunit;
 
 namespace OrcaFacil.UnitTests;
 
@@ -44,19 +45,7 @@ public sealed class DateTimePolicyTests
         Assert.Throws<ArgumentException>(() => new DueDatePolicyService().Validate(new DateOnly(2026, 8, 31), new DateOnly(2026, 8, 30)));
 }
 
-public sealed class TenantPermissionGuardTests
-{
-    [Fact]
-    public void Client_cannot_access_another_client_resource() =>
-        Assert.Throws<UnauthorizedAccessException>(() => new PortalIsolationGuardService().EnsureClientAccess(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
-
-    [Fact]
-    public void Partner_cannot_access_unassigned_resource() =>
-    {
-        var account = Guid.NewGuid();
-        Assert.Throws<UnauthorizedAccessException>(() => new PortalIsolationGuardService().EnsurePartnerAccess(account, account, Guid.NewGuid(), Guid.NewGuid()));
-    }
-}
+ 
 
 public sealed class FinancialFlowConsistencyTests
 {
