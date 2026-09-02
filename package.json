@@ -518,7 +518,15 @@
     "check:customer-success-permissions": "node scripts/check-customer-success-module.mjs",
     "check:customer-success-reports": "node scripts/check-customer-success-module.mjs",
     "check:customer-success-design": "node scripts/check-customer-success-module.mjs",
-    "check:customer-success-no-fake": "node scripts/check-customer-success-no-fake.mjs"
+    "check:customer-success-no-fake": "node scripts/check-customer-success-no-fake.mjs",
+    "check:documents-schema": "node scripts/check-documents-schema.mjs",
+    "check:commercial-routine": "node scripts/check-commercial-routine.mjs",
+    "check:schema-drift": "node scripts/check-schema-drift.mjs",
+    "check:design-premium": "node scripts/check-design-premium.mjs",
+    "check:commercial-design": "node scripts/check-commercial-design.mjs",
+    "check:form-quality": "node scripts/check-form-quality.mjs",
+    "check:table-quality": "node scripts/check-table-quality.mjs",
+    "check:mobile-layout": "node scripts/check-mobile-layout.mjs"
   },
   "engines": {
     "node": ">=18"

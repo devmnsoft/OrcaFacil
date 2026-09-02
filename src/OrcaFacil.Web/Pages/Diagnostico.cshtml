@@ -25,3 +25,13 @@
 @if (db?.MissingTables.Contains("account_onboarding_states", StringComparer.OrdinalIgnoreCase) == true) { <div class="callout"><strong>Banco desatualizado: tabela account_onboarding_states ausente.</strong><p>Execute <code>database/patch_fix_account_onboarding_states.sql</code> ou <code>database/script_completop.sql</code>.</p></div> }
 <details><summary>Ver detalhes técnicos</summary><dl><dt>PostgreSQL</dt><dd>@db?.PostgreSqlVersion</dd><dt>Usuário</dt><dd>@db?.ConnectedUser</dd><dt>search_path</dt><dd>@db?.SearchPath</dd><dt>Permissões</dt><dd>Leitura: @db?.CanRead; criação: @db?.CanWrite</dd><dt>Tabelas faltantes</dt><dd>@string.Join(", ", db?.MissingTables ?? [])</dd><dt>Colunas faltantes</dt><dd>@string.Join(", ", db?.MissingColumns ?? [])</dd></dl></details>
 @if (!string.IsNullOrWhiteSpace(db?.Error)) { <p class="text-danger">@db.Error</p> }
+<section class="of-panel" aria-labelledby="drift-title">
+<h2 id="drift-title">Varredura de schema drift</h2>
+<p><strong>Schema atualizado:</strong> @(db?.CanConnect == true && db.MissingTables.Count == 0 && (db.MissingColumns?.Count ?? 0) == 0 && (db.MissingIndexes?.Count ?? 0) == 0 ? "Sim" : "Não")</p>
+<table class="of-table"><thead><tr><th>Severidade</th><th>Módulo impactado</th><th>Rota impactada</th><th>Diagnóstico</th><th>Patch recomendado</th></tr></thead><tbody>
+@if ((db?.MissingColumns?.Count ?? 0) == 0 && (db?.MissingIndexes?.Count ?? 0) == 0) { <tr><td><span class="of-badge">OK</span></td><td>Todos</td><td>—</td><td>Nenhuma coluna ou índice crítico ausente.</td><td>Nenhuma ação</td></tr> }
+else {
+ @foreach (var column in db?.MissingColumns ?? []) { var commercial = column.StartsWith("documents.", StringComparison.OrdinalIgnoreCase); <tr><td><span class="of-badge is-critical">Crítica</span></td><td>@(commercial ? "Comercial" : "Plataforma")</td><td>@(commercial ? "/CommercialRoutine" : "/SystemHealth/Database")</td><td>Coluna ausente: <code>@column</code></td><td><code>database/patch_release_candidate_schema.sql</code></td></tr> }
+ @foreach (var index in db?.MissingIndexes ?? []) { <tr><td><span class="of-badge is-important">Alta</span></td><td>Performance</td><td>/SystemHealth/Database</td><td>Índice ausente: <code>@index</code></td><td><code>database/patch_release_candidate_schema.sql</code></td></tr> }
+}
+</tbody></table></section>

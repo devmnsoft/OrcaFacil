@@ -8,7 +8,7 @@ using OrcaFacil.Persistence;
 namespace OrcaFacil.Web.Services;
 
 public sealed record RoutineItem(Guid Id, string Kind, string Title, string Client, string Origin, DateTime Date,
-    string Priority, string Status, string NextAction, string Page);
+    string Priority, string Status, string NextAction, string Page, string? Phone, string? Email);
 public sealed record MessageTemplateView(Guid Id, string Code, string Name, string Channel, string? Subject,
     string Body, bool IsActive, bool IsSystem, DateTime CreatedAt, DateTime? UpdatedAt);
 
@@ -62,7 +62,7 @@ public sealed partial class CommercialAutomationService(OrcaFacilDbContext db, I
     }
 
     private static RoutineItem Item(Document d, string kind, string title, DateTime date, string action, string priority) =>
-        new(d.Id, kind, title, d.ClientName, $"Orçamento {d.Number}", date, priority, d.Status, action, "/Documents/Details");
+        new(d.Id, kind, title, d.ClientName, $"Orçamento {d.Number}", date, priority, d.Status, action, "/Documents/Details", d.ClientPhone, d.ClientEmail);
 
     public async Task<IReadOnlyList<MessageTemplateView>> GetTemplatesAsync(CancellationToken ct = default)
     {

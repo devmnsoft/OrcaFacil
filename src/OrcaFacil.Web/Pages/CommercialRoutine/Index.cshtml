@@ -1,20 +1,29 @@
 @page
 @model OrcaFacil.Web.Pages.CommercialRoutine.IndexModel
-@{ ViewData["Title"] = "Rotina comercial"; ViewData["Section"] = "Comercial"; }
+@{ ViewData["Title"] = "Rotina Comercial"; ViewData["Section"] = "Comercial"; }
 <header class="of-page-header of-commercial-hero">
-  <div><p class="of-eyebrow">Seu dia comercial</p><h1>Prioridades que pedem ação</h1><p>Somente ocorrências reais da sua conta, ordenadas por urgência.</p></div>
+  <div><p class="of-eyebrow">Operação diária</p><h1>Rotina Comercial</h1><p>Priorize retornos, acompanhe propostas e avance negociações reais da sua conta.</p></div>
   <a class="of-button-secondary" asp-page="PendingQuotes">Propostas sem resposta</a>
 </header>
-<section class="of-routine-summary" aria-label="Resumo da rotina">
-  <div><strong>@Model.Items.Count</strong><span>ações abertas</span></div><div><strong>@Model.Items.Count(x => x.Priority == "critical")</strong><span>prioridade alta</span></div><div><strong>@Model.Items.Count(x => x.Kind.Contains("followup"))</strong><span>follow-ups</span></div>
+<section class="of-routine-summary" aria-label="Indicadores comerciais">
+  <div><strong>@Model.Items.Count(x => x.Kind.Contains("followup"))</strong><span>follow-ups pendentes</span></div>
+  <div><strong>@Model.Items.Count(x => x.Kind is "expired" or "expiring")</strong><span>orçamentos vencendo</span></div>
+  <div><strong>@Model.Items.Count(x => x.Kind is "sent" or "viewed")</strong><span>propostas sem resposta</span></div>
 </section>
-@if (Model.Items.Count == 0) { <section class="of-empty-state"><h2>Rotina em dia</h2><p>Não há propostas ou retornos exigindo atenção agora.</p><a class="of-button-primary" asp-page="/Documents/New">Criar orçamento</a></section> }
-else { <section class="of-routine-list" aria-label="Ações comerciais">
+<nav class="of-filter-bar" aria-label="Filtros da rotina">
+ <a class="@(Model.Filter == "pending" ? "is-active" : null)" asp-route-filter="pending">Pendentes</a>
+ <a class="@(Model.Filter == "all" ? "is-active" : null)" asp-route-filter="all">Todos</a>
+ <a class="@(Model.Filter == "expiring" ? "is-active" : null)" asp-route-filter="expiring">Vencendo</a>
+</nav>
+@if (Model.LoadError is not null) { <section class="of-alert is-danger" role="alert"><h2>Rotina temporariamente indisponível</h2><p>@Model.LoadError</p><a asp-page="/Diagnostico">Abrir System Health</a></section> }
+else if (Model.Items.Count == 0) { <section class="of-empty-state"><h2>Nenhuma prioridade neste filtro</h2><p>Sua rotina está em dia. Você pode revisar todos os itens ou criar um novo orçamento.</p><div class="of-action-bar"><a class="of-button-secondary" asp-route-filter="all">Ver todos</a><a class="of-button-primary" asp-page="/Documents/New">Criar orçamento</a></div></section> }
+else { <section class="of-routine-list" aria-label="Prioridades do dia">
 @foreach (var item in Model.Items) { <article class="of-routine-card">
- <div class="of-routine-marker is-@item.Priority"></div><div class="of-routine-main"><div class="of-section-heading"><div><p class="of-eyebrow">@item.Origin</p><h2>@item.Title</h2></div><span class="of-badge is-@item.Priority">@item.Priority</span></div>
- <p><strong>@item.Client</strong> · @item.Status</p><small>@item.Date.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · Próxima ação: @item.NextAction</small></div>
- <div class="of-routine-actions"><a class="of-button-secondary" asp-page="@item.Page" asp-route-id="@item.Id">Abrir origem</a>
- <details><summary>Agendar follow-up</summary><form method="post" asp-page-handler="Schedule"><input type="hidden" name="documentId" value="@item.Id"/><label><span>Data e hora</span><input type="datetime-local" name="nextFollowUpAt" required/></label><label><span>Observação</span><input name="note" maxlength="1000"/></label><button type="submit" class="of-button-primary">Agendar</button></form></details>
+ <div class="of-routine-marker is-@item.Priority"></div><div class="of-routine-main"><div class="of-section-heading"><div><p class="of-eyebrow">@item.Origin</p><h2>@item.Title</h2></div><span class="of-badge is-@item.Priority">@item.Status</span></div>
+ <p><strong>@item.Client</strong></p><p class="of-contact-line">@(item.Phone ?? "Telefone não informado") · @(item.Email ?? "E-mail não informado")</p>
+ <div class="of-timeline"><span></span><small>@item.Date.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small><strong>@item.NextAction</strong></div></div>
+ <div class="of-routine-actions"><a class="of-button-secondary" asp-page="@item.Page" asp-route-id="@item.Id">Abrir orçamento</a>
+ <details><summary>Reagendar follow-up</summary><form method="post" asp-page-handler="Schedule"><input type="hidden" name="documentId" value="@item.Id"/><label><span>Data e hora</span><input type="datetime-local" name="nextFollowUpAt" required/></label><label><span>Observação</span><input name="note" maxlength="1000"/></label><button type="submit" class="of-button-primary">Registrar follow-up</button></form></details>
  @if(item.Kind.Contains("followup")){<form method="post" asp-page-handler="Complete"><input type="hidden" name="documentId" value="@item.Id"/><button type="submit" class="of-button-secondary">Concluir</button></form>}</div>
 </article> }</section> }
 @section Styles { <link rel="stylesheet" href="~/css/commercial.css" asp-append-version="true" /> }
