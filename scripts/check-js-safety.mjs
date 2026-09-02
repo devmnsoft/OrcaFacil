@@ -23,3 +23,6 @@ for (const file of layouts) {
 }
 if (failures.length) { console.error(failures.join('\n')); process.exit(1); }
 console.log(`Segurança JavaScript validada em ${files.length} arquivos.`);
+
+import { runSprint55Check } from './sprint55-design-checks.mjs';
+await runSprint55Check('js-safety');
