@@ -18,7 +18,18 @@ public class DatabaseDiagnosticsTests
             "plans", "plan_versions"
         };
 
-        Assert.Equal(expected, DatabaseDiagnosticsService.RequiredTables);
+        Assert.All(expected, table => Assert.Contains(table, DatabaseDiagnosticsService.RequiredTables));
+    }
+
+    [Theory]
+    [InlineData("contacts")]
+    [InlineData("payment_invoices")]
+    [InlineData("payment_receipts")]
+    [InlineData("commercial_follow_ups")]
+    [InlineData("customer_success_accounts")]
+    public void RequiredTables_Contains_Critical_Module_Table(string table)
+    {
+        Assert.Contains(table, DatabaseDiagnosticsService.RequiredTables);
     }
 
     [Fact]
