@@ -21,12 +21,15 @@ public class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.Property(x => x.City).HasMaxLength(120);
         builder.Property(x => x.Address).HasMaxLength(300);
         builder.Property(x => x.Notes).HasMaxLength(1000);
+        builder.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true).IsRequired();
         builder.Property(x => x.InternalNotes).HasMaxLength(2000);
         builder.Property(x => x.PreferredContactChannel).HasMaxLength(24);
         builder.Property(x => x.Version).IsRowVersion();
         builder.HasIndex(x => x.UserId);
         builder.HasIndex(x => x.Name);
         builder.HasIndex(x => x.DocumentNumber);
+        builder.HasIndex(x => new { x.AccountId, x.IsActive }).HasDatabaseName("ix_clients_account_active");
+        builder.HasIndex(x => new { x.AccountId, x.Name }).HasDatabaseName("ix_clients_account_name");
     }
 }
 

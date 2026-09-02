@@ -530,7 +530,12 @@
     "check:commercial-design": "node scripts/check-commercial-design.mjs",
     "check:form-quality": "node scripts/check-form-quality.mjs",
     "check:table-quality": "node scripts/check-table-quality.mjs",
-    "check:mobile-layout": "node scripts/check-mobile-layout.mjs"
+    "check:mobile-layout": "node scripts/check-mobile-layout.mjs",
+    "check:clients-schema": "node scripts/check-clients-schema.mjs",
+    "check:guided-budget-start": "node scripts/check-guided-budget-start.mjs",
+    "check:dashboard-schema": "node scripts/check-dashboard-schema.mjs",
+    "check:dashboard-design": "node scripts/check-dashboard-design.mjs",
+    "check:documents-new-design": "node scripts/check-documents-new-design.mjs"
   },
   "engines": {
     "node": ">=18"

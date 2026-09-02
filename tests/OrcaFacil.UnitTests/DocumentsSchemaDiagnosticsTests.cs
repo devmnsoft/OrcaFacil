@@ -7,6 +7,7 @@ public sealed class DocumentsSchemaDiagnosticsTests
 {
     [Theory]
     [InlineData("client_snapshot")]
+    [InlineData("conditions_text")]
     [InlineData("template_snapshot")]
     [InlineData("follow_up_status")]
     [InlineData("next_follow_up_at")]

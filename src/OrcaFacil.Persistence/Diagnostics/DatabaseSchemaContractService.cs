@@ -13,6 +13,7 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
     public const string QuoteToCashMigration = "20260730000000_AddManualPaymentsAndReceipts";
     public const string ReceiptSequenceMigration = "20260819010000_AddReceiptSequences";
     public const string CommercialDocumentRepairMigration = "20260902000000_AddMissingCommercialDocumentColumns";
+    public const string ClientsAndDocumentsDriftMigration = "20260902010000_FixClientsAndDocumentsSchemaDrift";
 
     public static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> RegistrationContract =
         new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
@@ -29,10 +30,10 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
             ["business_accounts"] = Columns(("id", "uuid"), ("document_number", "character varying"), ("is_deleted", "boolean")),
             ["account_members"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("user_id", "uuid"), ("role_code", "character varying")),
             ["documents"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("type", "character varying"),
-                ("client_snapshot", "jsonb"), ("template_snapshot", "jsonb"), ("follow_up_status", "character varying"),
+                ("client_snapshot", "jsonb"), ("conditions_text", "text"), ("template_snapshot", "jsonb"), ("follow_up_status", "character varying"),
                 ("next_follow_up_at", "timestamp with time zone"), ("public_token", "character varying"),
                 ("client_decision", "character varying"), ("internal_approval_status", "character varying")),
-            ["clients"] = Columns(("id", "uuid"), ("account_id", "uuid")),
+            ["clients"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("is_active", "boolean"), ("is_deleted", "boolean")),
             ["document_items"] = Columns(("id", "uuid"), ("document_id", "uuid")),
             ["contacts"] = Columns(("id", "uuid"), ("account_id", "uuid")),
             ["payments"] = Columns(("id", "uuid"), ("account_id", "uuid")),
@@ -55,7 +56,8 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
             ["subscriptions"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("user_id", "uuid")),
             ["issuer_profiles"] = Columns(("id", "uuid"), ("user_id", "uuid")),
             ["notifications"] = Columns(("id", "uuid"), ("user_id", "uuid"), ("account_id", "uuid")),
-            ["audit_logs"] = Columns(("id", "uuid"), ("user_id", "uuid"), ("account_id", "uuid")),
+            ["audit_logs"] = Columns(("id", "uuid"), ("user_id", "uuid"), ("account_id", "uuid"), ("correlation_id", "character varying")),
+            ["features"] = Columns(("id", "uuid"), ("code", "character varying")),
             ["plans"] = Columns(("id", "uuid"), ("code", "character varying")),
             ["plan_versions"] = Columns(("id", "uuid"), ("plan_id", "uuid"), ("status", "character varying")),
             ["document_revisions"] = Columns(
@@ -152,10 +154,16 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
         return new(issues.Count == 0 && !pending, issues, DateTimeOffset.UtcNow, pending);
     }
 
-    public static readonly string[] RequiredMigrations = [RepairMigration, PasswordRecoveryMigration, CommercialJourneyMigration, QuoteToCashMigration, ReceiptSequenceMigration, CommercialDocumentRepairMigration];
+    public static readonly string[] RequiredMigrations = [RepairMigration, PasswordRecoveryMigration, CommercialJourneyMigration, QuoteToCashMigration, ReceiptSequenceMigration, CommercialDocumentRepairMigration, ClientsAndDocumentsDriftMigration];
 
     private static readonly (string Table, string Name)[] EssentialIndexes =
     [
+        ("clients", "ix_clients_account_active"),
+        ("clients", "ix_clients_account_name"),
+        ("documents", "ix_documents_account_type_created"),
+        ("documents", "ix_documents_account_type_followup"),
+        ("documents", "ix_documents_account_type_valid_until"),
+        ("documents", "ix_documents_public_token"),
         ("document_revisions", "ux_document_revisions_version"),
         ("document_revisions", "ux_document_revisions_current"),
         ("public_document_accesses", "ux_public_document_access_token_hash"),
@@ -195,7 +203,7 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
         "document_revisions" or "public_document_accesses" or "public_document_decisions" or
             "commercial_follow_ups" or "work_orders" => CommercialJourneyMigration,
         "receipt_sequences" => ReceiptSequenceMigration,
-        "documents" => CommercialDocumentRepairMigration,
+        "documents" or "clients" => ClientsAndDocumentsDriftMigration,
         "manual_payments" or "receipts" => QuoteToCashMigration,
         _ => RepairMigration
     };

@@ -87,11 +87,11 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
             // diagnosed before EF Core attempts to materialize UserAccount during sign-in.
             var requiredColumns = new[]
             {
-                "documents.account_id", "documents.client_snapshot", "documents.template_snapshot",
+                "documents.account_id", "documents.client_snapshot", "documents.conditions_text", "documents.template_snapshot",
                 "documents.follow_up_status", "documents.next_follow_up_at", "documents.public_token",
                 "documents.client_decision", "documents.internal_approval_status",
                 "email_outbox_messages.status",
-                "clients.account_id", "public_document_accesses.token_hash",
+                "clients.account_id", "clients.is_active", "clients.is_deleted", "public_document_accesses.token_hash",
                 "users.failed_login_attempts", "users.last_failed_login_at",
                 "users.last_successful_login_at", "users.locked_until", "users.is_blocked",
                 "users.block_reason", "users.must_change_password", "users.password_changed_at",
@@ -120,7 +120,7 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
             var missingColumns = requiredColumns.Where(x => !columns.Contains(x)).ToArray();
             var requiredIndexes = new[]
             {
-                "ix_documents_account_client", "ix_documents_account_type_followup",
+                "ix_documents_account_client", "ix_clients_account_active", "ix_clients_account_name", "ix_documents_account_type_created", "ix_documents_account_type_followup",
                 "ix_documents_account_type_valid_until", "ix_documents_public_token",
                 "ux_public_document_access_token_hash", "ix_work_orders_schedule",
                 "ix_account_onboarding_states_account_id_user_id",

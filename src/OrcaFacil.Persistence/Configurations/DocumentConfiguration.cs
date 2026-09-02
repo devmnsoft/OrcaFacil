@@ -31,7 +31,7 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.Property(x => x.DepositAmount).HasPrecision(18, 2);
         builder.Property(x => x.PixInformation).HasMaxLength(300);
         builder.Property(x => x.WarrantyText).HasMaxLength(2000);
-        builder.Property(x => x.ConditionsText).HasMaxLength(4000);
+        builder.Property(x => x.ConditionsText).HasColumnName("conditions_text").HasMaxLength(4000);
         builder.Property(x => x.TemplateCode).HasMaxLength(40);
         builder.Property(x => x.TemplateSnapshot).HasColumnType("jsonb");
         builder.Property(x => x.RowVersion).IsConcurrencyToken();
@@ -62,5 +62,9 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => new { x.AccountId, x.Status, x.LastAutosavedAt });
         builder.HasIndex(x => new { x.AccountId, x.NextFollowUpAt });
+        builder.HasIndex(x => new { x.AccountId, x.Type, x.CreatedAt }).HasDatabaseName("ix_documents_account_type_created");
+        builder.HasIndex(x => new { x.AccountId, x.Type, x.NextFollowUpAt }).HasDatabaseName("ix_documents_account_type_followup");
+        builder.HasIndex(x => new { x.AccountId, x.Type, x.ValidUntil }).HasDatabaseName("ix_documents_account_type_valid_until");
+        builder.HasIndex(x => x.PublicToken).HasDatabaseName("ix_documents_public_token").HasFilter("public_token IS NOT NULL");
     }
 }
