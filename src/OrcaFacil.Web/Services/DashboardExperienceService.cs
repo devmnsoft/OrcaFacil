@@ -21,15 +21,14 @@ public sealed class DashboardExperienceService(
 {
     public async Task<DashboardExperienceViewModel> GetAsync(CancellationToken cancellationToken = default)
     {
-        var dashboardTask = dashboardQueries.GetDashboardAsync(currentUser.UserId, cancellationToken);
-        var profileTask = profiles.GetAsync(new(currentUser.UserId), cancellationToken);
-        var actionTask = nextBestAction.GetAsync(cancellationToken);
-        var planTask = planExperience.GetAsync(cancellationToken);
-        var commercialTask = commercialWorkspace.GetDashboardAsync(cancellationToken);
-        await Task.WhenAll(dashboardTask, profileTask, actionTask, planTask, commercialTask);
-
-        var dashboard = await dashboardTask;
-        var plan = await planTask;
+        // These collaborators are scoped and ultimately share OrcaFacilDbContext.
+        // Await each operation before starting the next one: EF contexts do not support
+        // multiple active operations, even when every individual query is asynchronous.
+        var dashboard = await dashboardQueries.GetDashboardAsync(currentUser.UserId, cancellationToken);
+        var profile = await profiles.GetAsync(new(currentUser.UserId), cancellationToken);
+        var action = await nextBestAction.GetAsync(cancellationToken);
+        var plan = await planExperience.GetAsync(cancellationToken);
+        var commercial = await commercialWorkspace.GetDashboardAsync(cancellationToken);
         var firstName = string.IsNullOrWhiteSpace(currentUser.Name)
             ? "bem-vindo"
             : currentUser.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
@@ -40,14 +39,14 @@ public sealed class DashboardExperienceService(
         return new(
             firstName,
             dashboard,
-            await profileTask is not null,
-            await actionTask,
+            profile is not null,
+            action,
             plan.EffectivePlanName,
             plan.Status,
             plan.DueAt is { } dueAt ? new DateTimeOffset(DateTime.SpecifyKind(dueAt, DateTimeKind.Utc)) : null,
             planUsage,
             plan.ContextualRecommendation,
-            await commercialTask);
+            commercial);
     }
 }
 

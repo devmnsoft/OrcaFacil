@@ -19,9 +19,14 @@
 }
 <header class="of-workbench-intro" aria-labelledby="welcome-title">
     <div>
-        <p class="of-eyebrow">Central de trabalho</p>
+        <p class="of-eyebrow"><span class="of-live-dot" aria-hidden="true"></span> Central de trabalho · dados da sua conta</p>
         <h1 id="welcome-title">Olá, @experience.FirstName.</h1>
         <p>Veja o que pede atenção e avance no próximo trabalho.</p>
+        <div class="of-hero-context" aria-label="Resumo atual da conta">
+            <span><strong>@dashboard.DocumentsThisMonth</strong> documentos neste mês</span>
+            <span><strong>@experience.Commercial.Attention.Count</strong> prioridades comerciais</span>
+            <span>Plano <strong>@experience.PlanName</strong></span>
+        </div>
     </div>
     <div class="of-workbench-actions">
         <a class="of-button-secondary" asp-page="/Documents/Index">Ver propostas</a>
