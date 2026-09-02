@@ -88,8 +88,15 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
             var requiredColumns = new[]
             {
                 "documents.account_id", "documents.client_snapshot", "documents.conditions_text", "documents.template_snapshot",
-                "documents.follow_up_status", "documents.next_follow_up_at", "documents.public_token",
-                "documents.client_decision", "documents.internal_approval_status",
+                "documents.follow_up_status", "documents.follow_up_note", "documents.last_follow_up_at",
+                "documents.next_follow_up_at", "documents.current_wizard_step", "documents.last_autosave_key",
+                "documents.last_autosaved_at", "documents.public_enabled", "documents.public_token",
+                "documents.client_decision", "documents.client_decision_at", "documents.client_decision_note",
+                "documents.internal_approval_status", "documents.requires_internal_approval",
+                "documents.converted_receipt_id", "documents.converted_receipt_number",
+                "documents.origin_budget_id", "documents.origin_budget_number", "documents.pix_information",
+                "documents.evidence_hash", "documents.warranty_text", "documents.deposit_amount",
+                "documents.installment_count", "documents.estimated_duration", "documents.expected_start_at",
                 "email_outbox_messages.status",
                 "clients.account_id", "clients.is_active", "clients.is_deleted", "public_document_accesses.token_hash",
                 "users.failed_login_attempts", "users.last_failed_login_at",

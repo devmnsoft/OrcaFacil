@@ -14,6 +14,7 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
     public const string ReceiptSequenceMigration = "20260819010000_AddReceiptSequences";
     public const string CommercialDocumentRepairMigration = "20260902000000_AddMissingCommercialDocumentColumns";
     public const string ClientsAndDocumentsDriftMigration = "20260902010000_FixClientsAndDocumentsSchemaDrift";
+    public const string DepositAmountDriftMigration = "20260902020000_FixDocumentsCommercialSchemaDepositAmount";
 
     public static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> RegistrationContract =
         new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
@@ -31,8 +32,18 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
             ["account_members"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("user_id", "uuid"), ("role_code", "character varying")),
             ["documents"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("type", "character varying"),
                 ("client_snapshot", "jsonb"), ("conditions_text", "text"), ("template_snapshot", "jsonb"), ("follow_up_status", "character varying"),
-                ("next_follow_up_at", "timestamp with time zone"), ("public_token", "character varying"),
-                ("client_decision", "character varying"), ("internal_approval_status", "character varying")),
+                ("follow_up_note", "character varying"), ("last_follow_up_at", "timestamp with time zone"),
+                ("next_follow_up_at", "timestamp with time zone"), ("current_wizard_step", "integer"),
+                ("last_autosave_key", "character varying"), ("last_autosaved_at", "timestamp with time zone"),
+                ("public_enabled", "boolean"), ("public_token", "character varying"),
+                ("client_decision", "character varying"), ("client_decision_at", "timestamp with time zone"),
+                ("client_decision_note", "character varying"), ("internal_approval_status", "character varying"),
+                ("requires_internal_approval", "boolean"), ("converted_receipt_id", "uuid"),
+                ("converted_receipt_number", "character varying"), ("origin_budget_id", "uuid"),
+                ("origin_budget_number", "character varying"), ("pix_information", "character varying"),
+                ("evidence_hash", "character varying"), ("warranty_text", "character varying"),
+                ("deposit_amount", "numeric"), ("installment_count", "integer"),
+                ("estimated_duration", "character varying"), ("expected_start_at", "timestamp with time zone")),
             ["clients"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("is_active", "boolean"), ("is_deleted", "boolean")),
             ["document_items"] = Columns(("id", "uuid"), ("document_id", "uuid")),
             ["contacts"] = Columns(("id", "uuid"), ("account_id", "uuid")),
@@ -154,7 +165,7 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
         return new(issues.Count == 0 && !pending, issues, DateTimeOffset.UtcNow, pending);
     }
 
-    public static readonly string[] RequiredMigrations = [RepairMigration, PasswordRecoveryMigration, CommercialJourneyMigration, QuoteToCashMigration, ReceiptSequenceMigration, CommercialDocumentRepairMigration, ClientsAndDocumentsDriftMigration];
+    public static readonly string[] RequiredMigrations = [RepairMigration, PasswordRecoveryMigration, CommercialJourneyMigration, QuoteToCashMigration, ReceiptSequenceMigration, CommercialDocumentRepairMigration, ClientsAndDocumentsDriftMigration, DepositAmountDriftMigration];
 
     private static readonly (string Table, string Name)[] EssentialIndexes =
     [
@@ -203,7 +214,8 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
         "document_revisions" or "public_document_accesses" or "public_document_decisions" or
             "commercial_follow_ups" or "work_orders" => CommercialJourneyMigration,
         "receipt_sequences" => ReceiptSequenceMigration,
-        "documents" or "clients" => ClientsAndDocumentsDriftMigration,
+        "documents" => DepositAmountDriftMigration,
+        "clients" => ClientsAndDocumentsDriftMigration,
         "manual_payments" or "receipts" => QuoteToCashMigration,
         _ => RepairMigration
     };
