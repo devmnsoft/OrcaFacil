@@ -535,7 +535,16 @@
     "check:guided-budget-start": "node scripts/check-guided-budget-start.mjs",
     "check:dashboard-schema": "node scripts/check-dashboard-schema.mjs",
     "check:dashboard-design": "node scripts/check-dashboard-design.mjs",
-    "check:documents-new-design": "node scripts/check-documents-new-design.mjs"
+    "check:documents-new-design": "node scripts/check-documents-new-design.mjs",
+    "check:design-system-v56": "node scripts/check-design-system-v56.mjs",
+    "check:login-premium": "node scripts/check-login-premium.mjs",
+    "check:dashboard-premium": "node scripts/check-dashboard-premium.mjs",
+    "check:public-home-design": "node scripts/check-public-home-design.mjs",
+    "check:forms-premium": "node scripts/check-forms-premium.mjs",
+    "check:tables-premium": "node scripts/check-tables-premium.mjs",
+    "check:admin-design": "node scripts/check-admin-design.mjs",
+    "check:system-health-design": "node scripts/check-system-health-design.mjs",
+    "check:feedback-messages": "node scripts/check-feedback-messages.mjs"
   },
   "engines": {
     "node": ">=18"

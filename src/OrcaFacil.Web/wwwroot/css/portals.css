@@ -1,0 +1,7 @@
+/* Trusted external portal surfaces — V5.6. */
+.of-client-portal,.of-partner-portal{min-height:100dvh;background:linear-gradient(180deg,var(--of-primary-soft),var(--of-page) 22rem)}
+.of-portal-shell{width:min(100% - 2rem,72rem);margin-inline:auto;padding-block:clamp(1rem,4vw,3rem)}
+.of-portal-header{display:flex;align-items:center;justify-content:space-between;gap:var(--of-space-4);margin-bottom:var(--of-space-6);padding:var(--of-space-4);border:1px solid var(--of-border);border-radius:var(--of-radius-lg);background:var(--of-surface-glass);box-shadow:var(--of-shadow-sm);backdrop-filter:blur(16px)}
+.of-portal-actions{display:flex;flex-wrap:wrap;gap:var(--of-space-3)}
+.of-portal-document{padding:clamp(1rem,4vw,2.5rem);border:1px solid var(--of-border);border-radius:var(--of-radius-lg);background:var(--of-surface);box-shadow:var(--of-shadow-md)}
+@media(max-width:640px){.of-portal-header,.of-portal-actions{align-items:stretch;flex-direction:column}.of-portal-actions>*{width:100%}.of-portal-document{border-radius:var(--of-radius)}}

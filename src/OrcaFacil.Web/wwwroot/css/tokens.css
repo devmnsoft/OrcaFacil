@@ -1,3 +1,4 @@
+/* OrçaFácil Design System V5.6 — semantic foundations shared by every surface. */
 :root {
   color-scheme: light;
   --of-page: #f5f7fb;
@@ -51,6 +52,7 @@
   --of-radius: 14px;
   --of-radius-lg: 22px;
   --of-shadow-sm: 0 1px 2px rgb(11 31 51 / 8%);
+  --of-shadow-md: 0 10px 30px rgb(11 31 51 / 10%);
   --of-shadow-lg: 0 24px 60px rgb(11 31 51 / 16%);
   --of-brand-gradient: linear-gradient(135deg, #246bfe 0%, #6654d9 100%);
   --of-brand-glow: 0 0 48px rgb(36 107 254 / 24%);
@@ -79,6 +81,15 @@
   --of-mobile-nav-height: 72px;
   --of-safe-bottom: env(safe-area-inset-bottom, 0px);
   --of-transition: 180ms ease;
+  --of-transition-fast: 120ms ease;
+  --of-transition-slow: 320ms cubic-bezier(.2,.8,.2,1);
+  --of-icon-sm: 16px;
+  --of-icon-md: 20px;
+  --of-icon-lg: 28px;
+  --of-breakpoint-sm: 360px;
+  --of-breakpoint-md: 768px;
+  --of-breakpoint-lg: 1024px;
+  --of-breakpoint-xl: 1440px;
   --of-z-topbar: 30;
   --of-z-nav: 40;
   --of-z-overlay: 70;
