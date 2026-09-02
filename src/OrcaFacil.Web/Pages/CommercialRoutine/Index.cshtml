@@ -6,9 +6,9 @@
   <a class="of-button-secondary" asp-page="PendingQuotes">Propostas sem resposta</a>
 </header>
 <section class="of-routine-summary" aria-label="Indicadores comerciais">
-  <div><strong>@Model.Items.Count(x => x.Kind.Contains("followup"))</strong><span>follow-ups pendentes</span></div>
-  <div><strong>@Model.Items.Count(x => x.Kind is "expired" or "expiring")</strong><span>orçamentos vencendo</span></div>
-  <div><strong>@Model.Items.Count(x => x.Kind is "sent" or "viewed")</strong><span>propostas sem resposta</span></div>
+  <div><strong>@Model.AllItems.Count(x => x.Kind.Contains("followup"))</strong><span>follow-ups pendentes</span></div>
+  <div><strong>@Model.AllItems.Count(x => x.Kind is "expired" or "expiring")</strong><span>orçamentos vencendo</span></div>
+  <div><strong>@Model.AllItems.Count(x => x.Kind is "sent" or "viewed")</strong><span>propostas sem resposta</span></div>
 </section>
 <nav class="of-filter-bar" aria-label="Filtros da rotina">
  <a class="@(Model.Filter == "pending" ? "is-active" : null)" asp-route-filter="pending">Pendentes</a>

@@ -10,6 +10,7 @@ namespace OrcaFacil.Web.Pages.CommercialRoutine;
 public sealed class IndexModel(ICommercialAutomationService automation, ICommercialJourneyService journey, ILogger<IndexModel> logger) : PageModel
 {
     public IReadOnlyList<RoutineItem> Items { get; private set; } = [];
+    public IReadOnlyList<RoutineItem> AllItems { get; private set; } = [];
     public string? LoadError { get; private set; }
     [BindProperty(SupportsGet = true)] public string Filter { get; set; } = "pending";
 
@@ -18,12 +19,17 @@ public sealed class IndexModel(ICommercialAutomationService automation, ICommerc
         try
         {
             var items = await automation.GetRoutineAsync(false, ct);
+            AllItems = items;
             Items = Filter switch
             {
                 "expiring" => items.Where(x => x.Kind is "expired" or "expiring").ToArray(),
                 "all" => items,
                 _ => items.Where(x => x.Priority is "critical" or "important").ToArray()
             };
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception exception)
         {
