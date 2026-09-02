@@ -544,7 +544,12 @@
     "check:tables-premium": "node scripts/check-tables-premium.mjs",
     "check:admin-design": "node scripts/check-admin-design.mjs",
     "check:system-health-design": "node scripts/check-system-health-design.mjs",
-    "check:feedback-messages": "node scripts/check-feedback-messages.mjs"
+    "check:feedback-messages": "node scripts/check-feedback-messages.mjs",
+    "check:documents-commercial-schema": "node scripts/check-documents-commercial-schema.mjs",
+    "check:documents-deposit-amount-schema": "node scripts/check-documents-deposit-amount-schema.mjs",
+    "check:dashboard-route": "node scripts/check-dashboard-route.mjs",
+    "check:documents-new-route": "node scripts/check-documents-new-route.mjs",
+    "check:commercial-routine-route": "node scripts/check-commercial-routine-route.mjs"
   },
   "engines": {
     "node": ">=18"

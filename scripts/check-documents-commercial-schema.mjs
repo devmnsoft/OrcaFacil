@@ -1,0 +1,5 @@
+import { readFileSync } from 'node:fs';
+const files = ['database/script_completop.sql', 'database/patch_release_candidate_schema.sql', 'database/hotfix_documents_commercial_columns.sql'];
+const columns = ['client_snapshot','template_snapshot','conditions_text','follow_up_status','follow_up_note','last_follow_up_at','next_follow_up_at','current_wizard_step','last_autosave_key','last_autosaved_at','public_enabled','public_token','client_decision','client_decision_at','client_decision_note','internal_approval_status','requires_internal_approval','converted_receipt_id','converted_receipt_number','origin_budget_id','origin_budget_number','pix_information','evidence_hash','warranty_text','deposit_amount','installment_count','estimated_duration','expected_start_at'];
+for (const file of files) { const sql = readFileSync(file, 'utf8').toLowerCase(); for (const column of columns) if (!sql.includes(`add column if not exists ${column}`)) throw new Error(`${file}: documents.${column} ausente do reparo idempotente`); }
+console.log('documents commercial schema: OK');
