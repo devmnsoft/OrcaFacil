@@ -27,11 +27,13 @@
 @if (!string.IsNullOrWhiteSpace(db?.Error)) { <p class="text-danger">@db.Error</p> }
 <section class="of-panel" aria-labelledby="drift-title">
 <h2 id="drift-title">Varredura de schema drift</h2>
-<p><strong>Schema atualizado:</strong> @(db?.CanConnect == true && db.MissingTables.Count == 0 && (db.MissingColumns?.Count ?? 0) == 0 && (db.MissingIndexes?.Count ?? 0) == 0 ? "Sim" : "Não")</p>
+<p><strong>Schema atualizado:</strong> @(db?.CanConnect == true && db.MissingTables.Count == 0 && (db.MissingColumns?.Count ?? 0) == 0 && (db.MissingIndexes?.Count ?? 0) == 0 && (db.SchemaDriftIssues?.Count ?? 0) == 0 ? "Sim" : "Não")</p>
 <table class="of-table"><thead><tr><th>Severidade</th><th>Módulo impactado</th><th>Rota impactada</th><th>Diagnóstico</th><th>Patch recomendado</th></tr></thead><tbody>
-@if ((db?.MissingColumns?.Count ?? 0) == 0 && (db?.MissingIndexes?.Count ?? 0) == 0) { <tr><td><span class="of-badge">OK</span></td><td>Todos</td><td>—</td><td>Nenhuma coluna ou índice crítico ausente.</td><td>Nenhuma ação</td></tr> }
+@if ((db?.SchemaDriftIssues?.Count ?? 0) == 0) { <tr><td><span class="of-badge">OK</span></td><td>Todos</td><td>—</td><td>Nenhuma coluna ou índice crítico ausente.</td><td>Nenhuma ação</td></tr> }
 else {
- @foreach (var column in db?.MissingColumns ?? []) { var commercial = column.StartsWith("documents.", StringComparison.OrdinalIgnoreCase); <tr><td><span class="of-badge is-critical">Crítica</span></td><td>@(commercial ? "Comercial" : "Plataforma")</td><td>@(commercial ? "/CommercialRoutine" : "/SystemHealth/Database")</td><td>Coluna ausente: <code>@column</code></td><td><code>database/patch_release_candidate_schema.sql</code></td></tr> }
- @foreach (var index in db?.MissingIndexes ?? []) { <tr><td><span class="of-badge is-important">Alta</span></td><td>Performance</td><td>/SystemHealth/Database</td><td>Índice ausente: <code>@index</code></td><td><code>database/patch_release_candidate_schema.sql</code></td></tr> }
+ @foreach (var issue in db?.SchemaDriftIssues ?? []) {
+   var typeDetail = issue.ExpectedType is null ? null : $"esperado: {issue.ExpectedType}; atual: {issue.ActualType ?? "ausente"}";
+   <tr><td><span class="of-badge @(issue.Severity == "Critical" ? "is-critical" : "is-important")">@issue.Severity</span></td><td>@issue.Module</td><td>@string.Join(", ", issue.ImpactedRoutes)</td><td>@issue.Kind: <code>@issue.ObjectName</code>@if (typeDetail is not null) { <span> (@typeDetail)</span> }</td><td><code>@issue.RecommendedPatch</code></td></tr>
+ }
 }
 </tbody></table></section>

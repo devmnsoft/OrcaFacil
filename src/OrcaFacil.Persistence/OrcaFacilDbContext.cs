@@ -8,6 +8,26 @@ public class OrcaFacilDbContext : DbContext
 {
     public OrcaFacilDbContext(DbContextOptions<OrcaFacilDbContext> options) : base(options) { }
 
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        RefreshDocumentConcurrencyTokens();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        RefreshDocumentConcurrencyTokens();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void RefreshDocumentConcurrencyTokens()
+    {
+        foreach (var entry in ChangeTracker.Entries<Document>().Where(entry => entry.State == EntityState.Modified))
+        {
+            entry.Entity.AdvanceRowVersion();
+        }
+    }
+
     public DbSet<UserAccount> Users => Set<UserAccount>();
     public DbSet<TenantDomain> TenantDomains => Set<TenantDomain>();
     public DbSet<TenantDomainVerification> TenantDomainVerifications => Set<TenantDomainVerification>();

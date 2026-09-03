@@ -574,7 +574,11 @@
     "check:ui-total-v59": "node scripts/check-ui-total-v59.mjs",
     "check:design-system-v59": "node scripts/check-design-system-v59.mjs",
     "check:page-standard-v59": "node scripts/check-page-standard-v59.mjs",
-    "check:critical-actions-confirmation": "node scripts/check-critical-actions-confirmation.mjs"
+    "check:critical-actions-confirmation": "node scripts/check-critical-actions-confirmation.mjs",
+    "check:documents-row-version-schema": "node scripts/check-documents-row-version-schema.mjs",
+    "check:critical-routes": "node scripts/check-critical-routes.mjs",
+    "check:system-health-schema": "node scripts/check-system-health-schema.mjs",
+    "check:design-system-v60": "node scripts/check-design-system-v60.mjs"
   },
   "engines": {
     "node": ">=18"

@@ -34,7 +34,9 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.Property(x => x.ConditionsText).HasColumnName("conditions_text").HasMaxLength(4000);
         builder.Property(x => x.TemplateCode).HasMaxLength(40);
         builder.Property(x => x.TemplateSnapshot).HasColumnType("jsonb");
-        builder.Property(x => x.RowVersion).IsConcurrencyToken();
+        // PostgreSQL has no SQL Server-style rowversion. This is an application-managed
+        // 16-byte token: the DbContext replaces it for every modified Document.
+        builder.Property(x => x.RowVersion).HasColumnName("row_version").HasColumnType("bytea").IsRequired().IsConcurrencyToken();
         builder.Property(x => x.LastAutosaveKey).HasMaxLength(80);
         builder.Property(x => x.Notes).HasColumnName("notes").HasMaxLength(4000);
         builder.Property(x => x.NextFollowUpAt).HasColumnName("next_follow_up_at");

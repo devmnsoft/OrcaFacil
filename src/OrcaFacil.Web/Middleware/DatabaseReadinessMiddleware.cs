@@ -9,7 +9,7 @@ public sealed class DatabaseReadinessMiddleware(RequestDelegate next)
     private static readonly string[] ProtectedPrefixes =
     [
         "/dashboard", "/clients", "/services", "/documents", "/templates", "/subscription",
-        "/profile", "/notifications", "/admin"
+        "/profile", "/notifications", "/commercialroutine", "/onboarding", "/admin"
     ];
 
     public async Task InvokeAsync(HttpContext context, IDatabaseConfigurationState state, IHostEnvironment environment)

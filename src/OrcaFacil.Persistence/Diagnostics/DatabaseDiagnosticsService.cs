@@ -8,6 +8,11 @@ namespace OrcaFacil.Persistence.Diagnostics;
 
 public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
 {
+    private sealed class ColumnMetadata
+    {
+        public string ColumnName { get; init; } = string.Empty;
+        public string DataType { get; init; } = string.Empty;
+    }
     public const string ExpectedSchema = "orcafacil";
 
     public static readonly IReadOnlyList<string> RequiredTables =
@@ -29,6 +34,24 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
         "discount_policies", "approval_requests", "approval_request_events", "white_label_settings",
         "unit_branding_profiles", "document_visibility_rules"
     ];
+
+    public static readonly IReadOnlyDictionary<string, string> RequiredDocumentColumns =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["row_version"] = "bytea", ["client_snapshot"] = "jsonb", ["template_snapshot"] = "jsonb",
+            ["conditions_text"] = "text", ["payment_method"] = "character varying", ["pix_information"] = "character varying",
+            ["deposit_amount"] = "numeric", ["installment_count"] = "integer", ["estimated_duration"] = "character varying",
+            ["expected_start_at"] = "timestamp with time zone", ["warranty_text"] = "character varying", ["evidence_hash"] = "character varying",
+            ["follow_up_status"] = "character varying", ["follow_up_note"] = "character varying",
+            ["last_follow_up_at"] = "timestamp with time zone", ["next_follow_up_at"] = "timestamp with time zone",
+            ["current_wizard_step"] = "integer", ["last_autosave_key"] = "character varying",
+            ["last_autosaved_at"] = "timestamp with time zone", ["public_enabled"] = "boolean", ["public_token"] = "character varying",
+            ["client_decision"] = "character varying", ["client_decision_at"] = "timestamp with time zone",
+            ["client_decision_note"] = "character varying", ["internal_approval_status"] = "character varying",
+            ["requires_internal_approval"] = "boolean", ["converted_receipt_id"] = "uuid",
+            ["converted_receipt_number"] = "character varying", ["origin_budget_id"] = "uuid",
+            ["origin_budget_number"] = "character varying"
+        };
 
     private readonly IConfiguration _configuration;
 
@@ -87,7 +110,7 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
             // diagnosed before EF Core attempts to materialize UserAccount during sign-in.
             var requiredColumns = new[]
             {
-                "documents.account_id", "documents.client_snapshot", "documents.conditions_text", "documents.template_snapshot",
+                "documents.account_id", "documents.row_version", "documents.client_snapshot", "documents.conditions_text", "documents.template_snapshot",
                 "documents.follow_up_status", "documents.follow_up_note", "documents.last_follow_up_at",
                 "documents.next_follow_up_at", "documents.current_wizard_step", "documents.last_autosave_key",
                 "documents.last_autosaved_at", "documents.public_enabled", "documents.public_token",
@@ -140,6 +163,21 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
             };
             var indexes = (await connection.QueryAsync<string>(new CommandDefinition("select indexname from pg_indexes where schemaname=@Schema", new { Schema = ExpectedSchema }, cancellationToken: ct))).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var missingIndexes = requiredIndexes.Where(x => !indexes.Contains(x)).ToArray();
+            var documentTypes = (await connection.QueryAsync<ColumnMetadata>(new CommandDefinition(
+                "select column_name as ColumnName, data_type as DataType from information_schema.columns where table_schema=@Schema and table_name='documents'",
+                new { Schema = ExpectedSchema }, cancellationToken: ct))).ToDictionary(x => x.ColumnName, x => x.DataType, StringComparer.OrdinalIgnoreCase);
+            var driftIssues = new List<SchemaDriftIssue>();
+            foreach (var table in missing)
+                driftIssues.Add(new(table, "MissingTable", "Critical", "Database", ["/SystemHealth"], "database/script_completop.sql"));
+            foreach (var expected in RequiredDocumentColumns)
+            {
+                if (!documentTypes.TryGetValue(expected.Key, out var actual))
+                    driftIssues.Add(new($"documents.{expected.Key}", "MissingColumn", "Critical", "Commercial", ["/Dashboard", "/Documents/New", "/CommercialRoutine"], "database/hotfix_documents_row_version_schema_drift_v60.sql", expected.Value));
+                else if (!string.Equals(actual, expected.Value, StringComparison.OrdinalIgnoreCase))
+                    driftIssues.Add(new($"documents.{expected.Key}", "IncompatibleType", "Critical", "Commercial", ["/Dashboard", "/Documents/New", "/CommercialRoutine"], "database/hotfix_documents_row_version_schema_drift_v60.sql", expected.Value, actual));
+            }
+            foreach (var index in missingIndexes)
+                driftIssues.Add(new(index, "MissingIndex", "Warning", "Database", ["/SystemHealth"], "database/hotfix_documents_row_version_schema_drift_v60.sql"));
             var appliedMigrations = existing.Contains("__EFMigrationsHistory")
                 ? (await connection.QueryAsync<string>(new CommandDefinition("select migration_id from orcafacil.\"__EFMigrationsHistory\" order by migration_id", cancellationToken: ct))).ToArray()
                 : Array.Empty<string>();
@@ -154,7 +192,7 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
                 """, cancellationToken: ct));
 
             return new(true, schemaExists, existingTables, missing, databaseName, version, null, freePlan, publishedFreeVersion,
-                missingColumns, missingIndexes, connectedUser, searchPath, stopwatch.ElapsedMilliseconds, canRead, canWrite, appliedMigrations);
+                missingColumns, missingIndexes, connectedUser, searchPath, stopwatch.ElapsedMilliseconds, canRead, canWrite, appliedMigrations, driftIssues);
         }
         catch (Exception ex)
         {
