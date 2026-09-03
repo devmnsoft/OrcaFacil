@@ -32,7 +32,7 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.Property(x => x.PixInformation).HasMaxLength(300);
         builder.Property(x => x.WarrantyText).HasMaxLength(2000);
         builder.Property(x => x.ConditionsText).HasColumnName("conditions_text").HasMaxLength(4000);
-        builder.Property(x => x.TemplateCode).HasMaxLength(40);
+        builder.Property(x => x.TemplateCode).HasColumnName("template_code").HasMaxLength(40).IsRequired();
         builder.Property(x => x.TemplateSnapshot).HasColumnType("jsonb");
         // PostgreSQL has no SQL Server-style rowversion. This is an application-managed
         // 16-byte token: the DbContext replaces it for every modified Document.
@@ -68,5 +68,6 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.HasIndex(x => new { x.AccountId, x.Type, x.NextFollowUpAt }).HasDatabaseName("ix_documents_account_type_followup");
         builder.HasIndex(x => new { x.AccountId, x.Type, x.ValidUntil }).HasDatabaseName("ix_documents_account_type_valid_until");
         builder.HasIndex(x => x.PublicToken).HasDatabaseName("ix_documents_public_token").HasFilter("public_token IS NOT NULL");
+        builder.HasIndex(x => new { x.AccountId, x.TemplateCode }).HasDatabaseName("ix_documents_template_code").HasFilter("template_code IS NOT NULL AND is_deleted = false");
     }
 }

@@ -578,7 +578,10 @@
     "check:documents-row-version-schema": "node scripts/check-documents-row-version-schema.mjs",
     "check:critical-routes": "node scripts/check-critical-routes.mjs",
     "check:system-health-schema": "node scripts/check-system-health-schema.mjs",
-    "check:design-system-v60": "node scripts/check-design-system-v60.mjs"
+    "check:design-system-v60": "node scripts/check-design-system-v60.mjs",
+    "check:documents-template-code-schema": "node scripts/check-documents-template-code-schema.mjs",
+    "check:documents-full-schema": "node scripts/check-documents-full-schema.mjs",
+    "check:design-system-v61": "node scripts/check-design-system-v61.mjs"
   },
   "engines": {
     "node": ">=18"

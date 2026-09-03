@@ -17,7 +17,7 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
 
     public static readonly IReadOnlyList<string> RequiredTables =
     [
-        "users", "issuer_profiles", "documents", "document_items", "public_quotes",
+        "users", "issuer_profiles", "documents", "document_items", "document_revisions", "budget_templates", "budget_template_items", "public_quotes",
         "user_usage", "subscriptions", "payments", "payment_events", "mercadopago_webhook_events",
         "billing_customer_profiles", "clients", "contacts", "plan_features", "admin_settings", "notifications",
         "audit_logs", "system_logs", "system_errors", "business_accounts", "account_members",
@@ -38,7 +38,7 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
     public static readonly IReadOnlyDictionary<string, string> RequiredDocumentColumns =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            ["row_version"] = "bytea", ["client_snapshot"] = "jsonb", ["template_snapshot"] = "jsonb",
+            ["row_version"] = "bytea", ["client_snapshot"] = "jsonb", ["template_code"] = "character varying", ["template_snapshot"] = "jsonb",
             ["conditions_text"] = "text", ["payment_method"] = "character varying", ["pix_information"] = "character varying",
             ["deposit_amount"] = "numeric", ["installment_count"] = "integer", ["estimated_duration"] = "character varying",
             ["expected_start_at"] = "timestamp with time zone", ["warranty_text"] = "character varying", ["evidence_hash"] = "character varying",
@@ -110,7 +110,7 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
             // diagnosed before EF Core attempts to materialize UserAccount during sign-in.
             var requiredColumns = new[]
             {
-                "documents.account_id", "documents.row_version", "documents.client_snapshot", "documents.conditions_text", "documents.template_snapshot",
+                "documents.account_id", "documents.row_version", "documents.client_snapshot", "documents.conditions_text", "documents.template_code", "documents.template_snapshot",
                 "documents.follow_up_status", "documents.follow_up_note", "documents.last_follow_up_at",
                 "documents.next_follow_up_at", "documents.current_wizard_step", "documents.last_autosave_key",
                 "documents.last_autosaved_at", "documents.public_enabled", "documents.public_token",
@@ -153,7 +153,7 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
             var requiredIndexes = new[]
             {
                 "ix_documents_account_client", "ix_clients_account_active", "ix_clients_account_name", "ix_documents_account_type_created", "ix_documents_account_type_followup",
-                "ix_documents_account_type_valid_until", "ix_documents_public_token",
+                "ix_documents_account_type_valid_until", "ix_documents_public_token", "ix_documents_template_code",
                 "ux_public_document_access_token_hash", "ix_work_orders_schedule",
                 "ix_account_onboarding_states_account_id_user_id",
                 "ix_account_onboarding_states_current_step_last_seen_at",
@@ -172,12 +172,12 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
             foreach (var expected in RequiredDocumentColumns)
             {
                 if (!documentTypes.TryGetValue(expected.Key, out var actual))
-                    driftIssues.Add(new($"documents.{expected.Key}", "MissingColumn", "Critical", "Commercial", ["/Dashboard", "/Documents/New", "/CommercialRoutine"], "database/hotfix_documents_row_version_schema_drift_v60.sql", expected.Value));
+                    driftIssues.Add(new($"documents.{expected.Key}", "MissingColumn", "Critical", "Commercial", ["/Dashboard", "/Documents/New", "/CommercialRoutine"], "database/hotfix_documents_full_schema_drift_v61.sql", expected.Value));
                 else if (!string.Equals(actual, expected.Value, StringComparison.OrdinalIgnoreCase))
-                    driftIssues.Add(new($"documents.{expected.Key}", "IncompatibleType", "Critical", "Commercial", ["/Dashboard", "/Documents/New", "/CommercialRoutine"], "database/hotfix_documents_row_version_schema_drift_v60.sql", expected.Value, actual));
+                    driftIssues.Add(new($"documents.{expected.Key}", "IncompatibleType", "Critical", "Commercial", ["/Dashboard", "/Documents/New", "/CommercialRoutine"], "database/hotfix_documents_full_schema_drift_v61.sql", expected.Value, actual));
             }
             foreach (var index in missingIndexes)
-                driftIssues.Add(new(index, "MissingIndex", "Warning", "Database", ["/SystemHealth"], "database/hotfix_documents_row_version_schema_drift_v60.sql"));
+                driftIssues.Add(new(index, "MissingIndex", "Warning", "Database", ["/SystemHealth"], "database/hotfix_documents_full_schema_drift_v61.sql"));
             var appliedMigrations = existing.Contains("__EFMigrationsHistory")
                 ? (await connection.QueryAsync<string>(new CommandDefinition("select migration_id from orcafacil.\"__EFMigrationsHistory\" order by migration_id", cancellationToken: ct))).ToArray()
                 : Array.Empty<string>();

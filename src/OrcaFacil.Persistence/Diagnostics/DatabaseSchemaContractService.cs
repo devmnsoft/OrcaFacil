@@ -16,6 +16,8 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
     public const string ClientsAndDocumentsDriftMigration = "20260902010000_FixClientsAndDocumentsSchemaDrift";
     public const string DepositAmountDriftMigration = "20260902020000_FixDocumentsCommercialSchemaDepositAmount";
     public const string CommercialSchemaV57Migration = "20260903000000_FixCommercialSchemaDriftBudgetTemplatesAndDocumentsV57";
+    public const string DocumentsRowVersionV60Migration = "20260903010000_FixDocumentsRowVersionSchemaDriftV60";
+    public const string DocumentsFullSchemaV61Migration = "20260903020000_FixDocumentsTemplateCodeFullSchemaDriftV61";
 
     public static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> RegistrationContract =
         new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
@@ -32,7 +34,8 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
             ["business_accounts"] = Columns(("id", "uuid"), ("document_number", "character varying"), ("is_deleted", "boolean")),
             ["account_members"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("user_id", "uuid"), ("role_code", "character varying")),
             ["documents"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("type", "character varying"),
-                ("client_snapshot", "jsonb"), ("conditions_text", "text"), ("template_snapshot", "jsonb"), ("follow_up_status", "character varying"),
+                ("client_snapshot", "jsonb"), ("conditions_text", "text"), ("template_code", "character varying"),
+                ("template_snapshot", "jsonb"), ("row_version", "bytea"), ("follow_up_status", "character varying"),
                 ("follow_up_note", "character varying"), ("last_follow_up_at", "timestamp with time zone"),
                 ("next_follow_up_at", "timestamp with time zone"), ("current_wizard_step", "integer"),
                 ("last_autosave_key", "character varying"), ("last_autosaved_at", "timestamp with time zone"),
@@ -169,7 +172,7 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
         return new(issues.Count == 0 && !pending, issues, DateTimeOffset.UtcNow, pending);
     }
 
-    public static readonly string[] RequiredMigrations = [RepairMigration, PasswordRecoveryMigration, CommercialJourneyMigration, QuoteToCashMigration, ReceiptSequenceMigration, CommercialDocumentRepairMigration, ClientsAndDocumentsDriftMigration, DepositAmountDriftMigration, CommercialSchemaV57Migration];
+    public static readonly string[] RequiredMigrations = [RepairMigration, PasswordRecoveryMigration, CommercialJourneyMigration, QuoteToCashMigration, ReceiptSequenceMigration, CommercialDocumentRepairMigration, ClientsAndDocumentsDriftMigration, DepositAmountDriftMigration, CommercialSchemaV57Migration, DocumentsRowVersionV60Migration, DocumentsFullSchemaV61Migration];
 
     private static readonly (string Table, string Name)[] EssentialIndexes =
     [
@@ -179,6 +182,7 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
         ("documents", "ix_documents_account_type_followup"),
         ("documents", "ix_documents_account_type_valid_until"),
         ("documents", "ix_documents_public_token"),
+        ("documents", "ix_documents_template_code"),
         ("budget_templates", "ix_budget_templates_account_active"),
         ("budget_templates", "ix_budget_templates_user_active"),
         ("budget_templates", "ix_budget_templates_system_active"),
@@ -221,7 +225,8 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
         "document_revisions" or "public_document_accesses" or "public_document_decisions" or
             "commercial_follow_ups" or "work_orders" => CommercialJourneyMigration,
         "receipt_sequences" => ReceiptSequenceMigration,
-        "documents" or "budget_templates" => CommercialSchemaV57Migration,
+        "documents" => DocumentsFullSchemaV61Migration,
+        "budget_templates" => CommercialSchemaV57Migration,
         "clients" => ClientsAndDocumentsDriftMigration,
         "manual_payments" or "receipts" => QuoteToCashMigration,
         _ => RepairMigration
