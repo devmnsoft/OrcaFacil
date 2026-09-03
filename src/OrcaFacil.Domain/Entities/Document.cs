@@ -74,6 +74,8 @@ public class Document : Entity
         Total = Math.Max(0, Subtotal - Discount);
     }
 
+    public void AdvanceRowVersion() => RowVersion = Guid.NewGuid().ToByteArray();
+
     public Document ConvertToReceipt(string receiptNumber)
     {
         if (Type != DocumentType.Budget || ClientDecision != ClientDecision.Approved)

@@ -23,4 +23,15 @@ public sealed record DatabaseDiagnosticsDto(
     long LatencyMilliseconds = 0,
     bool CanRead = false,
     bool CanWrite = false,
-    IReadOnlyList<string>? AppliedMigrations = null);
+    IReadOnlyList<string>? AppliedMigrations = null,
+    IReadOnlyList<SchemaDriftIssue>? SchemaDriftIssues = null);
+
+public sealed record SchemaDriftIssue(
+    string ObjectName,
+    string Kind,
+    string Severity,
+    string Module,
+    IReadOnlyList<string> ImpactedRoutes,
+    string RecommendedPatch,
+    string? ExpectedType = null,
+    string? ActualType = null);
