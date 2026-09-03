@@ -1,2 +1,2 @@
-import { runSprint55Check } from './sprint55-design-checks.mjs';
-await runSprint55Check('dashboard-premium');
+import { runSprint57Check } from './sprint57-ui-checks.mjs';
+await runSprint57Check('dashboard-premium');

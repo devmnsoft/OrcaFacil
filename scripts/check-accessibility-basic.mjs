@@ -1,4 +1,2 @@
-import './design-check-core.mjs';
-
-import { runSprint55Check } from './sprint55-design-checks.mjs';
-await runSprint55Check('accessibility-basic');
+import { runSprint57Check } from './sprint57-ui-checks.mjs';
+await runSprint57Check('accessibility-basic');

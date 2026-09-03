@@ -1,2 +1,2 @@
-import { runSprint55Check } from './sprint55-design-checks.mjs';
-await runSprint55Check('system-health-design');
+import { runSprint57Check } from './sprint57-ui-checks.mjs';
+await runSprint57Check('system-health-design');

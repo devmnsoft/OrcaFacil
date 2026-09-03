@@ -1,2 +1,2 @@
-import { runSprint56Check } from './sprint56-ui-checks.mjs';
-await runSprint56Check('popup-feedback');
+import { runSprint57Check } from './sprint57-ui-checks.mjs';
+await runSprint57Check('popup-feedback');

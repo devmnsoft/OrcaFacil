@@ -570,7 +570,11 @@
     "check:empty-states": "node scripts/check-empty-states.mjs",
     "check:loading-states": "node scripts/check-loading-states.mjs",
     "check:documents-new-premium": "node scripts/check-documents-new-premium.mjs",
-    "check:commercial-routine-premium": "node scripts/check-commercial-routine-premium.mjs"
+    "check:commercial-routine-premium": "node scripts/check-commercial-routine-premium.mjs",
+    "check:ui-total-v59": "node scripts/check-ui-total-v59.mjs",
+    "check:design-system-v59": "node scripts/check-design-system-v59.mjs",
+    "check:page-standard-v59": "node scripts/check-page-standard-v59.mjs",
+    "check:critical-actions-confirmation": "node scripts/check-critical-actions-confirmation.mjs"
   },
   "engines": {
     "node": ">=18"

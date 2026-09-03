@@ -63,7 +63,7 @@
       </div>
     </nav>
   </header>
-  <main id="main-content" tabindex="-1"><partial name="Partials/_ToastHost" />@RenderBody()</main>
+  <main id="main-content" tabindex="-1"><partial name="_ToastHost" />@RenderBody()</main>
   <footer class="of-public-footer">
     <div class="of-container of-public-footer-grid">
       <div class="of-footer-brand"><img src="~/img/brand/orcafacil-wordmark-light.svg" width="190" height="42" alt="OrçaFácil" /><p class="of-footer-endorsement">Um produto <strong>MNSOFT</strong></p><p>Orçamentos, clientes, serviços, pagamentos e recibos organizados para valorizar o seu trabalho.</p></div>
@@ -74,14 +74,16 @@
     </div>
     <div class="of-container of-footer-bottom"><span>© @DateTime.UtcNow.Year MNSOFT. Todos os direitos reservados.</span><span>OrçaFácil, feito para quem presta serviços.</span></div>
   </footer>
-  <partial name="Partials/_OverlayHost" />
+  <partial name="_ConfirmDialog" />
   <environment include="Development"><script src="~/js/diagnostics/js-health.js" asp-append-version="true"></script></environment>
   <script src="~/js/public.js" asp-append-version="true"></script>
   <script src="~/js/cookie-consent.js" asp-append-version="true"></script>
   <script src="~/js/pwa.js" asp-append-version="true"></script>
   <script src="~/js/pwa-install.js" asp-append-version="true"></script>
   <script src="~/js/offline-status.js" asp-append-version="true"></script>
-  <script type="module" src="~/js/ui/feedback.js" asp-append-version="true"></script>
+  <script type="module" src="~/js/feedback.js" asp-append-version="true"></script>
+  <script type="module" src="~/js/dialogs.js" asp-append-version="true"></script>
+  <script type="module" src="~/js/forms.js" asp-append-version="true"></script>
   @await RenderSectionAsync("Scripts", false)
 </body>
 </html>

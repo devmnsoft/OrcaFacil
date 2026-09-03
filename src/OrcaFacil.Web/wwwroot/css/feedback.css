@@ -7,3 +7,12 @@
 .of-toast__correlation { background: var(--of-subtle); border: 0; border-radius: var(--of-radius-sm); color: var(--of-text); font-size: var(--of-text-xs); grid-column: 1 / -1; padding: var(--of-space-2); text-align: left; }
 @media (max-width: 480px) { .of-toast-host { left: var(--of-space-3); max-width: none; right: var(--of-space-3); top: var(--of-space-3); width: auto; } }
 @media (prefers-reduced-motion: reduce) { .of-toast { transition: none; } }
+
+/* V5.9: feedback remains usable above mobile navigation and safe-area controls. */
+.of-toast-host { inset-block-start: max(var(--of-space-4), env(safe-area-inset-top)); inset-inline-end: max(var(--of-space-4), env(safe-area-inset-right)); }
+.of-toast:focus-within { outline: var(--of-focus-ring); outline-offset: 2px; }
+.of-button.is-loading { cursor: wait; opacity: .78; position: relative; }
+.of-button.is-loading::after { animation: of-feedback-spin .7s linear infinite; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; content: ""; height: 1em; margin-inline-start: var(--of-space-2); width: 1em; }
+@keyframes of-feedback-spin { to { transform: rotate(1turn); } }
+@media (max-width: 480px) { .of-toast-host { inset-block-start: max(var(--of-space-3), env(safe-area-inset-top)); inset-inline: max(var(--of-space-3), env(safe-area-inset-left)) max(var(--of-space-3), env(safe-area-inset-right)); } }
+@media (prefers-reduced-motion: reduce) { .of-button.is-loading::after { animation-duration: 1.5s; } }

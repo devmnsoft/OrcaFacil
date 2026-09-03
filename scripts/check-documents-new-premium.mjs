@@ -1,2 +1,2 @@
-import { runSprint56Check } from './sprint56-ui-checks.mjs';
-await runSprint56Check('documents-new-premium');
+import { runSprint57Check } from './sprint57-ui-checks.mjs';
+await runSprint57Check('documents-new-premium');
