@@ -30,7 +30,8 @@ public sealed class GuidedBudgetStartService(
                 (x.Name + " " + x.Code + " " + x.Description).ToLower()))
             .ToListAsync(ct);
         var templates = await db.BudgetTemplates.AsNoTracking()
-            .Where(x => x.IsActive && !x.IsDeleted && (x.IsSystemTemplate || (x.AccountId == accountId && x.UserId == userId)))
+            .Where(x => x.IsActive && !x.IsDeleted &&
+                        (x.IsSystemTemplate || x.AccountId == accountId || x.UserId == userId))
             .OrderBy(x => x.Profession).ThenBy(x => x.Title).Take(20)
             .Select(x => new BudgetStartTemplate(x.Id, x.Title, x.Profession, x.Items.Count(i => !i.IsDeleted)))
             .ToListAsync(ct);
