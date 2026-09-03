@@ -1,2 +1,2 @@
-import { runSprint56Check } from './sprint56-ui-checks.mjs';
-await runSprint56Check('confirm-dialogs');
+import { runSprint57Check } from './sprint57-ui-checks.mjs';
+await runSprint57Check('confirm-dialogs');

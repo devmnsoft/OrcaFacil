@@ -1,1 +1,2 @@
-import './check-journey-refinement.mjs';
+import { runSprint57Check } from './sprint57-ui-checks.mjs';
+await runSprint57Check('form-quality');

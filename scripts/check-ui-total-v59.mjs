@@ -1,2 +1,2 @@
 import { runSprint57Check } from './sprint57-ui-checks.mjs';
-await runSprint57Check('mobile-layout');
+await runSprint57Check('ui-total-v59');
