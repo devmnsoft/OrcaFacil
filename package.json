@@ -581,7 +581,13 @@
     "check:design-system-v60": "node scripts/check-design-system-v60.mjs",
     "check:documents-template-code-schema": "node scripts/check-documents-template-code-schema.mjs",
     "check:documents-full-schema": "node scripts/check-documents-full-schema.mjs",
-    "check:design-system-v61": "node scripts/check-design-system-v61.mjs"
+    "check:design-system-v61": "node scripts/check-design-system-v61.mjs",
+    "check:quality-gate-v62": "node scripts/check-quality-gate-v62.mjs",
+    "check:schema-drift-v62": "node scripts/check-schema-drift-v62.mjs",
+    "check:critical-routes-v62": "node scripts/check-critical-routes-v62.mjs",
+    "check:ui-total-v62": "node scripts/check-ui-total-v62.mjs",
+    "check:design-system-v62": "node scripts/check-design-system-v62.mjs",
+    "check:page-standard-v62": "node scripts/check-page-standard-v62.mjs"
   },
   "engines": {
     "node": ">=18"

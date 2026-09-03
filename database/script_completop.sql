@@ -1730,3 +1730,16 @@ CREATE INDEX IF NOT EXISTS ix_documents_public_token ON orcafacil.documents(publ
 CREATE INDEX IF NOT EXISTS ix_documents_template_code ON orcafacil.documents(account_id, template_code) WHERE template_code IS NOT NULL AND is_deleted = false;
 
 COMMIT;
+
+-- Quality Gate V6.2: contract additions are idempotent and preserve existing rows.
+ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS title varchar(160);
+ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS profession varchar(120);
+ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+CREATE INDEX IF NOT EXISTS ix_budget_templates_account_active ON orcafacil.budget_templates(account_id, is_active) WHERE is_deleted = false;
+CREATE INDEX IF NOT EXISTS ix_budget_template_items_template ON orcafacil.budget_template_items(template_id);
+ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS is_system_template boolean NOT NULL DEFAULT false;
+ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true;
+ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS is_deleted boolean NOT NULL DEFAULT false;
+ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS updated_at timestamptz;
+ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS deleted_by uuid;
