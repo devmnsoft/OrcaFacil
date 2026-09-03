@@ -549,7 +549,15 @@
     "check:documents-deposit-amount-schema": "node scripts/check-documents-deposit-amount-schema.mjs",
     "check:dashboard-route": "node scripts/check-dashboard-route.mjs",
     "check:documents-new-route": "node scripts/check-documents-new-route.mjs",
-    "check:commercial-routine-route": "node scripts/check-commercial-routine-route.mjs"
+    "check:commercial-routine-route": "node scripts/check-commercial-routine-route.mjs",
+    "check:commercial-schema-v57": "node scripts/check-commercial-schema-v57.mjs",
+    "check:documents-payment-method-schema": "node scripts/check-documents-payment-method-schema.mjs",
+    "check:budget-templates-schema": "node scripts/check-budget-templates-schema.mjs",
+    "check:onboarding-route": "node scripts/check-onboarding-route.mjs",
+    "check:design-premium-v57": "node scripts/check-design-premium-v57.mjs",
+    "check:commercial-routine-design": "node scripts/check-commercial-routine-design.mjs",
+    "check:onboarding-design": "node scripts/check-onboarding-design.mjs",
+    "check:system-health-schema-design": "node scripts/check-system-health-schema-design.mjs"
   },
   "engines": {
     "node": ">=18"
