@@ -1,4 +1,4 @@
-/* OrçaFácil Design System V5.6 — semantic foundations shared by every surface. */
+/* OrçaFácil Design System V5.8 — semantic foundations shared by every surface. */
 :root {
   color-scheme: light;
   --of-page: #f5f7fb;
@@ -16,6 +16,8 @@
   --of-warning-soft: #fff4e2;
   --of-danger: #b42318;
   --of-danger-soft: #fff0ee;
+  --of-info: #1769aa;
+  --of-info-soft: #e9f5ff;
   --of-text: #172033;
   --of-text-secondary: #617083;
   --of-text-inverse: #f8fbff;
@@ -73,6 +75,7 @@
   --of-radius-md: var(--of-radius);
   --of-radius-xl: 30px;
   --of-focus-ring: 0 0 0 3px rgb(36 107 254 / 35%);
+  --of-control-height: 48px;
   --of-sidebar-width: 272px;
   --of-sidebar-collapsed: 80px;
   --of-topbar-height: 72px;

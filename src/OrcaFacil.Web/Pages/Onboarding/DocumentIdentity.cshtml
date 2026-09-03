@@ -15,7 +15,7 @@
 <h1>Identidade do documento</h1>
 <p>Defina o cabeçalho que seu cliente verá no orçamento.</p>
 </header>
-<form method="post" data-onboarding-form novalidate>
+<form method="post" data-onboarding-form novalidate>@Html.AntiForgeryToken()
 <div asp-validation-summary="ModelOnly" class="of-onboarding-summary" role="alert" aria-live="assertive"></div>
 <div class="of-onboarding-field-grid">
 <div class="of-onboarding-field">

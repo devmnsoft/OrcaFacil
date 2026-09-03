@@ -30,7 +30,7 @@ document.querySelector('[data-confirm-accept]')?.addEventListener('click', () =>
 window.showToast = (message, type = 'success') => toastManager.show({ message, type });
 window.confirmAction = message => new Promise(resolve => {
   const dialog = document.querySelector('#confirm-dialog');
-  if (!dialog) { resolve(window.confirm(message)); return; }
+  if (!dialog) { console.error('OrcaFácil: host de confirmação não encontrado. A ação foi preservada.'); resolve(false); return; }
   const messageNode = dialog.querySelector('[data-confirm-message]');
   if (messageNode) messageNode.textContent = message;
   dialog.addEventListener('overlay:close', event => resolve(event.detail.result === 'confirm'), { once: true });
