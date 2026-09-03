@@ -49,6 +49,7 @@ public static class DependencyInjection
         services.TryAddScoped(serviceProvider => new ModuleReadinessService(
             repositoryRoot, serviceProvider.GetRequiredService<BusinessRuleAuditService>()));
         services.TryAddScoped<FunctionalQualityService>();
+        services.TryAddScoped<QualityGateService>();
         services.TryAddScoped<ModuleRefinementScoreService>();
         services.TryAddScoped<UserJourneyReviewService>();
         services.TryAddSingleton<FriendlyErrorMessageService>();

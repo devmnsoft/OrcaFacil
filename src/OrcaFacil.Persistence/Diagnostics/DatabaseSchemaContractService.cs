@@ -18,6 +18,7 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
     public const string CommercialSchemaV57Migration = "20260903000000_FixCommercialSchemaDriftBudgetTemplatesAndDocumentsV57";
     public const string DocumentsRowVersionV60Migration = "20260903010000_FixDocumentsRowVersionSchemaDriftV60";
     public const string DocumentsFullSchemaV61Migration = "20260903020000_FixDocumentsTemplateCodeFullSchemaDriftV61";
+    public const string QualityGateSchemaDriftV62Migration = "20260903030000_QualityGateSchemaDriftV62";
 
     public static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> RegistrationContract =
         new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
@@ -33,7 +34,12 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
                 ("accepted_terms_at", "timestamp with time zone"), ("legacy_unversioned_acceptance", "boolean")),
             ["business_accounts"] = Columns(("id", "uuid"), ("document_number", "character varying"), ("is_deleted", "boolean")),
             ["account_members"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("user_id", "uuid"), ("role_code", "character varying")),
-            ["documents"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("type", "character varying"),
+            ["documents"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("user_id", "uuid"),
+                ("number", "character varying"), ("type", "character varying"), ("status", "character varying"),
+                ("subtotal", "numeric"), ("discount", "numeric"), ("total", "numeric"),
+                ("issue_date", "timestamp with time zone"), ("valid_until", "timestamp with time zone"),
+                ("client_id", "uuid"), ("client_name", "character varying"), ("client_document", "character varying"),
+                ("client_email", "character varying"), ("client_phone", "character varying"), ("client_city", "character varying"),
                 ("client_snapshot", "jsonb"), ("conditions_text", "text"), ("template_code", "character varying"),
                 ("template_snapshot", "jsonb"), ("row_version", "bytea"), ("follow_up_status", "character varying"),
                 ("follow_up_note", "character varying"), ("last_follow_up_at", "timestamp with time zone"),
@@ -47,12 +53,16 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
                 ("origin_budget_number", "character varying"), ("pix_information", "character varying"),
                 ("evidence_hash", "character varying"), ("warranty_text", "character varying"),
                 ("payment_method", "character varying"), ("deposit_amount", "numeric"), ("installment_count", "integer"),
-                ("estimated_duration", "character varying"), ("expected_start_at", "timestamp with time zone")),
+                ("estimated_duration", "character varying"), ("expected_start_at", "timestamp with time zone"),
+                ("assigned_team_id", "uuid"), ("assigned_to_user_id", "uuid"), ("business_unit_id", "uuid"),
+                ("created_at", "timestamp with time zone"), ("updated_at", "timestamp with time zone"),
+                ("deleted_at", "timestamp with time zone"), ("deleted_by", "uuid"), ("is_deleted", "boolean")),
             ["budget_templates"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("user_id", "uuid"),
-                ("is_system_template", "boolean"), ("is_active", "boolean"), ("is_deleted", "boolean"),
-                ("updated_at", "timestamp with time zone"), ("deleted_at", "timestamp with time zone"), ("deleted_by", "uuid")),
+                ("title", "character varying"), ("profession", "character varying"), ("is_system_template", "boolean"), ("is_active", "boolean"), ("is_deleted", "boolean"),
+                ("created_at", "timestamp with time zone"), ("updated_at", "timestamp with time zone"), ("deleted_at", "timestamp with time zone"), ("deleted_by", "uuid")),
             ["clients"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("is_active", "boolean"), ("is_deleted", "boolean")),
             ["document_items"] = Columns(("id", "uuid"), ("document_id", "uuid")),
+            ["budget_template_items"] = Columns(("id", "uuid"), ("template_id", "uuid")),
             ["contacts"] = Columns(("id", "uuid"), ("account_id", "uuid")),
             ["payments"] = Columns(("id", "uuid"), ("account_id", "uuid")),
             ["payment_invoices"] = Columns(("id", "uuid"), ("account_id", "uuid")),
@@ -172,7 +182,7 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
         return new(issues.Count == 0 && !pending, issues, DateTimeOffset.UtcNow, pending);
     }
 
-    public static readonly string[] RequiredMigrations = [RepairMigration, PasswordRecoveryMigration, CommercialJourneyMigration, QuoteToCashMigration, ReceiptSequenceMigration, CommercialDocumentRepairMigration, ClientsAndDocumentsDriftMigration, DepositAmountDriftMigration, CommercialSchemaV57Migration, DocumentsRowVersionV60Migration, DocumentsFullSchemaV61Migration];
+    public static readonly string[] RequiredMigrations = [RepairMigration, PasswordRecoveryMigration, CommercialJourneyMigration, QuoteToCashMigration, ReceiptSequenceMigration, CommercialDocumentRepairMigration, ClientsAndDocumentsDriftMigration, DepositAmountDriftMigration, CommercialSchemaV57Migration, DocumentsRowVersionV60Migration, DocumentsFullSchemaV61Migration, QualityGateSchemaDriftV62Migration];
 
     private static readonly (string Table, string Name)[] EssentialIndexes =
     [
@@ -225,8 +235,7 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
         "document_revisions" or "public_document_accesses" or "public_document_decisions" or
             "commercial_follow_ups" or "work_orders" => CommercialJourneyMigration,
         "receipt_sequences" => ReceiptSequenceMigration,
-        "documents" => DocumentsFullSchemaV61Migration,
-        "budget_templates" => CommercialSchemaV57Migration,
+        "documents" or "budget_templates" or "budget_template_items" => QualityGateSchemaDriftV62Migration,
         "clients" => ClientsAndDocumentsDriftMigration,
         "manual_payments" or "receipts" => QuoteToCashMigration,
         _ => RepairMigration
