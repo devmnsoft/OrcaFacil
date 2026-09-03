@@ -11,7 +11,7 @@
         <article><span>Já recebido</span><strong>@Model.PaidAmount.ToString("C")</strong></article>
         <article><span>Saldo em aberto</span><strong>@Model.Balance.ToString("C")</strong></article>
     </section>
-    <form method="post" class="payment-register-form" data-payment-form novalidate>
+    <form method="post" class="payment-register-form" data-payment-form novalidate>@Html.AntiForgeryToken()
         <input asp-for="Input.IdempotencyKey" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="receipt-errors" tabindex="-1" data-validation-summary></div>
         <p class="receipt-manual-notice"><strong>Pagamento registrado manualmente.</strong> A informação não representa confirmação automática do banco, cartão ou operadora.</p>

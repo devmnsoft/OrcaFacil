@@ -15,7 +15,7 @@
 <h1>Conte sobre o seu negócio</h1>
 <p>Esses dados identificam sua atividade e mantêm seus documentos consistentes.</p>
 </header>
-<form method="post" data-onboarding-form novalidate>
+<form method="post" data-onboarding-form novalidate>@Html.AntiForgeryToken()
 <div asp-validation-summary="ModelOnly" class="of-onboarding-summary" role="alert" aria-live="assertive"></div>
 <div class="of-onboarding-field-grid">
 <div class="of-onboarding-field">

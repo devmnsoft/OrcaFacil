@@ -1,3 +1,12 @@
+document.addEventListener('click', event => {
+  const trigger = event.target.closest('[data-scroll-target]');
+  if (!trigger || trigger.disabled) return;
+  const target = document.getElementById(trigger.dataset.scrollTarget);
+  if (!target) return;
+  target.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  (target.querySelector('input,select,textarea,button,a[href]') || target).focus({ preventScroll: true });
+});
+
 document.querySelectorAll('[data-picker-search]').forEach(input => {
   const list = document.querySelector(`[data-picker-list="${input.dataset.pickerSearch}"]`);
   if (!list) return;

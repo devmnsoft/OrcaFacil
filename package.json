@@ -557,7 +557,20 @@
     "check:design-premium-v57": "node scripts/check-design-premium-v57.mjs",
     "check:commercial-routine-design": "node scripts/check-commercial-routine-design.mjs",
     "check:onboarding-design": "node scripts/check-onboarding-design.mjs",
-    "check:system-health-schema-design": "node scripts/check-system-health-schema-design.mjs"
+    "check:system-health-schema-design": "node scripts/check-system-health-schema-design.mjs",
+    "check:ui-total-v58": "node scripts/check-ui-total-v58.mjs",
+    "check:design-system-v58": "node scripts/check-design-system-v58.mjs",
+    "check:form-validation-ui": "node scripts/check-form-validation-ui.mjs",
+    "check:validation-messages": "node scripts/check-validation-messages.mjs",
+    "check:popup-feedback": "node scripts/check-popup-feedback.mjs",
+    "check:toast-host": "node scripts/check-toast-host.mjs",
+    "check:confirm-dialogs": "node scripts/check-confirm-dialogs.mjs",
+    "check:button-quality": "node scripts/check-button-quality.mjs",
+    "check:link-quality": "node scripts/check-link-quality.mjs",
+    "check:empty-states": "node scripts/check-empty-states.mjs",
+    "check:loading-states": "node scripts/check-loading-states.mjs",
+    "check:documents-new-premium": "node scripts/check-documents-new-premium.mjs",
+    "check:commercial-routine-premium": "node scripts/check-commercial-routine-premium.mjs"
   },
   "engines": {
     "node": ">=18"

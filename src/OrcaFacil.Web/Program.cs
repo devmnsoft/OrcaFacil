@@ -182,6 +182,7 @@ builder.Services.Configure<PlanOptions>(builder.Configuration.GetSection("Plans"
 builder.Services.AddScoped<BillingStatusService>();
 builder.Services.AddScoped<BillingPaymentService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<FriendlyMessageService>();
 builder.Services.AddSingleton<IApiKeyService, ApiKeyService>();
 builder.Services.Configure<MercadoPagoOptions>(builder.Configuration.GetSection("MercadoPago"));
 builder.Services.Configure<BillingOptions>(builder.Configuration.GetSection("Billing"));

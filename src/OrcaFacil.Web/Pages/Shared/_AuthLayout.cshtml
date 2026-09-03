@@ -10,7 +10,9 @@
     <link rel="stylesheet" href="~/css/surfaces.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/forms.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/design-system.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/overlays.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/feedback.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/responsive.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", false)
@@ -20,6 +22,7 @@
     <a class="of-skip-link" href="#auth-content">Ir para o conteúdo</a>
     <header class="of-auth-brand"><a asp-page="/Index"><img src="~/img/brand/orcafacil-wordmark-dark.svg" alt="OrçaFácil — um produto MNSOFT" /></a></header>
     <main id="auth-content"><partial name="Partials/_ToastHost" />@RenderBody()</main>
+    <partial name="Partials/_OverlayHost" />
     <script type="module" src="~/js/ui/feedback.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", false)
 </body>

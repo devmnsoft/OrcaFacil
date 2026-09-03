@@ -16,18 +16,18 @@
         <a class="of-start-card is-featured" asp-page="/Documents/CreateBudget">
             <span class="of-start-icon"><svg class="of-icon"><use href="#of-icon-plus" /></svg></span><span><strong>Orçamento em branco</strong><small>Comece do zero no editor guiado.</small></span><b>Começar</b>
         </a>
-        <a class="of-start-card" href="#clientes">
+        <button class="of-start-card" type="button" data-scroll-target="clientes">
             <span class="of-start-icon"><svg class="of-icon"><use href="#of-icon-client" /></svg></span><span><strong>Usar cliente existente</strong><small>Busque por nome, telefone, documento ou e-mail.</small></span><b>Escolher</b>
-        </a>
-        <a class="of-start-card" href="#servicos">
+        </button>
+        <button class="of-start-card" type="button" data-scroll-target="servicos">
             <span class="of-start-icon"><svg class="of-icon"><use href="#of-icon-service" /></svg></span><span><strong>Usar serviço cadastrado</strong><small>Leve descrição e preço do catálogo, nunca o custo interno.</small></span><b>Escolher</b>
-        </a>
-        <a class="of-start-card" href="#modelos">
+        </button>
+        <button class="of-start-card" type="button" data-scroll-target="modelos">
             <span class="of-start-icon"><svg class="of-icon"><use href="#of-icon-quote" /></svg></span><span><strong>Usar modelo</strong><small>Copie os itens de um template sem alterar o original.</small></span><b>Escolher</b>
-        </a>
-        <a class="of-start-card @(Model.Drafts.Count == 0 ? "is-disabled" : null)" href="@(Model.Drafts.Count == 0 ? "#rascunhos" : "#rascunhos")" aria-disabled="@(Model.Drafts.Count == 0 ? "true" : null)">
+        </button>
+        <button class="of-start-card @(Model.Drafts.Count == 0 ? "is-disabled" : null)" type="button" data-scroll-target="rascunhos" disabled="@(Model.Drafts.Count == 0)">
             <span class="of-start-icon"><svg class="of-icon"><use href="#of-icon-history" /></svg></span><span><strong>Continuar rascunho recente</strong><small>@(Model.Drafts.Count == 0 ? "Nenhum rascunho disponível agora." : "Retome de onde parou, com os dados preservados.")</small></span><b>Ver rascunhos</b>
-        </a>
+        </button>
     </section>
 
     <section class="of-start-picker" id="clientes">
