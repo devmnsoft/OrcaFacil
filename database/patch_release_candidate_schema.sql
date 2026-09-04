@@ -1011,3 +1011,6 @@ ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS is_deleted boole
 ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS updated_at timestamptz;
 ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS deleted_by uuid;
+
+-- Release Candidate V6.4: executar pelo psql para resolver o caminho relativo.
+\ir hotfix_release_candidate_schema_v64.sql

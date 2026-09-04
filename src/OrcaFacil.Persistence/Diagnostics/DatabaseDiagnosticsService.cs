@@ -17,7 +17,7 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
 
     public static readonly IReadOnlyList<string> RequiredTables =
     [
-        "users", "issuer_profiles", "documents", "document_items", "document_revisions", "budget_templates", "budget_template_items", "public_quotes",
+        "users", "issuer_profiles", "documents", "document_items", "document_revisions", "budget_templates", "budget_template_items", "public_quotes", "public_document_decisions",
         "user_usage", "subscriptions", "payments", "payment_events", "mercadopago_webhook_events",
         "billing_customer_profiles", "clients", "contacts", "plan_features", "admin_settings", "notifications",
         "audit_logs", "system_logs", "system_errors", "business_accounts", "account_members",

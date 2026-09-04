@@ -1743,3 +1743,8 @@ ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS is_deleted boole
 ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS updated_at timestamptz;
 ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS deleted_by uuid;
+
+-- Release Candidate V6.4: índices de isolamento e leitura do fluxo comercial.
+CREATE INDEX IF NOT EXISTS ix_budget_templates_account_active ON orcafacil.budget_templates(account_id,is_active) WHERE is_deleted=false;
+CREATE INDEX IF NOT EXISTS ix_budget_templates_user_active ON orcafacil.budget_templates(user_id,is_active) WHERE is_deleted=false;
+CREATE INDEX IF NOT EXISTS ix_public_document_decisions_account_document ON orcafacil.public_document_decisions(account_id,document_id,created_at DESC) WHERE is_deleted=false;
