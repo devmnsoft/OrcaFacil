@@ -598,7 +598,19 @@
     "check:schema-drift-v63": "node scripts/check-schema-drift-v63.mjs",
     "check:system-health-v63": "node scripts/check-system-health-v63.mjs",
     "check:ui-total-v63": "node scripts/check-ui-total-v63.mjs",
-    "check:design-system-v63": "node scripts/check-design-system-v63.mjs"
+    "check:design-system-v63": "node scripts/check-design-system-v63.mjs",
+    "check:release-candidate-v64": "node scripts/check-release-candidate-v64.mjs",
+    "check:critical-routes-v64": "node scripts/check-critical-routes-v64.mjs",
+    "check:schema-drift-v64": "node scripts/check-schema-drift-v64.mjs",
+    "check:commercial-flow-v64": "node scripts/check-commercial-flow-v64.mjs",
+    "check:documents-new-flow-v64": "node scripts/check-documents-new-flow-v64.mjs",
+    "check:budget-templates-v64": "node scripts/check-budget-templates-v64.mjs",
+    "check:document-preview-v64": "node scripts/check-document-preview-v64.mjs",
+    "check:commercial-routine-v64": "node scripts/check-commercial-routine-v64.mjs",
+    "check:dashboard-v64": "node scripts/check-dashboard-v64.mjs",
+    "check:demo-seed-v64": "node scripts/check-demo-seed-v64.mjs",
+    "check:ui-total-v64": "node scripts/check-ui-total-v64.mjs",
+    "check:design-system-v64": "node scripts/check-design-system-v64.mjs"
   },
   "engines": {
     "node": ">=18"
