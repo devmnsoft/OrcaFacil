@@ -587,7 +587,18 @@
     "check:critical-routes-v62": "node scripts/check-critical-routes-v62.mjs",
     "check:ui-total-v62": "node scripts/check-ui-total-v62.mjs",
     "check:design-system-v62": "node scripts/check-design-system-v62.mjs",
-    "check:page-standard-v62": "node scripts/check-page-standard-v62.mjs"
+    "check:page-standard-v62": "node scripts/check-page-standard-v62.mjs",
+    "check:homologation-v63": "node scripts/check-homologation-v63.mjs",
+    "check:critical-routes-v63": "node scripts/check-critical-routes-v63.mjs",
+    "check:profile-permissions-v63": "node scripts/check-profile-permissions-v63.mjs",
+    "check:commercial-flow-v63": "node scripts/check-commercial-flow-v63.mjs",
+    "check:operational-flow-v63": "node scripts/check-operational-flow-v63.mjs",
+    "check:financial-fiscal-flow-v63": "node scripts/check-financial-fiscal-flow-v63.mjs",
+    "check:portal-flow-v63": "node scripts/check-portal-flow-v63.mjs",
+    "check:schema-drift-v63": "node scripts/check-schema-drift-v63.mjs",
+    "check:system-health-v63": "node scripts/check-system-health-v63.mjs",
+    "check:ui-total-v63": "node scripts/check-ui-total-v63.mjs",
+    "check:design-system-v63": "node scripts/check-design-system-v63.mjs"
   },
   "engines": {
     "node": ">=18"
