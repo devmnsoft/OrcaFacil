@@ -20,6 +20,7 @@ var builder = WebApplication.CreateBuilder(args);
 var repositoryRoot = Directory.GetParent(builder.Environment.ContentRootPath)?.Parent?.FullName
     ?? builder.Environment.ContentRootPath;
 builder.Services.AddApplication(repositoryRoot);
+builder.Services.AddPersistence();
 DatabaseConnectionStringResolver.ApplyOperationalAlias(builder.Configuration);
 
 builder.Logging.ClearProviders();

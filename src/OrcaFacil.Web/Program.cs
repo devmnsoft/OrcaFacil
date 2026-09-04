@@ -58,6 +58,7 @@ var builder = WebApplication.CreateBuilder(args);
 var repositoryRoot = Directory.GetParent(builder.Environment.ContentRootPath)?.Parent?.FullName
     ?? builder.Environment.ContentRootPath;
 builder.Services.AddApplication(repositoryRoot);
+builder.Services.AddPersistence();
 builder.AddOrcaFacilLocalConfiguration();
 DatabaseConnectionStringResolver.ApplyOperationalAlias(builder.Configuration);
 // Operational aliases keep Windows service/IIS configuration concise while the
@@ -217,7 +218,6 @@ builder.Services.AddSingleton<IFileStorageService>(_ => new LocalFileStorageServ
 builder.Services.AddScoped<INumberToWordsService, NumberToWordsPtBrService>();
 builder.Services.AddSingleton<IDatabaseDiagnosticsService, DatabaseDiagnosticsService>();
 builder.Services.AddSingleton<DatabaseDiagnosticsService>();
-builder.Services.AddSingleton<IDatabaseSchemaContractService, DatabaseSchemaContractService>();
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
     .AddCheck<LocalSettingsHealthCheck>("local-settings", tags: ["ready"])
