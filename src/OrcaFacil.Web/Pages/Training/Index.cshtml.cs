@@ -1,0 +1,2 @@
+using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Mvc.RazorPages; using OrcaFacil.Application.GoLive;
+namespace OrcaFacil.Web.Pages.Training; [Authorize] public sealed class IndexModel(TrainingGuideService guides):PageModel { public IReadOnlyList<TrainingLesson> Lessons {get;private set;}=[]; public void OnGet()=>Lessons=guides.GetLessons(User.IsInRole("Administrator")||User.IsInRole("Owner")||User.IsInRole("SuperAdmin")); }

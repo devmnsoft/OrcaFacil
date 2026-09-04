@@ -1,0 +1,5 @@
+@page
+@model OrcaFacil.Web.Pages.Training.IndexModel
+@{ ViewData["Title"]="Treinamento"; }
+<section class="training-hero"><span class="eyebrow">Academia OrçaFácil</span><h1>Aprenda enquanto realiza</h1><p>Aulas curtas conectadas às telas reais. A conclusão somente ocorre após ação ou confirmação.</p></section>
+<div class="training-grid">@foreach(var lesson in Model.Lessons){<article class="training-card"><span class="status-badge">@lesson.Track · Pendente</span><h2>@lesson.Title</h2><p>@lesson.Description</p><a class="button button-primary" href="@lesson.Route">Ir para a tela</a></article>}</div>

@@ -1,0 +1,3 @@
+@page
+@model OrcaFacil.Web.Pages.Admin.ProductionReadinessModel
+@{ViewData["Title"]="Prontidão de produção";}<section class="golive-hero"><div><span class="eyebrow">Publicação controlada</span><h1>Prontidão de produção</h1><p>Verificações calculadas a partir da configuração ativa. Nenhum segredo é exibido.</p></div><span class="status-badge">@(Model.Ready?"Pronto":"Bloqueado")</span></section><div class="readiness-grid">@foreach(var check in Model.Checks){<article class="production-readiness-card @(check.Passed?"is-ready":"is-critical")"><span class="status-badge">@(check.Passed?"OK":check.Blocking?"Bloqueante":"Pendente")</span><h2>@check.Label</h2><p>@check.Recommendation</p></article>}</div>

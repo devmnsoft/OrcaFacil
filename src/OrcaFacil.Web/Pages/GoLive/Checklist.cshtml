@@ -1,0 +1,14 @@
+@page
+@model OrcaFacil.Web.Pages.GoLive.ChecklistModel
+@{ ViewData["Title"] = "Checklist de go-live"; var helpCode = "golive"; }
+<section class="golive-hero"><div><span class="eyebrow">Operação controlada</span><h1>Seu caminho seguro até a produção</h1><p>As evidências automáticas vêm do sistema. Verificações humanas exigem responsável, observação e confirmação.</p></div><div class="readiness-score" aria-label="Progresso do go-live"><strong>@Model.Progress%</strong><span>concluído</span></div></section>
+<div asp-validation-summary="ModelOnly" class="validation-summary" role="alert"></div>
+<div class="go-live-checklist">
+@foreach (var item in Model.Items) {
+ <article class="readiness-card @(item.IsCompleted ? "is-ready" : item.IsCritical ? "is-critical" : "")">
+  <div><span class="status-badge">@(item.IsCompleted ? "Concluído" : item.IsAutomatic ? "Validação automática" : "Revisão manual")</span><h2>@item.Title</h2><p>@(item.IsCritical ? "Item crítico para liberação." : "Recomendado para uma estreia consistente.")</p></div>
+  @if (!item.IsCompleted && !item.IsAutomatic) { <details><summary class="button button-secondary">Registrar evidência</summary><form method="post" asp-page-handler="Complete" data-confirm="Confirma que esta verificação foi executada com evidência real?"><input type="hidden" name="itemId" value="@item.Id" /><div class="field"><label for="responsible-@item.Id">Responsável</label><input id="responsible-@item.Id" name="responsible" required maxlength="160" /></div><div class="field"><label for="observation-@item.Id">Observação da evidência</label><textarea id="observation-@item.Id" name="observation" required maxlength="2000"></textarea></div><label class="check"><input type="checkbox" name="confirmed" value="true" required /> Confirmo que revisei esta evidência</label><button type="submit" class="button button-primary">Concluir verificação</button></form></details> }
+ </article>
+}
+</div>
+<partial name="_ContextualHelp" model="helpCode" />
