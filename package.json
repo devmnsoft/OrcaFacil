@@ -610,7 +610,21 @@
     "check:dashboard-v64": "node scripts/check-dashboard-v64.mjs",
     "check:demo-seed-v64": "node scripts/check-demo-seed-v64.mjs",
     "check:ui-total-v64": "node scripts/check-ui-total-v64.mjs",
-    "check:design-system-v64": "node scripts/check-design-system-v64.mjs"
+    "check:design-system-v64": "node scripts/check-design-system-v64.mjs",
+    "check:golive-v65": "node scripts/check-golive-v65.mjs",
+    "check:production-readiness-v65": "node scripts/check-production-readiness-v65.mjs",
+    "check:assisted-operation-v65": "node scripts/check-assisted-operation-v65.mjs",
+    "check:training-guides-v65": "node scripts/check-training-guides-v65.mjs",
+    "check:contextual-help-v65": "node scripts/check-contextual-help-v65.mjs",
+    "check:support-initial-v65": "node scripts/check-support-initial-v65.mjs",
+    "check:route-monitor-v65": "node scripts/check-route-monitor-v65.mjs",
+    "check:critical-routes-v65": "node scripts/check-critical-routes-v65.mjs",
+    "check:schema-drift-v65": "node scripts/check-schema-drift-v65.mjs",
+    "check:dashboard-v65": "node scripts/check-dashboard-v65.mjs",
+    "check:documents-new-v65": "node scripts/check-documents-new-v65.mjs",
+    "check:commercial-routine-v65": "node scripts/check-commercial-routine-v65.mjs",
+    "check:ui-total-v65": "node scripts/check-ui-total-v65.mjs",
+    "check:design-system-v65": "node scripts/check-design-system-v65.mjs"
   },
   "engines": {
     "node": ">=18"

@@ -51,6 +51,8 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Localization;
 using System.Globalization;
 using OrcaFacil.Application.Localization;
+using OrcaFacil.Application.GoLive;
+using OrcaFacil.Persistence.Services.GoLive;
 
 var builder = WebApplication.CreateBuilder(args);
 var repositoryRoot = Directory.GetParent(builder.Environment.ContentRootPath)?.Parent?.FullName
@@ -110,6 +112,12 @@ builder.Services.AddScoped<OrcaFacil.Application.Scoring.IClientScoreService, Or
 builder.Services.AddScoped<ICommercialAutomationService, CommercialAutomationService>();
 builder.Services.AddScoped<IDashboardExperienceService, DashboardExperienceService>();
 builder.Services.AddSingleton<IContextualHelpService, ContextualHelpService>();
+builder.Services.AddScoped<GoLiveChecklistService>();
+builder.Services.AddScoped<GoLivePersistenceService>();
+builder.Services.AddSingleton<TrainingGuideService>();
+builder.Services.AddScoped<TrainingProgressService>();
+builder.Services.AddSingleton<RouteErrorFingerprintService>();
+builder.Services.AddSingleton<ProductionReadinessService>();
 builder.Services.AddScoped<IPlanExperienceService, PlanExperienceService>();
 builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
 builder.Services.AddScoped<IInternalAssistantService, InternalAssistantService>();
@@ -313,6 +321,7 @@ if (databaseConfigured) await SuperAdminSeeder.SeedAsync(app.Services);
 
 app.UseHttpsRedirection();
 app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<CriticalRouteMonitorMiddleware>();
 app.Use(async (context, next) =>
 {
     context.Response.OnStarting(() =>

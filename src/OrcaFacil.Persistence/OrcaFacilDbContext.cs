@@ -140,6 +140,11 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<UserFeedback> UserFeedback => Set<UserFeedback>();
     public DbSet<KnowledgeBaseArticle> KnowledgeBaseArticles => Set<KnowledgeBaseArticle>();
     public DbSet<ReleaseNote> ReleaseNotes => Set<ReleaseNote>();
+    public DbSet<GoLiveChecklistItem> GoLiveChecklistItems => Set<GoLiveChecklistItem>();
+    public DbSet<GoLiveAccountState> GoLiveAccountStates => Set<GoLiveAccountState>();
+    public DbSet<TrainingProgress> TrainingProgress => Set<TrainingProgress>();
+    public DbSet<CriticalRouteEvent> CriticalRouteEvents => Set<CriticalRouteEvent>();
+    public DbSet<AssistedOperationAction> AssistedOperationActions => Set<AssistedOperationAction>();
     public DbSet<AccountSettings> AccountSettings => Set<AccountSettings>();
     public DbSet<DataImport> DataImports => Set<DataImport>();
     public DbSet<RecurringContract> RecurringContracts => Set<RecurringContract>();
