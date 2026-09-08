@@ -18,7 +18,7 @@ public sealed class DesignSystemStructureTests
     {
         var tokens = Sprint55Source.Read("src", "OrcaFacil.Web", "wwwroot", "css", "tokens.css");
         var components = Sprint55Source.Read("src", "OrcaFacil.Web", "wwwroot", "css", "design-system.css");
-        Assert.Contains("Design System V5.6", tokens);
+        Assert.Contains("Design System V5.8", tokens);
         foreach (var token in new[] { "--of-shadow-md", "--of-transition-fast", "--of-icon-md", "--of-breakpoint-md" }) Assert.Contains(token, tokens);
         foreach (var component in new[] { "page-hero", "summary-card", "status-badge", "loading-state", "premium-table", "health-card" }) Assert.Contains(component, components);
     }

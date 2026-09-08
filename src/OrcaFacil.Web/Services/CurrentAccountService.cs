@@ -19,7 +19,7 @@ public sealed class CurrentAccountService(
     public string? AccountRoleCode => Principal?.FindFirstValue("account_role");
     public AccountStatus? AccountStatus => Enum.TryParse<AccountStatus>(Principal?.FindFirstValue("account_status"), true, out var status) ? status : null;
     public bool IsPlatformUser => Principal?.Claims.Any(x => x.Type == ClaimTypes.Role &&
-        x.Value is "SuperAdministrator" or "SuperAdmin" or "PlatformSupport" or "PlatformFinance" or "PlatformAuditor") == true;
+        x.Value is "SuperAdministrator" or "SuperAdmin" or "PlatformSupport" or "PlatformFinance" or "PlatformAuditor" or "GlobalSupport" or "GlobalBilling" or "GlobalAuditor") == true;
     public bool HasAccount => AccountId.HasValue && AccountMemberId.HasValue;
 
     public async Task EnsureAccountAccessAsync(CancellationToken ct = default)

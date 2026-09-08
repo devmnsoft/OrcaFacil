@@ -16,6 +16,8 @@ using OrcaFacil.Persistence.Diagnostics;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+if (builder.Environment.IsDevelopment())
+    builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true).AddEnvironmentVariables();
 
 var repositoryRoot = Directory.GetParent(builder.Environment.ContentRootPath)?.Parent?.FullName
     ?? builder.Environment.ContentRootPath;
@@ -28,6 +30,7 @@ builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(conte
 
 var connectionString = DatabaseConnectionStringResolver.ResolveRequired(builder.Configuration);
 builder.Services.AddDbContext<OrcaFacilDbContext>(options => options.UseNpgsql(connectionString));
+builder.Services.AddSaasPersistence();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();

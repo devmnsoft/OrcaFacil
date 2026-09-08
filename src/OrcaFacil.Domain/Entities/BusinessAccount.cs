@@ -13,6 +13,12 @@ public class BusinessAccount : Entity
     public string? DocumentNumber { get; set; }
     public string Email { get; set; } = string.Empty;
     public string? Phone { get; set; }
+    public string? City { get; set; }
+    public string? State { get; set; }
+    public string? ResponsibleName { get; set; }
+    public string? InternalNotes { get; set; }
+    public string FinancialStatus { get; set; } = "Current";
+    public DateTime? LastAccessAt { get; set; }
     public AccountStatus Status { get; private set; } = AccountStatus.Active;
     public string CurrentPlanCode { get; set; } = "FREE";
     public DateTime? ActivatedAt { get; private set; } = DateTime.UtcNow;

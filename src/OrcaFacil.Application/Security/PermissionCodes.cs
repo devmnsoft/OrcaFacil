@@ -318,6 +318,19 @@ public static class PermissionCodes
     public const string SeoTranslationsManage = "SeoTranslations.Manage"; public const string TranslationJobsView = "TranslationJobs.View";
     public const string TranslationJobsManage = "TranslationJobs.Manage";
 
+    public const string GlobalClientsView = "Global.Clients.View"; public const string GlobalClientsManage = "Global.Clients.Manage";
+    public const string GlobalUsersView = "Global.Users.View"; public const string GlobalUsersManage = "Global.Users.Manage";
+    public const string GlobalModulesView = "Global.Modules.View"; public const string GlobalModulesManage = "Global.Modules.Manage";
+    public const string GlobalBillingView = "Global.Billing.View"; public const string GlobalBillingManage = "Global.Billing.Manage";
+    public const string GlobalUsageView = "Global.Usage.View"; public const string GlobalAuditView = "Global.Audit.View";
+    public const string AccountUsersView = "Account.Users.View"; public const string AccountUsersManage = "Account.Users.Manage";
+    public const string AccountProfilesManage = "Account.Profiles.Manage"; public const string AccountModulesView = "Account.Modules.View"; public const string AccountBillingView = "Account.Billing.View";
+    public const string ClientsCreate = "Clients.Create"; public const string ClientsEdit = "Clients.Edit"; public const string ClientsDelete = "Clients.Delete";
+    public const string DocumentsDelete = "Documents.Delete"; public const string DocumentsApprove = "Documents.Approve"; public const string DocumentsSend = "Documents.Send"; public const string DocumentsConvert = "Documents.Convert";
+    public const string CommercialRoutineView = "CommercialRoutine.View"; public const string CommercialRoutineManage = "CommercialRoutine.Manage";
+    public const string ProjectsView = "Projects.View"; public const string ProjectsManage = "Projects.Manage";
+    public const string PortalView = "Portal.View"; public const string TrainingView = "Training.View"; public const string QualityGateView = "QualityGate.View"; public const string SystemHealthView = "SystemHealth.View";
+
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
         AiView, AiUseCopilot, AiUseRag, AiUseSemanticSearch, AiAnalyzeDocuments, AiGenerateDrafts, AiApplySuggestions, AiManageSettings, AiManageGovernance, AiManagePromptTemplates, AiViewLogs, AiViewUsage, AiAdminGlobalView,
@@ -377,6 +390,11 @@ public static class PermissionCodes
         MarginsView, MarginsManagePolicies, PricingRulesView, PricingRulesManage, ReportsCosts, ReportsMargins,
         LocalizationView, LocalizationManage, LocalizationImport, LocalizationExport, LocalizationReview,
         LocaleSettingsView, LocaleSettingsManage, PublicTranslationsView, PublicTranslationsManage,
-        LegalTranslationsManage, SeoTranslationsManage, TranslationJobsView, TranslationJobsManage
+        LegalTranslationsManage, SeoTranslationsManage, TranslationJobsView, TranslationJobsManage,
+        GlobalClientsView, GlobalClientsManage, GlobalUsersView, GlobalUsersManage, GlobalModulesView, GlobalModulesManage,
+        GlobalBillingView, GlobalBillingManage, GlobalUsageView, GlobalAuditView, AccountUsersView, AccountUsersManage,
+        AccountProfilesManage, AccountModulesView, AccountBillingView, ClientsCreate, ClientsEdit, ClientsDelete,
+        DocumentsDelete, DocumentsApprove, DocumentsSend, DocumentsConvert, CommercialRoutineView, CommercialRoutineManage,
+        ProjectsView, ProjectsManage, PortalView, TrainingView, QualityGateView, SystemHealthView
     };
 }

@@ -1,0 +1,3 @@
+@page
+@model OrcaFacil.Web.Pages.SuperAdmin.Modules.EditModel
+@{ViewData["Title"]="Editar módulo";}<main class="page-shell"><header class="page-hero"><nav class="breadcrumb"><a asp-page="Index">Módulos</a> / Editar</nav><h1>Editar módulo</h1></header><form method="post" class="form-panel" data-submit-lock data-confirm="Alterar configuração e preço deste módulo?">@Html.AntiForgeryToken()<input asp-for="Input.Id" type="hidden"/><div asp-validation-summary="All" class="validation-summary"></div><partial name="_ModuleFields" for="Input"/><label><input asp-for="Active"/> Módulo ativo</label><button type="submit" class="of-button of-button-primary" data-loading>Salvar alterações</button></form></main>

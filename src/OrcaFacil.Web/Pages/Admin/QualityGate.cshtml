@@ -1,13 +1,13 @@
 @page "/Admin/QualityGate"
 @model OrcaFacil.Web.Pages.Admin.QualityGateModel
 @{
-    ViewData["Title"] = "Quality Gate V6.2";
+    ViewData["Title"] = "Quality Gate V6.6";
     var snapshot = Model.Snapshot;
 }
 <div class="page-shell quality-gate-page">
     <nav class="breadcrumb" aria-label="Navegação estrutural"><a asp-page="/Admin/Index">Administração</a><span aria-hidden="true">/</span><span aria-current="page">Quality Gate</span></nav>
     <header class="page-hero quality-gate-hero">
-        <div><span class="priority-badge">Governança V6.2</span><h1>Quality Gate</h1><p>Diagnóstico real de schema, rotas críticas e segurança da interface.</p></div>
+        <div><span class="priority-badge">Governança SaaS V6.6</span><h1>Quality Gate</h1><p>Diagnóstico real de schema, módulos, entitlements, rotas críticas e segurança da interface.</p></div>
         @if (snapshot is not null) { <div class="quality-score" aria-label="Pontuação geral"><strong>@snapshot.Score%</strong><span>@(snapshot.IsApproved ? "Aprovado" : "Requer ação")</span></div> }
     </header>
 

@@ -33,7 +33,8 @@ public sealed class AccountSwitcherService(
     {
         return await (from member in db.AccountMembers.AsNoTracking()
             join account in db.BusinessAccounts.AsNoTracking() on member.AccountId equals account.Id
-            where member.UserId == userId && !member.IsDeleted && !account.IsDeleted
+            where member.UserId == userId && !member.IsDeleted && member.Status == AccountMemberStatus.Active &&
+                  !account.IsDeleted && account.Status == AccountStatus.Active
             orderby account.Id == currentAccountId descending, account.DisplayName
             select new SwitchableAccount(account.Id, account.DisplayName, member.RoleCode,
                 account.Status.ToString(), account.CurrentPlanCode, account.Id == currentAccountId,

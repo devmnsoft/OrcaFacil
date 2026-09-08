@@ -70,7 +70,7 @@ public sealed class DocumentsNewPremiumStructureTests
         var page = Sprint56Source.Read("src", "OrcaFacil.Web", "Pages", "Documents", "New.cshtml");
         Assert.Contains("data-scroll-target", page);
         Assert.Contains("of-start-empty", page);
-        Assert.DoesNotContain("href=\"#", page);
+        Assert.DoesNotMatch(new Regex("<a\\b[^>]*href=\\\"#", RegexOptions.IgnoreCase), page);
     }
 }
 

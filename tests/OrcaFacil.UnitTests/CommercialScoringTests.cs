@@ -10,7 +10,9 @@ public sealed class CommercialScoringTests
         var service = new QuoteScoreService();
         var input = new QuoteScoreInput(15000, true, true, 2, 1, 2, false);
         var first = service.Calculate(input); var second = service.Calculate(input);
-        Assert.Equal(first, second); Assert.InRange(first.Value, 0, 100); Assert.NotEmpty(first.Reasons);
+        Assert.Equal(first.Value, second.Value); Assert.Equal(first.Classification, second.Classification);
+        Assert.Equal(first.Reasons, second.Reasons); Assert.Equal(first.Explanation, second.Explanation);
+        Assert.InRange(first.Value, 0, 100); Assert.NotEmpty(first.Reasons);
     }
 
     [Fact] public void Overdue_client_is_classified_from_real_receivable_value()

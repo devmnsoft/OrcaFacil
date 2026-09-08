@@ -1,0 +1,3 @@
+@page
+@model OrcaFacil.Web.Pages.AccountAdmin.Users.IndexModel
+@{ViewData["Title"]="Usuários da conta";}<main class="page-shell"><header class="page-hero"><nav class="breadcrumb"><a asp-page="/AccountAdmin/Index">Administração</a> / Usuários</nav><h1>Usuários da conta</h1><a asp-page="New" class="of-button of-button-primary">Novo usuário</a></header><table class="premium-table"><thead><tr><th>Usuário</th><th>Perfil</th><th>Vínculo</th><th>Último login</th><th></th></tr></thead><tbody>@foreach(var x in Model.Users){<tr><td>@x.Name<br/><small>@x.Email</small></td><td>@x.Profile</td><td>@x.Status</td><td>@x.LastLogin</td><td><a asp-page="Edit" asp-route-id="@x.MemberKey">Gerenciar</a></td></tr>}</tbody></table></main>

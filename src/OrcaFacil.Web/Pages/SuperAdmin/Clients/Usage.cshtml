@@ -1,0 +1,3 @@
+@page
+@model OrcaFacil.Web.Pages.SuperAdmin.Clients.UsageModel
+@{ViewData["Title"]="Uso do cliente";}<main class="page-shell"><header class="page-hero"><nav class="breadcrumb"><a asp-page="Details" asp-route-id="@Model.ClientKey">Cliente</a> / Uso</nav><h1>Uso real por módulo</h1></header>@if(Model.Items.Count==0){<div class="empty-state"><h2>Sem uso registrado</h2><p>Os eventos surgirão após acessos reais às rotas contratadas.</p></div>}else{<table class="premium-table"><thead><tr><th>Módulo</th><th>Eventos</th><th>Usuários</th><th>Último acesso</th></tr></thead><tbody>@foreach(var x in Model.Items){<tr><td>@x.Module</td><td>@x.Events</td><td>@x.Users</td><td>@x.Last</td></tr>}</tbody></table>}</main>

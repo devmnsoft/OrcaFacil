@@ -1,0 +1,7 @@
+@page
+@model OrcaFacil.Web.Pages.SuperAdmin.Clients.IndexModel
+@{ ViewData["Title"]="Clientes SaaS"; }
+<main class="page-shell"><header class="page-hero"><nav class="breadcrumb"><a asp-page="/SuperAdmin/Index">SuperAdmin</a> / Clientes</nav><h1>Clientes</h1><p>Contas isoladas, contratos modulares e situação operacional.</p></header>
+<form method="get" class="filter-bar"><label>Buscar <input name="q" value="@Model.Query" class="of-field-control" /></label><label>Status <select name="status" class="of-field-control"><option value="">Todos</option>@foreach(var status in Model.Statuses){<option selected="@(status==Model.Status)">@status</option>}</select></label><button type="submit" class="of-button of-button-secondary">Filtrar</button><a asp-page="New" class="of-button of-button-primary">Novo cliente</a></form>
+@if(Model.Accounts.Count==0){<div class="empty-state"><h2>Nenhum cliente encontrado</h2><p>Ajuste os filtros ou cadastre a primeira conta.</p></div>}
+else{<div class="responsive-table"><table class="premium-table"><thead><tr><th>Cliente</th><th>Documento</th><th>Status</th><th>Plano</th><th>Módulos</th><th>Usuários</th><th></th></tr></thead><tbody>@foreach(var item in Model.Accounts){<tr><td><strong>@item.Name</strong><small>@item.Email</small></td><td>@item.Document</td><td><span class="of-badge">@item.Status</span></td><td>@item.Plan</td><td>@item.Modules</td><td>@item.Users</td><td><a asp-page="Details" asp-route-id="@item.Id">Detalhes</a> · <a asp-page="Edit" asp-route-id="@item.Id">Editar</a></td></tr>}</tbody></table></div>}</main>

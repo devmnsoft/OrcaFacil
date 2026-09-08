@@ -19,6 +19,7 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
     public const string DocumentsRowVersionV60Migration = "20260903010000_FixDocumentsRowVersionSchemaDriftV60";
     public const string DocumentsFullSchemaV61Migration = "20260903020000_FixDocumentsTemplateCodeFullSchemaDriftV61";
     public const string QualityGateSchemaDriftV62Migration = "20260903030000_QualityGateSchemaDriftV62";
+    public const string SaasEnterpriseV66Migration = "20260908010000_SaasEnterpriseMultiTenantModulesV66";
 
     public static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> RegistrationContract =
         new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
@@ -32,8 +33,17 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
                 ("password_expires_at", "timestamp with time zone"), ("password_reset_reason", "character varying"),
                 ("session_version", "integer"), ("accepted_privacy_at", "timestamp with time zone"),
                 ("accepted_terms_at", "timestamp with time zone"), ("legacy_unversioned_acceptance", "boolean")),
-            ["business_accounts"] = Columns(("id", "uuid"), ("document_number", "character varying"), ("is_deleted", "boolean")),
+            ["business_accounts"] = Columns(("id", "uuid"), ("document_number", "character varying"), ("financial_status", "character varying"), ("is_deleted", "boolean")),
             ["account_members"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("user_id", "uuid"), ("role_code", "character varying")),
+            ["saas_modules"] = Columns(("id", "uuid"), ("code", "character varying"), ("display_name", "character varying"), ("route_prefix", "character varying"), ("required_permission_code", "character varying"), ("base_monthly_price", "numeric"), ("base_annual_price", "numeric"), ("is_active", "boolean"), ("is_deleted", "boolean")),
+            ["saas_module_features"] = Columns(("id", "uuid"), ("module_id", "uuid"), ("code", "character varying")),
+            ["saas_module_prices"] = Columns(("id", "uuid"), ("module_id", "uuid"), ("billing_period", "character varying"), ("amount", "numeric")),
+            ["account_module_subscriptions"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("module_id", "uuid"), ("status", "character varying"), ("contracted_price", "numeric")),
+            ["account_module_entitlements"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("module_id", "uuid"), ("is_enabled", "boolean"), ("source", "character varying")),
+            ["account_module_feature_limits"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("module_id", "uuid"), ("feature_code", "character varying"), ("limit_value", "bigint")),
+            ["account_module_usage_events"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("user_id", "uuid"), ("module_code", "character varying"), ("event_code", "character varying"), ("correlation_id", "character varying")),
+            ["account_module_usage_snapshots"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("module_code", "character varying"), ("event_count", "bigint")),
+            ["account_module_audit_logs"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("actor_user_id", "uuid"), ("action", "character varying"), ("correlation_id", "character varying")),
             ["documents"] = Columns(("id", "uuid"), ("account_id", "uuid"), ("user_id", "uuid"),
                 ("number", "character varying"), ("type", "character varying"), ("status", "character varying"),
                 ("subtotal", "numeric"), ("discount", "numeric"), ("total", "numeric"),
@@ -188,7 +198,7 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
         return new(issues.Count == 0 && !pending, issues, DateTimeOffset.UtcNow, pending);
     }
 
-    public static readonly string[] RequiredMigrations = [RepairMigration, PasswordRecoveryMigration, CommercialJourneyMigration, QuoteToCashMigration, ReceiptSequenceMigration, CommercialDocumentRepairMigration, ClientsAndDocumentsDriftMigration, DepositAmountDriftMigration, CommercialSchemaV57Migration, DocumentsRowVersionV60Migration, DocumentsFullSchemaV61Migration, QualityGateSchemaDriftV62Migration];
+    public static readonly string[] RequiredMigrations = [RepairMigration, PasswordRecoveryMigration, CommercialJourneyMigration, QuoteToCashMigration, ReceiptSequenceMigration, CommercialDocumentRepairMigration, ClientsAndDocumentsDriftMigration, DepositAmountDriftMigration, CommercialSchemaV57Migration, DocumentsRowVersionV60Migration, DocumentsFullSchemaV61Migration, QualityGateSchemaDriftV62Migration, SaasEnterpriseV66Migration];
 
     private static readonly (string Table, string Name)[] EssentialIndexes =
     [
@@ -244,6 +254,9 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
         "documents" or "budget_templates" or "budget_template_items" => QualityGateSchemaDriftV62Migration,
         "clients" => ClientsAndDocumentsDriftMigration,
         "manual_payments" or "receipts" => QuoteToCashMigration,
+        "saas_modules" or "saas_module_features" or "saas_module_prices" or "account_module_subscriptions" or
+            "account_module_entitlements" or "account_module_feature_limits" or "account_module_usage_events" or
+            "account_module_usage_snapshots" or "account_module_audit_logs" => SaasEnterpriseV66Migration,
         _ => RepairMigration
     };
 

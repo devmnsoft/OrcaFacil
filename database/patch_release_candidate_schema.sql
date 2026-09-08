@@ -1014,3 +1014,6 @@ ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS deleted_by uuid;
 
 -- Release Candidate V6.4: executar pelo psql para resolver o caminho relativo.
 \ir hotfix_release_candidate_schema_v64.sql
+
+-- SaaS Enterprise V6.6: catálogo modular, contratos, entitlements, uso e auditoria.
+\ir hotfix_saas_enterprise_modules_v66.sql

@@ -12,6 +12,9 @@ public class UserAccountConfiguration : IEntityTypeConfiguration<UserAccount>
         builder.ConfigureBase();
         builder.Property(x => x.Name).HasColumnName("name").HasMaxLength(180).IsRequired();
         builder.Property(x => x.Email).HasColumnName("email").HasMaxLength(254).IsRequired();
+        builder.Property(x => x.AlternateEmail).HasMaxLength(254);
+        builder.Property(x => x.DocumentType).HasConversion<string>().HasMaxLength(16);
+        builder.Property(x => x.DocumentNumber).HasMaxLength(14);
         builder.Property(x => x.PasswordHash).HasColumnName("password_hash").HasMaxLength(500).IsRequired();
         builder.Property(x => x.Role).HasColumnName("role").HasConversion<string>().HasMaxLength(40).IsRequired();
         builder.Property(x => x.Plan).HasColumnName("plan").HasConversion<string>().HasMaxLength(40).IsRequired();
@@ -25,8 +28,10 @@ public class UserAccountConfiguration : IEntityTypeConfiguration<UserAccount>
         builder.Property(x => x.LastSeenAt).HasColumnName("last_seen_at");
         builder.Property(x => x.SessionVersion).HasColumnName("session_version").HasDefaultValue(1);
         builder.Property(x => x.PasswordResetReason).HasMaxLength(500);
-        builder.HasCheckConstraint("ck_users_role", "role IN ('User','Admin','SuperAdmin')");
+        builder.HasCheckConstraint("ck_users_role", "role IN ('User','Admin','SuperAdmin','GlobalSupport','GlobalBilling','GlobalAuditor')");
         builder.HasCheckConstraint("ck_users_plan", "plan IN ('Free','Professional','Business')");
         builder.HasIndex(x => x.Email).IsUnique();
+        builder.HasIndex(x => x.AlternateEmail).IsUnique().HasFilter("alternate_email IS NOT NULL AND is_deleted = false");
+        builder.HasIndex(x => x.DocumentNumber).IsUnique().HasFilter("document_number IS NOT NULL AND is_deleted = false");
     }
 }

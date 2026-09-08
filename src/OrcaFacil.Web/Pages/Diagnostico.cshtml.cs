@@ -5,7 +5,7 @@ using OrcaFacil.Persistence.Diagnostics;
 
 namespace OrcaFacil.Web.Pages;
 
-[Authorize(Policy = "SuperAdmin")]
+[Authorize(Policy = "PlatformAuditRead")]
 public class DiagnosticoModel : PageModel
 {
     private readonly IWebHostEnvironment _environment;

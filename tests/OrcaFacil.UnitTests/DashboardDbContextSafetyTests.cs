@@ -55,11 +55,11 @@ public sealed class DashboardDbContextConcurrencyTests
 public sealed class ServiceLifetimeRegistrationTests
 {
     [Fact]
-    public void DashboardServices_AreScoped_NotSingleton()
+    public async Task DashboardServices_AreScoped_NotSingleton()
     {
         using var factory = new RouteApplicationFactory();
-        using var firstScope = factory.Services.CreateScope();
-        using var secondScope = factory.Services.CreateScope();
+        await using var firstScope = factory.Services.CreateAsyncScope();
+        await using var secondScope = factory.Services.CreateAsyncScope();
         var firstDashboard = firstScope.ServiceProvider.GetRequiredService<IDashboardExperienceService>();
         var firstCommercial = firstScope.ServiceProvider.GetRequiredService<ICommercialWorkspaceQueryService>();
         Assert.Same(firstDashboard, firstScope.ServiceProvider.GetRequiredService<IDashboardExperienceService>());

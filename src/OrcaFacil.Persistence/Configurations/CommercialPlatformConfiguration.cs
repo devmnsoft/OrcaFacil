@@ -4,7 +4,7 @@ using OrcaFacil.Domain.Entities;
 
 namespace OrcaFacil.Persistence.Configurations;
 
-public sealed class BusinessAccountConfiguration : IEntityTypeConfiguration<BusinessAccount> { public void Configure(EntityTypeBuilder<BusinessAccount> b) { b.ToTable("business_accounts"); b.ConfigureBase(); b.HasIndex(x => x.DocumentNumber).IsUnique(); b.HasIndex(x => x.Status); b.Property(x => x.Status).HasConversion<string>(); b.Property(x => x.PersonType).HasConversion<string>(); b.Property(x => x.DocumentType).HasConversion<string>(); b.Property(x => x.DocumentNumber).HasMaxLength(14).IsRequired(); b.Property(x => x.CurrentPlanCode).HasMaxLength(40); } }
+public sealed class BusinessAccountConfiguration : IEntityTypeConfiguration<BusinessAccount> { public void Configure(EntityTypeBuilder<BusinessAccount> b) { b.ToTable("business_accounts"); b.ConfigureBase(); b.HasIndex(x => x.DocumentNumber).IsUnique(); b.HasIndex(x => x.Status); b.Property(x => x.Status).HasConversion<string>(); b.Property(x => x.PersonType).HasConversion<string>(); b.Property(x => x.DocumentType).HasConversion<string>(); b.Property(x => x.DocumentNumber).HasMaxLength(14).IsRequired(); b.Property(x => x.CurrentPlanCode).HasMaxLength(40); b.Property(x=>x.City).HasMaxLength(120); b.Property(x=>x.State).HasMaxLength(2); b.Property(x=>x.ResponsibleName).HasMaxLength(160); b.Property(x=>x.InternalNotes).HasMaxLength(2000); b.Property(x=>x.FinancialStatus).HasMaxLength(32); } }
 public sealed class AccountMemberConfiguration : IEntityTypeConfiguration<AccountMember>
 {
     public void Configure(EntityTypeBuilder<AccountMember> b)

@@ -35,14 +35,17 @@ public sealed class CookieUserSignInService(
             new("authentication_time", now.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture))
         };
 
-        if (account is not null)
+        // A user with more than one tenant must make an explicit choice. Do not
+        // leak a default AccountId into the authentication ticket.
+        var selectedAccount = availableAccounts > 1 && preferredAccountId is null ? null : account;
+        if (selectedAccount is not null)
         {
             claims.AddRange([
-                new Claim("account_id", account.AccountId.ToString()),
-                new Claim("account_member_id", account.AccountMemberId.ToString()),
-                new Claim("account_role", account.Role),
-                new Claim("account_status", account.Status),
-                new Claim("effective_plan_code", account.EffectivePlanCode)
+                new Claim("account_id", selectedAccount.AccountId.ToString()),
+                new Claim("account_member_id", selectedAccount.AccountMemberId.ToString()),
+                new Claim("account_role", selectedAccount.Role),
+                new Claim("account_status", selectedAccount.Status),
+                new Claim("effective_plan_code", selectedAccount.EffectivePlanCode)
             ]);
         }
 
@@ -56,7 +59,7 @@ public sealed class CookieUserSignInService(
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity), properties);
         logger.LogInformation("USER_SIGNED_IN UserId {UserId} AccountId {AccountId} MultipleAccounts {MultipleAccounts}",
-            user.Id, account?.AccountId, availableAccounts > 1);
-        return new UserSignInResult(account, availableAccounts > 1);
+            user.Id, selectedAccount?.AccountId, availableAccounts > 1);
+        return new UserSignInResult(selectedAccount, availableAccounts > 1);
     }
 }

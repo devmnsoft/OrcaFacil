@@ -1,0 +1,3 @@
+@page
+@model OrcaFacil.Web.Pages.AccountAdmin.Profiles.IndexModel
+@{ViewData["Title"]="Perfis da conta";}<main class="page-shell"><header class="page-hero"><nav class="breadcrumb"><a asp-page="/AccountAdmin/Index">Administração</a> / Perfis</nav><h1>Perfis permitidos</h1><p>Perfis globais nunca podem ser atribuídos por um cliente.</p></header><div class="of-card-grid">@foreach(var role in Model.Profiles){<article class="form-panel"><h2>@role.Name</h2><p>@role.Members usuário(s)</p><span class="of-badge">Perfil de tenant</span></article>}</div></main>

@@ -16,6 +16,17 @@ public sealed partial class SensitiveDataSanitizer : ISensitiveDataSanitizer
     public string Sanitize(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return value ?? string.Empty;
+        try
+        {
+            using var json = JsonDocument.Parse(value);
+            using var stream = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(stream)) WriteSanitized(writer, json.RootElement, null);
+            return System.Text.Encoding.UTF8.GetString(stream.ToArray());
+        }
+        catch (JsonException)
+        {
+            // Non-JSON diagnostic text is sanitized by the defensive patterns below.
+        }
         var sanitized = ConnectionStringRegex().Replace(value, "$1=" + Redacted);
         return SecretPairRegex().Replace(sanitized, "$1$2" + Redacted);
     }

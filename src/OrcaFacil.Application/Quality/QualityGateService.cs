@@ -1,4 +1,5 @@
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Saas.Modules;
 
 namespace OrcaFacil.Application.Quality;
 
@@ -24,6 +25,7 @@ public sealed record QualityGateSnapshot(
 public sealed class QualityGateService(
     IDatabaseSchemaContractService schema,
     FunctionalQualityService sourceQuality,
+    SaasModuleRegistryService moduleRegistry,
     IClock clock)
 {
     private static readonly string[] CriticalRoutes =
@@ -40,7 +42,7 @@ public sealed class QualityGateService(
         rules.Add(new("schema.critical", "Schema", "Tabelas, colunas, índices e migrations críticos",
             schemaResult.IsValid,
             schemaResult.IsValid ? "Contrato do banco aprovado." : $"{schemaResult.Issues.Count} divergência(s) encontrada(s).",
-            "Aplicar a migration QualityGateSchemaDriftV62 e executar novamente."));
+            "Aplicar a migration SaasEnterpriseMultiTenantModulesV66 e executar novamente."));
 
         var pagesRoot = Path.Combine(repositoryRoot, "src", "OrcaFacil.Web", "Pages");
         foreach (var route in CriticalRoutes)
@@ -51,6 +53,38 @@ public sealed class QualityGateService(
                 exists ? "Razor Page e rota física localizadas." : "Razor Page não localizada.",
                 $"Restaurar a página crítica {route}."));
         }
+
+        var activeModules = moduleRegistry.GetAll().Where(module => module.IsActive).ToArray();
+        foreach (var module in activeModules)
+        {
+            var relative = module.RoutePrefix.Trim('/').Replace('/', Path.DirectorySeparatorChar);
+            var routeExists = File.Exists(Path.Combine(pagesRoot, relative, "Index.cshtml")) ||
+                              File.Exists(Path.Combine(pagesRoot, relative + ".cshtml"));
+            rules.Add(new($"module.{module.Code.ToLowerInvariant()}.route", "Módulos", $"Rota real do módulo {module.DisplayName}", routeExists,
+                routeExists ? module.RoutePrefix : "Rota física ausente.", $"Implementar a Razor Page de {module.DisplayName} antes de ativar o módulo."));
+            var validCommercialDefinition = !string.IsNullOrWhiteSpace(module.RequiredPermissionCode) &&
+                                            module.MonthlyPrice >= 0 && module.AnnualPrice >= 0;
+            rules.Add(new($"module.{module.Code.ToLowerInvariant()}.contract", "Módulos", $"Preço e permissão de {module.DisplayName}", validCommercialDefinition,
+                validCommercialDefinition ? $"{module.RequiredPermissionCode}; mensal {module.MonthlyPrice:C}." : "Contrato comercial incompleto.",
+                "Configurar preço não negativo e permissão explícita no catálogo."));
+        }
+
+        var menuFile = Path.Combine(repositoryRoot, "src", "OrcaFacil.Web", "Services", "ModuleMenuComposer.cs");
+        var menuText = File.Exists(menuFile) ? File.ReadAllText(menuFile) : string.Empty;
+        var activeTenantModules = activeModules.Where(module => module.Code != "QUALITY_GATE").ToArray();
+        var menuComplete = activeTenantModules.All(module => menuText.Contains($"\"{module.Code}\"", StringComparison.Ordinal));
+        rules.Add(new("modules.menu", "Módulos", "Todo módulo ativo possui entrada de menu funcional", menuComplete,
+            menuComplete ? $"{activeTenantModules.Length} módulos ativos cobertos." : "Há módulo ativo sem composição de menu.",
+            "Adicionar a entrada real ao compositor ou manter o módulo inativo."));
+
+        var middlewareFile = Path.Combine(repositoryRoot, "src", "OrcaFacil.Web", "Middleware", "ModuleAccessMiddleware.cs");
+        var middlewareText = File.Exists(middlewareFile) ? File.ReadAllText(middlewareFile) : string.Empty;
+        var backendGuard = middlewareText.Contains("HasPermissionAsync", StringComparison.Ordinal) &&
+                           middlewareText.Contains("access.CheckAsync", StringComparison.Ordinal) &&
+                           middlewareText.Contains("Status403Forbidden", StringComparison.Ordinal);
+        rules.Add(new("modules.backend-guard", "Segurança", "Permissão e entitlement são validados no backend", backendGuard,
+            backendGuard ? "Middleware aplica permissão, assinatura e entitlement." : "Guard de backend incompleto.",
+            "Restaurar o guard de módulos antes da autorização de rotas."));
 
         var source = sourceQuality.Evaluate(clock.UtcNow);
         var blockers = source.Findings.Count(finding => finding.Severity <= FindingSeverity.P1);

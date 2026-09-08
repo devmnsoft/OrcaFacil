@@ -628,7 +628,19 @@
     "check:documents-new-v65": "node scripts/check-documents-new-v65.mjs",
     "check:commercial-routine-v65": "node scripts/check-commercial-routine-v65.mjs",
     "check:ui-total-v65": "node scripts/check-ui-total-v65.mjs",
-    "check:design-system-v65": "node scripts/check-design-system-v65.mjs"
+    "check:design-system-v65": "node scripts/check-design-system-v65.mjs",
+    "check:saas-enterprise-v66": "node scripts/check-saas-enterprise-v66.mjs",
+    "check:superadmin-v66": "node scripts/check-superadmin-v66.mjs",
+    "check:account-admin-v66": "node scripts/check-account-admin-v66.mjs",
+    "check:module-entitlements-v66": "node scripts/check-module-entitlements-v66.mjs",
+    "check:module-pricing-v66": "node scripts/check-module-pricing-v66.mjs",
+    "check:login-identifiers-v66": "node scripts/check-login-identifiers-v66.mjs",
+    "check:profile-permissions-v66": "node scripts/check-profile-permissions-v66.mjs",
+    "check:module-menus-v66": "node scripts/check-module-menus-v66.mjs",
+    "check:tenant-isolation-v66": "node scripts/check-tenant-isolation-v66.mjs",
+    "check:module-usage-v66": "node scripts/check-module-usage-v66.mjs",
+    "check:system-health-saas-v66": "node scripts/check-system-health-saas-v66.mjs",
+    "check:quality-gate-saas-v66": "node scripts/check-quality-gate-saas-v66.mjs"
   },
   "engines": {
     "node": ">=18"

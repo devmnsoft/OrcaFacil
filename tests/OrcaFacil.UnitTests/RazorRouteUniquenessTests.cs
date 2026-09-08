@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using OrcaFacil.Persistence;
 using OrcaFacil.Persistence.Diagnostics;
 using Xunit;
 
@@ -75,10 +78,17 @@ public sealed class RouteApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Route/DI tests never access PostgreSQL. The Testing environment keeps
+        // startup seeders disabled while preserving the production composition root.
         builder.UseEnvironment("Testing");
-        builder.UseSetting("ConnectionStrings:DefaultConnection", string.Empty);
+        builder.UseSetting("ConnectionStrings:DefaultConnection", "Host=127.0.0.1;Port=1;Database=test;Username=test;Password=test;Timeout=1");
         builder.ConfigureServices(services =>
         {
+            services.RemoveAll<DbContextOptions<OrcaFacilDbContext>>();
+            services.RemoveAll<IDbContextOptionsConfiguration<OrcaFacilDbContext>>();
+            services.RemoveAll<OrcaFacilDbContext>();
+            services.AddDbContext<OrcaFacilDbContext>(options => options.UseNpgsql(
+                "Host=127.0.0.1;Port=2;Database=test;Username=test;Password=test;Timeout=1"));
             services.RemoveAll<IDatabaseConfigurationState>();
             services.AddSingleton<IDatabaseConfigurationState>(new DatabaseConfigurationState(
                 true, true, true, "Test", "", "127.0.0.1", 1, "test", "test", "Disable", "test",

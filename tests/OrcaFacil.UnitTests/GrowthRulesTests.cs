@@ -37,7 +37,7 @@ public sealed class GrowthRulesTests
 
     [Theory]
     [InlineData(150, 50, 0)]
-    [InlineData(25, 100, 0)]
+    [InlineData(25, 100, 75)]
     public void Coupon_never_makes_total_negative(decimal discount, decimal subtotal, decimal expected)
     {
         var now = DateTimeOffset.UtcNow;

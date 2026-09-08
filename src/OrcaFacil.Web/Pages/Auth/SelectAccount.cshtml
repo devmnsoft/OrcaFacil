@@ -1,0 +1,13 @@
+@page
+@model OrcaFacil.Web.Pages.Auth.SelectAccountModel
+@{ Layout = "/Pages/Shared/_PublicLayout.cshtml"; ViewData["Title"] = "Selecionar conta"; }
+<section class="page-shell of-container"><header class="page-hero"><p class="of-eyebrow">Acesso multiempresa</p><h1>Qual conta você quer abrir?</h1><p>Seu perfil e seus módulos podem ser diferentes em cada conta.</p></header>
+<div asp-validation-summary="ModelOnly" class="validation-summary" role="alert"></div>
+<div class="of-card-grid">
+@foreach (var account in Model.Accounts) {
+  <form method="post" class="form-panel" data-submit-lock>@Html.AntiForgeryToken()<input type="hidden" name="accountId" value="@account.AccountId" />
+    <h2>@account.Name</h2><p><span class="of-badge">@account.Role</span> · Plano @account.PlanCode</p>
+    <button type="submit" class="of-button of-button-primary" data-loading>Abrir esta conta</button>
+  </form>
+}
+</div></section>

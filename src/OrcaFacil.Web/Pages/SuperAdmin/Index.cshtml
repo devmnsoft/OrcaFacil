@@ -1,0 +1,16 @@
+@page
+@model OrcaFacil.Web.Pages.SuperAdmin.IndexModel
+@{ ViewData["Title"] = "Administração global"; }
+<main class="page-shell"><header class="page-hero"><p class="of-eyebrow">SaaS Enterprise</p><h1>Visão global da operação</h1><p>Métricas consultadas em tempo real, sem dados simulados.</p></header>
+<section class="of-metric-grid" aria-label="Indicadores globais">
+ <article class="metric-card"><span>Clientes ativos</span><strong>@Model.Metrics.ActiveAccounts</strong></article>
+ <article class="metric-card"><span>Bloqueados</span><strong>@Model.Metrics.BlockedAccounts</strong></article>
+ <article class="metric-card"><span>Em trial</span><strong>@Model.Metrics.TrialSubscriptions</strong></article>
+ <article class="metric-card"><span>Inadimplentes</span><strong>@Model.Metrics.OverdueAccounts</strong></article>
+ <article class="metric-card"><span>Usuários ativos</span><strong>@Model.Metrics.ActiveUsers</strong></article>
+ <article class="metric-card"><span>Receita modular prevista</span><strong>@Model.Metrics.MonthlyRecurringRevenue.ToString("C")</strong></article>
+</section>
+<section class="form-panel"><div class="action-bar"><h2>Módulos mais contratados</h2><a asp-page="/SuperAdmin/Clients/Index" class="of-button of-button-secondary">Gerenciar clientes</a></div>
+@if (Model.TopModules.Count == 0) { <div class="empty-state"><h3>Ainda não há contratações</h3><p>Cadastre um cliente ou aprove uma solicitação de módulo.</p></div> }
+else { <div class="responsive-table"><table class="premium-table"><thead><tr><th>Módulo</th><th>Contratos ativos</th><th>Eventos de uso (30 dias)</th></tr></thead><tbody>@foreach(var item in Model.TopModules){<tr><td>@item.Name</td><td>@item.Subscriptions</td><td>@item.Usage</td></tr>}</tbody></table></div> }
+</section></main>

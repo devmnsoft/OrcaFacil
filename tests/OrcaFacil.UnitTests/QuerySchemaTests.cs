@@ -29,7 +29,11 @@ public class QuerySchemaTests
         var root = FindRepositoryRoot();
         var script = File.ReadAllText(Path.Combine(root, "database/script_completop.sql"));
 
-        Assert.DoesNotContain(legacySchema, script, StringComparison.OrdinalIgnoreCase);
+        // Permission codes such as Admin.Access and ApiLogs.View are string data,
+        // not PostgreSQL schema qualifiers. Remove SQL literals before inspecting identifiers.
+        var identifiersOnly = System.Text.RegularExpressions.Regex.Replace(script, @"'(?:''|[^'])*'", "''",
+            System.Text.RegularExpressions.RegexOptions.Singleline);
+        Assert.DoesNotMatch($@"(?i)\b{System.Text.RegularExpressions.Regex.Escape(legacySchema.TrimEnd('.'))}\s*\.\s*[\""']?[a-z_]", identifiersOnly);
     }
 
     private static string FindRepositoryRoot()

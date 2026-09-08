@@ -16,11 +16,16 @@
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.10" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="..\..\database\patch_sprint43_assets_v44.sql" Link="Migrations\patch_sprint43_assets_v44.sql" />
+    <EmbeddedResource Include="..\..\database\hotfix_saas_enterprise_modules_v66.sql" Link="Migrations\hotfix_saas_enterprise_modules_v66.sql" />
   </ItemGroup>
 
 </Project>

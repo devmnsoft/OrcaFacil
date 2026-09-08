@@ -1,0 +1,3 @@
+@page
+@model OrcaFacil.Web.Pages.SuperAdmin.Usage.IndexModel
+@{ViewData["Title"]="Uso por cliente";}<main class="page-shell"><header class="page-hero"><nav class="breadcrumb"><a asp-page="/SuperAdmin/Index">SuperAdmin</a> / Uso</nav><h1>Uso por cliente e módulo</h1></header>@if(Model.Items.Count==0){<div class="empty-state"><h2>Ainda não há telemetria funcional</h2><p>O rastreamento não bloqueia as requisições e aparecerá após o primeiro acesso autenticado.</p></div>}else{<table class="premium-table"><thead><tr><th>Cliente</th><th>Módulo</th><th>Eventos</th><th>Usuários</th><th>Último uso</th></tr></thead><tbody>@foreach(var x in Model.Items){<tr><td>@x.Account</td><td>@x.Module</td><td>@x.Events</td><td>@x.Users</td><td>@x.Last</td></tr>}</tbody></table>}</main>

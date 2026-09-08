@@ -200,6 +200,16 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<QuotaEvent> QuotaEvents => Set<QuotaEvent>();
     public DbSet<RateLimitEvent> RateLimitEvents => Set<RateLimitEvent>();
     public DbSet<WorkerHeartbeat> WorkerHeartbeats => Set<WorkerHeartbeat>();
+    public DbSet<SaasModule> SaasModules => Set<SaasModule>();
+    public DbSet<SaasModuleFeature> SaasModuleFeatures => Set<SaasModuleFeature>();
+    public DbSet<SaasModulePrice> SaasModulePrices => Set<SaasModulePrice>();
+    public DbSet<AccountModuleSubscription> AccountModuleSubscriptions => Set<AccountModuleSubscription>();
+    public DbSet<AccountModuleEntitlement> AccountModuleEntitlements => Set<AccountModuleEntitlement>();
+    public DbSet<AccountModuleFeatureLimit> AccountModuleFeatureLimits => Set<AccountModuleFeatureLimit>();
+    public DbSet<AccountModuleUsageEvent> AccountModuleUsageEvents => Set<AccountModuleUsageEvent>();
+    public DbSet<AccountModuleUsageSnapshot> AccountModuleUsageSnapshots => Set<AccountModuleUsageSnapshot>();
+    public DbSet<AccountModuleAuditLog> AccountModuleAuditLogs => Set<AccountModuleAuditLog>();
+    public DbSet<AccountMemberProfile> AccountMemberProfiles => Set<AccountMemberProfile>();
     public DbSet<BusinessUnit> BusinessUnits => Set<BusinessUnit>();
     public DbSet<BusinessUnitMember> BusinessUnitMembers => Set<BusinessUnitMember>();
     public DbSet<Team> Teams => Set<Team>();

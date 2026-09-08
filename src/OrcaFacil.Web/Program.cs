@@ -53,6 +53,7 @@ using System.Globalization;
 using OrcaFacil.Application.Localization;
 using OrcaFacil.Application.GoLive;
 using OrcaFacil.Persistence.Services.GoLive;
+using OrcaFacil.Persistence.Services.Saas;
 
 var builder = WebApplication.CreateBuilder(args);
 var repositoryRoot = Directory.GetParent(builder.Environment.ContentRootPath)?.Parent?.FullName
@@ -86,6 +87,7 @@ builder.Services.AddDbContext<OrcaFacilDbContext>(options => options
     .UseNpgsql(DatabaseConnectionStringResolver.ResolveRequired(builder.Configuration))
     .EnableSensitiveDataLogging(false)
     .EnableDetailedErrors(builder.Environment.IsDevelopment() && builder.Configuration.GetValue("Diagnostics:EnableEfDetailedErrors", false)));
+builder.Services.AddSaasPersistence();
 var configuredKeyPath = builder.Configuration["DataProtection:KeysPath"];
 var keyPath = Path.GetFullPath(string.IsNullOrWhiteSpace(configuredKeyPath)
     ? Path.Combine(builder.Environment.ContentRootPath, ".keys")
@@ -105,6 +107,9 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ICurrentAccountService, CurrentAccountService>();
 builder.Services.AddScoped<IAccountSelectionService, AccountSelectionService>();
 builder.Services.AddScoped<IAccountSwitcherService, AccountSwitcherService>();
+builder.Services.AddScoped<IAccountMenuComposer, AccountMenuComposer>();
+builder.Services.AddScoped<ISuperAdminMenuComposer, SuperAdminMenuComposer>();
+builder.Services.AddScoped<IUserMenuComposer, UserMenuComposer>();
 builder.Services.AddScoped<IClientShellViewModelFactory, ClientShellViewModelFactory>();
 builder.Services.AddScoped<INextBestActionService, NextBestActionService>();
 builder.Services.AddScoped<IRecommendationService, RecommendationService>();
@@ -244,7 +249,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         var db = context.HttpContext.RequestServices.GetRequiredService<OrcaFacilDbContext>();
         var platformUser = context.Principal?.IsInRole("SuperAdministrator") == true || context.Principal?.IsInRole("SuperAdmin") == true ||
                            context.Principal?.IsInRole("PlatformSupport") == true || context.Principal?.IsInRole("PlatformFinance") == true ||
-                           context.Principal?.IsInRole("PlatformAuditor") == true;
+                           context.Principal?.IsInRole("PlatformAuditor") == true || context.Principal?.IsInRole("GlobalSupport") == true ||
+                           context.Principal?.IsInRole("GlobalBilling") == true || context.Principal?.IsInRole("GlobalAuditor") == true;
         var valid = await db.Users.AsNoTracking().AnyAsync(x => x.Id == userId && x.IsActive && !x.IsBlocked &&
             x.SessionVersion == sessionVersion && !x.IsDeleted && (platformUser ||
             db.AccountMembers.Any(m => m.UserId == x.Id && !m.IsDeleted && m.Status == OrcaFacil.Domain.Enums.AccountMemberStatus.Active &&
@@ -262,13 +268,14 @@ builder.Services.AddAuthorization(options =>
     // "SuperAdmin" remains accepted while existing accounts are migrated to the
     // canonical platform role name. Authorization is enforced by the backend.
     options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin"));
-    options.AddPolicy("PlatformSupportOrHigher", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin", "PlatformSupport"));
-    options.AddPolicy("PlatformFinanceOrHigher", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin", "PlatformFinance"));
-    options.AddPolicy("PlatformAuditRead", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin", "PlatformSupport", "PlatformFinance", "PlatformAuditor"));
+    options.AddPolicy("PlatformSupportOrHigher", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin", "PlatformSupport", "GlobalSupport"));
+    options.AddPolicy("PlatformFinanceOrHigher", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin", "PlatformFinance", "GlobalBilling"));
+    options.AddPolicy("PlatformAuditRead", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin", "PlatformSupport", "PlatformFinance", "PlatformAuditor", "GlobalSupport", "GlobalBilling", "GlobalAuditor"));
     options.AddPolicy("PlatformPlanManagement", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin"));
     options.AddPolicy("PlatformPaymentManagement", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin", "PlatformFinance"));
     options.AddPolicy("PlanManagement", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin"));
     options.AddPolicy("PaymentManagement", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin", "PlatformFinance"));
+    options.AddPolicy("AccountAdmin", policy => policy.RequireClaim("account_role", "Owner", "Administrator"));
     options.AddPolicy("SystemSettingsManagement", policy => policy.RequireRole("SuperAdministrator", "SuperAdmin"));
     foreach (var permission in OrcaFacil.Application.Security.PermissionCodes.All)
         options.AddPolicy($"Permission:{permission}", policy => policy.AddRequirements(new OrcaFacil.Web.Security.PermissionRequirement(permission)));
@@ -309,7 +316,7 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-if (!app.Environment.IsDevelopment() && !databaseConfigurationState.IsValid)
+if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing") && !databaseConfigurationState.IsValid)
     throw new InvalidOperationException("DefaultConnection inválida. A aplicação não pode iniciar em Production sem banco configurado.");
 
 if (!app.Environment.IsDevelopment())
@@ -317,7 +324,11 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-if (databaseConfigured) await SuperAdminSeeder.SeedAsync(app.Services);
+if (databaseConfigured && !app.Environment.IsEnvironment("Testing"))
+{
+    await SuperAdminSeeder.SeedAsync(app.Services);
+    await SaasModuleSeeder.SeedAsync(app.Services);
+}
 
 app.UseHttpsRedirection();
 app.UseMiddleware<CorrelationIdMiddleware>();
@@ -347,6 +358,7 @@ app.UseRouting();
 app.UseRequestLocalization();
 app.UseRateLimiter();
 app.UseAuthentication();
+app.UseMiddleware<ModuleAccessMiddleware>();
 app.UseMiddleware<ApiRequestLoggingMiddleware>();
 app.UseMiddleware<MaintenanceModeMiddleware>();
 app.UseAuthorization();

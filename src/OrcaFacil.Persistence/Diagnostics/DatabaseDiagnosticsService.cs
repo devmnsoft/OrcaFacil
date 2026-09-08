@@ -32,7 +32,9 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
         "security_events", "session_records", "public_token_access_logs", "account_security_settings", "audit_export_jobs",
         "business_units", "business_unit_members", "teams", "team_members", "role_profiles", "role_profile_permissions",
         "discount_policies", "approval_requests", "approval_request_events", "white_label_settings",
-        "unit_branding_profiles", "document_visibility_rules"
+        "unit_branding_profiles", "document_visibility_rules", "saas_modules", "saas_module_features", "saas_module_prices",
+        "account_module_subscriptions", "account_module_entitlements", "account_module_feature_limits",
+        "account_module_usage_events", "account_module_usage_snapshots", "account_module_audit_logs", "account_member_profiles"
     ];
 
     public static readonly IReadOnlyDictionary<string, string> RequiredDocumentColumns =
@@ -146,7 +148,12 @@ public sealed class DatabaseDiagnosticsService : IDatabaseDiagnosticsService
                 "data_subject_requests.resolution_notes", "data_subject_requests.reviewed_at",
                 "privacy_consents.account_id", "session_records.session_hash", "sensitive_data_access_logs.correlation_id",
                 "documents.business_unit_id", "documents.assigned_to_user_id", "documents.assigned_team_id",
-                "documents.requires_internal_approval", "approval_requests.account_id", "business_units.account_id"
+                "documents.requires_internal_approval", "approval_requests.account_id", "business_units.account_id",
+                "users.document_number", "users.alternate_email", "business_accounts.financial_status",
+                "saas_modules.code", "saas_modules.base_monthly_price", "saas_modules.required_permission_code",
+                "account_module_subscriptions.account_id", "account_module_subscriptions.module_id", "account_module_subscriptions.status",
+                "account_module_entitlements.account_id", "account_module_entitlements.module_id", "account_module_entitlements.is_enabled",
+                "account_module_usage_events.account_id", "account_module_usage_events.module_code", "account_module_usage_events.correlation_id"
             };
             var columns = (await connection.QueryAsync<string>(new CommandDefinition("select table_name || '.' || column_name from information_schema.columns where table_schema=@Schema", new { Schema = ExpectedSchema }, cancellationToken: ct))).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var missingColumns = requiredColumns.Where(x => !columns.Contains(x)).ToArray();

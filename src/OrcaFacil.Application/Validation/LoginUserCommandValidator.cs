@@ -7,7 +7,8 @@ public class LoginUserCommandValidator : AbstractValidator<LoginUserCommand>
 {
     public LoginUserCommandValidator()
     {
-        RuleFor(x => x.Email).NotEmpty().EmailAddress();
+        RuleFor(x => x.Email).NotEmpty().MaximumLength(254)
+            .WithName("CPF, CNPJ ou e-mail");
         RuleFor(x => x.Password).NotEmpty();
     }
 }

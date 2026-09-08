@@ -1,0 +1,3 @@
+using System.ComponentModel.DataAnnotations;
+namespace OrcaFacil.Web.Pages.SuperAdmin.Modules;
+public sealed class ModuleInput{public Guid Id{get;set;}[Required,StringLength(80),RegularExpression("^[A-Z0-9_]+$")]public string Code{get;set;}="";[Required,StringLength(160)]public string DisplayName{get;set;}="";[Required,StringLength(80)]public string Category{get;set;}="";[Required,StringLength(80)]public string MenuGroup{get;set;}="";[Required,StringLength(160),RegularExpression("^/.*")]public string RoutePrefix{get;set;}="";[Required,StringLength(160)]public string Permission{get;set;}="";[Range(0,1000000)]public decimal MonthlyPrice{get;set;}[Range(0,10000000)]public decimal AnnualPrice{get;set;}}

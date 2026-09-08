@@ -20,17 +20,23 @@ public class AuthService
     private readonly IRepository<PlanVersion> _planVersions;
     private readonly IRepository<IssuerProfile> _issuerProfiles;
     private readonly IRepository<Notification> _notificationRepository;
+    private readonly IRepository<SaasModule> _saasModules;
+    private readonly IRepository<AccountModuleSubscription> _moduleSubscriptions;
+    private readonly IRepository<AccountModuleEntitlement> _moduleEntitlements;
     private readonly IPasswordHasher _hasher;
     private readonly IUnitOfWork _uow;
     private readonly IAuditService _audit;
     private readonly ILogger<AuthService> _logger;
+    private readonly LoginIdentifierService _loginIdentifiers;
 
     public AuthService(IRepository<UserAccount> users, IRepository<BusinessAccount> accounts,
         IRepository<AccountMember> members, IRepository<BillingCustomerProfile> billingProfiles,
         IRepository<Subscription> subscriptions, IRepository<Plan> plans, IRepository<PlanVersion> planVersions,
         IRepository<IssuerProfile> issuerProfiles,
-        IRepository<Notification> notificationRepository, IPasswordHasher hasher, IUnitOfWork uow,
-        IAuditService audit, ILogger<AuthService> logger)
+        IRepository<Notification> notificationRepository, IRepository<SaasModule> saasModules,
+        IRepository<AccountModuleSubscription> moduleSubscriptions, IRepository<AccountModuleEntitlement> moduleEntitlements,
+        IPasswordHasher hasher, IUnitOfWork uow,
+        IAuditService audit, ILogger<AuthService> logger, LoginIdentifierService loginIdentifiers)
     {
         _users = users;
         _accounts = accounts;
@@ -41,10 +47,14 @@ public class AuthService
         _planVersions = planVersions;
         _issuerProfiles = issuerProfiles;
         _notificationRepository = notificationRepository;
+        _saasModules = saasModules;
+        _moduleSubscriptions = moduleSubscriptions;
+        _moduleEntitlements = moduleEntitlements;
         _hasher = hasher;
         _uow = uow;
         _audit = audit;
         _logger = logger;
+        _loginIdentifiers = loginIdentifiers;
     }
 
     public async Task<Result<UserSummaryDto>> RegisterAsync(RegisterUserCommand command, CancellationToken ct = default)
@@ -177,6 +187,22 @@ public class AuthService
             await _subscriptions.AddAsync(subscription, ct);
             await _issuerProfiles.AddAsync(issuer, ct);
             await _notificationRepository.AddAsync(notification, ct);
+            foreach (var module in _saasModules.Query().Where(x => new[] { "CORE", "CLIENTS", "DOCUMENTS", "ACCOUNT_ADMIN" }.Contains(x.Code) && x.IsActive && !x.IsDeleted).ToArray())
+            {
+                var moduleSubscription = new AccountModuleSubscription
+                {
+                    AccountId = account.Id, ModuleId = module.Id, BillingPeriod = SaasBillingPeriod.Monthly,
+                    ContractedPrice = 0, StartsAt = now
+                };
+                moduleSubscription.Activate(user.Id);
+                await _moduleSubscriptions.AddAsync(moduleSubscription, ct);
+                await _moduleEntitlements.AddAsync(new AccountModuleEntitlement
+                {
+                    AccountId = account.Id, ModuleId = module.Id, IsEnabled = true,
+                    Source = SaasModuleGrantSource.Subscription, GrantedByUserId = user.Id,
+                    Reason = "Módulo inicial da conta"
+                }, ct);
+            }
             stage = "REGISTER_DEPENDENTS_SAVE_STARTED";
             LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Started", user.Id, account.Id);
             await _audit.RegisterAsync(user.Id, "ACCOUNT_REGISTERED", nameof(BusinessAccount), account.Id.ToString(),
@@ -216,12 +242,27 @@ public class AuthService
     {
         try
         {
-            var email = new Email(command.Email).Value;
-            var user = _users.Query().SingleOrDefault(candidate => candidate.Email == email);
+            NormalizedLoginIdentifier identifier;
+            try { identifier = _loginIdentifiers.Normalize(command.Email); }
+            catch (ArgumentException ex) { return Result<UserSummaryDto>.Fail(ex.Message); }
+
+            UserAccount? user;
+            if (identifier.Kind == LoginIdentifierKind.Email)
+            {
+                user = _users.Query().SingleOrDefault(candidate =>
+                    candidate.Email == identifier.Value || candidate.AlternateEmail == identifier.Value);
+            }
+            else
+            {
+                var accountIds = _accounts.Query().Where(x => x.DocumentNumber == identifier.Value && !x.IsDeleted).Select(x => x.Id);
+                var linkedUserIds = _members.Query().Where(x => accountIds.Contains(x.AccountId) && !x.IsDeleted).Select(x => x.UserId);
+                user = _users.Query().Where(candidate => candidate.DocumentNumber == identifier.Value || linkedUserIds.Contains(candidate.Id))
+                    .OrderBy(candidate => candidate.CreatedAt).FirstOrDefault();
+            }
             if (user is null || !_hasher.Verify(command.Password, user.PasswordHash))
             {
-                _logger.LogWarning("AUTH_LOGIN_FAILED CorrelationId {CorrelationId}", command.CorrelationId ?? "not-provided");
-                return Result<UserSummaryDto>.Fail("E-mail ou senha inválidos.");
+                _logger.LogWarning("AUTH_LOGIN_FAILED IdentifierKind {IdentifierKind} CorrelationId {CorrelationId}", identifier.Kind, command.CorrelationId ?? "not-provided");
+                return Result<UserSummaryDto>.Fail("CPF, CNPJ, e-mail ou senha inválidos.");
             }
 
             if (user.IsBlocked)
@@ -233,6 +274,12 @@ public class AuthService
             {
                 return Result<UserSummaryDto>.Fail("Usuário inativo.");
             }
+
+            var platformUser = user.Role is UserRole.SuperAdmin or UserRole.GlobalSupport or UserRole.GlobalBilling or UserRole.GlobalAuditor;
+            var hasActiveAccount = _members.Query().Any(member => member.UserId == user.Id && !member.IsDeleted && member.Status == AccountMemberStatus.Active &&
+                _accounts.Query().Any(account => account.Id == member.AccountId && !account.IsDeleted && account.Status == AccountStatus.Active));
+            if (!platformUser && !hasActiveAccount)
+                return Result<UserSummaryDto>.Fail("Nenhuma conta ativa está disponível para este acesso.");
 
             user.LastLoginAt = DateTime.UtcNow;
             await _audit.RegisterAsync(user.Id, "USER_LOGIN", nameof(UserAccount), user.Id.ToString(), null, new { user.LastLoginAt }, null, ct);

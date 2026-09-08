@@ -1,0 +1,3 @@
+@page
+@model OrcaFacil.Web.Pages.SuperAdmin.Modules.NewModel
+@{ViewData["Title"]="Novo módulo";}<main class="page-shell"><header class="page-hero"><nav class="breadcrumb"><a asp-page="Index">Módulos</a> / Novo</nav><h1>Novo módulo</h1></header><form method="post" class="form-panel" data-submit-lock data-confirm="Criar este módulo e seus preços?">@Html.AntiForgeryToken()<div asp-validation-summary="All" class="validation-summary"></div><partial name="_ModuleFields" for="Input"/><button type="submit" class="of-button of-button-primary" data-loading>Criar módulo</button></form></main>

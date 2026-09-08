@@ -1,0 +1,3 @@
+@page
+@model OrcaFacil.Web.Pages.SuperAdmin.Audit.IndexModel
+@{ViewData["Title"]="Auditoria SaaS";}<main class="page-shell"><header class="page-hero"><nav class="breadcrumb"><a asp-page="/SuperAdmin/Index">SuperAdmin</a> / Auditoria</nav><h1>Auditoria global SaaS</h1><p>Sem senhas, tokens ou payloads sensíveis.</p></header>@if(Model.Items.Count==0){<div class="empty-state"><h2>Nenhuma ação global registrada</h2></div>}else{<table class="premium-table"><thead><tr><th>Data</th><th>Ação</th><th>Cliente</th><th>Módulo</th><th>Resumo</th><th>Correlação</th></tr></thead><tbody>@foreach(var x in Model.Items){<tr><td>@x.At</td><td>@x.Action</td><td>@x.Account</td><td>@x.Module</td><td>@x.Summary</td><td><code>@x.Correlation</code></td></tr>}</tbody></table>}</main>

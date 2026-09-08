@@ -11,6 +11,9 @@ using OrcaFacil.Application.Automation;
 using OrcaFacil.Application.DataGovernance;
 using OrcaFacil.Application.Bi;
 using OrcaFacil.Application.CustomerSuccess;
+using OrcaFacil.Application.Saas.Modules;
+using OrcaFacil.Application.Saas.Billing;
+using OrcaFacil.Application.Auth;
 
 namespace OrcaFacil.Application;
 
@@ -21,6 +24,12 @@ public static class DependencyInjection
         ArgumentException.ThrowIfNullOrWhiteSpace(repositoryRoot);
 
         services.TryAddSingleton<ISensitiveDataSanitizer, SensitiveDataSanitizer>();
+        services.TryAddSingleton<SaasModuleRegistryService>();
+        services.TryAddSingleton<ModulePricingService>();
+        services.TryAddSingleton<SubscriptionInvoicePreviewService>();
+        services.TryAddSingleton<BrazilianDocumentNormalizer>();
+        services.TryAddSingleton<InstitutionalEmailValidator>();
+        services.TryAddSingleton<LoginIdentifierService>();
         services.TryAddSingleton<IClock, SystemClock>();
         services.TryAddSingleton<LocalePreferenceService>();
         services.TryAddSingleton<RegionalFormatService>();

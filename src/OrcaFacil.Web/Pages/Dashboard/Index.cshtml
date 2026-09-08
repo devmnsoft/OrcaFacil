@@ -16,6 +16,10 @@
         experience.PlanUsage.Select(item => new PlanUsageItemViewModel(item.Label, item.Used, item.Limit)).ToArray(),
         experience.PlanDueAt,
         experience.PlanRecommendation);
+    var hasDocuments = Model.AvailableModules.Contains("DOCUMENTS");
+    var hasClients = Model.AvailableModules.Contains("CLIENTS");
+    var hasCommercial = Model.AvailableModules.Contains("COMMERCIAL_ROUTINE");
+    var hasFinancial = Model.AvailableModules.Contains("FINANCIAL");
 }
 <header class="of-workbench-intro" aria-labelledby="welcome-title">
     <div>
@@ -29,8 +33,7 @@
         </div>
     </div>
     <div class="of-workbench-actions">
-        <a class="of-button-secondary" asp-page="/Documents/Index">Ver propostas</a>
-        <a class="of-button-primary" asp-page="/Documents/New"><partial name="Partials/_Icon" model='new IconViewModel("plus", "sm", Decorative: true)' /> Novo orçamento</a>
+        @if (hasDocuments) { <a class="of-button-secondary" asp-page="/Documents/Index">Ver propostas</a><a class="of-button-primary" asp-page="/Documents/New"><partial name="Partials/_Icon" model='new IconViewModel("plus", "sm", Decorative: true)' /> Novo orçamento</a> }
     </div>
 </header>
 
@@ -99,13 +102,14 @@ else if (experience.NextAction is { } next)
             }
         }
     </div>
-    <aside class="of-quick-actions" aria-labelledby="quick-title">
+    @if (hasDocuments || hasClients) { <aside class="of-quick-actions" aria-labelledby="quick-title">
         <p class="of-eyebrow">Atalhos</p><h2 id="quick-title">Crie com contexto</h2>
-        <a class="of-quick-primary" asp-page="/Documents/New"><svg class="of-icon"><use href="#of-icon-quote" /></svg><span><strong>Novo orçamento</strong><small>Proposta pronta para enviar</small></span></a>
-        <div><a asp-page="/Documents/CreateReceipt">Novo recibo</a><a asp-page="/Clients/Create">Novo cliente</a><a asp-page="/Services/Index">Novo serviço</a></div>
-    </aside>
+        @if (hasDocuments) { <a class="of-quick-primary" asp-page="/Documents/New"><svg class="of-icon"><use href="#of-icon-quote" /></svg><span><strong>Novo orçamento</strong><small>Proposta pronta para enviar</small></span></a> }
+        <div>@if (hasDocuments) { <a asp-page="/Documents/CreateReceipt">Novo recibo</a> } @if (hasClients) { <a asp-page="/Clients/Create">Novo cliente</a> }</div>
+    </aside> }
 </section>
 
+@if (hasFinancial) {
 <section aria-labelledby="executive-title">
     <div class="of-section-heading"><div><p class="of-eyebrow">Inteligência financeira</p><h2 id="executive-title">Recebimentos do mês</h2></div><a asp-page="/Reports/Financial">Analisar financeiro</a></div>
     <div class="metric-grid">
@@ -116,11 +120,14 @@ else if (experience.NextAction is { } next)
     </div>
     <div class="of-workbench-actions"><a class="of-button-secondary" asp-page="/Reports/CommercialFunnel">Funil comercial</a><a class="of-button-secondary" asp-page="/Reports/Clients">Clientes</a><a class="of-button-secondary" asp-page="/Reports/Services">Serviços</a><a class="of-button-primary" asp-page="/Alerts/Index">Alertas de hoje</a></div>
 </section>
+}
 
+@if (hasCommercial) {
 <section aria-labelledby="pipeline-title">
     <div class="of-section-heading"><div><p class="of-eyebrow">Jornada comercial</p><h2 id="pipeline-title">Oportunidades em movimento</h2></div><div class="of-workbench-actions"><a asp-page="/CommercialRoutine/Index">Ações comerciais</a><a asp-page="/CommercialPipeline/Index">Abrir pipeline</a></div></div>
     <partial name="Partials/_ProductPipelinePreview" model="experience.Commercial" />
 </section>
+}
 
 <section aria-labelledby="metrics-title">
     <div class="of-section-heading"><div><p class="of-eyebrow">Visão comercial</p><h2 id="metrics-title">O mês em quatro sinais</h2></div><a asp-page="/Documents/Index">Ver relatório completo</a></div>
@@ -176,7 +183,7 @@ else if (experience.NextAction is { } next)
     {
         <section class="of-guidance" aria-labelledby="first-budget-title">
             <div><p class="of-eyebrow">Seu próximo resultado</p><h2 id="first-budget-title">Crie seu primeiro orçamento</h2><p>Transforme seus dados, cliente e serviço em uma proposta profissional.</p></div>
-            <a asp-page="/Documents/New">Criar orçamento</a>
+            @if (hasDocuments) { <a asp-page="/Documents/New">Criar orçamento</a> }
         </section>
     }
 </div>

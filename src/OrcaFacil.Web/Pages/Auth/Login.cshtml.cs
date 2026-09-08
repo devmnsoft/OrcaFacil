@@ -30,7 +30,7 @@ public class LoginModel : PageModel
     [BindProperty] public InputModel Input { get; set; } = new();
     public record InputModel
     {
-        [Required, EmailAddress]
+        [Required, StringLength(254)]
         public string Email { get; set; } = string.Empty;
 
         [Required]
@@ -50,7 +50,7 @@ public class LoginModel : PageModel
             return Page();
         }
 
-        if (!ModelState.IsValid) { TempData.Warning("Informe e-mail e senha para entrar."); return Page(); }
+        if (!ModelState.IsValid) { TempData.Warning("Informe CPF, CNPJ ou e-mail e senha para entrar."); return Page(); }
         try
         {
             var result = await _authService.LoginAsync(new LoginUserCommand(Input.Email, Input.Password, HttpContext.TraceIdentifier), ct);
@@ -59,6 +59,20 @@ public class LoginModel : PageModel
             // it. Besides validating the schema, the upsert closes the first-login race safely and
             // reactivates a soft-deleted state so its unique key cannot strand the user in a loop.
             var (account, _) = await _accountSelection.SelectAsync(result.Value.Id, null, ct);
+            var signIn = await _signIn.SignInAsync(HttpContext, result.Value, cancellationToken: ct);
+            if (signIn.HasMultipleAccounts)
+            {
+                TempData.Success("Acesso validado. Escolha a conta que deseja abrir.");
+                return RedirectToPage("/Auth/SelectAccount");
+            }
+            if (account is null && result.Value.Role is "SuperAdmin" or "GlobalSupport" or "GlobalBilling" or "GlobalAuditor")
+                return result.Value.Role switch
+                {
+                    "GlobalBilling" => RedirectToPage("/SuperAdmin/Billing/Index"),
+                    "GlobalSupport" => RedirectToPage("/SuperAdmin/Usage/Index"),
+                    "GlobalAuditor" => RedirectToPage("/SuperAdmin/Audit/Index"),
+                    _ => RedirectToPage("/SuperAdmin/Index")
+                };
             if (account is null)
             {
                 const string noAccountMessage = "Seu acesso foi validado, mas não há uma conta ativa vinculada. Fale com o suporte MNSOFT.";
@@ -89,7 +103,6 @@ public class LoginModel : PageModel
                 x.AccountId == account.AccountId && x.UserId == result.Value.Id &&
                 x.CompletedAt != null && !x.IsDeleted, ct);
 
-            await _signIn.SignInAsync(HttpContext, result.Value, account.AccountId, cancellationToken: ct);
             TempData.Success("Login realizado com sucesso.");
             return RedirectToPage(configured ? "/Dashboard/Index" : "/Onboarding/Index");
         }

@@ -1,0 +1,29 @@
+@page
+@model OrcaFacil.Web.Pages.SuperAdmin.Clients.ModulesModel
+@{ ViewData["Title"] = "Módulos do cliente"; }
+<main class="page-shell">
+  <header class="page-hero"><nav class="breadcrumb"><a asp-page="Details" asp-route-id="@Model.ClientKey">Cliente</a> / Módulos</nav><h1>Módulos contratados</h1><p>Preço, status, trial e liberações persistidos por conta.</p></header>
+  <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+  <div class="responsive-table"><table class="premium-table"><thead><tr><th>Módulo</th><th>Status</th><th>Preço</th><th>Ações</th></tr></thead><tbody>
+  @foreach (var item in Model.Modules) {
+    <tr><td>@item.Name</td><td><span class="of-badge">@item.Status</span></td><td>@item.Price.ToString("C") / @item.Period</td><td><div class="action-bar">
+    @if (item.SubscriptionKey is null) {
+      <form method="post" asp-page-handler="Request" data-submit-lock data-confirm="Contratar este módulo para o cliente?">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.ClientKey"/><input type="hidden" name="moduleCode" value="@item.Code"/><button type="submit" class="of-button" data-loading>Contratar</button></form>
+    } else {
+      @if (item.Status is "PendingApproval" or "Suspended" or "Cancelled") {
+        <form method="post" asp-page-handler="Activate" data-submit-lock data-confirm="Ativar o módulo e liberar o entitlement?">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.ClientKey"/><input type="hidden" name="moduleId" value="@item.ModuleKey"/><input type="hidden" name="price" value="@item.Price"/><button type="submit" class="of-button" data-loading>Ativar</button></form>
+      }
+      <details><summary>Contrato</summary><div class="form-grid">
+        <form method="post" asp-page-handler="Price" data-submit-lock data-confirm="Alterar preço e desconto contratados?">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.ClientKey"/><input type="hidden" name="moduleId" value="@item.ModuleKey"/><label>Preço<input type="number" name="price" value="@item.Price" min="0" step="0.01" required/></label><label>Desconto<input type="number" name="discount" value="0" min="0" step="0.01" required/></label><button type="submit" class="of-button" data-loading>Salvar preço</button></form>
+        <form method="post" asp-page-handler="Trial" data-submit-lock data-confirm="Liberar trial temporário?">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.ClientKey"/><input type="hidden" name="moduleId" value="@item.ModuleKey"/><label>Fim do trial<input type="date" name="endsAt" min="@DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-dd")" required/></label><button type="submit" class="of-button" data-loading>Liberar trial</button></form>
+        <form method="post" asp-page-handler="Manual" data-submit-lock data-confirm="Criar liberação manual temporária?">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.ClientKey"/><input type="hidden" name="moduleId" value="@item.ModuleKey"/><label>Válida até<input type="date" name="endsAt" min="@DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-dd")" required/></label><label>Motivo<input name="reason" minlength="5" maxlength="500" required/></label><button type="submit" class="of-button" data-loading>Liberar temporariamente</button></form>
+      </div></details>
+      @if (item.Status is "Active" or "Trial") {
+        <form method="post" asp-page-handler="Suspend" data-submit-lock data-confirm="Suspender este módulo e bloquear menu e rota?">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.ClientKey"/><input type="hidden" name="moduleId" value="@item.ModuleKey"/><input name="reason" required minlength="5" maxlength="500" placeholder="Motivo"/><button type="submit" class="of-button of-button-danger" data-loading>Suspender</button></form>
+        <form method="post" asp-page-handler="Cancel" data-submit-lock data-confirm="Cancelar o módulo e remover os entitlements agora?">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.ClientKey"/><input type="hidden" name="moduleId" value="@item.ModuleKey"/><input name="reason" required minlength="5" maxlength="500" placeholder="Motivo"/><button type="submit" class="of-button of-button-danger" data-loading>Cancelar</button></form>
+      }
+    }
+    </div></td></tr>
+  }
+  </tbody></table></div>
+</main>
