@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using OrcaFacil.Application;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Quality;
-using OrcaFacil.Infrastructure;
 using OrcaFacil.Persistence;
 using OrcaFacil.Persistence.Diagnostics;
 using Xunit;
@@ -17,9 +16,8 @@ public sealed class QualityGateServiceDiTests
     {
         var services = new ServiceCollection();
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
-        services.AddApplication(RepositoryRoot());
+        services.AddApplication(CompositionRootSource.RepositoryRoot);
         services.AddPersistence();
-        services.AddInfrastructure();
 
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions
         {
@@ -31,24 +29,24 @@ public sealed class QualityGateServiceDiTests
         Assert.IsType<DatabaseSchemaContractService>(scope.ServiceProvider.GetRequiredService<IDatabaseSchemaContractService>());
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<QualityGateService>());
     }
-
-    private static string RepositoryRoot() => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
 }
 
 public sealed class ServiceRegistrationTests
 {
     [Fact]
-    public void Schema_contract_and_quality_gate_are_scoped()
+    public void Schema_contract_and_quality_gate_are_scoped_and_clock_is_available()
     {
         var services = new ServiceCollection();
         services.AddPersistence();
-        services.AddApplication(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..")));
+        services.AddApplication(CompositionRootSource.RepositoryRoot);
 
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IDatabaseSchemaContractService)
             && descriptor.ImplementationType == typeof(DatabaseSchemaContractService)
             && descriptor.Lifetime == ServiceLifetime.Scoped);
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(QualityGateService)
             && descriptor.Lifetime == ServiceLifetime.Scoped);
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IClock)
+            && descriptor.Lifetime == ServiceLifetime.Singleton);
         Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IDatabaseSchemaContractService)
             && descriptor.Lifetime == ServiceLifetime.Singleton);
     }
@@ -101,13 +99,12 @@ public sealed class DatabaseSchemaContractServiceTests
 public sealed class ApiCompositionRootTests
 {
     [Fact]
-    public void Api_uses_central_application_persistence_and_infrastructure_registration()
+    public void Api_uses_central_application_and_persistence_registration()
     {
         var source = CompositionRootSource.Read("OrcaFacil.Api");
 
         Assert.Contains("builder.Services.AddApplication(repositoryRoot);", source, StringComparison.Ordinal);
         Assert.Contains("builder.Services.AddPersistence();", source, StringComparison.Ordinal);
-        Assert.Contains("builder.Services.AddInfrastructure();", source, StringComparison.Ordinal);
     }
 }
 
@@ -120,14 +117,22 @@ public sealed class WebCompositionRootTests
 
         Assert.Contains("builder.Services.AddApplication(repositoryRoot);", source, StringComparison.Ordinal);
         Assert.Contains("builder.Services.AddPersistence();", source, StringComparison.Ordinal);
-        Assert.Contains("builder.Services.AddInfrastructure();", source, StringComparison.Ordinal);
         Assert.Contains("app.MapGet(\"/SystemHealth\"", source, StringComparison.Ordinal);
     }
 }
 
 internal static class CompositionRootSource
 {
-    public static string Read(string project) => File.ReadAllText(Path.Combine(
-        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..")),
-        "src", project, "Program.cs"));
+    public static string RepositoryRoot { get; } = FindRepositoryRoot();
+
+    public static string Read(string project) => File.ReadAllText(Path.Combine(RepositoryRoot, "src", project, "Program.cs"));
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "OrcaFacil.sln")))
+            directory = directory.Parent;
+
+        return directory?.FullName ?? throw new DirectoryNotFoundException("Repository root not found.");
+    }
 }

@@ -59,7 +59,6 @@ var repositoryRoot = Directory.GetParent(builder.Environment.ContentRootPath)?.P
     ?? builder.Environment.ContentRootPath;
 builder.Services.AddApplication(repositoryRoot);
 builder.Services.AddPersistence();
-builder.Services.AddInfrastructure();
 builder.AddOrcaFacilLocalConfiguration();
 DatabaseConnectionStringResolver.ApplyOperationalAlias(builder.Configuration);
 // Operational aliases keep Windows service/IIS configuration concise while the

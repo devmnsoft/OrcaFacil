@@ -11,7 +11,13 @@ async function walk(directory) {
 }
 await walk("src");
 const source = (await Promise.all(files.map(file => readFile(file, "utf8")))).join("\n");
-const protectedServices = ["CommercialWorkspaceQueryService", "DashboardExperienceService", "QualityGateService", "IDatabaseSchemaContractService"];
+const protectedServices = [
+  "CommercialWorkspaceQueryService",
+  "DashboardExperienceService",
+  "QualityGateService",
+  "IDatabaseSchemaContractService",
+  "DatabaseSchemaContractService"
+];
 const violations = protectedServices.flatMap(name => {
   const singleton = new RegExp(`(?:Add|TryAdd)Singleton\\s*<[^>]*${name}[^>]*>`).test(source);
   const scoped = new RegExp(`(?:Add|TryAdd)Scoped\\s*<[^>]*${name}[^>]*>`).test(source);

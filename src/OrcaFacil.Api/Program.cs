@@ -21,7 +21,6 @@ var repositoryRoot = Directory.GetParent(builder.Environment.ContentRootPath)?.P
     ?? builder.Environment.ContentRootPath;
 builder.Services.AddApplication(repositoryRoot);
 builder.Services.AddPersistence();
-builder.Services.AddInfrastructure();
 DatabaseConnectionStringResolver.ApplyOperationalAlias(builder.Configuration);
 
 builder.Logging.ClearProviders();

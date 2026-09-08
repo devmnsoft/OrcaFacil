@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Security;
+using OrcaFacil.Application.Services;
 using OrcaFacil.Application.Localization;
 using OrcaFacil.Application.Payments;
 using OrcaFacil.Application.Field;
@@ -19,6 +21,7 @@ public static class DependencyInjection
         ArgumentException.ThrowIfNullOrWhiteSpace(repositoryRoot);
 
         services.TryAddSingleton<ISensitiveDataSanitizer, SensitiveDataSanitizer>();
+        services.TryAddSingleton<IClock, SystemClock>();
         services.TryAddSingleton<LocalePreferenceService>();
         services.TryAddSingleton<RegionalFormatService>();
         services.TryAddSingleton<TranslationImportService>();

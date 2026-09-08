@@ -19,7 +19,6 @@ requireMatch(/TryAddScoped\s*<\s*IDatabaseSchemaContractService\s*,\s*DatabaseSc
 for (const host of ["api", "web"]) {
   requireMatch(source[host].includes("builder.Services.AddApplication(repositoryRoot);"), `${host} does not call AddApplication.`);
   requireMatch(source[host].includes("builder.Services.AddPersistence();"), `${host} does not call AddPersistence.`);
-  requireMatch(source[host].includes("builder.Services.AddInfrastructure();"), `${host} does not call AddInfrastructure.`);
 }
 const combined = Object.values(source).join("\n");
 requireMatch(!/(?:Add|TryAdd)Singleton\s*<\s*(?:QualityGateService|IDatabaseSchemaContractService)\b/.test(combined),
