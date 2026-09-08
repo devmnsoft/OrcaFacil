@@ -88,6 +88,12 @@ public sealed class DatabaseSchemaContractService(IConfiguration configuration) 
             ["features"] = Columns(("id", "uuid"), ("code", "character varying")),
             ["plans"] = Columns(("id", "uuid"), ("code", "character varying")),
             ["plan_versions"] = Columns(("id", "uuid"), ("plan_id", "uuid"), ("status", "character varying")),
+            ["plan_feature_values"] = Columns(
+                ("id", "uuid"), ("plan_version_id", "uuid"), ("feature_id", "uuid"),
+                ("boolean_value", "boolean"), ("integer_value", "integer"), ("decimal_value", "numeric"),
+                ("text_value", "text"), ("is_unlimited", "boolean"),
+                ("created_at", "timestamp with time zone"), ("updated_at", "timestamp with time zone"),
+                ("is_deleted", "boolean")),
             ["document_revisions"] = Columns(
                 ("id", "uuid"), ("account_id", "uuid"), ("document_id", "uuid"), ("version_number", "integer"),
                 ("status", "character varying"), ("snapshot_hash", "character varying"), ("protected_snapshot", "text"),
