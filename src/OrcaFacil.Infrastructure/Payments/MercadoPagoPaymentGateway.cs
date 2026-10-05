@@ -37,13 +37,18 @@ public class MercadoPagoPaymentGateway : IPaymentGateway
         if (!IsEnabled())
             return UnavailableAsync();
 
+        var billingCycle = string.IsNullOrWhiteSpace(request.BillingCycle)
+            ? (request.Description.Contains("anual", StringComparison.OrdinalIgnoreCase) ? "annual" : "monthly")
+            : request.BillingCycle;
+
         var payload = new Dictionary<string, object?>
         {
             ["reason"] = string.IsNullOrWhiteSpace(request.Description) ? "Assinatura OrçaFácil" : request.Description,
+            ["billing_cycle"] = billingCycle,
             ["auto_recurring"] = new Dictionary<string, object?>
             {
-                ["frequency"] = 1,
-                ["frequency_type"] = "months",
+                ["frequency"] = billingCycle.Equals("annual", StringComparison.OrdinalIgnoreCase) ? 12 : 1,
+                ["frequency_type"] = billingCycle.Equals("annual", StringComparison.OrdinalIgnoreCase) ? "months" : "months",
                 ["transaction_amount"] = decimal.Round(request.Amount, 2),
                 ["currency_id"] = "BRL",
                 ["repetitions"] = 0,
@@ -60,10 +65,10 @@ public class MercadoPagoPaymentGateway : IPaymentGateway
                 }
             },
             ["external_reference"] = request.ExternalReference,
-            ["idempotency_key"] = request.IdempotencyKey
+            ["payment_type"] = string.IsNullOrWhiteSpace(request.PaymentType) ? "subscription" : request.PaymentType
         };
 
-        var response = await SendAsync("/preapproval", HttpMethod.Post, payload, ct);
+        var response = await SendAsync("/preapproval", HttpMethod.Post, payload, ct, request.IdempotencyKey);
         if (!response.IsSuccess)
             return new PaymentGatewayResult(false, null, response.StatusCode, Error: response.Message);
 
@@ -144,7 +149,7 @@ public class MercadoPagoPaymentGateway : IPaymentGateway
             ["idempotency_key"] = request.IdempotencyKey
         };
 
-        var response = await SendAsync("/v1/payments", HttpMethod.Post, payload, ct);
+        var response = await SendAsync("/v1/payments", HttpMethod.Post, payload, ct, request.IdempotencyKey);
         if (!response.IsSuccess)
             return new PaymentGatewayResult(false, null, response.StatusCode, Error: response.Message);
 
@@ -158,9 +163,14 @@ public class MercadoPagoPaymentGateway : IPaymentGateway
         return new PaymentGatewayResult(false, null, code, Error: "Checkout indisponível no momento. Fale com a MNSOFT.");
     }
 
-    private async Task<ProviderResponse> SendAsync(string path, HttpMethod method, object? payload = null, CancellationToken ct = default)
+    private async Task<ProviderResponse> SendAsync(string path, HttpMethod method, object? payload = null, CancellationToken ct = default, string? idempotencyKey = null)
     {
         using var request = new HttpRequestMessage(method, path);
+        if (!string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            request.Headers.Add("X-Idempotency-Key", idempotencyKey);
+            request.Headers.Add("X-Request-Id", idempotencyKey);
+        }
         if (payload is not null)
             request.Content = JsonContent.Create(payload);
 

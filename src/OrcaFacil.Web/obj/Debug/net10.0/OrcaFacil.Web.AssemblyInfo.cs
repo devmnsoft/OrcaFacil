@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OrcaFacil.Web")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6d48174a0687446436f76e3f31982c97390c538a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0d413c88b1e1af3b2b01949595401b08fbf8c625")]
 [assembly: System.Reflection.AssemblyProductAttribute("OrcaFacil.Web")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OrcaFacil.Web")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

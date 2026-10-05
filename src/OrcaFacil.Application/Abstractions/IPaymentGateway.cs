@@ -9,7 +9,7 @@ public interface IPaymentGateway
     Task<PaymentGatewayWebhookResult> HandleWebhookAsync(string rawBody, IReadOnlyDictionary<string, string> headers, CancellationToken ct = default);
 }
 
-public record PaymentGatewayRequest(string PayerEmail, string DocumentType, string DocumentNumber, decimal Amount, string Description, string ExternalReference, string IdempotencyKey);
+public record PaymentGatewayRequest(string PayerEmail, string DocumentType, string DocumentNumber, decimal Amount, string Description, string ExternalReference, string IdempotencyKey, string? BillingCycle = null, string? PaymentType = null);
 public record PaymentGatewayResult(bool Succeeded, string? ExternalPaymentId, string Status, string? PixQrCode = null, string? PixQrCodeBase64 = null, string? PixTicketUrl = null, string? BoletoUrl = null, string? BoletoBarcode = null, string? RawResponseJson = null, string? Error = null);
 public record PaymentGatewayStatus(string ExternalPaymentId, string Status, string? RawResponseJson = null);
 public record PaymentGatewayWebhookResult(string EventKey, string? ExternalPaymentId, string Status, bool Processed);
