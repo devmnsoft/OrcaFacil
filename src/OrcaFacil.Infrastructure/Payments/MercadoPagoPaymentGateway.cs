@@ -1,3 +1,8 @@
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Options;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Payments;
@@ -6,26 +11,257 @@ namespace OrcaFacil.Infrastructure.Payments;
 
 public class MercadoPagoPaymentGateway : IPaymentGateway
 {
+    private const string BaseUrl = "https://api.mercadopago.com";
     private readonly MercadoPagoOptions _options;
-    public MercadoPagoPaymentGateway(IOptions<MercadoPagoOptions> options) => _options = options.Value;
-    public Task<PaymentGatewayResult> CreatePixPaymentAsync(PaymentGatewayRequest r, CancellationToken ct = default) => UnavailableAsync();
-    public Task<PaymentGatewayResult> CreateBoletoPaymentAsync(PaymentGatewayRequest r, CancellationToken ct = default) => UnavailableAsync();
-    public Task<PaymentGatewayResult> CreateSubscriptionAsync(PaymentGatewayRequest r, CancellationToken ct = default) => UnavailableAsync();
-    public Task<PaymentGatewayStatus> GetPaymentStatusAsync(string externalPaymentId, CancellationToken ct = default) => Task.FromResult(new PaymentGatewayStatus(externalPaymentId, "pending", "{}"));
-    public Task<PaymentGatewayWebhookResult> HandleWebhookAsync(string rawBody, IReadOnlyDictionary<string, string> headers, CancellationToken ct = default)
+    private readonly HttpClient _httpClient;
+
+    public MercadoPagoPaymentGateway(IOptions<MercadoPagoOptions> options, HttpClient? httpClient = null)
     {
-        if (!_options.Enabled || string.IsNullOrWhiteSpace(_options.WebhookSecret))
-            return Task.FromResult(new PaymentGatewayWebhookResult("unvalidated", null, "provider_not_configured", false));
-        if (!headers.TryGetValue("x-signature", out var signature) || string.IsNullOrWhiteSpace(signature))
-            return Task.FromResult(new PaymentGatewayWebhookResult("unvalidated", null, "invalid_signature", false));
-        // Full provider validation must be introduced together with the real HTTP client. Never trust payload-only events.
-        return Task.FromResult(new PaymentGatewayWebhookResult("unvalidated", null, "validation_not_implemented", false));
+        _options = options.Value;
+        _httpClient = httpClient ?? new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+        _httpClient.BaseAddress ??= new Uri(BaseUrl);
+        _httpClient.DefaultRequestHeaders.Accept.Clear();
+        _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        if (!string.IsNullOrWhiteSpace(_options.AccessToken))
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _options.AccessToken);
     }
-    private Task<PaymentGatewayResult> UnavailableAsync()
+
+    public Task<PaymentGatewayResult> CreatePixPaymentAsync(PaymentGatewayRequest request, CancellationToken ct = default)
+        => CreatePaymentAsync("pix", request, ct);
+
+    public Task<PaymentGatewayResult> CreateBoletoPaymentAsync(PaymentGatewayRequest request, CancellationToken ct = default)
+        => CreatePaymentAsync("boleto", request, ct);
+
+    public async Task<PaymentGatewayResult> CreateSubscriptionAsync(PaymentGatewayRequest request, CancellationToken ct = default)
+    {
+        if (!IsEnabled())
+            return UnavailableAsync();
+
+        var payload = new Dictionary<string, object?>
+        {
+            ["reason"] = string.IsNullOrWhiteSpace(request.Description) ? "Assinatura OrçaFácil" : request.Description,
+            ["auto_recurring"] = new Dictionary<string, object?>
+            {
+                ["frequency"] = 1,
+                ["frequency_type"] = "months",
+                ["transaction_amount"] = decimal.Round(request.Amount, 2),
+                ["currency_id"] = "BRL",
+                ["repetitions"] = 0,
+                ["payment_method_id"] = "pix",
+                ["back_url"] = "https://app.orcafacil.com/checkout/retorno"
+            },
+            ["payer"] = new Dictionary<string, object?>
+            {
+                ["email"] = request.PayerEmail,
+                ["identification"] = new Dictionary<string, object?>
+                {
+                    ["type"] = request.DocumentType,
+                    ["number"] = request.DocumentNumber
+                }
+            },
+            ["external_reference"] = request.ExternalReference,
+            ["idempotency_key"] = request.IdempotencyKey
+        };
+
+        var response = await SendAsync("/preapproval", HttpMethod.Post, payload, ct);
+        if (!response.IsSuccess)
+            return new PaymentGatewayResult(false, null, response.StatusCode, Error: response.Message);
+
+        return ParsePaymentResult(response.Body, "subscription");
+    }
+
+    public async Task<PaymentGatewayStatus> GetPaymentStatusAsync(string externalPaymentId, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(externalPaymentId))
+            return new PaymentGatewayStatus(string.Empty, "invalid_payment_id", "{}");
+
+        if (!IsEnabled())
+            return new PaymentGatewayStatus(externalPaymentId, "provider_not_configured", "{}");
+
+        var response = await SendAsync($"/v1/payments/{externalPaymentId}", HttpMethod.Get, ct: ct);
+        if (!response.IsSuccess)
+            return new PaymentGatewayStatus(externalPaymentId, response.StatusCode, response.Body);
+
+        using var document = JsonDocument.Parse(response.Body);
+        var status = GetString(document.RootElement, "status") ?? "pending";
+        return new PaymentGatewayStatus(externalPaymentId, status, response.Body);
+    }
+
+    public async Task<PaymentGatewayWebhookResult> HandleWebhookAsync(string rawBody, IReadOnlyDictionary<string, string> headers, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(rawBody))
+            return new PaymentGatewayWebhookResult("unvalidated", null, "empty_payload", false);
+
+        if (!IsEnabled() || string.IsNullOrWhiteSpace(_options.WebhookSecret))
+            return new PaymentGatewayWebhookResult("unvalidated", null, "provider_not_configured", false);
+
+        var signature = GetHeader(headers, "x-signature", "x-signature-sha256");
+        if (string.IsNullOrWhiteSpace(signature))
+            return new PaymentGatewayWebhookResult("unvalidated", null, "invalid_signature", false);
+
+        if (!ValidSignature(rawBody, signature, _options.WebhookSecret))
+            return new PaymentGatewayWebhookResult("unvalidated", null, "invalid_signature", false);
+
+        try
+        {
+            using var document = JsonDocument.Parse(rawBody);
+            var root = document.RootElement;
+            var eventType = GetString(root, "type");
+            var externalId = GetString(root, "data.id") ?? GetString(root, "resource.id");
+            if (string.IsNullOrWhiteSpace(eventType) || string.IsNullOrWhiteSpace(externalId))
+                return new PaymentGatewayWebhookResult("unvalidated", null, "invalid_payload", false);
+
+            var eventKey = $"{eventType}:{externalId}";
+            return new PaymentGatewayWebhookResult(eventKey, externalId, "processed", true);
+        }
+        catch (JsonException)
+        {
+            return new PaymentGatewayWebhookResult("unvalidated", null, "invalid_payload", false);
+        }
+    }
+
+    private async Task<PaymentGatewayResult> CreatePaymentAsync(string paymentKind, PaymentGatewayRequest request, CancellationToken ct)
+    {
+        if (!IsEnabled())
+            return UnavailableAsync();
+
+        var payload = new Dictionary<string, object?>
+        {
+            ["transaction_amount"] = decimal.Round(request.Amount, 2),
+            ["description"] = string.IsNullOrWhiteSpace(request.Description) ? "OrçaFácil cobrança" : request.Description,
+            ["payment_method_id"] = paymentKind == "pix" ? "pix" : "bolbradesco",
+            ["external_reference"] = request.ExternalReference,
+            ["payer"] = new Dictionary<string, object?>
+            {
+                ["email"] = request.PayerEmail,
+                ["identification"] = new Dictionary<string, object?>
+                {
+                    ["type"] = request.DocumentType,
+                    ["number"] = request.DocumentNumber
+                }
+            },
+            ["date_of_expiration"] = DateTime.UtcNow.AddMinutes(paymentKind == "pix" ? _options.PixExpirationMinutes : _options.BoletoExpirationDays * 24 * 60).ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+            ["idempotency_key"] = request.IdempotencyKey
+        };
+
+        var response = await SendAsync("/v1/payments", HttpMethod.Post, payload, ct);
+        if (!response.IsSuccess)
+            return new PaymentGatewayResult(false, null, response.StatusCode, Error: response.Message);
+
+        return ParsePaymentResult(response.Body, paymentKind);
+    }
+
+    private PaymentGatewayResult UnavailableAsync()
     {
         var code = !_options.Enabled || string.IsNullOrWhiteSpace(_options.AccessToken)
             ? "provider_not_configured" : "provider_integration_unavailable";
-        return Task.FromResult(new PaymentGatewayResult(false, null, code,
-            Error: "Checkout indisponível no momento. Fale com a MNSOFT."));
+        return new PaymentGatewayResult(false, null, code, Error: "Checkout indisponível no momento. Fale com a MNSOFT.");
+    }
+
+    private async Task<ProviderResponse> SendAsync(string path, HttpMethod method, object? payload = null, CancellationToken ct = default)
+    {
+        using var request = new HttpRequestMessage(method, path);
+        if (payload is not null)
+            request.Content = JsonContent.Create(payload);
+
+        try
+        {
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, ct);
+            var body = await response.Content.ReadAsStringAsync(ct);
+            if (!response.IsSuccessStatusCode)
+                return new ProviderResponse(false, body, response.StatusCode.ToString());
+            return new ProviderResponse(true, body, "ok");
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            return new ProviderResponse(false, "{\"message\":\"gateway_timeout\"}", "timeout");
+        }
+        catch (Exception ex)
+        {
+            return new ProviderResponse(false, $"{{\"message\":\"{EscapeJson(ex.Message)}\"}}", "provider_error");
+        }
+    }
+
+    private bool IsEnabled() => _options.Enabled && !string.IsNullOrWhiteSpace(_options.AccessToken);
+
+    private static string EscapeJson(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+
+    private static bool ValidSignature(string rawBody, string signature, string secret)
+    {
+        if (string.IsNullOrWhiteSpace(secret))
+            return false;
+
+        var candidate = signature.Trim();
+        if (candidate.StartsWith("sha256=", StringComparison.OrdinalIgnoreCase))
+            candidate = candidate[7..];
+
+        var expected = Convert.ToHexString(HMACSHA256.HashData(Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes(rawBody))).ToLowerInvariant();
+        return candidate.Equals(expected, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? GetHeader(IReadOnlyDictionary<string, string> headers, params string[] keys)
+    {
+        foreach (var key in keys)
+        {
+            if (headers.TryGetValue(key, out var value))
+                return value;
+            var lowered = key.ToLowerInvariant();
+            foreach (var pair in headers)
+            {
+                if (string.Equals(pair.Key, lowered, StringComparison.OrdinalIgnoreCase))
+                    return pair.Value;
+            }
+        }
+        return null;
+    }
+
+    private static PaymentGatewayResult ParsePaymentResult(string body, string paymentKind)
+    {
+        using var document = JsonDocument.Parse(body);
+        var root = document.RootElement;
+        var id = GetString(root, "id") ?? GetString(root, "external_reference");
+        var status = GetString(root, "status") ?? "pending";
+        var pixQrCode = GetString(root, "point_of_interaction.transaction_data.qr_code") ??
+            GetString(root, "point_of_interaction.transaction_data.qr_code_base64");
+        var ticketUrl = GetString(root, "point_of_interaction.transaction_data.ticket_url") ??
+            GetString(root, "transaction_details.external_resource_url");
+        var boletoUrl = GetString(root, "transaction_details.external_resource_url") ?? GetString(root, "payment_method.reference") ??
+            GetString(root, "payment_method.id");
+
+        var succeeded = status is "approved" or "authorized" or "in_process" or "pending" or "active";
+        if (paymentKind == "pix")
+            return new PaymentGatewayResult(succeeded, id, status, PixQrCode: pixQrCode, PixTicketUrl: ticketUrl, RawResponseJson: body);
+        if (paymentKind == "boleto")
+            return new PaymentGatewayResult(succeeded, id, status, BoletoUrl: boletoUrl, RawResponseJson: body);
+        return new PaymentGatewayResult(succeeded, id, status, RawResponseJson: body);
+    }
+
+    private static string? GetString(JsonElement element, string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return null;
+
+        JsonElement current = element;
+        foreach (var token in path.Split('.'))
+        {
+            if (!current.ValueKind.Equals(JsonValueKind.Object) || !current.TryGetProperty(token, out var next))
+                return null;
+            current = next;
+        }
+
+        return current.ValueKind switch
+        {
+            JsonValueKind.String => current.GetString(),
+            JsonValueKind.Number => current.GetRawText(),
+            JsonValueKind.True => bool.TrueString,
+            JsonValueKind.False => bool.FalseString,
+            JsonValueKind.Null => null,
+            _ => current.GetRawText()
+        };
+    }
+
+    private readonly record struct ProviderResponse(bool IsSuccess, string Body, string StatusCode)
+    {
+        public string Message => string.IsNullOrWhiteSpace(Body) ? StatusCode : Body;
     }
 }

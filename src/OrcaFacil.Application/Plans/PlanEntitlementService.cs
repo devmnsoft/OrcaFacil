@@ -5,7 +5,7 @@ namespace OrcaFacil.Application.Plans;
 public class PlanEntitlementService
 {
     private const int FreeDocumentLimit = 20;
-    private const int FreePdfLimit = 20;
+    private const int FreePdfLimit = 10;
     public Task<bool> CanCreateDocumentAsync(Guid userId, PlanType plan, SubscriptionStatus status, int monthlyDocuments = 0, CancellationToken ct = default) => Task.FromResult(IsProActive(plan, status) || monthlyDocuments < FreeDocumentLimit);
     public Task<bool> CanGeneratePdfAsync(Guid userId, PlanType plan, SubscriptionStatus status, int monthlyPdfs = 0, CancellationToken ct = default) => Task.FromResult(IsProActive(plan, status) || monthlyPdfs < FreePdfLimit);
     public Task<bool> CanUsePublicApprovalAsync(Guid userId, PlanType plan, SubscriptionStatus status, CancellationToken ct = default) => Task.FromResult(IsProActive(plan, status));
