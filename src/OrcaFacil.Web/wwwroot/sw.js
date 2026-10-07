@@ -1,11 +1,32 @@
 /* OrçaFácil V1.8: only immutable/public shell assets are stored offline. */
 'use strict';
-const CACHE_NAME = 'orcafacil-public-v1.8.0';
+const CACHE_NAME = 'orcafacil-public-v1.8.1';
 const PUBLIC_ASSETS = [
   '/Offline',
   '/favicon.svg',
   '/img/brand/orcafacil-symbol.svg',
   '/css/app.css',
+  '/css/tokens.css',
+  '/css/base.css',
+  '/css/surfaces.css',
+  '/css/components.css',
+  '/css/forms.css',
+  '/css/design-system.css',
+  '/css/navigation.css',
+  '/css/tables.css',
+  '/css/overlays.css',
+  '/css/feedback.css',
+  '/css/timeline.css',
+  '/css/kanban.css',
+  '/css/pipeline.css',
+  '/css/public.css',
+  '/css/auth.css',
+  '/css/app-layout.css',
+  '/css/admin.css',
+  '/css/legal.css',
+  '/css/responsive.css',
+  '/css/mobile.css',
+  '/css/settings.css',
   '/css/support.css',
   '/js/pwa-install.js',
   '/js/offline-status.js'

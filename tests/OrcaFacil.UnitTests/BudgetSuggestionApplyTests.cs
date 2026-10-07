@@ -32,7 +32,7 @@ public sealed class BudgetSuggestionApplyTests
     [Fact]
     public async Task Repeated_apply_with_same_selection_returns_the_same_document()
     {
-        var (service, apply, documents, reviews, accountId, userId) = await Scenario();
+        var (service, apply, documents, _, reviews, accountId, userId) = await Scenario();
 
         var first = await apply.ApplyAsync(userId, accountId, reviews.Review!.Id, [new(service.Id, null)], CancellationToken.None);
         var second = await apply.ApplyAsync(userId, accountId, reviews.Review!.Id, [new(service.Id, null)], CancellationToken.None);
@@ -47,7 +47,7 @@ public sealed class BudgetSuggestionApplyTests
     [Fact]
     public async Task Repeated_apply_with_different_selection_conflicts()
     {
-        var (service, apply, documents, reviews, accountId, userId) = await Scenario();
+        var (service, apply, documents, _, reviews, accountId, userId) = await Scenario();
 
         var first = await apply.ApplyAsync(userId, accountId, reviews.Review!.Id, [new(service.Id, null)], CancellationToken.None);
         var second = await apply.ApplyAsync(userId, accountId, reviews.Review!.Id, [new(service.Id, 5m)], CancellationToken.None);
@@ -61,7 +61,7 @@ public sealed class BudgetSuggestionApplyTests
     [Fact]
     public async Task Catalog_price_change_after_suggestion_blocks_apply_without_silent_swap()
     {
-        var (service, apply, documents, reviews, accountId, userId) = await Scenario();
+        var (service, apply, documents, _, reviews, accountId, userId) = await Scenario();
         service.StandardPrice = 999m;
 
         var result = await apply.ApplyAsync(userId, accountId, reviews.Review!.Id, [new(service.Id, null)], CancellationToken.None);
@@ -76,7 +76,7 @@ public sealed class BudgetSuggestionApplyTests
     [Fact]
     public async Task Deactivated_service_blocks_apply_and_keeps_review_pending()
     {
-        var (service, apply, documents, reviews, accountId, userId) = await Scenario();
+        var (service, apply, documents, _, reviews, accountId, userId) = await Scenario();
         service.IsActive = false;
 
         var result = await apply.ApplyAsync(userId, accountId, reviews.Review!.Id, [new(service.Id, null)], CancellationToken.None);
@@ -89,7 +89,7 @@ public sealed class BudgetSuggestionApplyTests
     [Fact]
     public async Task Unknown_or_unselected_items_are_rejected()
     {
-        var (_, apply, documents, reviews, accountId, userId) = await Scenario();
+        var (_, apply, documents, _, reviews, accountId, userId) = await Scenario();
 
         var result = await apply.ApplyAsync(userId, accountId, reviews.Review!.Id, [new(Guid.NewGuid(), 1m)], CancellationToken.None);
 
@@ -100,7 +100,7 @@ public sealed class BudgetSuggestionApplyTests
     [Fact]
     public async Task Invalid_quantity_is_rejected_without_creating_documents()
     {
-        var (service, apply, documents, reviews, accountId, userId) = await Scenario();
+        var (service, apply, documents, _, reviews, accountId, userId) = await Scenario();
 
         var result = await apply.ApplyAsync(userId, accountId, reviews.Review!.Id, [new(service.Id, 10001m)], CancellationToken.None);
 
@@ -112,7 +112,7 @@ public sealed class BudgetSuggestionApplyTests
     [Fact]
     public async Task Review_from_another_account_is_not_found()
     {
-        var (service, apply, documents, reviews, _, _) = await Scenario();
+        var (service, apply, documents, _, reviews, _, _) = await Scenario();
 
         var result = await apply.ApplyAsync(Guid.NewGuid(), Guid.NewGuid(), reviews.Review!.Id, [new(service.Id, null)], CancellationToken.None);
 
@@ -143,7 +143,7 @@ public sealed class BudgetSuggestionApplyTests
     [Fact]
     public async Task Failed_claim_with_different_content_conflicts()
     {
-        var (service, apply, _, reviews, accountId, userId) = await Scenario();
+        var (service, apply, _, _, reviews, accountId, userId) = await Scenario();
         reviews.SimulateLostRace(Guid.NewGuid(), winnerFingerprint: "outro-conteudo");
 
         var result = await apply.ApplyAsync(userId, accountId, reviews.Review!.Id, [new(service.Id, null)], CancellationToken.None);
@@ -155,7 +155,7 @@ public sealed class BudgetSuggestionApplyTests
     [Fact]
     public async Task Dismissed_review_cannot_be_applied()
     {
-        var (service, apply, documents, reviews, accountId, userId) = await Scenario();
+        var (service, apply, documents, _, reviews, accountId, userId) = await Scenario();
         await reviews.MarkAsync(accountId, reviews.Review!.Id, "Dismissed", CancellationToken.None);
 
         var result = await apply.ApplyAsync(userId, accountId, reviews.Review.Id, [new(service.Id, null)], CancellationToken.None);
@@ -164,7 +164,7 @@ public sealed class BudgetSuggestionApplyTests
         Assert.Empty(documents.Items);
     }
 
-    private static async Task<(ServiceCatalogItem Service, BudgetSuggestionApplyService Apply, ListRepository<Document> Documents,
+    private static async Task<(ServiceCatalogItem Service, BudgetSuggestionApplyService Apply, ListRepository<Document> Documents, ListRepository<DocumentItem> Items,
         FakeReviewService Reviews, Guid AccountId, Guid UserId)> Scenario(decimal itemQuantity = 1m)
     {
         var accountId = Guid.NewGuid();
@@ -182,7 +182,7 @@ public sealed class BudgetSuggestionApplyTests
 
         var reviews = new FakeReviewService(accountId, userId, service, itemQuantity);
         var apply = new BudgetSuggestionApplyService(reviews, wizard, documents, uow);
-        return (service, apply, documents, reviews, accountId, userId);
+        return (service, apply, documents, items, reviews, accountId, userId);
     }
 
     private sealed class FakeReviewService : IAiSuggestionReviewService

@@ -12,8 +12,22 @@ input:-webkit-autofill, textarea:-webkit-autofill, select:-webkit-autofill {
   box-shadow: 0 0 0 1000px var(--of-input-background) inset;
 }
 input:read-only, textarea:read-only { background: var(--of-subtle); color: var(--of-text); }
-.of-section-dark :is(h1, h2, h3, h4, p, a, .of-icon) { color: var(--of-text-inverse); }
-.of-section-dark :is(input, textarea, select, .form-control, .form-select) { background: var(--of-input-background); color: var(--of-text); }
+.of-section-dark,
+.of-surface-dark { color: var(--of-text-inverse); }
+.of-section-dark :is(h1, h2, h3, h4, p, label, .form-label, .of-field, .of-field label, .of-icon),
+.of-surface-dark :is(h1, h2, h3, h4, p, label, .form-label, .of-field, .of-field label, .of-icon) { color: var(--of-text-inverse); }
+.of-section-dark :is(a, .of-button-secondary),
+.of-surface-dark :is(a, .of-button-secondary) { color: var(--of-link-inverse); }
+.of-section-dark :is(.form-text, .text-muted, small, .of-help-text),
+.of-surface-dark :is(.form-text, .text-muted, small, .of-help-text) { color: var(--of-input-helper-dark); }
+.of-section-dark :is(input, textarea, select, .form-control, .form-select, .of-field-control),
+.of-surface-dark :is(input, textarea, select, .form-control, .form-select, .of-field-control) {
+  border-color: var(--of-input-border-dark);
+  background: var(--of-input-background-dark);
+  color: var(--of-text);
+}
+.of-section-dark :is(input, textarea)::placeholder,
+.of-surface-dark :is(input, textarea)::placeholder { color: #5f6f82; }
 .field-validation-error::before, .of-field-error:not(:empty)::before { content: "Erro: "; }
 input:not([type="checkbox"]):not([type="radio"]):focus-visible,select:focus-visible,textarea:focus-visible { border-color:var(--of-focus); outline:0; box-shadow:var(--of-focus-ring); }
 input.input-validation-error,select.input-validation-error,textarea.input-validation-error,[aria-invalid="true"] { border-color:var(--of-danger); background:linear-gradient(0deg,var(--of-danger-soft),var(--of-danger-soft)) padding-box,var(--of-surface); }

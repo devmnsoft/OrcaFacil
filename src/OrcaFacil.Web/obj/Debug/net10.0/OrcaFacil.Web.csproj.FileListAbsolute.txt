@@ -190,7 +190,6 @@ C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\rjsmcshtml.dswa.cache.js
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\scopedcss\bundle\OrcaFacil.Web.styles.css
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\tcbjo3bhyo-{0}-k6xdmfhpz2-k6xdmfhpz2.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\ds7ai26zod-{0}-t1beggebdp-t1beggebdp.gz
-C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\79vl7v95uw-{0}-t98o8c5zxl-t98o8c5zxl.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\szvwaa25h5-{0}-krby745y9w-krby745y9w.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\c3lk5tsrml-{0}-ga46rd836x-ga46rd836x.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\bx72vba56z-{0}-5fysx1jyps-5fysx1jyps.gz
@@ -209,7 +208,6 @@ C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\l26mxbs3dw-{0
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\r0kth8zepy-{0}-jhfy36j06c-jhfy36j06c.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\8ylk6oha2v-{0}-bikib9umcp-bikib9umcp.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\3i26maqart-{0}-e8ulercwee-e8ulercwee.gz
-C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\xbg13itfw4-{0}-31p6pgyn1w-31p6pgyn1w.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\54o310zqrh-{0}-re2fod6lpz-re2fod6lpz.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\c6sjfkamh4-{0}-vvmcj5tiqr-vvmcj5tiqr.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\2hrxbxwm5l-{0}-oe9aqxp97y-oe9aqxp97y.gz
@@ -224,7 +222,6 @@ C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\4okcxg97uu-{0
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\xfij2tqi4p-{0}-454lcoozbe-454lcoozbe.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\tpz1xn8alr-{0}-g6e534iluo-g6e534iluo.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\ua2jcp2tht-{0}-n3m17hxqfy-n3m17hxqfy.gz
-C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\wjcpdgfci1-{0}-h5cdm4x29j-h5cdm4x29j.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\lxn83utpo3-{0}-dvpzabkhjl-dvpzabkhjl.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\uy7ecbk8ww-{0}-b7e3okjvdd-b7e3okjvdd.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\f9pyxb60ve-{0}-wp1jcoz2eu-wp1jcoz2eu.gz
@@ -318,7 +315,6 @@ C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\j6lb666d6u-{0
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\oo0fc8rwk4-{0}-6ipmwiibgv-6ipmwiibgv.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\w74punittz-{0}-wsr7zsfb51-wsr7zsfb51.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\h28oc12mcf-{0}-nh4u1dba6u-nh4u1dba6u.gz
-C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\l39xmxlzbr-{0}-wl2j9ccbrf-wl2j9ccbrf.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\dwsbachb9y-{0}-9kjnkc3zxw-9kjnkc3zxw.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\2qacgo4iz5-{0}-ailm6tyngn-ailm6tyngn.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\7sjb64kb1q-{0}-270sal42w8-270sal42w8.gz
@@ -370,7 +366,11 @@ C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\pps3pm1o3e-{0
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\ol298av7jg-{0}-pmae8q65jv-pmae8q65jv.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\birvprhlpn-{0}-8vo6w3lsta-8vo6w3lsta.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\ub0aiyu26q-{0}-ksdylowxjs-ksdylowxjs.gz
-C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\4ghim849k7-{0}-oqos8l85ol-oqos8l85ol.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\gcl3xvak1a-{0}-8kaz0o219k-8kaz0o219k.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\vvrtlboftg-{0}-s9yw5fyqx2-s9yw5fyqx2.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\f2372gl0po-{0}-bg6yzzr185-bg6yzzr185.gz
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\79vl7v95uw-{0}-w7lks75kwe-w7lks75kwe.gz
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\4ghim849k7-{0}-l86c2y47s8-l86c2y47s8.gz
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\xbg13itfw4-{0}-s2pmftdwvx-s2pmftdwvx.gz
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\wjcpdgfci1-{0}-ad2aqcl35z-ad2aqcl35z.gz
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\l39xmxlzbr-{0}-64y90b2fwv-64y90b2fwv.gz

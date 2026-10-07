@@ -16,7 +16,6 @@ C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\bin\Debug\net10.0\Localization\res
 C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\bin\Debug\net10.0\OrcaFacil.Web.staticwebassets.runtime.json
 C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\bin\Debug\net10.0\OrcaFacil.Web.staticwebassets.endpoints.json
 C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\bin\Debug\net10.0\OrcaFacil.Web.exe
-C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\bin\Debug\net10.0\testhost.exe
 C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\bin\Debug\net10.0\MvcTestingAppManifest.json
 C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\bin\Debug\net10.0\xunit.runner.visualstudio.testadapter.dll
 C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\bin\Debug\net10.0\LatoFont\Lato-Black.ttf
@@ -499,3 +498,4 @@ C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\obj\Debug\net10.0\refint\OrcaFacil
 C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\obj\Debug\net10.0\OrcaFacil.UnitTests.pdb
 C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\obj\Debug\net10.0\OrcaFacil.UnitTests.genruntimeconfig.cache
 C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\obj\Debug\net10.0\ref\OrcaFacil.UnitTests.dll
+C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\bin\Debug\net10.0\testhost.exe
