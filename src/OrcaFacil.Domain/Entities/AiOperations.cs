@@ -23,4 +23,8 @@ public sealed class AiSuggestionCard : Entity
 {
     public Guid AccountId { get; set; }
     public string DataJson { get; set; } = "{}";
+    public string Status { get; set; } = "PendingReview";
+    public Guid? AppliedDocumentId { get; set; }
+    public string? ApplyFingerprint { get; set; }
+    public DateTime? AppliedAt { get; set; }
 }

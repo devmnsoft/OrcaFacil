@@ -1788,3 +1788,7 @@ CREATE INDEX IF NOT EXISTS ix_public_document_decisions_account_document ON orca
 
 -- V6.8: reserva de cota de IA e idempotência do rascunho.
 \ir hotfix_ai_quota_reservation_v68.sql
+
+-- V6.9: aplicação atômica de sugestões de IA, permissões de IA, benefício por plano
+-- e reparo explícito dos índices de unicidade do V6.8.
+\ir hotfix_ai_apply_governance_v69.sql

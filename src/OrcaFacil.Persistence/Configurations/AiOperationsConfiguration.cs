@@ -35,6 +35,10 @@ public sealed class AiSuggestionCardConfiguration : IEntityTypeConfiguration<AiS
         builder.ConfigureBase();
         builder.Property(x => x.AccountId).HasColumnName("account_id");
         builder.Property(x => x.DataJson).HasColumnName("data_json").HasColumnType("jsonb");
+        builder.Property(x => x.Status).HasColumnName("status").HasMaxLength(24);
+        builder.Property(x => x.AppliedDocumentId).HasColumnName("applied_document_id");
+        builder.Property(x => x.ApplyFingerprint).HasColumnName("apply_fingerprint").HasMaxLength(128);
+        builder.Property(x => x.AppliedAt).HasColumnName("applied_at");
         builder.HasIndex(x => new { x.AccountId, x.CreatedAt });
         builder.HasQueryFilter(x => !x.IsDeleted);
     }

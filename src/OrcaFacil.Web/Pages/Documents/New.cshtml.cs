@@ -14,10 +14,8 @@ public sealed class NewModel(IGuidedBudgetStartService service) : PageModel
     public IReadOnlyList<BudgetStartTemplate> Templates => Start.Templates;
     public IReadOnlyList<BudgetStartDraft> Drafts => Start.Drafts;
 
-    public async Task<IActionResult> OnGetAsync(Guid? clientId, Guid? serviceId, Guid? templateId, CancellationToken ct)
+    public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
-        if (clientId.HasValue || serviceId.HasValue || templateId.HasValue)
-            return RedirectToPage("/Documents/CreateBudget", new { clientId, serviceId, templateId });
         Start = await service.GetAsync(ct);
         return Page();
     }

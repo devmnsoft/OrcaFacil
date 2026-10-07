@@ -39,11 +39,22 @@ public sealed record AiBudgetSuggestionReview(
     string Notes,
     string Notice,
     bool IsRuleBased,
-    IReadOnlyList<AiBudgetSuggestionItem> Items);
+    IReadOnlyList<AiBudgetSuggestionItem> Items,
+    Guid? AppliedDocumentId = null,
+    string? ApplyFingerprint = null);
 
 public interface IAiSuggestionReviewService
 {
     Task<Guid> SavePendingAsync(Guid accountId, Guid userId, BudgetAiSuggestionResult result, CancellationToken ct = default);
     Task<AiBudgetSuggestionReview?> FindAsync(Guid accountId, Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<AiBudgetSuggestionReview>> ListPendingAsync(Guid accountId, int take, CancellationToken ct = default);
     Task<bool> MarkAsync(Guid accountId, Guid id, string status, CancellationToken ct = default);
+
+    /// <summary>
+    /// Marca a revisão como aplicada somente se ainda estiver pendente (compare-and-set no banco).
+    /// Deve ser chamada dentro da transação ambiente que persiste o documento, garantindo
+    /// atomicidade entre a gravação do documento e a transição da revisão.
+    /// Retorna false quando outra operação já transitou a revisão.
+    /// </summary>
+    Task<bool> TryMarkAppliedAsync(Guid accountId, Guid id, string applyFingerprint, Guid documentId, CancellationToken ct = default);
 }

@@ -23,6 +23,8 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
 
     public UnitOfWork(OrcaFacilDbContext db) => _db = db;
 
+    public bool HasActiveTransaction => _transaction is not null;
+
     public async Task BeginTransactionAsync(CancellationToken ct = default)
     {
         if (_transaction is not null) throw new InvalidOperationException("Já existe uma transação em andamento.");

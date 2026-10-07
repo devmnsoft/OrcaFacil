@@ -221,6 +221,7 @@ builder.Services.AddSingleton<IAiModelClient, DeepSeekAiClient>();
 builder.Services.AddSingleton<IAiOrchestrator, AiOrchestrator>();
 builder.Services.AddScoped<IAiConsumptionService, AiConsumptionService>();
 builder.Services.AddScoped<IAiSuggestionReviewService, AiSuggestionReviewService>();
+builder.Services.AddScoped<BudgetSuggestionApplyService>();
 builder.Services.AddScoped<IBudgetAiAssistant, BudgetAiAssistant>();
 builder.Services.AddScoped<BudgetAiAssistant>();
 builder.Services.AddScoped<ICommercialAiReviewer, CommercialAiReviewer>();

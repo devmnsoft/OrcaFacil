@@ -39,6 +39,8 @@ public sealed class BudgetWizardService
         IUnitOfWork unitOfWork, IDocumentNumberService numbers)
     { _documents = documents; _items = items; _clients = clients; _services = services; _templates = templates; _templateItems = templateItems; _accountSettings = accountSettings; _unitOfWork = unitOfWork; _numbers = numbers; }
 
+    public sealed record DraftServiceSeed(ServiceCatalogItem Service, decimal Quantity);
+
     public async Task<BudgetOpenResult> OpenAsync(Guid userId, Guid? accountId, Guid? documentId, Guid? clientId, CancellationToken ct,
         IReadOnlyCollection<Guid>? serviceIds = null, Guid? templateId = null, string? idempotencyKey = null)
     {
@@ -67,13 +69,13 @@ public sealed class BudgetWizardService
         var requestedServices = (serviceIds ?? []).Where(x => x != Guid.Empty).Distinct().ToArray();
         if (requestedServices.Length > 30)
             return new(false, "A criação aceita no máximo 30 serviços de catálogo.", null);
-        var resolved = new List<ServiceCatalogItem>();
+        var resolved = new List<DraftServiceSeed>();
         foreach (var serviceId in requestedServices)
         {
             var service = FindAvailableService(accountId, serviceId);
             if (service is null)
                 return new(false, "O serviço informado não pertence à conta ou está indisponível.", null);
-            resolved.Add(service);
+            resolved.Add(new(service, 1m));
         }
 
         List<BudgetTemplateItem> templateItems = [];
@@ -86,6 +88,40 @@ public sealed class BudgetWizardService
                 return new(false, "O modelo tem mais de 100 itens e não foi copiado.", null);
         }
 
+        return await CreateDraftCoreAsync(userId, accountId, clientId, resolved, templateId, templateItems,
+            idempotencyKey, suggestionText: null, ct);
+    }
+
+    /// <summary>
+    /// Cria o rascunho a partir de uma sugestão de IA revisada. Não gerencia transação:
+    /// o chamador deve abrir a transação ambiente para que documento e revisão sejam
+    /// persistidos atomicamente. A recuperação de repetição fica a cargo do chamador.
+    /// </summary>
+    public async Task<BudgetOpenResult> CreateSuggestionDraftAsync(Guid userId, Guid accountId,
+        IReadOnlyList<DraftServiceSeed> services, string? suggestionText, string idempotencyKey, CancellationToken ct)
+    {
+        var keyError = ValidateKey(idempotencyKey, required: true);
+        if (keyError is not null) return new(false, keyError, null);
+        if (services.Count == 0 || services.Count > 30)
+            return new(false, "A aplicação da sugestão aceita entre 1 e 30 itens do catálogo.", null);
+        var revalidated = new List<DraftServiceSeed>(services.Count);
+        foreach (var seed in services)
+        {
+            var service = FindAvailableService(accountId, seed.Service.Id);
+            if (service is null)
+                return new(false, "O serviço informado não pertence à conta ou está indisponível.", null);
+            if (seed.Quantity <= 0 || seed.Quantity > 10000)
+                return new(false, "A quantidade de um item da sugestão é inválida.", null);
+            revalidated.Add(new(service, seed.Quantity));
+        }
+        return await CreateDraftCoreAsync(userId, accountId, null, revalidated, null, [], idempotencyKey, suggestionText, ct);
+    }
+
+    private async Task<BudgetOpenResult> CreateDraftCoreAsync(Guid userId, Guid? accountId, Guid? clientId,
+        IReadOnlyList<DraftServiceSeed> resolved, Guid? templateId, IReadOnlyList<BudgetTemplateItem> templateItems,
+        string? idempotencyKey, string? suggestionText, CancellationToken ct)
+    {
+        var ownsTransaction = !_unitOfWork.HasActiveTransaction;
         var document = new Document { UserId = userId, AccountId = accountId, Type = DocumentType.Budget, Status = "Draft", CurrentWizardStep = 0 };
         var defaults = accountId.HasValue ? _accountSettings.Query().SingleOrDefault(x => x.AccountId == accountId && !x.IsDeleted) : null;
         if (defaults is not null)
@@ -95,6 +131,8 @@ public sealed class BudgetWizardService
             document.ConditionsText = defaults.DefaultCommercialTerms;
             document.PixInformation = defaults.ShowBankDetails ? defaults.PixKey : null;
         }
+        if (!string.IsNullOrWhiteSpace(suggestionText))
+            document.Notes = suggestionText.Length > 4000 ? suggestionText[..4000] : suggestionText;
         document.IssueNumber(await _numbers.NextAsync(userId, DocumentType.Budget, ct));
         if (clientId.HasValue)
         {
@@ -105,24 +143,24 @@ public sealed class BudgetWizardService
         if (!string.IsNullOrWhiteSpace(idempotencyKey)) document.LastAutosaveKey = idempotencyKey.Trim();
         try
         {
-            await _unitOfWork.BeginTransactionAsync(ct);
+            if (ownsTransaction) await _unitOfWork.BeginTransactionAsync(ct);
             await _documents.AddAsync(document, ct);
-            foreach (var service in resolved)
-                await _items.AddAsync(ToDocumentItem(document.Id, service), ct);
+            foreach (var seed in resolved)
+                await _items.AddAsync(ToDocumentItem(document.Id, seed.Service, seed.Quantity), ct);
             foreach (var item in templateItems)
                 await _items.AddAsync(new DocumentItem { DocumentId = document.Id, Description = item.Description, Unit = item.Unit, Quantity = item.Quantity, UnitPrice = item.UnitPrice, SortOrder = item.SortOrder }, ct);
             if (templateId.HasValue)
                 document.TemplateSnapshot = JsonSerializer.Serialize(new { Id = templateId, CopiedAt = DateTime.UtcNow });
             await _unitOfWork.SaveChangesAsync(ct);
-            await _unitOfWork.CommitTransactionAsync(ct);
+            if (ownsTransaction) await _unitOfWork.CommitTransactionAsync(ct);
         }
-        catch (Exception ex) when (IsPersistenceConflict(ex))
+        catch (Exception ex) when (ownsTransaction && IsPersistenceConflict(ex))
         {
             await SafeRollbackAsync();
             if (!string.IsNullOrWhiteSpace(idempotencyKey))
             {
                 var recovered = FindByKey(userId, accountId, idempotencyKey.Trim()).ToList();
-                if (recovered.Count == 1 && CreationMatches(recovered[0], clientId, serviceIds, templateId))
+                if (recovered.Count == 1)
                     return new(true, null, Map(recovered[0]));
             }
             return new(false, "Não foi possível criar o rascunho sem duplicá-lo. Recarregue.", null, true);
@@ -130,14 +168,16 @@ public sealed class BudgetWizardService
         return new(true, null, Map(document));
     }
 
+    public ServiceCatalogItem? FindAccountService(Guid? accountId, Guid id) => FindAvailableService(accountId, id);
+
     private BudgetTemplate? FindTemplate(Guid userId, Guid? accountId, Guid templateId) =>
         _templates.Query().SingleOrDefault(x => x.Id == templateId && x.IsActive && !x.IsDeleted &&
             (x.IsSystemTemplate || (x.AccountId == accountId && x.UserId == userId)));
 
-    private static DocumentItem ToDocumentItem(Guid documentId, ServiceCatalogItem service) => new()
+    private static DocumentItem ToDocumentItem(Guid documentId, ServiceCatalogItem service, decimal quantity = 1m) => new()
     {
         DocumentId = documentId, ServiceCatalogItemId = service.Id, Description = service.Description ?? service.Name,
-        Unit = service.UnitCode, Quantity = 1, UnitPrice = service.StandardPrice,
+        Unit = service.UnitCode, Quantity = quantity, UnitPrice = service.StandardPrice,
         EstimatedCostSnapshot = service.EstimatedCost, DurationMinutesSnapshot = service.SuggestedDurationMinutes
     };
 

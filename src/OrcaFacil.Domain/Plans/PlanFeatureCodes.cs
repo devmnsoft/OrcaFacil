@@ -23,4 +23,6 @@ public static class PlanFeatureCodes
     public const string CommercialMetricsEnabled = "commercial.metrics";
     public const string CsvExportEnabled = "exports.csv";
     public const string AccountAuditEnabled = "audit.account";
+    public const string AiExternalProvidersEnabled = "ai.external.enabled";
+    public const string AiMonthlyLimit = "ai.monthly_limit";
 }

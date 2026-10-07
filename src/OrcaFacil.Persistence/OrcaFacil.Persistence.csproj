@@ -29,6 +29,7 @@
     <EmbeddedResource Include="..\..\database\hotfix_ai_budget_assistant_v67.sql" Link="Migrations\hotfix_ai_budget_assistant_v67.sql" />
     <EmbeddedResource Include="..\..\database\hotfix_billing_coverage_v67.sql" Link="Migrations\hotfix_billing_coverage_v67.sql" />
     <EmbeddedResource Include="..\..\database\hotfix_ai_quota_reservation_v68.sql" Link="Migrations\hotfix_ai_quota_reservation_v68.sql" />
+    <EmbeddedResource Include="..\..\database\hotfix_ai_apply_governance_v69.sql" Link="Migrations\hotfix_ai_apply_governance_v69.sql" />
   </ItemGroup>
 
 </Project>

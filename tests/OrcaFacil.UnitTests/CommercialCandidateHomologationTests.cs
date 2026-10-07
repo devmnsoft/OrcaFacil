@@ -476,8 +476,10 @@ internal sealed class InMemoryRepository<T> : IRepository<T> where T : class
 
 internal sealed class NoopUnitOfWork : IUnitOfWork
 {
+    private bool _active;
+    public bool HasActiveTransaction => _active;
     public Task<int> SaveChangesAsync(CancellationToken ct = default) => Task.FromResult(1);
-    public Task BeginTransactionAsync(CancellationToken ct = default) => Task.CompletedTask;
-    public Task CommitTransactionAsync(CancellationToken ct = default) => Task.CompletedTask;
-    public Task RollbackTransactionAsync(CancellationToken ct = default) => Task.CompletedTask;
+    public Task BeginTransactionAsync(CancellationToken ct = default) { _active = true; return Task.CompletedTask; }
+    public Task CommitTransactionAsync(CancellationToken ct = default) { _active = false; return Task.CompletedTask; }
+    public Task RollbackTransactionAsync(CancellationToken ct = default) { _active = false; return Task.CompletedTask; }
 }

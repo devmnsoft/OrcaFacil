@@ -281,8 +281,8 @@ public sealed class AiSuggestionReviewService(OrcaFacilDbContext db) : IAiSugges
         var card = new AiSuggestionCard
         {
             AccountId = accountId,
+            Status = "PendingReview",
             DataJson = JsonSerializer.Serialize(new StoredSuggestion(
-                "PendingReview",
                 userId,
                 result.SuggestedScope,
                 result.SuggestedNotes,
@@ -300,18 +300,46 @@ public sealed class AiSuggestionReviewService(OrcaFacilDbContext db) : IAiSugges
     {
         var card = await db.AiSuggestionCards.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id && x.AccountId == accountId, ct);
         if (card is null || !TryRead(card.DataJson, out var stored) || stored is null) return null;
-        return Map(card.Id, card.AccountId, stored);
+        return Map(card, stored);
+    }
+
+    public async Task<IReadOnlyList<AiBudgetSuggestionReview>> ListPendingAsync(Guid accountId, int take, CancellationToken ct = default)
+    {
+        var cards = await db.AiSuggestionCards.AsNoTracking()
+            .Where(x => x.AccountId == accountId && x.Status == "PendingReview")
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(Math.Clamp(take, 1, 20))
+            .ToListAsync(ct);
+        var mapped = new List<AiBudgetSuggestionReview>(cards.Count);
+        foreach (var card in cards)
+            if (TryRead(card.DataJson, out var stored) && stored is not null)
+                mapped.Add(Map(card, stored));
+        return mapped;
     }
 
     public async Task<bool> MarkAsync(Guid accountId, Guid id, string status, CancellationToken ct = default)
     {
         if (status is not ("Applied" or "Dismissed")) return false;
         var card = await db.AiSuggestionCards.SingleOrDefaultAsync(x => x.Id == id && x.AccountId == accountId, ct);
-        if (card is null || !TryRead(card.DataJson, out var stored) || stored is null || stored.Status != "PendingReview") return false;
-        card.DataJson = JsonSerializer.Serialize(stored with { Status = status }, JsonOptions);
+        if (card is null || card.Status != "PendingReview") return false;
+        card.Status = status;
         card.Touch();
         await db.SaveChangesAsync(ct);
         return true;
+    }
+
+    public async Task<bool> TryMarkAppliedAsync(Guid accountId, Guid id, string applyFingerprint, Guid documentId, CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        var updated = await db.AiSuggestionCards
+            .Where(x => x.Id == id && x.AccountId == accountId && x.Status == "PendingReview")
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.Status, "Applied")
+                .SetProperty(x => x.AppliedDocumentId, documentId)
+                .SetProperty(x => x.ApplyFingerprint, applyFingerprint)
+                .SetProperty(x => x.AppliedAt, now)
+                .SetProperty(x => x.UpdatedAt, now), ct);
+        return updated == 1;
     }
 
     private static bool TryRead(string json, out StoredSuggestion? stored)
@@ -328,12 +356,12 @@ public sealed class AiSuggestionReviewService(OrcaFacilDbContext db) : IAiSugges
         }
     }
 
-    private static AiBudgetSuggestionReview Map(Guid id, Guid accountId, StoredSuggestion stored) =>
-        new(id, accountId, stored.Status, stored.Scope, stored.Notes, stored.Notice, stored.IsRuleBased,
-            stored.Items.Select(x => new AiBudgetSuggestionItem(x.CatalogItemId, x.Description, x.Quantity, x.UnitPrice, x.UnitCode)).ToArray());
+    private static AiBudgetSuggestionReview Map(AiSuggestionCard card, StoredSuggestion stored) =>
+        new(card.Id, card.AccountId, card.Status, stored.Scope, stored.Notes, stored.Notice, stored.IsRuleBased,
+            stored.Items.Select(x => new AiBudgetSuggestionItem(x.CatalogItemId, x.Description, x.Quantity, x.UnitPrice, x.UnitCode)).ToArray(),
+            card.AppliedDocumentId, card.ApplyFingerprint);
 
     private sealed record StoredSuggestion(
-        string Status,
         Guid UserId,
         string Scope,
         string Notes,

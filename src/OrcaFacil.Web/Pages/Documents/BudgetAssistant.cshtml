@@ -9,7 +9,13 @@
     <p class="of-eyebrow">Sugestão revisável</p>
     <h1>Assistente de orçamento</h1>
     <p>Os preços saem do catálogo desta conta. A sugestão não envia proposta, não cobra e não emite recibo.</p>
-    <details><summary>Como usar</summary><p>Descreva o serviço, confira escopo, pendências e itens, e só então crie o rascunho. Repetir a confirmação não duplica itens. O custo exibido nas operações é uma estimativa, não uma fatura do provedor.</p></details>
+    <p>
+        <strong>Modo desta conta:</strong>
+        @(Model.ExternalAiAllowed
+            ? "provedor externo autorizado pelo plano, com fallback por regras quando indisponível"
+            : "regras internas do catálogo (o plano atual não inclui provedores externos de IA)")
+    </p>
+    <details><summary>Como usar</summary><p>Descreva o serviço, confira escopo, pendências e itens, ajuste as quantidades e só então crie o rascunho. Repetir a confirmação não duplica o orçamento: a mesma aplicação retorna o mesmo rascunho. O custo exibido nas operações é uma estimativa, não uma fatura do provedor.</p></details>
 </section>
 
 <section class="of-section-light of-budget-ai-review">
@@ -22,19 +28,19 @@
         {
             <p role="alert">@Model.ErrorMessage</p>
         }
-        <button class="of-button of-button-primary" type="submit">Gerar sugestão para revisão</button>
+        <button class="of-button of-button-primary" type="submit" data-loading>Gerar sugestão para revisão</button>
     </form>
 
-    @if (Model.Review is { Status: "PendingReview" } review)
+    @if (Model.Review is { } current && Model.Review.Status == "PendingReview")
     {
         <article aria-live="polite">
-            <p><strong>@(review.IsRuleBased ? "Regras do catálogo" : "Apoio do provedor configurado")</strong></p>
-            <p>@review.Notice</p>
+            <p><strong>@(current.IsRuleBased ? "Regras do catálogo (nenhum provedor externo foi usado)" : "Apoio do provedor configurado")</strong></p>
+            <p>@current.Notice</p>
             <h2>Escopo sugerido</h2>
-            <p>@review.Scope</p>
+            <p>@current.Scope</p>
             <h2>Observações</h2>
-            <p>@review.Notes</p>
-            @if (review.Items.Count == 0)
+            <p>@current.Notes</p>
+            @if (current.Items.Count == 0)
             {
                 <p>Nenhum item do catálogo desta conta corresponde à descrição. Ajuste o texto ou cadastre o serviço antes de criar o orçamento.</p>
             }
@@ -42,26 +48,60 @@
             {
                 <form method="post" asp-page-handler="Apply">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" name="reviewId" value="@review.Id" />
+                    <input type="hidden" name="reviewId" value="@current.Id" />
+                    <p>Confira a seleção e as quantidades. O rascunho será criado exatamente com estes dados, com preço e total calculados no servidor.</p>
                     <ul class="of-budget-ai-items">
-                        @foreach (var item in review.Items)
+                        @foreach (var item in current.Items)
                         {
+                            var lineTotal = item.Quantity * item.UnitPrice;
                             <li>
                                 <label>
                                     <input type="checkbox" name="selectedCatalogIds" value="@item.CatalogItemId" checked />
-                                    <span><strong>@item.Description</strong><small>@item.Quantity.ToString("0.##") @item.UnitCode · R$ @item.UnitPrice.ToString("N2")</small></span>
+                                    <span><strong>@item.Description</strong><small>@item.UnitCode · R$ @item.UnitPrice.ToString("N2") · total R$ @lineTotal.ToString("N2")</small></span>
+                                </label>
+                                <label class="of-budget-ai-qty">
+                                    <span>Quantidade</span>
+                                    <input type="number" name="qty_@item.CatalogItemId.ToString("N")" value="@item.Quantity.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" min="0.01" max="10000" step="0.01" inputmode="decimal" />
                                 </label>
                             </li>
                         }
                     </ul>
-                    <button class="of-button of-button-primary" type="submit">Criar rascunho com os itens marcados</button>
+                    <button class="of-button of-button-primary" type="submit" data-loading>Criar rascunho com os itens marcados</button>
                 </form>
             }
             <form method="post" asp-page-handler="Dismiss">
                 @Html.AntiForgeryToken()
-                <input type="hidden" name="reviewId" value="@review.Id" />
+                <input type="hidden" name="reviewId" value="@current.Id" />
                 <button class="of-button of-button-secondary" type="submit">Descartar sugestão</button>
             </form>
         </article>
+    }
+    else if (Model.Review is { } applied && applied.Status == "Applied")
+    {
+        <article aria-live="polite">
+            <p role="status">Esta revisão já foi aplicada. @(applied.AppliedDocumentId is Guid docId ? null : "O rascunho vinculado não está mais disponível.")</p>
+            @if (applied.AppliedDocumentId is Guid documentId)
+            {
+                <a class="of-button of-button-primary" asp-page="/Documents/CreateBudget" asp-route-id="@documentId">Abrir o orçamento criado</a>
+            }
+        </article>
+    }
+
+    @if (Model.PendingReviews.Count > 0)
+    {
+        <section aria-label="Revisões pendentes">
+            <h2>Revisões pendentes</h2>
+            <ul>
+                @foreach (var pending in Model.PendingReviews.Where(x => x.Id != Model.Review?.Id))
+                {
+                    <li>
+                        <a asp-page="/Documents/BudgetAssistant" asp-route-reviewId="@pending.Id">
+                            @(string.IsNullOrWhiteSpace(pending.Scope) ? "Revisão pendente" : pending.Scope)
+                        </a>
+                        <small>@(pending.IsRuleBased ? "regras do catálogo" : "provedor externo") · @pending.Items.Count item(ns)</small>
+                    </li>
+                }
+            </ul>
+        </section>
     }
 </section>

@@ -20,16 +20,16 @@ public static class PlanCatalogDefinitions
     public static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, PlanFeatureSetting>> Features =
         new Dictionary<string, IReadOnlyDictionary<string, PlanFeatureSetting>>(StringComparer.OrdinalIgnoreCase)
         {
-            ["FREE"] = Matrix(1, 25, 20, 10, true, 90, 3, false, false, false, false, false, false, true, false, false, false, false, false, false, false),
-            ["PROFESSIONAL"] = Matrix(1, null, null, null, false, null, null, true, true, true, true, true, true, true, true, false, false, false, false, false, false),
-            ["BUSINESS"] = Matrix(3, null, null, null, false, null, null, true, true, true, true, true, true, true, true, true, true, true, true, true, true),
-            ["ENTERPRISE"] = Matrix(10, null, null, null, false, null, null, true, true, true, true, true, true, true, true, true, true, true, true, true, true)
+            ["FREE"] = Matrix(1, 25, 20, 10, true, 90, 3, false, false, false, false, false, false, true, false, false, false, false, false, false, false, aiExternal: false, aiMonthly: 10),
+            ["PROFESSIONAL"] = Matrix(1, null, null, null, false, null, null, true, true, true, true, true, true, true, true, false, false, false, false, false, false, aiExternal: true, aiMonthly: 200),
+            ["BUSINESS"] = Matrix(3, null, null, null, false, null, null, true, true, true, true, true, true, true, true, true, true, true, true, true, true, aiExternal: true, aiMonthly: 1000),
+            ["ENTERPRISE"] = Matrix(10, null, null, null, false, null, null, true, true, true, true, true, true, true, true, true, true, true, true, true, true, aiExternal: true, aiMonthly: null)
         };
 
     private static IReadOnlyDictionary<string, PlanFeatureSetting> Matrix(int team, int? clients, int? services, int? pdf,
         bool watermark, int? history, int? templates, bool customTemplates, bool branding, bool approval, bool whatsapp,
         bool workOrders, bool payments, bool receipts, bool basicReports, bool advancedReports, bool pipeline,
-        bool followups, bool metrics, bool csv, bool audit) => new Dictionary<string, PlanFeatureSetting>
+        bool followups, bool metrics, bool csv, bool audit, bool aiExternal, int? aiMonthly) => new Dictionary<string, PlanFeatureSetting>
     {
         [PlanFeatureCodes.TeamMembersLimit] = new(true, team),
         [PlanFeatureCodes.ClientsActiveLimit] = Limit(clients),
@@ -51,7 +51,9 @@ public static class PlanCatalogDefinitions
         [PlanFeatureCodes.CommercialFollowUpsEnabled] = Flag(followups),
         [PlanFeatureCodes.CommercialMetricsEnabled] = Flag(metrics),
         [PlanFeatureCodes.CsvExportEnabled] = Flag(csv),
-        [PlanFeatureCodes.AccountAuditEnabled] = Flag(audit)
+        [PlanFeatureCodes.AccountAuditEnabled] = Flag(audit),
+        [PlanFeatureCodes.AiExternalProvidersEnabled] = Flag(aiExternal),
+        [PlanFeatureCodes.AiMonthlyLimit] = Limit(aiMonthly)
     };
 
     private static PlanFeatureSetting Limit(int? value) => value is null ? Unlimited : new(true, value);

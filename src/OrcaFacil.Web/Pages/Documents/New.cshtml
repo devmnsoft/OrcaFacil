@@ -23,9 +23,13 @@
     </section>
 
     <section class="of-start-options" aria-label="Formas de iniciar o orçamento">
-        <a class="of-start-card is-featured" asp-page="/Documents/CreateBudget">
-            <span class="of-start-icon"><svg class="of-icon"><use href="#of-icon-plus" /></svg></span><span><strong>Orçamento em branco</strong><small>Comece do zero no editor guiado.</small></span><b>Começar</b>
-        </a>
+        <form method="post" action="@Url.Page("/Documents/CreateBudget", "Create")">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="idempotencyKey" value="@Guid.NewGuid().ToString("N")" />
+            <button class="of-start-card is-featured" type="submit">
+                <span class="of-start-icon"><svg class="of-icon"><use href="#of-icon-plus" /></svg></span><span><strong>Orçamento em branco</strong><small>Comece do zero no editor guiado.</small></span><b>Começar</b>
+            </button>
+        </form>
         <button class="of-start-card" type="button" data-scroll-target="clientes">
             <span class="of-start-icon"><svg class="of-icon"><use href="#of-icon-client" /></svg></span><span><strong>Usar cliente existente</strong><small>Busque por nome, telefone, documento ou e-mail.</small></span><b>Escolher</b>
         </button>
@@ -43,19 +47,19 @@
     <section class="of-start-picker" id="clientes">
         <header><div><p class="of-eyebrow">Clientes</p><h2>Para quem é a proposta?</h2></div><a asp-page="/Clients/Create" asp-route-returnUrl="/Documents/New">Cadastrar primeiro cliente</a></header>
         @if (Model.Clients.Count == 0) { <div class="of-start-empty"><strong>Você ainda não tem clientes cadastrados.</strong><p>Cadastre o cliente e volte para continuar.</p><a class="of-button-primary" asp-page="/Clients/Create" asp-route-returnUrl="/Documents/New">Cadastrar primeiro cliente</a></div> }
-        else { <label class="of-start-search"><span>Buscar cliente</span><input type="search" placeholder="Nome, telefone, documento ou e-mail" data-picker-search="clients" /></label><div class="of-picker-list" data-picker-list="clients">@foreach (var item in Model.Clients) { <a asp-page="/Documents/CreateBudget" asp-route-clientId="@item.Id" data-search="@item.SearchText"><span><strong>@item.Name</strong><small>@item.Detail</small></span><b>Usar cliente</b></a> }</div> }
+        else { <label class="of-start-search"><span>Buscar cliente</span><input type="search" placeholder="Nome, telefone, documento ou e-mail" data-picker-search="clients" /></label><div class="of-picker-list" data-picker-list="clients">@foreach (var item in Model.Clients) { <form method="post" action="@Url.Page("/Documents/CreateBudget", "Create")" data-search="@item.SearchText">@Html.AntiForgeryToken()<input type="hidden" name="clientId" value="@item.Id" /><input type="hidden" name="idempotencyKey" value="@Guid.NewGuid().ToString("N")" /><button type="submit" class="of-picker-choice"><span><strong>@item.Name</strong><small>@item.Detail</small></span><b>Usar cliente</b></button></form> }</div> }
     </section>
 
     <section class="of-start-picker" id="servicos">
         <header><div><p class="of-eyebrow">Catálogo</p><h2>Qual serviço entra primeiro?</h2></div><a asp-page="/Services/Create">Criar serviço</a></header>
         @if (Model.Services.Count == 0) { <div class="of-start-empty"><strong>Cadastre seu primeiro serviço.</strong><p>Depois, descrição e preço poderão entrar no orçamento em um clique.</p><a class="of-button-primary" asp-page="/Services/Create">Criar serviço</a></div> }
-        else { <label class="of-start-search"><span>Buscar serviço</span><input type="search" placeholder="Nome, código ou descrição" data-picker-search="services" /></label><form method="get" action="@Url.Page("/Documents/CreateBudget")" data-service-picker><div class="of-picker-list" data-picker-list="services">@foreach (var item in Model.Services) { <label data-search="@item.SearchText"><input type="checkbox" name="serviceIds" value="@item.Id" /><span><strong>@item.Name</strong><small>@(item.Description ?? "Sem descrição") · @item.Unit · @item.Price.ToString("C")</small></span><b>Selecionar</b></label> }</div><button class="of-button-primary" type="submit" disabled data-service-submit>Adicionar serviços selecionados</button></form> }
+        else { <label class="of-start-search"><span>Buscar serviço</span><input type="search" placeholder="Nome, código ou descrição" data-picker-search="services" /></label><form method="post" action="@Url.Page("/Documents/CreateBudget", "Create")" data-service-picker>@Html.AntiForgeryToken()<input type="hidden" name="idempotencyKey" value="@Guid.NewGuid().ToString("N")" /><div class="of-picker-list" data-picker-list="services">@foreach (var item in Model.Services) { <label data-search="@item.SearchText"><input type="checkbox" name="serviceIds" value="@item.Id" /><span><strong>@item.Name</strong><small>@(item.Description ?? "Sem descrição") · @item.Unit · @item.Price.ToString("C")</small></span><b>Selecionar</b></label> }</div><button class="of-button-primary" type="submit" disabled data-service-submit>Adicionar serviços selecionados</button></form> }
     </section>
 
     <section class="of-start-picker" id="modelos">
         <header><div><p class="of-eyebrow">Templates ativos</p><h2>Reaproveite uma estrutura pronta</h2></div><a asp-page="/Templates/Index">Ver modelos</a></header>
-        @if (Model.Templates.Count == 0) { <div class="of-start-empty"><strong>Nenhum modelo ativo.</strong><p>Você pode continuar em branco ou criar um modelo para reutilizar depois.</p><div><a class="of-button-primary" asp-page="/Documents/CreateBudget">Continuar em branco</a><a class="of-button-secondary" asp-page="/Templates/Index">Criar template</a></div></div> }
-        else { <div class="of-picker-list">@foreach (var item in Model.Templates) { <a asp-page="/Documents/CreateBudget" asp-route-templateId="@item.Id"><span><strong>@item.Title</strong><small>@item.Profession · @item.ItemCount item(ns)</small></span><b>Usar cópia</b></a> }</div> }
+        @if (Model.Templates.Count == 0) { <div class="of-start-empty"><strong>Nenhum modelo ativo.</strong><p>Você pode continuar em branco ou criar um modelo para reutilizar depois.</p><div><form method="post" action="@Url.Page("/Documents/CreateBudget", "Create")">@Html.AntiForgeryToken()<input type="hidden" name="idempotencyKey" value="@Guid.NewGuid().ToString("N")" /><button class="of-button-primary" type="submit">Continuar em branco</button></form><a class="of-button-secondary" asp-page="/Templates/Index">Criar template</a></div></div> }
+        else { <div class="of-picker-list">@foreach (var item in Model.Templates) { <form method="post" action="@Url.Page("/Documents/CreateBudget", "Create")">@Html.AntiForgeryToken()<input type="hidden" name="templateId" value="@item.Id" /><input type="hidden" name="idempotencyKey" value="@Guid.NewGuid().ToString("N")" /><button type="submit" class="of-picker-choice"><span><strong>@item.Title</strong><small>@item.Profession · @item.ItemCount item(ns)</small></span><b>Usar cópia</b></button></form> }</div> }
     </section>
 
     <section class="of-start-picker" id="rascunhos">
