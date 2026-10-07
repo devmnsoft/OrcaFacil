@@ -170,10 +170,11 @@ public sealed class CommercialCandidateHomologationTests
 
         var service = new BillingStatusService(subRepo, payRepo, invRepo, evtRepo, uow, options, testClock);
         await service.SyncOverdueSubscriptionsAsync();
+        await service.SyncOverdueSubscriptionsAsync();
 
-        // Coverage advances from 2026-11-06 to 2026-12-06!
-        Assert.Equal(new DateTime(2026, 12, 6, 12, 0, 0, DateTimeKind.Utc), subscription.PaidThroughAt);
-        Assert.Equal(new DateTime(2026, 12, 6, 12, 0, 0, DateTimeKind.Utc), subscription.NextDueAt);
+        Assert.Equal(new DateTime(2026, 11, 6, 12, 0, 0, DateTimeKind.Utc), subscription.PaidThroughAt);
+        Assert.Equal(new DateTime(2026, 11, 6, 12, 0, 0, DateTimeKind.Utc), subscription.NextDueAt);
+        Assert.Equal(SubscriptionStatus.Active, subscription.Status);
     }
 
     [Fact]

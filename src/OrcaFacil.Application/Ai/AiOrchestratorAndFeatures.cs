@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Ai;
+using OrcaFacil.Application.Security;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
 
@@ -95,7 +96,8 @@ public sealed record BudgetAiSuggestionResult(
     IReadOnlyList<BudgetAiItemSuggestion> Items,
     decimal EstimatedTotal,
     bool IsRuleBased,
-    string Notice);
+    string Notice,
+    bool RequiresReview = true);
 
 public interface IBudgetAiAssistant
 {
@@ -184,8 +186,11 @@ public sealed class BudgetAiAssistant(
         IReadOnlyList<ServiceCatalogItem> availableCatalog,
         CancellationToken ct = default)
     {
+        if (context.AccountId == Guid.Empty || context.AccountId != policy.AccountId || !policy.AllowSuggestions || !CanSuggest(context))
+            return new(false, string.Empty, string.Empty, [], 0, true, "Esta conta não autorizou sugestões de orçamento.", false);
+
         if (string.IsNullOrWhiteSpace(serviceDescription))
-            return new(false, string.Empty, string.Empty, [], 0, true, "Informe a descrição do serviço para receber sugestões.");
+            return new(false, string.Empty, string.Empty, [], 0, true, "Informe a descrição do serviço para receber sugestões.", false);
 
         var cleanDescription = sanitizer.Sanitize(serviceDescription);
         var activeCatalog = availableCatalog
@@ -231,7 +236,7 @@ public sealed class BudgetAiAssistant(
 
         if (execution.Succeeded && !execution.IsFallbackToRules)
         {
-            scope = execution.Content;
+            scope = sanitizer.Sanitize(execution.Content);
             notes = "Orçamento gerado com base no catálogo oficial do prestador. Válido por 10 dias.";
         }
         else
@@ -250,8 +255,14 @@ public sealed class BudgetAiAssistant(
             execution.IsFallbackToRules,
             execution.IsFallbackToRules
                 ? "Sugestão gerada por regras internas baseada no seu catálogo de serviços."
-                : "Sugestão auxiliada por IA com preços fixados no seu catálogo. Revise antes de aplicar.");
+                : "Sugestão auxiliada por IA com preços fixados no seu catálogo. Revise antes de aplicar.",
+            true);
     }
+
+    private static bool CanSuggest(AiRequestContext context) =>
+        context.Permissions.Contains("Ai.Suggest")
+        || context.Permissions.Contains(PermissionCodes.AiApplySuggestions)
+        || context.Permissions.Contains(PermissionCodes.AiGenerateDrafts);
 }
 
 public sealed class CommercialAiReviewer : ICommercialAiReviewer

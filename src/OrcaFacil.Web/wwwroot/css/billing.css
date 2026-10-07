@@ -10,7 +10,7 @@
 /* Manual payment registration */
 .payment-register-form{display:grid;gap:.55rem;max-width:720px;margin-top:1.5rem;padding:1.5rem;background:var(--of-surface,#fff);border:1px solid var(--of-border,#e2e8f0);border-radius:20px;box-shadow:0 8px 28px rgb(15 23 42 / 6%)}
 .payment-register-form label{margin-top:.45rem;font-weight:700}
-.payment-register-form input,.payment-register-form select,.payment-register-form textarea{width:100%;min-height:46px;padding:.75rem;border:1px solid var(--of-border,#cbd5e1);border-radius:10px;background:var(--of-surface,#fff);color:inherit;font:inherit}
+.payment-register-form input,.payment-register-form select,.payment-register-form textarea{width:100%;min-height:46px;padding:.75rem;border:1px solid var(--of-border,#cbd5e1);border-radius:10px;background:var(--of-input-background,#fff);color:var(--of-text,#172033);caret-color:var(--of-text,#172033);font:inherit}
 .payment-register-form textarea{min-height:96px;resize:vertical}
 .payment-register-form small{color:var(--of-text-secondary,#64748b)}
 .payment-register-form input:focus-visible,.payment-register-form select:focus-visible,.payment-register-form textarea:focus-visible{outline:3px solid color-mix(in srgb,var(--of-primary,#087443) 35%,transparent);outline-offset:2px}

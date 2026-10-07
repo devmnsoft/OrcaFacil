@@ -4,5 +4,6 @@
 .of-menu a.is-active { color:#fff; background:rgb(36 107 254 / 32%); box-shadow:inset 3px 0 var(--of-primary); }
 .of-menu-heading { margin:var(--of-space-4) .8rem var(--of-space-1); color:rgb(207 224 242 / 70%); font-size:.68rem; font-weight:800; letter-spacing:.11em; text-transform:uppercase; }
 .of-mobile-menu { overscroll-behavior:contain; }
+.of-mobile-menu.is-open, .of-public-menu.is-open, .of-profile-menu:not([hidden]) { z-index: var(--of-z-overlay); }
 .of-mobile-menu__header { display:flex; align-items:center; justify-content:space-between; min-height:3.5rem; padding:var(--of-space-3) var(--of-space-4); border-bottom:1px solid rgb(255 255 255 / 12%); }
 .of-mobile-menu__header button { min-width:44px; min-height:44px; border:0; border-radius:var(--of-radius-sm); color:inherit; background:transparent; font-size:1.5rem; }

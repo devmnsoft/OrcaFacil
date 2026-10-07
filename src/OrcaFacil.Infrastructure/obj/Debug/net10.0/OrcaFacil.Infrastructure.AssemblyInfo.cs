@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OrcaFacil.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e41fe62a300aa16879146c5e5992b4e4ed77eab1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0f26d0717d845278477b0577f69f30b526f442d4")]
 [assembly: System.Reflection.AssemblyProductAttribute("OrcaFacil.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OrcaFacil.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

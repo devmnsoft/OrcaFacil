@@ -22,21 +22,24 @@ public sealed class ReceiptApplicationService(
         if (currentAccount.AccountId is not Guid accountId || request.AccountId != accountId)
             return Failure(CreateReceiptCode.AccessDenied, "A conta ativa não permite esta operação.", correlationId);
         if (request.Amount <= 0) return Failure(CreateReceiptCode.InvalidAmount, "Informe um valor maior que zero.", correlationId);
-        if (request.PaidAt > DateTime.UtcNow.AddDays(1)) return Failure(CreateReceiptCode.InvalidDate, "A data do recebimento não pode estar no futuro.", correlationId);
         if (!PaymentMethodCodes.TryParse(request.PaymentMethod, out var paymentMethod))
             return Failure(CreateReceiptCode.InvalidPaymentMethod, "Escolha uma forma de pagamento válida.", correlationId);
         var canonicalPaymentMethod = paymentMethod.ToCode();
 
+        var paidAtUtc = CommercialClock.NormalizeToUtc(request.PaidAt);
+        if (paidAtUtc > DateTime.UtcNow.AddDays(1)) return Failure(CreateReceiptCode.InvalidDate, "A data do recebimento não pode estar no futuro.", correlationId);
         var duplicate = await db.ManualPayments.AsNoTracking().FirstOrDefaultAsync(
             x => x.AccountId == accountId && x.IdempotencyKey == request.IdempotencyKey, ct);
         if (duplicate is not null)
         {
-            var paidAt = CommercialClock.NormalizeToUtc(request.PaidAt);
+            var paidAt = paidAtUtc;
             var same = ManualPaymentIdempotency.Matches(request.WorkOrderId, CommercialCalculator.Round(request.Amount), canonicalPaymentMethod, paidAt,
                 duplicate.WorkOrderId, duplicate.Amount, duplicate.PaymentMethod, duplicate.PaidAt);
             if (!same)
                 return Failure(CreateReceiptCode.ConcurrencyConflict, "Esta chave já foi usada para outro recebimento. O lançamento original foi mantido.", correlationId);
             var existingReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(x => x.PaymentId == duplicate.Id && !x.IsDeleted, ct);
+            if (existingReceipt is null && duplicate.Status == FinancialRecordStatus.Active)
+                return await CreateForPaymentAsync(duplicate.Id, request.ServiceDescription, request.City, request.Notes, ct);
             return new(true, CreateReceiptCode.DuplicateRequest, "Este recebimento já havia sido registrado.", duplicate.Id,
                 existingReceipt?.Id, existingReceipt?.Number, RedirectPage, correlationId);
         }
@@ -66,7 +69,7 @@ public sealed class ReceiptApplicationService(
         {
             AccountId = accountId, ClientId = client.Id, WorkOrderId = request.WorkOrderId,
             DocumentId = request.DocumentId, Amount = request.Amount,
-            PaymentMethod = canonicalPaymentMethod, PaidAt = request.PaidAt.ToUniversalTime(),
+            PaymentMethod = canonicalPaymentMethod, PaidAt = paidAtUtc,
             Notes = request.Notes?.Trim(), RegisteredByUserId = currentAccount.UserId,
             IdempotencyKey = request.IdempotencyKey
         };
@@ -161,6 +164,8 @@ public sealed class ReceiptApplicationService(
         if (payment is null || payment.Status == FinancialRecordStatus.Reversed) return false;
         payment.Status = FinancialRecordStatus.Reversed; payment.ReversedAt = DateTime.UtcNow;
         payment.ReversedByUserId = currentAccount.UserId; payment.ReversalReason = reason.Trim(); payment.Touch();
+        var receipts = await db.Receipts.Where(x => x.AccountId == accountId && x.PaymentId == payment.Id && !x.IsDeleted && x.CancelledAt == null).ToListAsync(ct);
+        foreach (var receipt in receipts) receipt.CancelForReversedPayment(currentAccount.UserId, DateTime.UtcNow);
         if (payment.WorkOrderId is Guid workOrderId)
         {
             var order = await db.WorkOrders.SingleOrDefaultAsync(x => x.Id == workOrderId && x.AccountId == accountId && !x.IsDeleted, ct);

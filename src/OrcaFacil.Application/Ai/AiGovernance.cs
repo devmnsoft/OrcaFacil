@@ -71,7 +71,8 @@ public sealed class ExternalAiProvider : IAiProvider
 public sealed record AiGovernancePolicy(Guid AccountId, bool AllowCustomerData = true,
     bool AllowFinancialData = false, bool AllowCostAndMargin = false, bool AllowDocuments = false,
     bool AllowCommercialDrafts = true, bool AllowFinancialDrafts = false, bool AllowSuggestions = true,
-    bool AllowAutomaticCriticalActions = false);
+    bool AllowAutomaticCriticalActions = false, IReadOnlyCollection<string>? DeniedProviders = null,
+    bool AccountActive = true, bool FeatureEnabled = true);
 
 public sealed class AiGovernanceService
 {

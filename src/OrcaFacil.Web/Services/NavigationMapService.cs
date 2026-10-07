@@ -26,6 +26,7 @@ public sealed class NavigationMapService : INavigationMapService
         Group("comercial", "Comercial", 20,
             Item("routine", "Rotina comercial", "Prioridades e próximos contatos", "calendar", "/CommercialRoutine/Index", 10, "follow-up"),
             Item("new-budget", "Novo orçamento", "Crie uma proposta comercial", "quote", "/Documents/New", 20, true, "documents.create", "proposta", "criar orçamento"),
+            Item("budget-assistant", "Assistente de orçamento", "Sugestões revisáveis do seu catálogo", "help", "/Documents/BudgetAssistant", 25, false, "documents.create", "ia", "sugestão"),
             Item("budgets", "Orçamentos", "Propostas e documentos comerciais", "quote", "/Documents/Index", 30, false, "documents.read", "propostas"),
             Item("clients", "Clientes", "Carteira e histórico de clientes", "client", "/Clients/Index", 40, false, "clients.read", "contatos"),
             Item("messages", "Templates de mensagem", "Mensagens comerciais reutilizáveis", "share", "/MessageTemplates/Index", 50, "mensagens")),

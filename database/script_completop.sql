@@ -1779,3 +1779,9 @@ CREATE INDEX IF NOT EXISTS ix_public_document_decisions_account_document ON orca
 
 -- SaaS Enterprise V6.6: executar pelo psql para carregar o patch idempotente.
 \ir hotfix_saas_enterprise_modules_v66.sql
+
+-- V6.7: consumo de IA e sugestões de orçamento revisáveis.
+\ir hotfix_ai_budget_assistant_v67.sql
+
+-- V6.7: unicidade da cobertura financeira por pagamento.
+\ir hotfix_billing_coverage_v67.sql

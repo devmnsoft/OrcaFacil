@@ -1,4 +1,5 @@
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Commercial;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
 
@@ -12,8 +13,9 @@ public sealed class BillingPaymentService(IRepository<BillingInvoice> invoices, 
         if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount), "O pagamento deve ser positivo.");
         var invoice = await invoices.GetAsync(invoiceId, ct) ?? throw new KeyNotFoundException("Cobrança não encontrada.");
         if (invoice.AccountId != accountId) throw new InvalidOperationException("A cobrança não pertence à conta informada.");
-        invoice.ApplyPayment(amount, paymentDate);
-        var payment = new BillingPayment { AccountId = accountId, InvoiceId = invoiceId, Amount = amount, PaymentDate = paymentDate, PaymentMethod = method, Reference = reference?.Trim(), RegisteredByUserId = actorId };
+        var paidAtUtc = CommercialClock.NormalizeToUtc(paymentDate);
+        invoice.ApplyPayment(amount, paidAtUtc);
+        var payment = new BillingPayment { AccountId = accountId, InvoiceId = invoiceId, Amount = amount, PaymentDate = paidAtUtc, PaymentMethod = method, Reference = reference?.Trim(), RegisteredByUserId = actorId };
         await payments.AddAsync(payment, ct);
         await unitOfWork.SaveChangesAsync(ct);
         return payment;

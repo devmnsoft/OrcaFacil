@@ -7,6 +7,8 @@ public sealed class AiOptions
     public int MaxInputTokens { get; set; } = 4000;
     public int MaxOutputTokens { get; set; } = 1500;
     public int RateLimitPerMinute { get; set; } = 30;
+    public int MonthlyAccountLimit { get; set; } = 200;
+    public int DailyUserLimit { get; set; } = 40;
 }
 
 public sealed class AiProviderSettings

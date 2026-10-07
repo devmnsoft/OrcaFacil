@@ -181,76 +181,10 @@ public class BillingStatusService
         return restored;
     }
 
-    private async Task<bool> HasProvenSettlementForCycleAsync(Subscription subscription, DateTime dueAt, DateTime now, CancellationToken ct)
+    private static Task<bool> HasProvenSettlementForCycleAsync(Subscription subscription, DateTime dueAt, DateTime now, CancellationToken ct)
     {
-        if (!subscription.AccountId.HasValue) return false;
-        var accountId = subscription.AccountId.Value;
-
-        var isAnnual = subscription.BillingCycle != null &&
-            subscription.BillingCycle.Equals("annual", StringComparison.OrdinalIgnoreCase);
-        var cycleMonths = isAnnual ? 12 : 1;
-
-        // Check if an invoice for this cycle is fully paid
-        var paidInvoice = _invoices.Query().FirstOrDefault(x =>
-            x.AccountId == accountId &&
-            x.SubscriptionId == subscription.Id &&
-            x.Status == BillingInvoiceStatus.Paid &&
-            ((x.PaidAt.HasValue && (subscription.LastPaymentAt == null || x.PaidAt.Value > subscription.LastPaymentAt.Value)) ||
-             (x.DueAt >= dueAt.AddMonths(-cycleMonths))));
-
-        if (paidInvoice != null && (subscription.LastPaymentAt == null || (paidInvoice.PaidAt.HasValue && paidInvoice.PaidAt.Value > subscription.LastPaymentAt.Value)))
-        {
-            var currentCoverage = subscription.PaidThroughAt ?? dueAt;
-            var baseDate = currentCoverage > now ? currentCoverage : (paidInvoice.PaidAt ?? now);
-            var nextCoverage = baseDate.AddMonths(cycleMonths);
-
-            if (subscription.PaidThroughAt == null || subscription.PaidThroughAt.Value < nextCoverage)
-            {
-                subscription.PaidThroughAt = nextCoverage;
-                subscription.NextDueAt = nextCoverage;
-                subscription.LastPaymentAt = paidInvoice.PaidAt ?? now;
-                subscription.Touch();
-            }
-            return true;
-        }
-
-        // Check if an approved payment specifically covers this obligation
-        var approvedPayment = _payments.Query().FirstOrDefault(x =>
-            x.AccountId == accountId &&
-            x.SubscriptionId == subscription.Id &&
-            x.Status == PaymentStatus.Approved &&
-            x.PaidAt.HasValue &&
-            ((subscription.LastPaymentAt == null || x.PaidAt.Value > subscription.LastPaymentAt.Value) ||
-             (x.PaidAt.Value >= dueAt.AddMonths(-cycleMonths))));
-
-        if (approvedPayment != null && (subscription.LastPaymentAt == null || (approvedPayment.PaidAt.HasValue && approvedPayment.PaidAt.Value > subscription.LastPaymentAt.Value)))
-        {
-            var currentCoverage = subscription.PaidThroughAt ?? dueAt;
-            var paymentDate = approvedPayment.PaidAt ?? now;
-            var baseDate = currentCoverage > now ? currentCoverage : paymentDate;
-            var nextCoverage = baseDate.AddMonths(cycleMonths);
-
-            if (subscription.PaidThroughAt == null || subscription.PaidThroughAt.Value < nextCoverage)
-            {
-                subscription.PaidThroughAt = nextCoverage;
-                subscription.NextDueAt = nextCoverage;
-                subscription.LastPaymentAt = paymentDate;
-                subscription.Touch();
-            }
-            return true;
-        }
-
-        if (approvedPayment != null && (subscription.Status is SubscriptionStatus.PastDue or SubscriptionStatus.Suspended))
-        {
-            return true;
-        }
-
-        if (paidInvoice != null && (subscription.Status is SubscriptionStatus.PastDue or SubscriptionStatus.Suspended))
-        {
-            return true;
-        }
-
-        return false;
+        if (!subscription.AccountId.HasValue) return Task.FromResult(false);
+        return Task.FromResult(subscription.PaidThroughAt.HasValue && subscription.PaidThroughAt.Value > now && subscription.PaidThroughAt.Value >= dueAt);
     }
 
     private static void RestoreSubscription(Subscription subscription)

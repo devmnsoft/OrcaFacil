@@ -80,6 +80,7 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<SubscriptionEvent> SubscriptionEvents => Set<SubscriptionEvent>();
     public DbSet<PlanOverride> PlanOverrides => Set<PlanOverride>();
     public DbSet<BillingInvoice> BillingInvoices => Set<BillingInvoice>();
+    public DbSet<BillingCoverageApplication> BillingCoverageApplications => Set<BillingCoverageApplication>();
     public DbSet<BillingInvoiceItem> BillingInvoiceItems => Set<BillingInvoiceItem>();
     public DbSet<BillingPayment> BillingPayments => Set<BillingPayment>();
     public DbSet<SubscriptionChangeRequest> SubscriptionChangeRequests => Set<SubscriptionChangeRequest>();
@@ -335,6 +336,8 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<TechnicalReport> TechnicalReports => Set<TechnicalReport>();
     public DbSet<AssetQrCode> AssetQrCodes => Set<AssetQrCode>();
     public DbSet<AssetQrAccessLog> AssetQrAccessLogs => Set<AssetQrAccessLog>();
+    public DbSet<AiUsageLog> AiUsageLogs => Set<AiUsageLog>();
+    public DbSet<AiSuggestionCard> AiSuggestionCards => Set<AiSuggestionCard>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

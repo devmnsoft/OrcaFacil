@@ -68,7 +68,7 @@
 .of-account-choice:disabled { cursor:default; opacity:.72; }
 .of-account-search { display:grid; gap:var(--of-space-2); }
 .of-account-search input { width:100%; }
-.of-profile-menu{position:absolute;right:var(--of-space-6);top:calc(var(--of-topbar-height) - 4px);z-index:var(--of-z-nav);width:280px;padding:var(--of-space-2);border:1px solid var(--of-border);border-radius:var(--of-radius);background:var(--of-surface);box-shadow:var(--of-shadow-lg)}
+.of-profile-menu{position:absolute;right:var(--of-space-6);top:calc(var(--of-topbar-height) - 4px);z-index:var(--of-z-overlay);width:280px;padding:var(--of-space-2);border:1px solid var(--of-border);border-radius:var(--of-radius);background:var(--of-surface);color:var(--of-text);box-shadow:var(--of-shadow-lg)}
 .of-profile-menu[hidden]{display:none}.of-profile-menu header{display:flex;gap:var(--of-space-3);align-items:center;padding:var(--of-space-3);border-bottom:1px solid var(--of-border)}
 .of-profile-menu header span:last-child,.of-profile-context{display:flex;min-width:0;flex-direction:column}.of-profile-menu small{color:var(--of-text-secondary);overflow:hidden;text-overflow:ellipsis}
 .of-profile-context{margin:var(--of-space-2);padding:var(--of-space-3);border-radius:var(--of-radius-sm);background:var(--of-subtle)}

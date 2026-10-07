@@ -177,6 +177,16 @@ public sealed class Receipt : Entity
     public string? PdfStorageKey { get; set; }
     public DateTime? SentAt { get; set; }
     public DateTime? LastSharedAt { get; set; }
+
+    public bool CancelForReversedPayment(Guid userId, DateTime utcNow)
+    {
+        if (CancelledAt.HasValue || IsDeleted) return false;
+        CancelledAt = utcNow;
+        CancelledByUserId = userId;
+        CancellationReason = "Recibo cancelado porque o pagamento foi estornado. O registro original foi preservado.";
+        Touch();
+        return true;
+    }
 }
 
 /// <summary>Serializes receipt numbering inside one tenant and calendar year.</summary>

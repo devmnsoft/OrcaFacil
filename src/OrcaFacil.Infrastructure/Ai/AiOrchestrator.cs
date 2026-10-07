@@ -11,18 +11,27 @@ public sealed class AiOrchestrator : IAiOrchestrator
     private readonly AiOptions _options;
     private readonly AiCircuitBreaker _circuitBreaker;
     private readonly ILogger<AiOrchestrator> _logger;
+    private readonly IAiRedactionService _redaction;
+    private readonly AiPromptInjectionGuard _injection;
+    private readonly IAiConsumptionService? _consumption;
     private readonly ConcurrentDictionary<Guid, AccountRateLimiter> _rateLimits = new();
 
     public AiOrchestrator(
         IEnumerable<IAiModelClient> clients,
         IOptions<AiOptions> options,
         AiCircuitBreaker circuitBreaker,
-        ILogger<AiOrchestrator> logger)
+        ILogger<AiOrchestrator> logger,
+        IAiRedactionService? redaction = null,
+        AiPromptInjectionGuard? injectionGuard = null,
+        IAiConsumptionService? consumption = null)
     {
         _clients = clients;
         _options = options.Value;
         _circuitBreaker = circuitBreaker;
         _logger = logger;
+        _redaction = redaction ?? new AiRedactionService();
+        _injection = injectionGuard ?? new AiPromptInjectionGuard();
+        _consumption = consumption;
     }
 
     public async Task<AiExecutionResult> ExecuteAsync(
@@ -33,12 +42,43 @@ public sealed class AiOrchestrator : IAiOrchestrator
         string? preferredProvider = null,
         CancellationToken ct = default)
     {
-        if (context.AccountId == Guid.Empty)
+        if (context.AccountId == Guid.Empty || context.AccountId != policy.AccountId)
         {
             return FallbackToRules("Conta não identificada.");
         }
 
-        // Rate limiting check
+        if (!policy.AccountActive || !policy.FeatureEnabled || policy.AllowAutomaticCriticalActions)
+        {
+            return FallbackToRules("A conta ou o recurso inteligente não está autorizado para esta operação.");
+        }
+
+        if (AiActionPolicy.Prohibited.Contains(purpose) || !HasPurposePermission(context, purpose))
+        {
+            return FallbackToRules("Você não tem permissão para usar este recurso inteligente.");
+        }
+
+        if (purpose.Equals("budget_assistant", StringComparison.OrdinalIgnoreCase) && !policy.AllowSuggestions)
+        {
+            return FallbackToRules("As sugestões inteligentes estão desativadas para esta conta.");
+        }
+
+        var prompt = _redaction.Sanitize(request.Prompt);
+        var systemPrompt = string.IsNullOrWhiteSpace(request.SystemPrompt) ? null : _redaction.Sanitize(request.SystemPrompt);
+        if (_injection.IsSuspicious(prompt) || _injection.IsSuspicious(systemPrompt))
+        {
+            _logger.LogWarning("AI_PROMPT_BLOCKED AccountId {AccountId} Purpose {Purpose}", context.AccountId, purpose);
+            return FallbackToRules("O pedido foi bloqueado pela política de segurança. Nenhum provedor externo foi chamado.");
+        }
+
+        var inputChars = prompt.Length + (systemPrompt?.Length ?? 0);
+        if (_options.MaxInputTokens > 0 && inputChars > _options.MaxInputTokens * 4)
+        {
+            return FallbackToRules("O pedido excede o limite de entrada configurado. Nenhum provedor externo foi chamado.");
+        }
+
+        var maxTokens = Math.Clamp(request.MaxTokens ?? _options.MaxOutputTokens, 1, Math.Max(1, _options.MaxOutputTokens));
+        var safeRequest = request with { Prompt = prompt, SystemPrompt = systemPrompt, MaxTokens = maxTokens };
+
         var limiter = _rateLimits.GetOrAdd(context.AccountId, _ => new AccountRateLimiter());
         if (!limiter.Allow(_options.RateLimitPerMinute))
         {
@@ -46,10 +86,19 @@ public sealed class AiOrchestrator : IAiOrchestrator
             return FallbackToRules("Limite de requisições por minuto excedido para esta conta. Tente novamente em instantes.");
         }
 
-        var providerName = preferredProvider;
-        if (string.IsNullOrWhiteSpace(providerName))
+        if (_consumption is not null)
         {
-            providerName = _options.DefaultProvider;
+            var allowed = false;
+            try
+            {
+                allowed = await _consumption.HasCapacityAsync(context.AccountId, context.UserId, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "AI_QUOTA_CHECK_FAILED AccountId {AccountId}", context.AccountId);
+            }
+
+            if (!allowed) return FallbackToRules(AiQuotaService.LimitMessage);
         }
 
         var candidates = _clients.Where(x => x.IsConfigured).ToList();
@@ -58,56 +107,104 @@ public sealed class AiOrchestrator : IAiOrchestrator
             return FallbackToRules("Nenhum provedor externo está habilitado ou com credenciais configuradas.");
         }
 
-        IAiModelClient? chosen = null;
-        if (!string.IsNullOrWhiteSpace(providerName))
+        var ordered = OrderProviders(candidates, preferredProvider, _options.DefaultProvider)
+            .Where(x => !IsDenied(policy, x.ProviderName) && _circuitBreaker.CanAttempt(x.ProviderName))
+            .ToList();
+        if (ordered.Count == 0)
         {
-            chosen = candidates.FirstOrDefault(x => x.ProviderName.Equals(providerName, StringComparison.OrdinalIgnoreCase));
+            return FallbackToRules("Os provedores configurados estão temporariamente indisponíveis após falhas consecutivas.");
         }
 
-        chosen ??= candidates.FirstOrDefault();
-        if (chosen == null)
+        string? lastError = null;
+        foreach (var chosen in ordered)
         {
-            return FallbackToRules("Provedor solicitado indisponível.");
-        }
-
-        if (!_circuitBreaker.CanAttempt(chosen.ProviderName))
-        {
-            _logger.LogWarning("AI_CIRCUIT_BREAKER_OPEN Provider {Provider}", chosen.ProviderName);
-            // Check fallback provider
-            var fallback = candidates.FirstOrDefault(x => !x.ProviderName.Equals(chosen.ProviderName, StringComparison.OrdinalIgnoreCase) &&
-                                                          _circuitBreaker.CanAttempt(x.ProviderName));
-            if (fallback != null)
+            var response = await chosen.ExecuteChatAsync(safeRequest, ct);
+            if (response.Succeeded)
             {
-                _logger.LogInformation("AI_FALLBACK_TRIGGERED From {From} To {To}", chosen.ProviderName, fallback.ProviderName);
-                chosen = fallback;
+                _circuitBreaker.RecordSuccess(chosen.ProviderName);
+                var content = _redaction.Sanitize(response.Content);
+                await RecordAsync(context, purpose, chosen.ProviderName, "ExternalProvider", "Succeeded",
+                    response.PromptTokens + response.CompletionTokens, response.LatencyMs, null, ct);
+                return new AiExecutionResult(
+                    true,
+                    content,
+                    AiOperatingMode.ExternalProvider,
+                    chosen.ProviderName,
+                    response.Model,
+                    response.PromptTokens,
+                    response.CompletionTokens,
+                    response.LatencyMs,
+                    false);
             }
-            else
-            {
-                return FallbackToRules($"Provedor {chosen.ProviderName} temporariamente indisponível após falhas consecutivas.");
-            }
+
+            if (response.ErrorCode is not ("model_not_allowed" or "provider_not_configured" or "empty_response"))
+                _circuitBreaker.RecordFailure(chosen.ProviderName);
+            lastError = _redaction.Sanitize(response.ErrorMessage);
+            _logger.LogWarning("AI_EXECUTION_FAILED Provider {Provider} Code {Code}", chosen.ProviderName, response.ErrorCode);
+            await RecordAsync(context, purpose, chosen.ProviderName, "ExternalProvider", "Failed", 0, response.LatencyMs, lastError, ct);
         }
 
-        var response = await chosen.ExecuteChatAsync(request, ct);
-        if (response.Succeeded)
-        {
-            _circuitBreaker.RecordSuccess(chosen.ProviderName);
-            return new AiExecutionResult(
-                true,
-                response.Content,
-                AiOperatingMode.ExternalProvider,
-                chosen.ProviderName,
-                response.Model,
-                response.PromptTokens,
-                response.CompletionTokens,
-                response.LatencyMs,
-                false);
-        }
-
-        _circuitBreaker.RecordFailure(chosen.ProviderName);
-        _logger.LogWarning("AI_EXECUTION_FAILED Provider {Provider} Error {Error}", chosen.ProviderName, response.ErrorMessage);
-
-        return FallbackToRules(response.ErrorMessage ?? "Falha na resposta do provedor de IA.");
+        return FallbackToRules(string.IsNullOrWhiteSpace(lastError) ? "Falha na resposta do provedor de IA." : lastError);
     }
+
+    private async Task RecordAsync(AiRequestContext context, string purpose, string provider, string mode, string status,
+        int tokens, long latencyMs, string? error, CancellationToken ct)
+    {
+        if (_consumption is null) return;
+        try
+        {
+            await _consumption.RecordAsync(new AiUsageEntry(
+            context.AccountId,
+            context.UserId,
+            purpose,
+            provider,
+            mode,
+            tokens,
+            0m,
+            (int)Math.Min(int.MaxValue, Math.Max(0, latencyMs)),
+            status,
+            error,
+            Guid.NewGuid().ToString("N")), ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "AI_USAGE_RECORD_FAILED AccountId {AccountId}", context.AccountId);
+        }
+    }
+
+    private static IEnumerable<IAiModelClient> OrderProviders(IReadOnlyList<IAiModelClient> candidates, string? preferred, string? configuredDefault)
+    {
+        var ordered = new List<IAiModelClient>();
+        void Add(string? name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return;
+            var match = candidates.FirstOrDefault(x => x.ProviderName.Equals(name, StringComparison.OrdinalIgnoreCase));
+            if (match is not null && !ordered.Contains(match)) ordered.Add(match);
+        }
+
+        Add(preferred);
+        Add(configuredDefault);
+        foreach (var name in new[] { "Groq", "Gemini", "DeepSeek" }) Add(name);
+        foreach (var candidate in candidates)
+        {
+            if (!ordered.Contains(candidate)) ordered.Add(candidate);
+        }
+
+        return ordered;
+    }
+
+    private static bool HasPurposePermission(AiRequestContext context, string purpose)
+    {
+        if (AiActionPolicy.Prohibited.Contains(purpose)) return false;
+        var permissions = context.Permissions;
+        return permissions.Contains("Ai.Suggest")
+            || permissions.Contains("Ai.ApplySuggestions")
+            || permissions.Contains("Ai.GenerateDrafts")
+            || permissions.Contains("documents.create");
+    }
+
+    private static bool IsDenied(AiGovernancePolicy policy, string provider) =>
+        policy.DeniedProviders?.Any(x => x.Equals(provider, StringComparison.OrdinalIgnoreCase)) == true;
 
     private static AiExecutionResult FallbackToRules(string message) =>
         new(false, string.Empty, AiOperatingMode.RulesOnly, "Rules", string.Empty, 0, 0, 0, true, message);

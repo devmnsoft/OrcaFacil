@@ -51,3 +51,18 @@
 @keyframes of-shimmer { to { translate:100% 0; } }
 @media (prefers-reduced-motion:reduce) { .of-skeleton::after { display:none; } }
 @media (forced-colors:active) { .of-kpi,.of-empty-state { border:1px solid CanvasText; } }
+
+/* V6.7 — pares explícitos de contraste para seções e para o assistente de orçamento. */
+.of-section-light { color: var(--of-navy, #14273f); background: var(--of-surface, #fff); }
+.of-section-dark { color: #f7fbff; background: #102a43; }
+.of-section-dark :is(h1, h2, h3, h4) { color: #f7fbff; }
+.of-section-dark :is(p, small, .text-muted) { color: #e5eef6; }
+.of-budget-ai-hero { display: grid; gap: .45rem; margin-bottom: 1.25rem; padding: clamp(1.25rem, 3vw, 2rem); border-radius: 1rem; background: #102a43; color: #f7fbff; }
+.of-budget-ai-hero :is(h1, p, .of-eyebrow) { margin: 0; }
+.of-budget-ai-hero p, .of-budget-ai-hero .of-eyebrow { color: #d7e6f2; }
+.of-budget-ai-review { display: grid; gap: .85rem; margin-top: 1rem; padding: 1.25rem; border: 1px solid #d5deea; border-radius: 1rem; background: #fff; color: #14273f; }
+.of-budget-ai-review :is(p, li, label, strong) { color: #14273f; }
+.of-budget-ai-review small { color: #3e4c5f; }
+.of-budget-ai-items { display: grid; gap: .65rem; margin: 0; padding: 0; list-style: none; }
+.of-budget-ai-items label { display: flex; gap: .75rem; align-items: flex-start; }
+@media (max-width: 640px) { .of-budget-ai-hero, .of-budget-ai-review { padding: 1rem; } }
