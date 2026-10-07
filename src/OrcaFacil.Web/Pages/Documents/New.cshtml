@@ -8,9 +8,19 @@
 
 <main class="of-budget-start">
     <header class="of-budget-start-hero">
-        <div><p class="of-eyebrow">Novo orçamento assistido</p><h1>Como você quer começar?</h1><p>Escolha um ponto de partida. Você poderá revisar e editar tudo antes de salvar ou compartilhar.</p></div>
+        <div><p class="of-eyebrow">Novo orçamento assistido</p><h1>Como você quer começar?</h1><p>Escolha um ponto de partida. Você poderá revisar e editar tudo antes de salvar ou compartilhar.</p>
+        <details><summary>Como usar</summary><p>Descreva o serviço para receber uma sugestão revisável, ou comece por cliente, catálogo ou rascunho. A sugestão não envia, não cobra e não altera o orçamento até você confirmar.</p></details></div>
         <span aria-hidden="true"><svg class="of-icon"><use href="#of-icon-quote" /></svg></span>
     </header>
+
+    <section class="of-start-picker" id="assistente">
+        <header><div><p class="of-eyebrow">Sugestão revisável</p><h2>Descreva o serviço</h2></div></header>
+        <form method="post" action="@Url.Page("/Documents/BudgetAssistant", "Suggest")">
+            @Html.AntiForgeryToken()
+            <label class="of-field"><span>O que o cliente pediu</span><textarea name="Description" rows="4" maxlength="2000" required placeholder="Ex.: instalação de três pontos de tomada na sala"></textarea></label>
+            <button class="of-button-primary" type="submit">Gerar sugestão para revisão</button>
+        </form>
+    </section>
 
     <section class="of-start-options" aria-label="Formas de iniciar o orçamento">
         <a class="of-start-card is-featured" asp-page="/Documents/CreateBudget">

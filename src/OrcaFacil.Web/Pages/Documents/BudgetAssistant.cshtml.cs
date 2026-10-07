@@ -2,9 +2,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Ai;
 using OrcaFacil.Application.Security;
+using OrcaFacil.Domain.Entities;
+using OrcaFacil.Domain.Enums;
 using OrcaFacil.Persistence;
 
 namespace OrcaFacil.Web.Pages.Documents;
@@ -16,13 +19,15 @@ public sealed class BudgetAssistantModel : PageModel
     private readonly IBudgetAiAssistant _assistant;
     private readonly IAiSuggestionReviewService _reviews;
     private readonly OrcaFacilDbContext _db;
+    private readonly IOptions<AiOptions> _options;
 
-    public BudgetAssistantModel(ICurrentAccountService account, IBudgetAiAssistant assistant, IAiSuggestionReviewService reviews, OrcaFacilDbContext db)
+    public BudgetAssistantModel(ICurrentAccountService account, IBudgetAiAssistant assistant, IAiSuggestionReviewService reviews, OrcaFacilDbContext db, IOptions<AiOptions> options)
     {
         _account = account;
         _assistant = assistant;
         _reviews = reviews;
         _db = db;
+        _options = options;
     }
 
     [BindProperty]
@@ -53,15 +58,17 @@ public sealed class BudgetAssistantModel : PageModel
             .OrderBy(x => x.Name)
             .Take(200)
             .ToListAsync(ct);
-        var permissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Ai.Suggest" };
-        if (await _account.HasPermissionAsync(PermissionCodes.AiApplySuggestions, ct)) permissions.Add(PermissionCodes.AiApplySuggestions);
-        if (await _account.HasPermissionAsync(PermissionCodes.AiGenerateDrafts, ct)) permissions.Add(PermissionCodes.AiGenerateDrafts);
+        var permissions = await ServerPermissionsAsync(ct);
+        if (!permissions.Contains("documents.create") && !permissions.Contains(PermissionCodes.AiApplySuggestions) && !permissions.Contains(PermissionCodes.AiGenerateDrafts) && !permissions.Contains("Ai.Suggest"))
+            return Forbid();
+        var settings = await _db.AccountSettings.AsNoTracking().SingleOrDefaultAsync(x => x.AccountId == accountId && !x.IsDeleted, ct);
         var result = await _assistant.SuggestBudgetAsync(
             new AiRequestContext(accountId, _account.UserId, permissions),
-            new AiGovernancePolicy(accountId, AllowSuggestions: true, AllowAutomaticCriticalActions: false),
+            ServerPolicy(accountId),
             Description.Trim(),
             catalog,
-            ct);
+            ct,
+            new BudgetCommercialContext(settings?.DefaultQuoteValidityDays, settings?.DefaultDeliveryTerm, settings?.DefaultCommercialTerms, null));
         if (!result.Succeeded)
         {
             ErrorMessage = result.Notice;
@@ -101,8 +108,23 @@ public sealed class BudgetAssistantModel : PageModel
 
     private async Task<bool> CanUseAsync(CancellationToken ct) =>
         await _account.HasPermissionAsync("documents.create", ct)
+        || await _account.HasPermissionAsync("Ai.Suggest", ct)
         || await _account.HasPermissionAsync(PermissionCodes.AiApplySuggestions, ct)
         || await _account.HasPermissionAsync(PermissionCodes.AiGenerateDrafts, ct);
+
+    private async Task<HashSet<string>> ServerPermissionsAsync(CancellationToken ct)
+    {
+        var permissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var code in new[] { "documents.create", "Ai.Suggest", PermissionCodes.AiApplySuggestions, PermissionCodes.AiGenerateDrafts })
+            if (await _account.HasPermissionAsync(code, ct)) permissions.Add(code);
+        return permissions;
+    }
+
+    private AiGovernancePolicy ServerPolicy(Guid accountId)
+    {
+        var denied = _options.Value.Providers.Where(x => !x.Value.Enabled || x.Value.AllowedModels.Count == 0).Select(x => x.Key).ToArray();
+        return new AiGovernancePolicy(accountId, AllowSuggestions: true, AllowAutomaticCriticalActions: false, DeniedProviders: denied, AccountActive: true, FeatureEnabled: true);
+    }
 
     private string BuildCreateUrl(IReadOnlyList<Guid> serviceIds)
     {

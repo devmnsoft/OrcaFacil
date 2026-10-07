@@ -21,21 +21,42 @@ public sealed class CreateBudgetModel : PageModel
     public BudgetWizardViewModel Draft { get; private set; } = default!;
     public IReadOnlyList<ClientChoice> Clients { get; private set; } = [];
 
-    public async Task OnGetAsync(Guid? id, Guid? clientId, Guid? serviceId, Guid[]? serviceIds, Guid? templateId, CancellationToken ct)
+    public string? OpenError { get; private set; }
+
+    public async Task<IActionResult> OnGetAsync(Guid? id, Guid? clientId, Guid? serviceId, Guid[]? serviceIds, Guid? templateId, CancellationToken ct)
     {
-        Draft = await _wizard.OpenAsync(_current.UserId, _account.AccountId, id, clientId, ct, serviceIds is { Length: > 0 } ? serviceIds : serviceId is Guid one ? [one] : [], templateId);
+        if (_account.AccountId is null) return Forbid();
+        try { await _account.EnsureAccountAccessAsync(ct); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        var opened = await _wizard.OpenAsync(_current.UserId, _account.AccountId, id, clientId, ct, serviceIds is { Length: > 0 } ? serviceIds : serviceId is Guid one ? [one] : [], templateId);
+        if (!opened.Succeeded || opened.Draft is null)
+        {
+            OpenError = opened.Error ?? "Não foi possível abrir o orçamento.";
+            return Page();
+        }
+        if (!id.HasValue) return RedirectToPage(new { id = opened.Draft.DocumentId });
+        Draft = opened.Draft;
         await LoadClients(ct);
+        return Page();
     }
 
     public async Task<IActionResult> OnPostAutosaveAsync([FromBody] SaveBudgetDraftRequest input, CancellationToken ct)
     {
+        if (_account.AccountId is null) return Forbid();
+        try { await _account.EnsureAccountAccessAsync(ct); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
         if (string.IsNullOrWhiteSpace(input.IdempotencyKey)) return BadRequest(new { error = "Identificador de salvamento ausente." });
         var result = await _wizard.SaveAsync(_current.UserId, _account.AccountId, input, ct);
-        return result.Succeeded ? new JsonResult(result.Draft) : StatusCode(result.Conflict ? 409 : 400, new { error = result.Error, draft = result.Draft });
+        return result.Succeeded
+            ? new JsonResult(new { draft = result.Draft, notices = result.Notices ?? [], rowVersion = result.Draft?.RowVersion })
+            : StatusCode(result.Conflict ? 409 : 400, new { error = result.Error, draft = result.Draft, conflict = result.Conflict });
     }
 
     public async Task<IActionResult> OnPostFinalizeAsync([FromBody] SaveBudgetDraftRequest input, CancellationToken ct)
     {
+        if (_account.AccountId is null) return Forbid();
+        try { await _account.EnsureAccountAccessAsync(ct); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
         var result = await _wizard.FinalizeAsync(_current.UserId, _account.AccountId, input, ct);
         return result.Succeeded ? new JsonResult(new { redirectUrl = Url.Page("/Documents/Details", new { id = input.DocumentId }) })
             : StatusCode(result.Conflict ? 409 : 400, new { error = result.Error, draft = result.Draft });

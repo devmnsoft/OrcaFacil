@@ -1785,3 +1785,6 @@ CREATE INDEX IF NOT EXISTS ix_public_document_decisions_account_document ON orca
 
 -- V6.7: unicidade da cobertura financeira por pagamento.
 \ir hotfix_billing_coverage_v67.sql
+
+-- V6.8: reserva de cota de IA e idempotência do rascunho.
+\ir hotfix_ai_quota_reservation_v68.sql

@@ -71,6 +71,31 @@ internal static class AiClientHttp
         if (value.TryGetInt32(out var count)) return Math.Max(0, count);
         return value.TryGetDecimal(out var number) ? Math.Max(0, (int)number) : 0;
     }
+
+    public static AiClientResponse? RejectTransport(System.Net.HttpStatusCode status, int bodyLength, string provider, string model, long elapsed)
+    {
+        if (bodyLength > 200_000)
+            return new AiClientResponse(false, string.Empty, provider, model, 0, 0, elapsed, "response_too_large", "A resposta externa foi recusada antes de ser usada.");
+        if (IsRedirect(status))
+            return new AiClientResponse(false, string.Empty, provider, model, 0, 0, elapsed, "redirect_blocked", "A resposta externa foi recusada antes de ser usada.");
+        var code = (int)status;
+        if (code is 401 or 403)
+            return new AiClientResponse(false, string.Empty, provider, model, 0, 0, elapsed, "provider_unauthorized", "O provedor recusou a credencial. Nada foi aplicado.");
+        if (code == 429)
+            return new AiClientResponse(false, string.Empty, provider, model, 0, 0, elapsed, "rate_limited", "O provedor limitou a chamada. Nada foi aplicado.");
+        if (code >= 500)
+            return new AiClientResponse(false, string.Empty, provider, model, 0, 0, elapsed, "provider_unavailable", "O provedor está indisponível. Nada foi aplicado.");
+        if (code < 200 || code >= 300)
+            return new AiClientResponse(false, string.Empty, provider, model, 0, 0, elapsed, code.ToString(), $"Falha na resposta da API {provider} ({code}).");
+        return null;
+    }
+
+    public static string? OpenAiFinishError(string? finishReason) => finishReason switch
+    {
+        "length" => "truncated_response",
+        "content_filter" => "blocked_response",
+        _ => null
+    };
 }
 
 public sealed class GroqAiClient : IAiModelClient
@@ -158,21 +183,18 @@ public sealed class GroqAiClient : IAiModelClient
             sw.Stop();
 
             var body = await response.Content.ReadAsStringAsync(timeoutCts.Token);
-            if (body.Length > 200_000 || AiClientHttp.IsRedirect(response.StatusCode))
-            {
-                return new AiClientResponse(false, string.Empty, ProviderName, model, 0, 0, sw.ElapsedMilliseconds,
-                    AiClientHttp.IsRedirect(response.StatusCode) ? "redirect_blocked" : "response_too_large",
-                    "A resposta externa foi recusada antes de ser usada.");
-            }
-            if (!response.IsSuccessStatusCode)
-            {
-                return new AiClientResponse(false, string.Empty, ProviderName, model, 0, 0, sw.ElapsedMilliseconds,
-                    response.StatusCode.ToString(), $"Falha na resposta da API Groq ({response.StatusCode}).");
-            }
+            var rejected = AiClientHttp.RejectTransport(response.StatusCode, body.Length, ProviderName, model, sw.ElapsedMilliseconds);
+            if (rejected is not null) return rejected;
 
             using var doc = JsonDocument.Parse(body);
             var root = doc.RootElement;
-            var content = root.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? string.Empty;
+            var choice = root.GetProperty("choices")[0];
+            var finishError = AiClientHttp.OpenAiFinishError(choice.TryGetProperty("finish_reason", out var finish) ? finish.GetString() : null);
+            if (finishError == "truncated_response")
+                return new AiClientResponse(false, string.Empty, ProviderName, model, 0, 0, sw.ElapsedMilliseconds, finishError, "A resposta da Groq veio incompleta e não foi aplicada.");
+            if (finishError == "blocked_response")
+                return new AiClientResponse(false, string.Empty, ProviderName, model, 0, 0, sw.ElapsedMilliseconds, finishError, "A Groq bloqueou a resposta. Nada foi aplicado.");
+            var content = choice.GetProperty("message").GetProperty("content").GetString() ?? string.Empty;
 
             var promptTokens = 0;
             var completionTokens = 0;
@@ -299,17 +321,8 @@ public sealed class GeminiAiClient : IAiModelClient
             sw.Stop();
 
             var body = await response.Content.ReadAsStringAsync(timeoutCts.Token);
-            if (body.Length > 200_000 || AiClientHttp.IsRedirect(response.StatusCode))
-            {
-                return new AiClientResponse(false, string.Empty, ProviderName, model, 0, 0, sw.ElapsedMilliseconds,
-                    AiClientHttp.IsRedirect(response.StatusCode) ? "redirect_blocked" : "response_too_large",
-                    "A resposta externa foi recusada antes de ser usada.");
-            }
-            if (!response.IsSuccessStatusCode)
-            {
-                return new AiClientResponse(false, string.Empty, ProviderName, model, 0, 0, sw.ElapsedMilliseconds,
-                    response.StatusCode.ToString(), $"Falha na resposta da API Gemini ({response.StatusCode}).");
-            }
+            var rejected = AiClientHttp.RejectTransport(response.StatusCode, body.Length, ProviderName, model, sw.ElapsedMilliseconds);
+            if (rejected is not null) return rejected;
 
             using var doc = JsonDocument.Parse(body);
             var root = doc.RootElement;
@@ -474,21 +487,18 @@ public sealed class DeepSeekAiClient : IAiModelClient
             sw.Stop();
 
             var body = await response.Content.ReadAsStringAsync(timeoutCts.Token);
-            if (body.Length > 200_000 || AiClientHttp.IsRedirect(response.StatusCode))
-            {
-                return new AiClientResponse(false, string.Empty, ProviderName, model, 0, 0, sw.ElapsedMilliseconds,
-                    AiClientHttp.IsRedirect(response.StatusCode) ? "redirect_blocked" : "response_too_large",
-                    "A resposta externa foi recusada antes de ser usada.");
-            }
-            if (!response.IsSuccessStatusCode)
-            {
-                return new AiClientResponse(false, string.Empty, ProviderName, model, 0, 0, sw.ElapsedMilliseconds,
-                    response.StatusCode.ToString(), $"Falha na resposta da API DeepSeek ({response.StatusCode}).");
-            }
+            var rejected = AiClientHttp.RejectTransport(response.StatusCode, body.Length, ProviderName, model, sw.ElapsedMilliseconds);
+            if (rejected is not null) return rejected;
 
             using var doc = JsonDocument.Parse(body);
             var root = doc.RootElement;
-            var content = root.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? string.Empty;
+            var choice = root.GetProperty("choices")[0];
+            var finishError = AiClientHttp.OpenAiFinishError(choice.TryGetProperty("finish_reason", out var finish) ? finish.GetString() : null);
+            if (finishError == "truncated_response")
+                return new AiClientResponse(false, string.Empty, ProviderName, model, 0, 0, sw.ElapsedMilliseconds, finishError, "A resposta da DeepSeek veio incompleta e não foi aplicada.");
+            if (finishError == "blocked_response")
+                return new AiClientResponse(false, string.Empty, ProviderName, model, 0, 0, sw.ElapsedMilliseconds, finishError, "A DeepSeek bloqueou a resposta. Nada foi aplicado.");
+            var content = choice.GetProperty("message").GetProperty("content").GetString() ?? string.Empty;
 
             var promptTokens = 0;
             var completionTokens = 0;

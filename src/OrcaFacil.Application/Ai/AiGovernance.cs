@@ -6,7 +6,7 @@ public enum AiOperatingMode { RulesOnly, ExternalProvider, SecureRag }
 public enum AiProviderStatus { NotConfigured, Configured, Healthy, Degraded, Failed, Disabled }
 public enum AiConfidence { Insufficient, Low, Medium, High }
 
-public sealed record AiRequestContext(Guid AccountId, Guid UserId, IReadOnlySet<string> Permissions);
+public sealed record AiRequestContext(Guid AccountId, Guid UserId, IReadOnlySet<string> Permissions, string? CorrelationId = null);
 public sealed record AiSource(Guid AccountId, string Type, string EntityId, string Title, string Url, string Content, bool IsAccessible = true);
 public sealed record AiAnswer(string Text, AiOperatingMode Mode, AiConfidence Confidence,
     IReadOnlyList<AiSource> Sources, IReadOnlyList<string> Limitations, string? SuggestedNextAction = null);

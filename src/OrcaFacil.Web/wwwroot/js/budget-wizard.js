@@ -10,6 +10,8 @@ if (wizard) {
   const finish = wizard.querySelector('[data-finish]');
   let currentStep = Math.max(0, Math.min(4, Number(wizard.dataset.currentStep) || 0));
   let rowVersion = wizard.dataset.rowVersion;
+  let idempotencyKey = crypto.randomUUID();
+  let confirmPriceChanges = false;
   let timer;
   let saving = false;
   let queued = false;
@@ -43,7 +45,7 @@ if (wizard) {
     warrantyText: field('warrantyText')?.value || null, conditionsText: field('conditionsText')?.value || null,
     templateCode: wizard.querySelector('input[name="presentation"]:checked')?.value || 'essential', discount: num(wizard.querySelector('[data-general-discount]')),
     items: rows().map((row, sortOrder) => ({ serviceCatalogItemId: row.dataset.serviceId || null, description: row.querySelector('[data-item-description]').value, unit: row.querySelector('[data-item-unit]').value, quantity: num(row.querySelector('[data-item-quantity]')), unitPrice: num(row.querySelector('[data-item-price]')), discount: num(row.querySelector('[data-item-discount]')), notes: null, sortOrder })),
-    rowVersion, idempotencyKey: crypto.randomUUID()
+    rowVersion, idempotencyKey, confirmPriceChanges
   });
   const save = async (finalize = false) => {
     if (saving) { queued = true; return false; }
@@ -51,9 +53,40 @@ if (wizard) {
     try {
       const response = await fetch(`?handler=${finalize ? 'Finalize' : 'Autosave'}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token }, body: JSON.stringify(payload()) });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Não foi possível salvar.');
+      if (!response.ok) {
+        const message = data.error || 'Não foi possível salvar.';
+        if (response.status === 409) {
+          setState(message + ' Recarregue antes de tentar de novo.', 'error');
+          return false;
+        }
+        if (message.includes('Confirme a alteração de preço')) {
+          confirmPriceChanges = false;
+          setState(message, 'error');
+          let confirm = wizard.querySelector('[data-confirm-price]');
+          if (!confirm) {
+            confirm = document.createElement('button');
+            confirm.type = 'button';
+            confirm.className = 'of-button-secondary';
+            confirm.dataset.confirmPrice = 'true';
+            confirm.textContent = 'Confirmar alteração de preço e salvar';
+            wizard.querySelector('[data-save-state]')?.after(confirm);
+            confirm.addEventListener('click', () => { confirmPriceChanges = true; save(); });
+          }
+          confirm.hidden = false;
+          return false;
+        }
+        throw new Error(message);
+      }
       if (finalize) { window.location.assign(data.redirectUrl); return true; }
-      rowVersion = data.rowVersion; setState('Salvo agora', 'saved'); return true;
+      const draft = data.draft || data;
+      rowVersion = draft.rowVersion || data.rowVersion;
+      idempotencyKey = crypto.randomUUID();
+      confirmPriceChanges = false;
+      const confirmButton = wizard.querySelector('[data-confirm-price]');
+      if (confirmButton) confirmButton.hidden = true;
+      const notice = Array.isArray(data.notices) && data.notices.length ? ` ${data.notices[0]}` : '';
+      setState(`Salvo agora.${notice}`, 'saved');
+      return true;
     } catch (error) { setState(error.message || 'Falha ao salvar — tentar novamente', 'error'); return false; }
     finally { saving = false; if (queued && !finalize) { queued = false; save(); } }
   };

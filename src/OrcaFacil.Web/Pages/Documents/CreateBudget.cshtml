@@ -12,12 +12,19 @@
         <p class="of-eyebrow">Orçamento guiado</p>
         <h1>Transforme o pedido em uma proposta clara</h1>
         <p>Avance no seu ritmo. Nada será enviado ao cliente ao finalizar. <a asp-page="/Documents/BudgetAssistant">Pedir sugestões revisáveis</a></p>
+        <details><summary>Como usar</summary><p>Descreva o serviço, revise a sugestão e só então aplique os itens do seu catálogo. Salvar de novo com a mesma tentativa não duplica o rascunho. Se o preço do catálogo mudou, o orçamento mantém o preço já contratado até você confirmar.</p></details>
     </div>
     <div class="of-save-state" data-save-state role="status" aria-live="polite">
         <span aria-hidden="true"></span><strong>Alterações pendentes</strong>
     </div>
 </header>
 
+@if (!string.IsNullOrWhiteSpace(Model.OpenError))
+{
+    <p class="of-form-error" role="alert">@Model.OpenError</p>
+}
+else
+{
 <form method="post" class="of-budget-wizard" data-budget-wizard data-document-id="@Model.Draft.DocumentId" data-row-version="@Model.Draft.RowVersion" data-current-step="@Model.Draft.CurrentStep" novalidate>
     @Html.AntiForgeryToken()
     <div asp-validation-summary="ModelOnly" class="of-form-error" role="alert"></div>
@@ -108,6 +115,7 @@
         </aside>
     </div>
 </form>
+}
 
 @section Scripts {
     <script type="module" src="~/js/budget-wizard.js" asp-append-version="true"></script>

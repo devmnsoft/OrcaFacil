@@ -13,9 +13,14 @@ public sealed record AiUsageEntry(
     string? SanitizedError,
     string CorrelationId);
 
+public sealed record AiQuotaReservation(bool Allowed, string? Reason, int? MonthlyRemaining, int? DailyRemaining);
+public sealed record AiQuotaBalance(int MonthlyLimit, int MonthlyUsed, int DailyLimit, int DailyUsed, int? MonthlyRemaining, int? DailyRemaining, string? BlockReason, bool Estimated);
+
 public interface IAiConsumptionService
 {
     Task<bool> HasCapacityAsync(Guid accountId, Guid userId, CancellationToken ct = default);
+    Task<AiQuotaReservation> TryReserveAsync(Guid accountId, Guid userId, string operationType, string correlationId, CancellationToken ct = default);
+    Task<AiQuotaBalance> GetBalanceAsync(Guid accountId, Guid userId, CancellationToken ct = default);
     Task RecordAsync(AiUsageEntry entry, CancellationToken ct = default);
 }
 

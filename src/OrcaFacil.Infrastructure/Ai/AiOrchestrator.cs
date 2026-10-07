@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OrcaFacil.Application.Ai;
@@ -14,6 +15,7 @@ public sealed class AiOrchestrator : IAiOrchestrator
     private readonly IAiRedactionService _redaction;
     private readonly AiPromptInjectionGuard _injection;
     private readonly IAiConsumptionService? _consumption;
+    private readonly IServiceScopeFactory? _scopes;
     private readonly ConcurrentDictionary<Guid, AccountRateLimiter> _rateLimits = new();
 
     public AiOrchestrator(
@@ -23,7 +25,8 @@ public sealed class AiOrchestrator : IAiOrchestrator
         ILogger<AiOrchestrator> logger,
         IAiRedactionService? redaction = null,
         AiPromptInjectionGuard? injectionGuard = null,
-        IAiConsumptionService? consumption = null)
+        IAiConsumptionService? consumption = null,
+        IServiceScopeFactory? scopes = null)
     {
         _clients = clients;
         _options = options.Value;
@@ -32,6 +35,7 @@ public sealed class AiOrchestrator : IAiOrchestrator
         _redaction = redaction ?? new AiRedactionService();
         _injection = injectionGuard ?? new AiPromptInjectionGuard();
         _consumption = consumption;
+        _scopes = scopes;
     }
 
     public async Task<AiExecutionResult> ExecuteAsync(
@@ -86,21 +90,6 @@ public sealed class AiOrchestrator : IAiOrchestrator
             return FallbackToRules("Limite de requisições por minuto excedido para esta conta. Tente novamente em instantes.");
         }
 
-        if (_consumption is not null)
-        {
-            var allowed = false;
-            try
-            {
-                allowed = await _consumption.HasCapacityAsync(context.AccountId, context.UserId, ct);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "AI_QUOTA_CHECK_FAILED AccountId {AccountId}", context.AccountId);
-            }
-
-            if (!allowed) return FallbackToRules(AiQuotaService.LimitMessage);
-        }
-
         var candidates = _clients.Where(x => x.IsConfigured).ToList();
         if (candidates.Count == 0)
         {
@@ -115,6 +104,11 @@ public sealed class AiOrchestrator : IAiOrchestrator
             return FallbackToRules("Os provedores configurados estão temporariamente indisponíveis após falhas consecutivas.");
         }
 
+        var correlation = string.IsNullOrWhiteSpace(context.CorrelationId) ? Guid.NewGuid().ToString("N") : context.CorrelationId.Trim();
+        var reservation = await ReserveAsync(context, purpose, correlation, ct);
+        if (reservation is not null && !reservation.Allowed)
+            return FallbackToRules(reservation.Reason ?? AiQuotaService.LimitMessage);
+
         string? lastError = null;
         foreach (var chosen in ordered)
         {
@@ -124,7 +118,7 @@ public sealed class AiOrchestrator : IAiOrchestrator
                 _circuitBreaker.RecordSuccess(chosen.ProviderName);
                 var content = _redaction.Sanitize(response.Content);
                 await RecordAsync(context, purpose, chosen.ProviderName, "ExternalProvider", "Succeeded",
-                    response.PromptTokens + response.CompletionTokens, response.LatencyMs, null, ct);
+                    response.PromptTokens + response.CompletionTokens, response.LatencyMs, null, correlation, ct);
                 return new AiExecutionResult(
                     true,
                     content,
@@ -137,38 +131,70 @@ public sealed class AiOrchestrator : IAiOrchestrator
                     false);
             }
 
-            if (response.ErrorCode is not ("model_not_allowed" or "provider_not_configured" or "empty_response"))
+            if (response.ErrorCode is not ("model_not_allowed" or "provider_not_configured" or "empty_response" or "blocked_response" or "truncated_response" or "invalid_json"))
                 _circuitBreaker.RecordFailure(chosen.ProviderName);
             lastError = _redaction.Sanitize(response.ErrorMessage);
             _logger.LogWarning("AI_EXECUTION_FAILED Provider {Provider} Code {Code}", chosen.ProviderName, response.ErrorCode);
-            await RecordAsync(context, purpose, chosen.ProviderName, "ExternalProvider", "Failed", 0, response.LatencyMs, lastError, ct);
         }
 
+        await RecordAsync(context, purpose, ordered[0].ProviderName, "ExternalProvider", "Failed", 0, 0, lastError, correlation, ct);
         return FallbackToRules(string.IsNullOrWhiteSpace(lastError) ? "Falha na resposta do provedor de IA." : lastError);
     }
 
-    private async Task RecordAsync(AiRequestContext context, string purpose, string provider, string mode, string status,
-        int tokens, long latencyMs, string? error, CancellationToken ct)
+    private async Task<AiQuotaReservation?> ReserveAsync(AiRequestContext context, string purpose, string correlation, CancellationToken ct)
     {
-        if (_consumption is null) return;
         try
         {
-            await _consumption.RecordAsync(new AiUsageEntry(
-            context.AccountId,
-            context.UserId,
-            purpose,
-            provider,
-            mode,
-            tokens,
-            0m,
-            (int)Math.Min(int.MaxValue, Math.Max(0, latencyMs)),
-            status,
-            error,
-            Guid.NewGuid().ToString("N")), ct);
+            if (_scopes is not null)
+            {
+                using var scope = _scopes.CreateScope();
+                var consumption = scope.ServiceProvider.GetService<IAiConsumptionService>();
+                if (consumption is null) return null;
+                return await consumption.TryReserveAsync(context.AccountId, context.UserId, purpose, correlation, ct);
+            }
+
+            if (_consumption is null) return null;
+            return await _consumption.TryReserveAsync(context.AccountId, context.UserId, purpose, correlation, ct);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "AI_USAGE_RECORD_FAILED AccountId {AccountId}", context.AccountId);
+            _logger.LogWarning("AI_QUOTA_CHECK_FAILED AccountId {AccountId} Type {ExceptionType}", context.AccountId, ex.GetType().Name);
+            return new AiQuotaReservation(false, AiQuotaService.LimitMessage, 0, 0);
+        }
+    }
+
+    private async Task RecordAsync(AiRequestContext context, string purpose, string provider, string mode, string status,
+        int tokens, long latencyMs, string? error, string correlation, CancellationToken ct)
+    {
+        try
+        {
+            var entry = new AiUsageEntry(
+                context.AccountId,
+                context.UserId,
+                purpose,
+                provider,
+                mode,
+                tokens,
+                0m,
+                (int)Math.Min(int.MaxValue, Math.Max(0, latencyMs)),
+                status,
+                error,
+                correlation);
+            if (_scopes is not null)
+            {
+                using var scope = _scopes.CreateScope();
+                var consumption = scope.ServiceProvider.GetService<IAiConsumptionService>();
+                if (consumption is null) return;
+                await consumption.RecordAsync(entry, ct);
+                return;
+            }
+
+            if (_consumption is null) return;
+            await _consumption.RecordAsync(entry, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("AI_USAGE_RECORD_FAILED AccountId {AccountId} Type {ExceptionType}", context.AccountId, ex.GetType().Name);
         }
     }
 
