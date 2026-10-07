@@ -14,7 +14,7 @@ public sealed class QualityGateSchemaDriftV62 : Migration
         ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS profession varchar(120);
         ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
         CREATE INDEX IF NOT EXISTS ix_budget_templates_account_active ON orcafacil.budget_templates(account_id, is_active) WHERE is_deleted = false;
-        CREATE INDEX IF NOT EXISTS ix_budget_template_items_template ON orcafacil.budget_template_items(template_id);
+        CREATE INDEX IF NOT EXISTS ix_budget_template_items_template ON orcafacil.budget_template_items(budget_template_id);
         """);
 
     // Deliberately non-destructive: repaired production columns are retained.

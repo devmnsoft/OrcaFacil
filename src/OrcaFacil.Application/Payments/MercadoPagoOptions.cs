@@ -10,4 +10,6 @@ public class MercadoPagoOptions
     public string StatementDescriptor { get; set; } = "ORCAFACIL";
     public int PixExpirationMinutes { get; set; } = 60;
     public int BoletoExpirationDays { get; set; } = 3;
+    public string? BackUrl { get; set; }
+    public string? NotificationUrl { get; set; }
 }

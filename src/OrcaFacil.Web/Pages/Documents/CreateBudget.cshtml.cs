@@ -42,7 +42,7 @@ public sealed class CreateBudgetModel : PageModel
     }
 
     private async Task LoadClients(CancellationToken ct) => Clients = await _db.Clients.AsNoTracking()
-        .Where(x => x.UserId == _current.UserId && x.AccountId == _account.AccountId && !x.IsDeleted).OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt).Take(40)
+        .Where(x => x.AccountId == _account.AccountId && !x.IsDeleted).OrderBy(x => x.Name).Take(40)
         .Select(x => new ClientChoice(x.Id, x.Name, x.DocumentNumber, x.Phone, x.Email, x.City)).ToListAsync(ct);
 }
 

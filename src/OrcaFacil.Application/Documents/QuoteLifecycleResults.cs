@@ -6,7 +6,7 @@ public enum QuoteLifecycleCode
 {
     None, DocumentNotFound, AccessDenied, InvalidStatus, InvalidDocument, NoItems,
     RevisionAlreadyExists, PublicLinkUnavailable, PublicLinkExpired, PublicLinkRevoked,
-    DecisionAlreadyRegistered, VersionOutdated, PlanLimitReached, ConcurrencyConflict, Unexpected
+    DecisionAlreadyRegistered, VersionOutdated, PlanLimitReached, ConcurrencyConflict, IdempotencyConflict, Unexpected
 }
 
 public record QuoteLifecycleResult(bool Succeeded, QuoteLifecycleCode Code, string Message, Guid? DocumentId = null,

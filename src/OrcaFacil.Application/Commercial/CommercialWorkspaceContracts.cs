@@ -6,7 +6,7 @@ public sealed record CommercialWorkspaceItem(Guid Id, string Description, decima
     decimal Discount, decimal Subtotal, decimal Total);
 public sealed record CommercialRevisionView(Guid Id, int Number, string Status, DateTime CreatedAt, bool IsCurrent);
 public sealed record ClientEngagementView(string Status, DateTime CreatedAt, DateTime ExpiresAt, int ViewCount,
-    DateTime? LastViewedAt, string? Decision, DateTime? DecidedAt, string? CustomerName, string? Comment);
+    DateTime? LastViewedAt, string? Decision, DateTime? DecidedAt, string? CustomerName, string? Comment, int? DecidedRevision = null);
 public sealed record CommercialTimelineEvent(string Action, string Title, string? Description, DateTime OccurredAt,
     string Origin, string Tone, string Icon);
 public sealed record CommercialWorkOrderView(Guid Id, string Number, string Status, DateTime? ScheduledStart,
@@ -29,9 +29,10 @@ public sealed record CommercialPipelineColumn(string Code, string Title, int Cou
     IReadOnlyList<CommercialPipelineCard> Cards);
 public sealed record CommercialAttentionItem(Guid DocumentId, string Severity, string Title, string Description,
     DateTime OccurredAt);
+public sealed record CommercialPendingItem(string Title, string Explanation, int Count, decimal? Amount, string Href);
 public sealed record CommercialDashboardView(IReadOnlyList<CommercialPipelineColumn> Pipeline,
     IReadOnlyList<CommercialAttentionItem> Attention, int Sent, int Viewed, int Approved, decimal ApprovedValue,
-    decimal? ApprovalRate, decimal? AverageTicket);
+    decimal? ApprovalRate, decimal? AverageTicket, IReadOnlyList<CommercialPendingItem> Pending);
 
 public interface ICommercialWorkspaceQueryService
 {

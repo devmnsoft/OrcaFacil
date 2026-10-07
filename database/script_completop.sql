@@ -938,6 +938,28 @@ CREATE TABLE IF NOT EXISTS orcafacil.account_security_settings (id uuid PRIMARY 
 CREATE TABLE IF NOT EXISTS orcafacil.audit_export_jobs (id uuid PRIMARY KEY, account_id uuid NOT NULL, requested_by_user_id uuid NOT NULL, status text NOT NULL, requested_at timestamptz NOT NULL, completed_at timestamptz NULL, created_at timestamptz NOT NULL, updated_at timestamptz NULL, is_deleted boolean NOT NULL DEFAULT false);
 ALTER TABLE orcafacil.audit_logs ADD COLUMN IF NOT EXISTS summary text NOT NULL DEFAULT '';
 ALTER TABLE orcafacil.audit_logs ADD COLUMN IF NOT EXISTS correlation_id uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+CREATE TABLE IF NOT EXISTS orcafacil.data_subject_requests (
+    id uuid PRIMARY KEY,
+    requester_user_id uuid NOT NULL,
+    account_id uuid NOT NULL,
+    type varchar(40) NOT NULL,
+    description varchar(4000) NOT NULL,
+    status varchar(40) NOT NULL,
+    requested_at timestamptz NOT NULL,
+    verified_at timestamptz NULL,
+    due_at timestamptz NOT NULL,
+    completed_at timestamptz NULL,
+    rejected_at timestamptz NULL,
+    rejection_reason text NULL,
+    assigned_to_user_id uuid NULL,
+    correlation_id uuid NOT NULL,
+    delivery_file_id uuid NULL,
+    client_id uuid NULL,
+    resolution_notes text NULL,
+    reviewed_at timestamptz NULL,
+    created_at timestamptz NOT NULL,
+    updated_at timestamptz NULL,
+    is_deleted boolean NOT NULL DEFAULT false);
 ALTER TABLE orcafacil.data_subject_requests ADD COLUMN IF NOT EXISTS client_id uuid NULL;
 ALTER TABLE orcafacil.data_subject_requests ADD COLUMN IF NOT EXISTS resolution_notes text NULL;
 ALTER TABLE orcafacil.data_subject_requests ADD COLUMN IF NOT EXISTS reviewed_at timestamptz NULL;
@@ -1481,6 +1503,12 @@ CREATE INDEX IF NOT EXISTS ix_documents_account_type_valid_until ON orcafacil.do
 CREATE INDEX IF NOT EXISTS ix_documents_public_token ON orcafacil.documents(public_token) WHERE public_token IS NOT NULL;
 
 -- P0 schema-drift repair: clients and documents (idempotent; preserves restored data).
+ALTER TABLE orcafacil.clients ADD COLUMN IF NOT EXISTS is_favorite boolean NOT NULL DEFAULT false;
+ALTER TABLE orcafacil.clients ADD COLUMN IF NOT EXISTS internal_notes varchar(2000);
+ALTER TABLE orcafacil.clients ADD COLUMN IF NOT EXISTS last_interaction_at timestamptz;
+ALTER TABLE orcafacil.clients ADD COLUMN IF NOT EXISTS next_follow_up_at timestamptz;
+ALTER TABLE orcafacil.clients ADD COLUMN IF NOT EXISTS preferred_contact_channel varchar(24);
+ALTER TABLE orcafacil.clients ADD COLUMN IF NOT EXISTS version xid;
 ALTER TABLE orcafacil.clients ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true;
 ALTER TABLE orcafacil.clients ADD COLUMN IF NOT EXISTS is_deleted boolean NOT NULL DEFAULT false;
 ALTER TABLE orcafacil.clients ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone;
@@ -1736,7 +1764,7 @@ ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS title varchar(16
 ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS profession varchar(120);
 ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
 CREATE INDEX IF NOT EXISTS ix_budget_templates_account_active ON orcafacil.budget_templates(account_id, is_active) WHERE is_deleted = false;
-CREATE INDEX IF NOT EXISTS ix_budget_template_items_template ON orcafacil.budget_template_items(template_id);
+CREATE INDEX IF NOT EXISTS ix_budget_template_items_template ON orcafacil.budget_template_items(budget_template_id);
 ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS is_system_template boolean NOT NULL DEFAULT false;
 ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true;
 ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS is_deleted boolean NOT NULL DEFAULT false;

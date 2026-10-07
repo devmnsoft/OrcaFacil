@@ -1,6 +1,7 @@
 using System.Data;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Commercial;
 using OrcaFacil.Application.Common;
@@ -105,10 +106,22 @@ public sealed class CommercialJourneyService(
         var existing = await db.PublicDocumentDecisions.SingleOrDefaultAsync(
             x => x.AccountId == access.AccountId && x.IdempotencyKey == idempotencyKey, ct);
         if (existing is not null)
-            return PublicDecision(true, QuoteLifecycleCode.None, "Resposta já registrada.", correlation, access,
+        {
+            if (SameDecision(existing, decision, customerName, customerContact, reason, comment, desiredDate, acceptedTerms))
+                return PublicDecision(true, QuoteLifecycleCode.None, "Resposta já registrada.", correlation, access,
+                    DecisionStatus(existing.Decision), existing.Id);
+            return PublicDecision(false, QuoteLifecycleCode.IdempotencyConflict,
+                "Esta confirmação já foi usada para uma resposta diferente. A decisão anterior foi mantida.", correlation, access,
                 DecisionStatus(existing.Decision), existing.Id);
-        if (await db.PublicDocumentDecisions.AnyAsync(x => x.AccountId == access.AccountId && x.DocumentRevisionId == access.DocumentRevisionId, ct))
-            return PublicDecision(false, QuoteLifecycleCode.DecisionAlreadyRegistered, "Esta versão já recebeu uma resposta.", correlation, access);
+        }
+        var revisionDecision = await db.PublicDocumentDecisions.SingleOrDefaultAsync(
+            x => x.AccountId == access.AccountId && x.DocumentRevisionId == access.DocumentRevisionId, ct);
+        if (revisionDecision is not null)
+            return PublicDecision(false, QuoteLifecycleCode.DecisionAlreadyRegistered,
+                revisionDecision.Decision == decision
+                    ? "Esta versão já recebeu esta resposta."
+                    : "Esta versão já recebeu outra resposta. A decisão anterior foi mantida.", correlation, access,
+                DecisionStatus(revisionDecision.Decision), revisionDecision.Id);
         if (!await db.DocumentRevisions.AnyAsync(x => x.Id == access.DocumentRevisionId && x.IsCurrent, ct))
             return PublicDecision(false, QuoteLifecycleCode.VersionOutdated, "Existe uma versão mais recente deste orçamento.", correlation, access);
 
@@ -133,8 +146,22 @@ public sealed class CommercialJourneyService(
             Type = decision == PublicDocumentDecisionType.Approved ? NotificationType.Success : NotificationType.Warning,
             Category = NotificationCategory.Document, ActionUrl = $"/Documents/Details/{document.Id}", ActionText = "Abrir proposta"
         });
-        await db.SaveChangesAsync(ct);
-        await transaction.CommitAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            db.ChangeTracker.Clear();
+            var raced = await db.PublicDocumentDecisions.AsNoTracking().SingleOrDefaultAsync(
+                x => x.AccountId == access.AccountId && (x.IdempotencyKey == idempotencyKey || x.DocumentRevisionId == access.DocumentRevisionId), ct);
+            if (raced is not null && SameDecision(raced, decision, customerName, customerContact, reason, comment, desiredDate, acceptedTerms))
+                return PublicDecision(true, QuoteLifecycleCode.None, "Resposta já registrada.", correlation, access, DecisionStatus(raced.Decision), raced.Id);
+            return PublicDecision(false, raced?.IdempotencyKey == idempotencyKey ? QuoteLifecycleCode.IdempotencyConflict : QuoteLifecycleCode.DecisionAlreadyRegistered,
+                "Outra resposta foi registrada primeiro. A decisão anterior foi mantida.", correlation, access,
+                raced is null ? null : DecisionStatus(raced.Decision), raced?.Id);
+        }
         return PublicDecision(true, QuoteLifecycleCode.None, "Resposta registrada com segurança.", correlation, access, status, entity.Id);
     }
 
@@ -227,23 +254,44 @@ public sealed class CommercialJourneyService(
 
     public async Task<WorkOrderResult> ConvertToWorkOrderAsync(Guid documentId, CancellationToken ct = default)
     {
+        for (var attempt = 1; attempt <= 2; attempt++)
+        {
+            try { return await ConvertToWorkOrderCoreAsync(documentId, ct); }
+            catch (Exception ex) when (attempt == 1 && IsRetryableConflict(ex)) { db.ChangeTracker.Clear(); }
+        }
+        return await ConvertToWorkOrderCoreAsync(documentId, ct);
+    }
+
+    private async Task<WorkOrderResult> ConvertToWorkOrderCoreAsync(Guid documentId, CancellationToken ct)
+    {
         var correlation = CorrelationId; var allowed = await plans.CanUseAsync(AccountId, PlanFeatureCodes.WorkOrdersEnabled, ct);
         if (!allowed.IsAllowed) return Work(false, allowed.InternalReason, allowed.UserMessage, null, null, correlation);
         await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         var document = await OwnedDocument(documentId, ct);
-        if (document is null || !Enum.TryParse<DocumentStatus>(document.Status, out var status) || status != DocumentStatus.Approved)
-            return Work(false, "NotApproved", "Apenas orçamento aprovado pode virar ordem.", document?.Id, document?.Status, correlation);
+        if (document is null) return Work(false, "NotFound", "Orçamento não encontrado nesta conta.", null, null, correlation);
+        var existing = await db.WorkOrders.SingleOrDefaultAsync(x => x.AccountId == AccountId && x.SourceDocumentId == document.Id, ct);
+        if (existing is not null)
+        {
+            if (existing.IsDeleted) return Work(false, "WorkOrderRemoved", "A ordem deste orçamento foi excluída e não pode ser duplicada.", existing.Id, existing.Status.ToString(), correlation);
+            return Work(true, "IdempotentReplay", "Ordem já criada.", existing.Id, existing.Status.ToString(), correlation);
+        }
+        if (!Enum.TryParse<DocumentStatus>(document.Status, out var status) || status != DocumentStatus.Approved)
+            return Work(false, "NotApproved", "Apenas orçamento aprovado pode virar ordem.", document.Id, document.Status, correlation);
         if (document.ClientId is not { } clientId || !await db.Clients.AnyAsync(x => x.AccountId == AccountId && x.Id == clientId && !x.IsDeleted, ct))
             return Work(false, "InvalidClient", "Vincule um cliente válido da conta antes de gerar a OS.", document.Id, document.Status, correlation);
         var revision = await db.DocumentRevisions.SingleOrDefaultAsync(x => x.AccountId == AccountId && x.DocumentId == documentId && x.IsCurrent, ct);
         if (revision is null) return Work(false, "RevisionRequired", "Gere a versão aprovada da proposta antes de criar a OS.", document.Id, document.Status, correlation);
-        var existing = await db.WorkOrders.SingleOrDefaultAsync(x => x.AccountId == AccountId && x.SourceDocumentId == document.Id && !x.IsDeleted, ct);
-        if (existing is not null) return Work(true, "IdempotentReplay", "Ordem já criada.", existing.Id, existing.Status.ToString(), correlation);
+        DocumentSnapshot? snapshot = null;
+        try { snapshot = JsonSerializer.Deserialize<DocumentSnapshot>(revision.ProtectedSnapshot, new JsonSerializerOptions(JsonSerializerDefaults.Web)); }
+        catch (JsonException) { snapshot = null; }
+        var itemsJson = snapshot is not null
+            ? JsonSerializer.Serialize(snapshot.Items.Select(x => new { x.Description, x.Quantity, x.UnitPrice, x.Discount }))
+            : JsonSerializer.Serialize(document.Items.Select(x => new { x.Description, x.Quantity, x.UnitPrice, x.Discount }));
         var order = new WorkOrder { AccountId = AccountId, SourceDocumentId = document.Id, SourceRevisionId = revision.Id,
             ClientId = clientId, Number = $"OS-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid():N}"[..20], Title = $"Serviço do orçamento {document.Number}",
-            ClientSnapshot = JsonSerializer.Serialize(new { document.ClientName, document.ClientEmail, document.ClientPhone }),
-            ItemsSnapshot = JsonSerializer.Serialize(document.Items.Select(x => new { x.Description, x.Quantity, x.UnitPrice, x.Discount })),
-            TotalSnapshot = revision.Total, Notes = document.Notes, CreatedByUserId = currentUser.UserId };
+            ClientSnapshot = JsonSerializer.Serialize(snapshot?.Customer ?? new CustomerSnapshot(document.ClientName, null, document.ClientDocument, document.ClientPhone, document.ClientEmail, null, document.ClientCity, null)),
+            ItemsSnapshot = itemsJson,
+            TotalSnapshot = snapshot?.Quote.Total ?? revision.Total, Notes = snapshot?.Quote.Notes ?? document.Notes, CreatedByUserId = currentUser.UserId };
         db.WorkOrders.Add(order);
         var checklist = new[] { "Confirmar dados do cliente", "Preparar material", "Executar serviço", "Validar entrega", "Finalizar atendimento" };
         db.WorkOrderChecklistItems.AddRange(checklist.Select((description, position) => new WorkOrderChecklistItem
@@ -251,12 +299,30 @@ public sealed class CommercialJourneyService(
             AccountId = AccountId, WorkOrderId = order.Id, Description = description, Position = position + 1
         }));
         Transition(document, DocumentStatus.ConvertedToWorkOrder); AddEvent("WorkOrderCreated", order.Id, "Ordem de serviço criada com checklist operacional.");
-        await db.SaveChangesAsync(ct); await transaction.CommitAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            db.ChangeTracker.Clear();
+            var raced = await db.WorkOrders.AsNoTracking().SingleOrDefaultAsync(x => x.AccountId == AccountId && x.SourceDocumentId == document.Id, ct);
+            if (raced is null) return Work(false, "ConcurrencyConflict", "Não foi possível confirmar a ordem. Tente novamente.", document.Id, document.Status, correlation);
+            return Work(true, "IdempotentReplay", "Ordem já criada.", raced.Id, raced.Status.ToString(), correlation);
+        }
         return Work(true, "Created", "Ordem de serviço criada.", order.Id, order.Status.ToString(), correlation);
     }
 
-    public Task<WorkOrderResult> ScheduleAsync(Guid id, DateTime start, DateTime end, Guid? assignee, CancellationToken ct = default) =>
-        ChangeOrder(id, WorkOrderStatus.Scheduled, x => { if (end <= start) return false; x.ScheduledStart = start.ToUniversalTime(); x.ScheduledEnd = end.ToUniversalTime(); x.AssignedUserId = assignee; return true; }, "Serviço agendado.", ct);
+    public async Task<WorkOrderResult> ScheduleAsync(Guid id, DateTime start, DateTime end, Guid? assignee, CancellationToken ct = default)
+    {
+        var startUtc = CommercialClock.NormalizeToUtc(start);
+        var endUtc = CommercialClock.NormalizeToUtc(end);
+        if (endUtc <= startUtc) return Work(false, "InvalidSchedule", "O término deve ser posterior ao início.", id, null, CorrelationId);
+        if (assignee is Guid assigneeId && !await db.AccountMembers.AnyAsync(x => x.AccountId == AccountId && x.UserId == assigneeId && !x.IsDeleted && x.Status == AccountMemberStatus.Active, ct))
+            return Work(false, "InvalidAssignee", "O responsável precisa ser um membro ativo desta conta.", id, null, CorrelationId);
+        return await ChangeOrder(id, WorkOrderStatus.Scheduled, x => { x.ScheduledStart = startUtc; x.ScheduledEnd = endUtc; x.AssignedUserId = assignee; return true; }, "Serviço agendado.", ct);
+    }
     public Task<WorkOrderResult> StartAsync(Guid id, CancellationToken ct = default) => ChangeOrder(id, WorkOrderStatus.InProgress, x => { x.StartedAt = DateTime.UtcNow; return true; }, "Execução iniciada.", ct);
     public Task<WorkOrderResult> PauseAsync(Guid id, CancellationToken ct = default) => ChangeOrder(id, WorkOrderStatus.Paused, _ => true, "Execução pausada.", ct);
     public Task<WorkOrderResult> ResumeAsync(Guid id, CancellationToken ct = default) => ChangeOrder(id, WorkOrderStatus.InProgress, _ => true, "Execução retomada.", ct);
@@ -275,46 +341,118 @@ public sealed class CommercialJourneyService(
         await currentAccount.EnsureAccountAccessAsync(ct);
         var allowed = await plans.CanUseAsync(AccountId, PlanFeatureCodes.ManualPaymentsEnabled, ct);
         if (!allowed.IsAllowed) return Pay(false, allowed.InternalReason, allowed.UserMessage, null, null, correlation);
-        if (request.Amount <= 0 || string.IsNullOrWhiteSpace(request.IdempotencyKey))
-            return Pay(false, "Invalid", "Informe valor e chave de idempotência válidos.", null, null, correlation);
+        if (string.IsNullOrWhiteSpace(request.IdempotencyKey))
+            return Pay(false, "Invalid", "Informe a chave de idempotência do recebimento.", null, null, correlation);
+        var amount = CommercialCalculator.Round(request.Amount);
+        if (amount <= 0)
+            return Pay(false, "Invalid", "Informe um valor maior que zero.", null, null, correlation);
         if (!PaymentMethodCodes.TryParse(request.PaymentMethod, out var method))
             return Pay(false, "InvalidPaymentMethod", "Escolha uma forma de pagamento válida.", null, null, correlation);
-        if (request.PaidAt.ToUniversalTime() > DateTime.UtcNow.AddMinutes(5))
+        var paidAt = CommercialClock.NormalizeToUtc(request.PaidAt);
+        if (paidAt > DateTime.UtcNow.AddMinutes(5))
             return Pay(false, "InvalidPaidAt", "A data do recebimento não pode estar no futuro.", null, null, correlation);
+        var methodCode = method.ToCode();
+        for (var attempt = 1; attempt <= 2; attempt++)
+        {
+            try { return await RegisterCoreAsync(request, amount, methodCode, paidAt, correlation, ct); }
+            catch (Exception ex) when (attempt == 1 && IsRetryableConflict(ex)) { db.ChangeTracker.Clear(); }
+        }
+        return await RegisterCoreAsync(request, amount, methodCode, paidAt, correlation, ct);
+    }
+
+    private async Task<PaymentRegistrationResult> RegisterCoreAsync(ManualPaymentRequest request, decimal amount, string methodCode, DateTime paidAt, string correlation, CancellationToken ct)
+    {
         await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         var order = await db.WorkOrders.SingleOrDefaultAsync(x => x.Id == request.WorkOrderId && x.AccountId == AccountId && !x.IsDeleted, ct);
         if (order is null) return Pay(false, "NotFound", "Ordem não encontrada.", null, null, correlation);
+        if (order.Status == WorkOrderStatus.Cancelled) return Pay(false, "WorkOrderCancelled", "Não é possível receber em uma ordem cancelada.", null, order.Status.ToString(), correlation);
         var existing = await db.ManualPayments.SingleOrDefaultAsync(x => x.AccountId == AccountId && x.IdempotencyKey == request.IdempotencyKey, ct);
-        if (existing is not null) return Pay(true, "IdempotentReplay", "Pagamento já registrado.", existing.Id, "Registered", correlation);
+        if (existing is not null)
+        {
+            if (ManualPaymentIdempotency.Matches(request.WorkOrderId, amount, methodCode, paidAt, existing.WorkOrderId, existing.Amount, existing.PaymentMethod, existing.PaidAt))
+                return Pay(true, "IdempotentReplay", "Pagamento já registrado.", existing.Id, existing.Status.ToString(), correlation);
+            return Pay(false, "IdempotencyConflict", "Esta chave já foi usada para outro recebimento. O lançamento original foi mantido.", existing.Id, existing.Status.ToString(), correlation);
+        }
         var paid = await db.ManualPayments.Where(x => x.AccountId == AccountId && x.WorkOrderId == order.Id && !x.IsDeleted && x.Status == FinancialRecordStatus.Active)
             .SumAsync(x => (decimal?)x.Amount, ct) ?? 0m;
-        var balance = Math.Max(0m, order.TotalSnapshot - paid);
+        var balance = order.TotalSnapshot - paid;
+        if (balance < 0m) balance = 0m;
         if (balance == 0m) return Pay(false, "AlreadyPaid", "Esta ordem já está totalmente paga.", null, "Paid", correlation);
-        if (request.Amount > balance) return Pay(false, "AmountExceedsBalance", $"O valor informado supera o saldo de {balance:C}.", null, "Partial", correlation);
+        if (amount > balance) return Pay(false, "AmountExceedsBalance", $"O valor informado supera o saldo de {balance:C}.", null, "Partial", correlation);
         var payment = new ManualPayment { AccountId = AccountId, WorkOrderId = order.Id, DocumentId = order.SourceDocumentId, ClientId = order.ClientId,
-            Amount = request.Amount, PaymentMethod = method.ToCode(), PaidAt = request.PaidAt.ToUniversalTime(), Notes = Clean(request.Notes, 1000), RegisteredByUserId = currentUser.UserId, IdempotencyKey = request.IdempotencyKey };
+            Amount = amount, PaymentMethod = methodCode, PaidAt = paidAt, Notes = Clean(request.Notes, 1000), RegisteredByUserId = currentUser.UserId, IdempotencyKey = request.IdempotencyKey };
         db.ManualPayments.Add(payment);
-        var remaining = balance - request.Amount;
+        var remaining = balance - amount;
         order.PaymentReceived = remaining == 0m; order.PaymentMethod = payment.PaymentMethod;
         AddEvent("PaymentRegistered", order.Id, remaining == 0m ? "Pagamento total registrado manualmente." : "Pagamento parcial registrado manualmente.");
-        await db.SaveChangesAsync(ct); await transaction.CommitAsync(ct);
-        return Pay(true, remaining == 0m ? "Registered" : "PartiallyPaid", "Pagamento registrado manualmente.", payment.Id, remaining == 0m ? "Paid" : "Partial", correlation);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            db.ChangeTracker.Clear();
+            var raced = await db.ManualPayments.AsNoTracking().SingleOrDefaultAsync(x => x.AccountId == AccountId && x.IdempotencyKey == request.IdempotencyKey, ct);
+            if (raced is not null && ManualPaymentIdempotency.Matches(request.WorkOrderId, amount, methodCode, paidAt, raced.WorkOrderId, raced.Amount, raced.PaymentMethod, raced.PaidAt))
+                return Pay(true, "IdempotentReplay", "Pagamento já registrado.", raced.Id, raced.Status.ToString(), correlation);
+            return Pay(false, "IdempotencyConflict", "Esta chave já foi usada para outro recebimento. O lançamento original foi mantido.", raced?.Id, null, correlation);
+        }
+        return Pay(true, remaining == 0m ? "Registered" : "PartiallyPaid", "Pagamento registrado manualmente. Este lançamento não confirma o banco ou a operadora.", payment.Id, remaining == 0m ? "Paid" : "Partial", correlation);
     }
 
     public async Task<ReceiptGenerationResult> GenerateReceiptAsync(Guid paymentId, CancellationToken ct = default)
     {
-        var correlation = CorrelationId; var payment = await db.ManualPayments.SingleOrDefaultAsync(x => x.Id == paymentId && x.AccountId == AccountId, ct);
-        if (payment is null) return ReceiptResult(false, "NotFound", "Pagamento não encontrado.", null, null, correlation);
+        for (var attempt = 1; attempt <= 2; attempt++)
+        {
+            try { return await GenerateReceiptCoreAsync(paymentId, ct); }
+            catch (Exception ex) when (attempt == 1 && IsRetryableConflict(ex)) { db.ChangeTracker.Clear(); }
+        }
+        return await GenerateReceiptCoreAsync(paymentId, ct);
+    }
+
+    private async Task<ReceiptGenerationResult> GenerateReceiptCoreAsync(Guid paymentId, CancellationToken ct)
+    {
+        var correlation = CorrelationId;
+        await currentAccount.EnsureAccountAccessAsync(ct);
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+        var payment = await db.ManualPayments.SingleOrDefaultAsync(x => x.Id == paymentId && x.AccountId == AccountId && !x.IsDeleted, ct);
+        if (payment is null || payment.Status != FinancialRecordStatus.Active)
+            return ReceiptResult(false, "NotEligible", "Só é possível emitir recibo de um recebimento ativo desta conta.", null, null, correlation);
         var existing = await db.Receipts.SingleOrDefaultAsync(x => x.AccountId == AccountId && x.PaymentId == paymentId, ct);
-        if (existing is not null) return ReceiptResult(true, "IdempotentReplay", "Recibo já emitido.", existing.Id, "Issued", correlation);
-        var order = await db.WorkOrders.SingleAsync(x => x.Id == payment.WorkOrderId && x.AccountId == AccountId, ct);
+        if (existing is not null)
+        {
+            if (existing.CancelledAt is not null || existing.IsDeleted)
+                return ReceiptResult(false, "ReceiptCancelled", "O recibo deste recebimento foi cancelado e não será reemitido automaticamente.", existing.Id, "Cancelled", correlation);
+            return ReceiptResult(true, "IdempotentReplay", "Recibo já emitido.", existing.Id, "Issued", correlation);
+        }
+        var order = payment.WorkOrderId is Guid workOrderId
+            ? await db.WorkOrders.SingleOrDefaultAsync(x => x.Id == workOrderId && x.AccountId == AccountId && !x.IsDeleted, ct)
+            : null;
+        if (payment.WorkOrderId is not null && order is null)
+            return ReceiptResult(false, "NotEligible", "A ordem de serviço deste recebimento não está disponível.", null, null, correlation);
         var issuer = await db.IssuerProfiles.AsNoTracking().SingleOrDefaultAsync(x => x.UserId == currentUser.UserId, ct);
-        var receipt = new Receipt { AccountId = AccountId, PaymentId = payment.Id, WorkOrderId = order.Id, ClientId = payment.ClientId,
-            Number = $"REC-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid():N}"[..21], IssuerSnapshot = JsonSerializer.Serialize(issuer), ClientSnapshot = order.ClientSnapshot,
-            ServiceSnapshot = order.ItemsSnapshot, Amount = payment.Amount, AmountInWords = numberToWords.ToCurrencyWords(payment.Amount), PaymentMethod = payment.PaymentMethod,
-            IssuedAt = DateTime.UtcNow, City = issuer?.City, Notes = payment.Notes };
-        db.Receipts.Add(receipt); AddEvent("ReceiptGenerated", receipt.Id, "Recibo gerado."); await db.SaveChangesAsync(ct);
-        return ReceiptResult(true, "Issued", "Recibo gerado.", receipt.Id, "Issued", correlation);
+        var description = string.IsNullOrWhiteSpace(order?.Title) ? "Serviço recebido" : order!.Title;
+        var receipt = new Receipt { AccountId = AccountId, PaymentId = payment.Id, WorkOrderId = order?.Id, DocumentId = payment.DocumentId, ClientId = payment.ClientId,
+            Number = await ReceiptNumberAllocator.NextAsync(db, AccountId, ct), IssuerSnapshot = JsonSerializer.Serialize(issuer), ClientSnapshot = order?.ClientSnapshot ?? "{}",
+            ServiceSnapshot = order?.ItemsSnapshot ?? "[]", Amount = payment.Amount, AmountInWords = numberToWords.ToCurrencyWords(payment.Amount), PaymentMethod = payment.PaymentMethod,
+            IssuedAt = DateTime.UtcNow, City = issuer?.City, Notes = payment.Notes, ServiceDescription = description,
+            OriginType = order is null ? ReceiptOriginType.Standalone : ReceiptOriginType.WorkOrder,
+            FiscalNotice = "Recibo do valor efetivamente recebido. Não substitui nota fiscal." };
+        db.Receipts.Add(receipt); AddEvent("ReceiptGenerated", receipt.Id, "Recibo gerado.");
+        try
+        {
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            db.ChangeTracker.Clear();
+            var raced = await db.Receipts.AsNoTracking().SingleOrDefaultAsync(x => x.AccountId == AccountId && x.PaymentId == paymentId && !x.IsDeleted, ct);
+            if (raced is null) return ReceiptResult(false, "ConcurrencyConflict", "Não foi possível confirmar o recibo. Tente novamente.", null, null, correlation);
+            return ReceiptResult(true, "IdempotentReplay", "Recibo já emitido.", raced.Id, "Issued", correlation);
+        }
+        return ReceiptResult(true, "Issued", "Recibo gerado para o valor recebido. Este documento não é nota fiscal.", receipt.Id, "Issued", correlation);
     }
 
     public Task<CommercialResult> ScheduleFollowUpAsync(FollowUpRequest request, CancellationToken ct = default) =>
@@ -405,4 +543,23 @@ public sealed class CommercialJourneyService(
     private static ReceiptGenerationResult ReceiptResult(bool ok,string code,string msg,Guid? id,string? status,string c)=>new(ok,code,msg,id,status,c,ok?"Download":"Review",ok?"/Receipts/Details":null);
     private CommercialResult FollowUpResult(bool ok, string code, string message, Guid? id) =>
         new(ok, code, message, id, null, CorrelationId, ok ? "OpenDocument" : "Review", ok ? "/Documents/Details" : null);
+
+    private static bool SameDecision(PublicDocumentDecision existing, PublicDocumentDecisionType decision, string customerName,
+        string? customerContact, string? reason, string? comment, DateTime? desiredDate, bool acceptedTerms)
+    {
+        static DateTime? Day(DateTime? value) => value?.Date;
+        return existing.Decision == decision
+            && string.Equals(existing.CustomerName, Clean(customerName, 180), StringComparison.Ordinal)
+            && string.Equals(existing.CustomerContact, Clean(customerContact, 254), StringComparison.Ordinal)
+            && string.Equals(existing.ReasonCode, Clean(reason, 40), StringComparison.Ordinal)
+            && string.Equals(existing.Comment, Clean(comment, 1000), StringComparison.Ordinal)
+            && Day(existing.DesiredDate) == Day(desiredDate)
+            && existing.AcceptedTerms == acceptedTerms;
+    }
+
+    private static bool IsUniqueViolation(DbUpdateException ex) =>
+        ex.GetBaseException() is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation };
+
+    private static bool IsRetryableConflict(Exception ex) =>
+        ex.GetBaseException() is PostgresException pg && pg.SqlState is PostgresErrorCodes.SerializationFailure or PostgresErrorCodes.DeadlockDetected;
 }

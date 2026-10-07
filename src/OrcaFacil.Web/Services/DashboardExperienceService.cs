@@ -13,6 +13,7 @@ public interface IDashboardExperienceService
 /// <summary>Composes the dashboard from account data so presentation code never invents plan or renewal information.</summary>
 public sealed class DashboardExperienceService(
     ICurrentUserService currentUser,
+    ICurrentAccountService currentAccount,
     IDashboardQueries dashboardQueries,
     ProfileService profiles,
     INextBestActionService nextBestAction,
@@ -24,7 +25,9 @@ public sealed class DashboardExperienceService(
         // These collaborators are scoped and ultimately share OrcaFacilDbContext.
         // Await each operation before starting the next one: EF contexts do not support
         // multiple active operations, even when every individual query is asynchronous.
-        var dashboard = await dashboardQueries.GetDashboardAsync(currentUser.UserId, cancellationToken);
+        await currentAccount.EnsureAccountAccessAsync(cancellationToken);
+        var accountId = currentAccount.AccountId ?? throw new InvalidOperationException("Conta ativa não selecionada.");
+        var dashboard = await dashboardQueries.GetDashboardAsync(currentUser.UserId, accountId, cancellationToken);
         var profile = await profiles.GetAsync(new(currentUser.UserId), cancellationToken);
         var action = await nextBestAction.GetAsync(cancellationToken);
         var plan = await planExperience.GetAsync(cancellationToken);

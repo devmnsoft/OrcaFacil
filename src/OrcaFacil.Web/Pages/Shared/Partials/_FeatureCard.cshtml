@@ -1,2 +1,2 @@
 @model OrcaFacil.Web.ViewModels.Components.FeatureCardViewModel
-<article class="of-feature"><i class="bi @Model.Icon fs-3 text-primary" aria-hidden="true"></i><h3 class="h5 mt-3">@Model.Title</h3><p>@Model.Text</p>@if(!string.IsNullOrWhiteSpace(Model.ActionText)&&!string.IsNullOrWhiteSpace(Model.ActionPage)){<a class="stretched-link" asp-page="@Model.ActionPage">@Model.ActionText</a>}</article>
+<article class="of-feature"><i class="bi @Model.Icon fs-3 text-primary" aria-hidden="true"></i><h3 class="h5">@Model.Title</h3><p>@Model.Text</p>@if(!string.IsNullOrWhiteSpace(Model.ActionText)&&!string.IsNullOrWhiteSpace(Model.ActionPage)){<a class="stretched-link" asp-page="@Model.ActionPage">@Model.ActionText</a>}</article>

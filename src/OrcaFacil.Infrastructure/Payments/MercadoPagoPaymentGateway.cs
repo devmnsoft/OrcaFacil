@@ -15,10 +15,25 @@ public class MercadoPagoPaymentGateway : IPaymentGateway
     private readonly MercadoPagoOptions _options;
     private readonly HttpClient _httpClient;
 
-    public MercadoPagoPaymentGateway(IOptions<MercadoPagoOptions> options, HttpClient? httpClient = null)
+    public MercadoPagoPaymentGateway(
+        IOptions<MercadoPagoOptions> options,
+        HttpClient? httpClient = null,
+        IHttpClientFactory? httpClientFactory = null)
     {
         _options = options.Value;
-        _httpClient = httpClient ?? new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+        if (httpClient != null)
+        {
+            _httpClient = httpClient;
+        }
+        else if (httpClientFactory != null)
+        {
+            _httpClient = httpClientFactory.CreateClient("MercadoPago");
+        }
+        else
+        {
+            _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+        }
+
         _httpClient.BaseAddress ??= new Uri(BaseUrl);
         _httpClient.DefaultRequestHeaders.Accept.Clear();
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -37,42 +52,49 @@ public class MercadoPagoPaymentGateway : IPaymentGateway
         if (!IsEnabled())
             return UnavailableAsync();
 
-        var billingCycle = string.IsNullOrWhiteSpace(request.BillingCycle)
-            ? (request.Description.Contains("anual", StringComparison.OrdinalIgnoreCase) ? "annual" : "monthly")
-            : request.BillingCycle;
+        var billingCycle = request.BillingCycle?.Trim().ToLowerInvariant();
+        if (billingCycle != "monthly" && billingCycle != "annual")
+        {
+            return new PaymentGatewayResult(
+                false,
+                null,
+                "invalid_billing_cycle",
+                Error: "Periodicidade de cobrança inválida. Valores permitidos: monthly, annual.");
+        }
+
+        var annual = billingCycle == "annual";
+        var backUrl = !string.IsNullOrWhiteSpace(_options.BackUrl)
+            ? _options.BackUrl
+            : "https://app.orcafacil.com/MeuPlano";
 
         var payload = new Dictionary<string, object?>
         {
             ["reason"] = string.IsNullOrWhiteSpace(request.Description) ? "Assinatura OrçaFácil" : request.Description,
-            ["billing_cycle"] = billingCycle,
+            ["payer_email"] = request.PayerEmail,
             ["auto_recurring"] = new Dictionary<string, object?>
             {
-                ["frequency"] = billingCycle.Equals("annual", StringComparison.OrdinalIgnoreCase) ? 12 : 1,
-                ["frequency_type"] = billingCycle.Equals("annual", StringComparison.OrdinalIgnoreCase) ? "months" : "months",
+                ["frequency"] = annual ? 12 : 1,
+                ["frequency_type"] = "months",
                 ["transaction_amount"] = decimal.Round(request.Amount, 2),
-                ["currency_id"] = "BRL",
-                ["repetitions"] = 0,
-                ["payment_method_id"] = "pix",
-                ["back_url"] = "https://app.orcafacil.com/checkout/retorno"
+                ["currency_id"] = "BRL"
             },
-            ["payer"] = new Dictionary<string, object?>
-            {
-                ["email"] = request.PayerEmail,
-                ["identification"] = new Dictionary<string, object?>
-                {
-                    ["type"] = request.DocumentType,
-                    ["number"] = request.DocumentNumber
-                }
-            },
+            ["back_url"] = backUrl,
             ["external_reference"] = request.ExternalReference,
-            ["payment_type"] = string.IsNullOrWhiteSpace(request.PaymentType) ? "subscription" : request.PaymentType
+            ["status"] = "pending"
         };
+
+        if (!string.IsNullOrWhiteSpace(_options.NotificationUrl))
+        {
+            payload["notification_url"] = _options.NotificationUrl;
+        }
 
         var response = await SendAsync("/preapproval", HttpMethod.Post, payload, ct, request.IdempotencyKey);
         if (!response.IsSuccess)
+        {
             return new PaymentGatewayResult(false, null, response.StatusCode, Error: response.Message);
+        }
 
-        return ParsePaymentResult(response.Body, "subscription");
+        return ParseSubscriptionResult(response.Body);
     }
 
     public async Task<PaymentGatewayStatus> GetPaymentStatusAsync(string externalPaymentId, CancellationToken ct = default)
@@ -100,28 +122,46 @@ public class MercadoPagoPaymentGateway : IPaymentGateway
         if (!IsEnabled() || string.IsNullOrWhiteSpace(_options.WebhookSecret))
             return new PaymentGatewayWebhookResult("unvalidated", null, "provider_not_configured", false);
 
-        var signature = GetHeader(headers, "x-signature", "x-signature-sha256");
-        if (string.IsNullOrWhiteSpace(signature))
-            return new PaymentGatewayWebhookResult("unvalidated", null, "invalid_signature", false);
+        var signatureHeader = GetHeader(headers, "x-signature", "x-signature-sha256");
+        var requestId = GetHeader(headers, "x-request-id") ?? string.Empty;
 
-        if (!ValidSignature(rawBody, signature, _options.WebhookSecret))
-            return new PaymentGatewayWebhookResult("unvalidated", null, "invalid_signature", false);
+        if (string.IsNullOrWhiteSpace(signatureHeader))
+            return new PaymentGatewayWebhookResult("unvalidated", null, "missing_signature", false);
 
+        JsonDocument? document = null;
         try
         {
-            using var document = JsonDocument.Parse(rawBody);
-            var root = document.RootElement;
-            var eventType = GetString(root, "type");
-            var externalId = GetString(root, "data.id") ?? GetString(root, "resource.id");
-            if (string.IsNullOrWhiteSpace(eventType) || string.IsNullOrWhiteSpace(externalId))
-                return new PaymentGatewayWebhookResult("unvalidated", null, "invalid_payload", false);
-
-            var eventKey = $"{eventType}:{externalId}";
-            return new PaymentGatewayWebhookResult(eventKey, externalId, "processed", true);
+            document = JsonDocument.Parse(rawBody);
         }
         catch (JsonException)
         {
-            return new PaymentGatewayWebhookResult("unvalidated", null, "invalid_payload", false);
+            return new PaymentGatewayWebhookResult("unvalidated", null, "invalid_json", false);
+        }
+
+        using (document)
+        {
+            var root = document.RootElement;
+            var eventType = GetString(root, "type") ?? GetString(root, "topic") ?? "payment";
+            var action = GetString(root, "action");
+            var dataId = GetString(root, "data.id") ?? GetString(root, "resource.id") ?? GetString(root, "id");
+
+            if (string.IsNullOrWhiteSpace(dataId))
+                return new PaymentGatewayWebhookResult("unvalidated", null, "missing_data_id", false);
+
+            if (!VerifySignature(rawBody, signatureHeader, requestId, dataId, _options.WebhookSecret))
+                return new PaymentGatewayWebhookResult("unvalidated", dataId, "invalid_signature", false);
+
+            var tsPart = ExtractTsFromSignature(signatureHeader) ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+            var eventKey = $"mp:{eventType}:{dataId}:{action ?? "status"}:{tsPart}";
+
+            return new PaymentGatewayWebhookResult(
+                eventKey,
+                dataId,
+                "verified",
+                true,
+                Topic: eventType,
+                Action: action,
+                RequestId: requestId);
         }
     }
 
@@ -148,6 +188,11 @@ public class MercadoPagoPaymentGateway : IPaymentGateway
             ["date_of_expiration"] = DateTime.UtcNow.AddMinutes(paymentKind == "pix" ? _options.PixExpirationMinutes : _options.BoletoExpirationDays * 24 * 60).ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
             ["idempotency_key"] = request.IdempotencyKey
         };
+
+        if (!string.IsNullOrWhiteSpace(_options.NotificationUrl))
+        {
+            payload["notification_url"] = _options.NotificationUrl;
+        }
 
         var response = await SendAsync("/v1/payments", HttpMethod.Post, payload, ct, request.IdempotencyKey);
         if (!response.IsSuccess)
@@ -196,17 +241,75 @@ public class MercadoPagoPaymentGateway : IPaymentGateway
 
     private static string EscapeJson(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
-    private static bool ValidSignature(string rawBody, string signature, string secret)
+    internal static bool VerifySignature(string rawBody, string signatureHeader, string requestId, string dataId, string secret)
     {
         if (string.IsNullOrWhiteSpace(secret))
             return false;
 
-        var candidate = signature.Trim();
+        // 1. Official Mercado Pago manifest verification (ts=...,v1=...)
+        var ts = ExtractTsFromSignature(signatureHeader);
+        var v1 = ExtractV1FromSignature(signatureHeader);
+
+        if (!string.IsNullOrWhiteSpace(ts) && !string.IsNullOrWhiteSpace(v1))
+        {
+            // Manifest format: id:[data.id];request-id:[x-request-id];ts:[ts];
+            var manifest = $"id:{dataId};request-id:{requestId};ts:{ts};";
+            var expectedBytes = HMACSHA256.HashData(Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes(manifest));
+            var expectedHex = Convert.ToHexString(expectedBytes).ToLowerInvariant();
+            try
+            {
+                var suppliedBytes = Encoding.UTF8.GetBytes(v1.ToLowerInvariant());
+                var expBytes = Encoding.UTF8.GetBytes(expectedHex);
+                if (CryptographicOperations.FixedTimeEquals(expBytes, suppliedBytes))
+                    return true;
+            }
+            catch
+            {
+                // Proceed to fallback
+            }
+        }
+
+        // 2. Fallback: payload-level HMAC (e.g. sha256=... or raw body hash) for legacy or direct webhook tests
+        var candidate = signatureHeader.Trim();
         if (candidate.StartsWith("sha256=", StringComparison.OrdinalIgnoreCase))
             candidate = candidate[7..];
 
-        var expected = Convert.ToHexString(HMACSHA256.HashData(Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes(rawBody))).ToLowerInvariant();
-        return candidate.Equals(expected, StringComparison.OrdinalIgnoreCase);
+        var rawExpected = Convert.ToHexString(HMACSHA256.HashData(Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes(rawBody))).ToLowerInvariant();
+        try
+        {
+            var suppliedBytes = Encoding.UTF8.GetBytes(candidate.ToLowerInvariant());
+            var expBytes = Encoding.UTF8.GetBytes(rawExpected);
+            if (suppliedBytes.Length == expBytes.Length && CryptographicOperations.FixedTimeEquals(expBytes, suppliedBytes))
+                return true;
+        }
+        catch
+        {
+            return false;
+        }
+
+        return false;
+    }
+
+    private static string? ExtractTsFromSignature(string header)
+    {
+        foreach (var part in header.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries))
+        {
+            var trimmed = part.Trim();
+            if (trimmed.StartsWith("ts=", StringComparison.OrdinalIgnoreCase))
+                return trimmed[3..].Trim();
+        }
+        return null;
+    }
+
+    private static string? ExtractV1FromSignature(string header)
+    {
+        foreach (var part in header.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries))
+        {
+            var trimmed = part.Trim();
+            if (trimmed.StartsWith("v1=", StringComparison.OrdinalIgnoreCase))
+                return trimmed[3..].Trim();
+        }
+        return null;
     }
 
     private static string? GetHeader(IReadOnlyDictionary<string, string> headers, params string[] keys)
@@ -225,24 +328,50 @@ public class MercadoPagoPaymentGateway : IPaymentGateway
         return null;
     }
 
+    private PaymentGatewayResult ParseSubscriptionResult(string body)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            var root = document.RootElement;
+            var id = GetString(root, "id") ?? GetString(root, "external_reference");
+            var status = GetString(root, "status") ?? "pending";
+            var initPoint = GetString(root, "init_point");
+            var sandboxInitPoint = GetString(root, "sandbox_init_point");
+            var isSandbox = _options.Environment.Equals("Sandbox", StringComparison.OrdinalIgnoreCase);
+            var checkoutUrl = isSandbox ? (sandboxInitPoint ?? initPoint) : (initPoint ?? sandboxInitPoint);
+
+            var succeeded = status is "pending" or "authorized" or "active";
+            return new PaymentGatewayResult(succeeded, id, status, RawResponseJson: body, CheckoutUrl: checkoutUrl);
+        }
+        catch (JsonException ex)
+        {
+            return new PaymentGatewayResult(false, null, "invalid_json", Error: ex.Message, RawResponseJson: body);
+        }
+    }
+
     private static PaymentGatewayResult ParsePaymentResult(string body, string paymentKind)
     {
         using var document = JsonDocument.Parse(body);
         var root = document.RootElement;
         var id = GetString(root, "id") ?? GetString(root, "external_reference");
         var status = GetString(root, "status") ?? "pending";
-        var pixQrCode = GetString(root, "point_of_interaction.transaction_data.qr_code") ??
-            GetString(root, "point_of_interaction.transaction_data.qr_code_base64");
-        var ticketUrl = GetString(root, "point_of_interaction.transaction_data.ticket_url") ??
-            GetString(root, "transaction_details.external_resource_url");
-        var boletoUrl = GetString(root, "transaction_details.external_resource_url") ?? GetString(root, "payment_method.reference") ??
-            GetString(root, "payment_method.id");
+
+        var pixQrCode = GetString(root, "point_of_interaction.transaction_data.qr_code");
+        var pixQrCodeBase64 = GetString(root, "point_of_interaction.transaction_data.qr_code_base64");
+        var pixTicketUrl = GetString(root, "point_of_interaction.transaction_data.ticket_url");
+
+        var rawBoleto = GetString(root, "transaction_details.external_resource_url");
+        var boletoUrl = (rawBoleto != null && Uri.TryCreate(rawBoleto, UriKind.Absolute, out var parsedUri) &&
+            (parsedUri.Scheme == Uri.UriSchemeHttp || parsedUri.Scheme == Uri.UriSchemeHttps))
+            ? rawBoleto : null;
+        var boletoBarcode = GetString(root, "barcode.content");
 
         var succeeded = status is "approved" or "authorized" or "in_process" or "pending" or "active";
         if (paymentKind == "pix")
-            return new PaymentGatewayResult(succeeded, id, status, PixQrCode: pixQrCode, PixTicketUrl: ticketUrl, RawResponseJson: body);
+            return new PaymentGatewayResult(succeeded, id, status, PixQrCode: pixQrCode, PixQrCodeBase64: pixQrCodeBase64, PixTicketUrl: pixTicketUrl, RawResponseJson: body);
         if (paymentKind == "boleto")
-            return new PaymentGatewayResult(succeeded, id, status, BoletoUrl: boletoUrl, RawResponseJson: body);
+            return new PaymentGatewayResult(succeeded, id, status, BoletoUrl: boletoUrl, BoletoBarcode: boletoBarcode, RawResponseJson: body);
         return new PaymentGatewayResult(succeeded, id, status, RawResponseJson: body);
     }
 

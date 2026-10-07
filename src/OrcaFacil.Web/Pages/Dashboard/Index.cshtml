@@ -123,6 +123,20 @@ else if (experience.NextAction is { } next)
 }
 
 @if (hasCommercial) {
+<section aria-labelledby="pending-title">
+    <div class="of-section-heading"><div><p class="of-eyebrow">Conta selecionada</p><h2 id="pending-title">Pendências comerciais e financeiras</h2></div></div>
+    <div class="of-metric-grid">
+    @foreach (var item in experience.Commercial.Pending)
+    {
+        <article>
+            <span>@item.Title</span>
+            <strong>@(item.Amount is { } amount ? amount.ToString("C") : item.Count.ToString())</strong>
+            <small>@item.Explanation</small>
+            <a href="@item.Href">Abrir lista</a>
+        </article>
+    }
+    </div>
+</section>
 <section aria-labelledby="pipeline-title">
     <div class="of-section-heading"><div><p class="of-eyebrow">Jornada comercial</p><h2 id="pipeline-title">Oportunidades em movimento</h2></div><div class="of-workbench-actions"><a asp-page="/CommercialRoutine/Index">Ações comerciais</a><a asp-page="/CommercialPipeline/Index">Abrir pipeline</a></div></div>
     <partial name="Partials/_ProductPipelinePreview" model="experience.Commercial" />

@@ -1,0 +1,13 @@
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Domain\bin\Release\net10.0\OrcaFacil.Domain.deps.json
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Domain\bin\Release\net10.0\OrcaFacil.Domain.dll
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Domain\bin\Release\net10.0\OrcaFacil.Domain.pdb
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Domain\obj\Release\net10.0\OrcaFacil.Domain.csproj.AssemblyReference.cache
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Domain\obj\Release\net10.0\OrcaFacil.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Domain\obj\Release\net10.0\OrcaFacil.Domain.AssemblyInfoInputs.cache
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Domain\obj\Release\net10.0\OrcaFacil.Domain.AssemblyInfo.cs
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Domain\obj\Release\net10.0\OrcaFacil.Domain.csproj.CoreCompileInputs.cache
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Domain\obj\Release\net10.0\OrcaFacil.Domain.sourcelink.json
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Domain\obj\Release\net10.0\OrcaFacil.Domain.dll
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Domain\obj\Release\net10.0\refint\OrcaFacil.Domain.dll
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Domain\obj\Release\net10.0\OrcaFacil.Domain.pdb
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Domain\obj\Release\net10.0\ref\OrcaFacil.Domain.dll

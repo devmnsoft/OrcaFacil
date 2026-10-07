@@ -28,7 +28,13 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
             query = query.Where(document => EF.Functions.ILike(document.Number, $"%{search}%") ||
                                              EF.Functions.ILike(document.ClientName, $"%{search}%"));
         }
-        if (!string.IsNullOrWhiteSpace(request.Status)) query = query.Where(document => document.Status == request.Status);
+        if (string.Equals(request.Status, "AwaitingDecision", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(document => document.Status == "Sent" || document.Status == "Viewed");
+        else if (string.Equals(request.Status, "ChangeRequested", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(document => document.Status == "InNegotiation" || document.Status == "ChangeRequested");
+        else if (string.Equals(request.Status, "FollowUpScheduled", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(document => document.FollowUpStatus == FollowUpStatus.Scheduled && document.NextFollowUpAt != null);
+        else if (!string.IsNullOrWhiteSpace(request.Status)) query = query.Where(document => document.Status == request.Status);
         if (request.ClientId is { } clientId) query = query.Where(document => document.ClientId == clientId);
         if (request.From is { } from) query = query.Where(document => document.IssueDate >= from);
         if (request.To is { } to) query = query.Where(document => document.IssueDate < to.Date.AddDays(1));

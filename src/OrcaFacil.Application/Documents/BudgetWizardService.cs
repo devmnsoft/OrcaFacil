@@ -1,5 +1,6 @@
 using System.Text.Json;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Commercial;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
 
@@ -37,7 +38,7 @@ public sealed class BudgetWizardService
     public async Task<BudgetWizardViewModel> OpenAsync(Guid userId, Guid? accountId, Guid? documentId, Guid? clientId, CancellationToken ct,
         IReadOnlyCollection<Guid>? serviceIds = null, Guid? templateId = null)
     {
-        var document = documentId is null ? null : _documents.Query().SingleOrDefault(x => x.Id == documentId && x.UserId == userId && x.AccountId == accountId && !x.IsDeleted);
+        var document = documentId is null ? null : _documents.Query().SingleOrDefault(x => x.Id == documentId && x.AccountId == accountId && !x.IsDeleted && (accountId != null || x.UserId == userId));
         if (document is null)
         {
             document = new Document { UserId = userId, AccountId = accountId, Type = DocumentType.Budget, Status = "Draft", CurrentWizardStep = 0 };
@@ -86,7 +87,9 @@ public sealed class BudgetWizardService
 
     public async Task<BudgetDraftResult> SaveAsync(Guid userId, Guid? accountId, SaveBudgetDraftRequest request, CancellationToken ct)
     {
-        var document = _documents.Query().SingleOrDefault(x => x.Id == request.DocumentId && x.UserId == userId && x.AccountId == accountId && x.Status == "Draft" && !x.IsDeleted);
+        var invalid = ValidateCommercial(request, strict: false);
+        if (invalid is not null) return new(false, invalid, DraftFrom(request));
+        var document = _documents.Query().SingleOrDefault(x => x.Id == request.DocumentId && x.AccountId == accountId && x.Status == "Draft" && !x.IsDeleted && (accountId != null || x.UserId == userId));
         if (document is null) return new(false, "Rascunho não encontrado nesta conta.");
         if (document.LastAutosaveKey == request.IdempotencyKey) return new(true, null, Map(document));
         if (!Convert.ToBase64String(document.RowVersion).Equals(request.RowVersion, StringComparison.Ordinal))
@@ -108,12 +111,12 @@ public sealed class BudgetWizardService
         document.ConditionsText = Clean(request.ConditionsText, 4000);
         document.TemplateCode = request.TemplateCode.ToLowerInvariant();
         document.TemplateSnapshot = JsonSerializer.Serialize(new { Code = document.TemplateCode, SavedAt = DateTime.UtcNow });
-        document.Discount = Math.Max(0, request.Discount);
+        document.Discount = CommercialCalculator.Round(request.Discount);
         foreach (var old in _items.Query().Where(x => x.DocumentId == document.Id).ToList()) _items.Remove(old);
         document.Items = request.Items.Where(x => !string.IsNullOrWhiteSpace(x.Description)).Take(100).Select((x, index) =>
         {
             var service = x.ServiceCatalogItemId.HasValue ? _services.Query().SingleOrDefault(s => s.Id == x.ServiceCatalogItemId && s.AccountId == accountId && s.IsActive && !s.IsDeleted) : null;
-            return new DocumentItem { DocumentId = document.Id, ServiceCatalogItemId = service?.Id, Description = service?.Description ?? x.Description.Trim(), Unit = service?.UnitCode ?? Clean(x.Unit, 40) ?? "serviço", Quantity = Math.Max(0, x.Quantity), UnitPrice = service?.StandardPrice ?? Math.Max(0, x.UnitPrice), EstimatedCostSnapshot = service?.EstimatedCost ?? 0, DurationMinutesSnapshot = service?.SuggestedDurationMinutes, Discount = Math.Max(0, x.Discount), Notes = Clean(x.Notes, 1000), SortOrder = index };
+            return new DocumentItem { DocumentId = document.Id, ServiceCatalogItemId = service?.Id, Description = service?.Description ?? x.Description.Trim(), Unit = service?.UnitCode ?? Clean(x.Unit, 40) ?? "serviço", Quantity = x.Quantity, UnitPrice = service?.StandardPrice ?? CommercialCalculator.Round(x.UnitPrice), EstimatedCostSnapshot = service?.EstimatedCost ?? 0, DurationMinutesSnapshot = service?.SuggestedDurationMinutes, Discount = CommercialCalculator.Round(x.Discount), Notes = Clean(x.Notes, 1000), SortOrder = index };
         }).ToList();
         document.CalculateTotals();
         document.LastAutosavedAt = DateTime.UtcNow;
@@ -126,9 +129,11 @@ public sealed class BudgetWizardService
 
     public async Task<BudgetDraftResult> FinalizeAsync(Guid userId, Guid? accountId, SaveBudgetDraftRequest request, CancellationToken ct)
     {
+        var invalid = ValidateCommercial(request, strict: true);
+        if (invalid is not null) return new(false, invalid, DraftFrom(request));
         var saved = await SaveAsync(userId, accountId, request, ct);
         if (!saved.Succeeded) return saved;
-        var document = _documents.Query().Single(x => x.Id == request.DocumentId && x.UserId == userId && x.AccountId == accountId);
+        var document = _documents.Query().Single(x => x.Id == request.DocumentId && x.AccountId == accountId && (accountId != null || x.UserId == userId));
         if (document.ClientId is null) return new(false, "Selecione um cliente cadastrado antes de finalizar.", saved.Draft);
         if (document.Items.Count == 0 || document.Items.Any(x => x.Quantity <= 0)) return new(false, "Inclua ao menos um item com quantidade válida.", saved.Draft);
         if (document.ValidUntil is null || document.ValidUntil.Value.Date < DateTime.UtcNow.Date) return new(false, "Informe uma validade futura para a proposta.", saved.Draft);
@@ -139,7 +144,29 @@ public sealed class BudgetWizardService
         return new(true, null, Map(document));
     }
 
-    private Client? FindClient(Guid userId, Guid? accountId, Guid id) => _clients.Query().SingleOrDefault(x => x.Id == id && x.UserId == userId && x.AccountId == accountId && !x.IsDeleted);
+    private Client? FindClient(Guid userId, Guid? accountId, Guid id) => _clients.Query().SingleOrDefault(x => x.Id == id && x.AccountId == accountId && !x.IsDeleted && (accountId != null || x.UserId == userId));
+    private static string? ValidateCommercial(SaveBudgetDraftRequest request, bool strict)
+    {
+        if (request.Discount < 0) return "O desconto não pode ser negativo.";
+        var lines = request.Items.Where(x => !string.IsNullOrWhiteSpace(x.Description)).ToArray();
+        if (lines.Length == 0) return strict ? "Inclua ao menos um serviço." : null;
+        if (lines.Any(x => x.Quantity < 0 || x.UnitPrice < 0 || x.Discount < 0))
+            return "Quantidade, preço e desconto não podem ser negativos.";
+        if (strict && lines.Any(x => x.Quantity <= 0)) return "A quantidade de cada item deve ser maior que zero.";
+        var priced = lines.Where(x => x.Quantity > 0).Select(x => new CommercialLine(x.Quantity, x.UnitPrice, x.Discount)).ToArray();
+        if (priced.Length == 0) return strict ? "Inclua ao menos um item com quantidade válida." : null;
+        try
+        {
+            var totals = CommercialCalculator.Calculate(priced);
+            if (CommercialCalculator.Round(request.Discount) > totals.Total)
+                return "O desconto não pode superar o valor dos itens.";
+        }
+        catch (ArgumentException ex) { return ex.Message; }
+        return null;
+    }
+    private static BudgetWizardViewModel DraftFrom(SaveBudgetDraftRequest request) => new(request.DocumentId, request.ClientId, "", request.CurrentStep,
+        request.ValidUntil, request.ExpectedStartAt, request.EstimatedDuration, request.PaymentMethod, request.InstallmentCount, request.DepositAmount,
+        request.PixInformation, request.WarrantyText, request.ConditionsText, request.TemplateCode, request.Discount, request.Items, request.RowVersion, null);
     private static void ApplyClient(Document document, Client? client)
     {
         if (client is null) { document.ClientId = null; document.ClientName = ""; document.ClientSnapshot = null; return; }

@@ -14,7 +14,8 @@
     <form method="post" class="payment-register-form" data-payment-form novalidate>@Html.AntiForgeryToken()
         <input asp-for="Input.IdempotencyKey" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="receipt-errors" tabindex="-1" data-validation-summary></div>
-        <p class="receipt-manual-notice"><strong>Pagamento registrado manualmente.</strong> A informação não representa confirmação automática do banco, cartão ou operadora.</p>
+        <p class="receipt-manual-notice"><strong>Pagamento registrado manualmente.</strong> A informação não representa confirmação automática do banco, cartão ou operadora. Registrar um recebimento não aprova o orçamento nem conclui o serviço.</p>
+        <details><summary>Como usar</summary><p>Informe o valor até o saldo recalculado no servidor. A mesma tentativa não lança o recebimento duas vezes. Uma chave já usada com outro valor, forma ou data é recusada.</p></details>
         <label asp-for="Input.Amount">Valor recebido</label>
         <input asp-for="Input.Amount" inputmode="decimal" min="0.01" max="@Model.Balance" step="0.01" aria-describedby="amount-help" />
         <small id="amount-help">Você pode registrar um pagamento parcial de até @Model.Balance.ToString("C").</small>
@@ -23,7 +24,7 @@
         <select asp-for="Input.PaymentMethod"><option>Pix</option><option>Dinheiro</option><option>Transferência</option><option>Cartão</option><option>Boleto</option><option>Outro</option></select>
         <span asp-validation-for="Input.PaymentMethod"></span>
         <label asp-for="Input.PaidAt">Recebido em</label>
-        <input asp-for="Input.PaidAt" />
+        <input asp-for="Input.PaidAt" type="datetime-local" />
         <span asp-validation-for="Input.PaidAt"></span>
         <label asp-for="Input.Notes">Observação</label>
         <textarea asp-for="Input.Notes" rows="4" maxlength="1000"></textarea>

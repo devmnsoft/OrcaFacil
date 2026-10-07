@@ -10,6 +10,7 @@ public interface INextBestActionService
 
 public sealed class NextBestActionService(
     ICurrentUserService current,
+    ICurrentAccountService currentAccount,
     IDashboardQueries dashboardQueries,
     ProfileService profiles) : INextBestActionService
 {
@@ -19,7 +20,9 @@ public sealed class NextBestActionService(
         if (profile is null)
             return new("Complete os dados do emitente", "Nome, documento e contato serão usados nos seus documentos.", "/Profile/Index", "Conferir dados", "high");
 
-        var dashboard = await dashboardQueries.GetDashboardAsync(current.UserId, cancellationToken);
+        await currentAccount.EnsureAccountAccessAsync(cancellationToken);
+        var accountId = currentAccount.AccountId ?? throw new InvalidOperationException("Conta ativa não selecionada.");
+        var dashboard = await dashboardQueries.GetDashboardAsync(current.UserId, accountId, cancellationToken);
         if (dashboard.TotalDocuments == 0)
             return new("Prepare seu primeiro orçamento", "Cadastre o cliente e apresente serviços, valores, condições e prazo.", "/Documents/CreateBudget", "Criar orçamento", "high");
         if (dashboard.PdfsThisMonth == 0)

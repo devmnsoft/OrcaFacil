@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OrcaFacil.Persistence")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0d413c88b1e1af3b2b01949595401b08fbf8c625")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e41fe62a300aa16879146c5e5992b4e4ed77eab1")]
 [assembly: System.Reflection.AssemblyProductAttribute("OrcaFacil.Persistence")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OrcaFacil.Persistence")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

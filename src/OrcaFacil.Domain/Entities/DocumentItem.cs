@@ -20,5 +20,11 @@ public class DocumentItem : Entity
     public int SortOrder { get; set; }
     public decimal Total { get; private set; }
 
-    public decimal CalculateTotal() => Total = Math.Max(0, Quantity * UnitPrice - Discount);
+    public decimal CalculateTotal()
+    {
+        var raw = Quantity * UnitPrice - Discount;
+        if (raw < 0) raw = 0;
+        Total = decimal.Round(raw, 2, MidpointRounding.AwayFromZero);
+        return Total;
+    }
 }

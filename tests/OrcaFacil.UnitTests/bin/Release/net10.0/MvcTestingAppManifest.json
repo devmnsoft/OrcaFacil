@@ -1,0 +1,8 @@
+{
+  "OrcaFacil.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\MNSOFT\\OrcaFacil\\src\\OrcaFacil.Application",
+  "OrcaFacil.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\MNSOFT\\OrcaFacil\\src\\OrcaFacil.Domain",
+  "OrcaFacil.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\MNSOFT\\OrcaFacil\\src\\OrcaFacil.Infrastructure",
+  "OrcaFacil.Persistence, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\MNSOFT\\OrcaFacil\\src\\OrcaFacil.Persistence",
+  "OrcaFacil.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\MNSOFT\\OrcaFacil\\src\\OrcaFacil.Shared",
+  "OrcaFacil.Web, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\MNSOFT\\OrcaFacil\\src\\OrcaFacil.Web"
+}

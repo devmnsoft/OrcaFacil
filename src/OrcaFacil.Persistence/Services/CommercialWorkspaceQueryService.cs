@@ -36,10 +36,11 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
             .OrderByDescending(x => x.CreatedAt).ToListAsync(ct);
 
         var access = accesses.FirstOrDefault(); var decision = decisions.FirstOrDefault(); var now = DateTime.UtcNow;
+        var decidedRevision = decision is null ? null : revisions.FirstOrDefault(x => x.Id == decision.DocumentRevisionId)?.VersionNumber;
         var engagement = access is null ? null : new ClientEngagementView(
             access.RevokedAt is not null || access.Status == PublicAccessStatus.Revoked ? "Revogado" : access.ExpiresAt <= now ? "Expirado" : "Ativo",
             access.CreatedAt, access.ExpiresAt, access.ViewCount, access.LastViewedAt, decision?.Decision.ToString(), decision?.CreatedAt,
-            decision?.CustomerName, decision?.Comment ?? decision?.ReasonCode);
+            decision?.CustomerName, decision?.Comment ?? decision?.ReasonCode, decidedRevision);
         var paid = payments.Where(x => x.Status == FinancialRecordStatus.Active).Sum(x => x.Amount);
         var orderView = order is null ? null : new CommercialWorkOrderView(order.Id, order.Number, order.Status.ToString(),
             order.ScheduledStart, order.ScheduledEnd, paid, Math.Max(0, order.TotalSnapshot - paid), payments.FirstOrDefault()?.Id, receipts.FirstOrDefault()?.Id);
@@ -110,10 +111,27 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         }
         var approved = docs.Where(x => x.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase) || x.Status.Equals("ConvertedToWorkOrder", StringComparison.OrdinalIgnoreCase)).ToArray();
         var responded = decisions.Select(x => x.DocumentId).Distinct().Count();
+        var orders = await db.WorkOrders.AsNoTracking().Where(x => x.AccountId == AccountId && !x.IsDeleted).ToListAsync(ct);
+        var activePayments = await db.ManualPayments.AsNoTracking().Where(x => x.AccountId == AccountId && !x.IsDeleted && x.Status == FinancialRecordStatus.Active).ToListAsync(ct);
+        var openOrders = orders.Count(x => x.Status is not WorkOrderStatus.Completed and not WorkOrderStatus.Cancelled);
+        var openBalances = orders.Where(x => x.Status != WorkOrderStatus.Cancelled).Select(order =>
+        {
+            var received = activePayments.Where(x => x.WorkOrderId == order.Id).Sum(x => x.Amount);
+            var balance = order.TotalSnapshot - received;
+            return balance < 0m ? 0m : balance;
+        }).Where(balance => balance > 0m).ToArray();
+        var pending = new CommercialPendingItem[]
+        {
+            new("Orçamentos aguardando decisão", "Inclui propostas enviadas ou visualizadas que ainda não têm resposta nesta revisão.", docs.Count(x => x.Status is "Sent" or "Viewed"), null, "/Documents?status=AwaitingDecision"),
+            new("Solicitações de alteração", "Inclui orçamentos em negociação ou com pedido de alteração. A decisão anterior permanece no histórico.", docs.Count(x => x.Status is "InNegotiation" or "ChangeRequested"), null, "/Documents?status=ChangeRequested"),
+            new("Ordens com próxima ação", "Inclui ordens que não estão concluídas nem canceladas.", openOrders, null, "/WorkOrders?phase=active"),
+            new("Saldos pendentes", "Soma do saldo de ordens não canceladas. Um serviço concluído pode continuar em aberto. Não inclui a assinatura do OrçaFácil.", openBalances.Length, openBalances.Sum(), "/WorkOrders?finance=open"),
+            new("Retornos comerciais agendados", "Inclui orçamentos com acompanhamento marcado como agendado.", docs.Count(x => x.FollowUpStatus == FollowUpStatus.Scheduled && x.NextFollowUpAt != null), null, "/Documents?status=FollowUpScheduled")
+        };
         return new(columns, attention.OrderBy(x => x.Severity).ThenByDescending(x => x.OccurredAt).Take(5).ToArray(),
             docs.Count(x => x.Status.Equals("Sent", StringComparison.OrdinalIgnoreCase)), docs.Count(x => x.Status.Equals("Viewed", StringComparison.OrdinalIgnoreCase)),
             approved.Length, approved.Sum(x => x.Total), responded == 0 ? null : decimal.Round(approved.Length * 100m / responded, 1),
-            approved.Length == 0 ? null : approved.Average(x => x.Total));
+            approved.Length == 0 ? null : approved.Average(x => x.Total), pending);
     }
 
     private static CommercialNextAction ResolveNext(Document d, ClientEngagementView? engagement, CommercialWorkOrderView? order, bool change)
@@ -123,7 +141,7 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
             "Planned" => new("schedule", "Agende a execução", "Defina data e responsável para tirar o serviço do planejamento.", "Abrir ordem de serviço", null, "/WorkOrders/Details", order.Id, "calendar"),
             "Scheduled" => new("start", "Prepare o início do serviço", "A ordem está agendada e pronta para execução.", "Abrir ordem de serviço", null, "/WorkOrders/Details", order.Id, "start"),
             "InProgress" => new("complete", "Conclua a execução", "Registre a conclusão na ordem de serviço.", "Abrir ordem de serviço", null, "/WorkOrders/Details", order.Id, "success"),
-            "Completed" when order.Balance > 0 => new("payment", order.Paid > 0 ? "Registre o saldo restante" : "Registre o pagamento", $"Saldo atual de {order.Balance:C}.", "Abrir ordem de serviço", null, "/WorkOrders/Details", order.Id, "payment"),
+            "Completed" when order.Balance > 0 => new("payment", order.Paid > 0 ? "Registre o saldo restante" : "Registre o recebimento", $"Saldo atual de {order.Balance:C}. O serviço pode estar concluído e ainda ter saldo.", "Registrar recebimento", null, "/Payments/Register", order.Id, "payment"),
             _ when order.LatestReceiptId is not null => new("receipt", "Recibo disponível", "O pagamento e o recibo estão registrados.", "Visualizar recibo", null, "/Receipts/Details", order.LatestReceiptId, "receipt"),
             _ => new("receipt", "Emita o recibo", "O pagamento foi concluído e pode ser formalizado.", "Abrir ordem de serviço", null, "/WorkOrders/Details", order.Id, "receipt") };
         if (d.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase)) return new("work-order", "Converta a aprovação em operação", "Crie uma ordem rastreável a partir da versão aprovada.", "Criar ordem de serviço", "WorkOrder", null, null, "work-order");

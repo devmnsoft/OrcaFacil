@@ -1,5 +1,6 @@
 @page "{id:guid}"
 @model OrcaFacil.Web.Pages.Documents.DetailsModel
+@using OrcaFacil.Web.Services
 @using OrcaFacil.Web.ViewModels
 @section Styles { <link rel="stylesheet" href="~/css/documents.css" asp-append-version="true" /> }
 @{ var d = Model.Document; ViewData["Title"] = $"{d.Type} {d.Number}"; }
@@ -11,7 +12,7 @@
     <header class="of-document-hero">
         <div class="of-document-hero-main">
             <p class="of-eyebrow">Workspace comercial · @d.Type</p>
-            <div class="of-document-title"><h1>@d.Number</h1><span class="of-commercial-status" data-status="@d.Status">@d.Status</span></div>
+            <div class="of-document-title"><h1>@d.Number</h1><span class="of-commercial-status" data-status="@d.Status">@CommercialPresentation.QuoteStatus(d.Status)</span></div>
             <p class="of-document-client">@d.ClientName</p>
             <div class="of-document-signals">
                 @if (d.IsExpired) { <span class="of-badge of-badge-danger">Validade encerrada</span> }
@@ -26,6 +27,22 @@
             <div><dt>Origem</dt><dd>@d.Origin</dd></div>
             <div><dt>Responsável</dt><dd>Equipe da conta</dd></div>
         </dl>
+        <section class="of-document-signals" aria-label="Situação da jornada">
+            <span class="of-badge">Orçamento: @CommercialPresentation.QuoteStatus(d.Status)</span>
+            <span class="of-badge">Execução: @CommercialPresentation.WorkOrderStatus(d.WorkOrder?.Status)</span>
+            <span class="of-badge">Financeiro: @CommercialPresentation.Financial(d.WorkOrder?.Paid + (d.WorkOrder?.Balance ?? 0), d.WorkOrder?.Paid ?? 0)</span>
+            <span class="of-badge">Revisão atual: @(d.CurrentRevision == 0 ? "a preparar" : d.CurrentRevision.ToString())</span>
+            <span class="of-badge">Revisão decidida: @(d.Engagement?.DecidedRevision?.ToString() ?? "ainda sem decisão")</span>
+            @if (d.WorkOrder is { } order)
+            {
+                <span class="of-badge">Recebido: @order.Paid.ToString("C")</span>
+                <span class="of-badge">Saldo: @order.Balance.ToString("C")</span>
+            }
+        </section>
+        <details class="of-inline-empty">
+            <summary>Como usar</summary>
+            <p>Confira cliente, revisão e valor. Compartilhe o link da revisão atual. A resposta do cliente vale só para essa revisão. A ordem de serviço nasce do snapshot aprovado. Um serviço concluído pode continuar com saldo, e um recebimento não aprova o orçamento nem conclui a execução.</p>
+        </details>
     </header>
 
     <div class="of-document-layout">

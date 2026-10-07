@@ -70,8 +70,9 @@ public class Document : Entity
 
     public void CalculateTotals()
     {
-        Subtotal = Items.Sum(item => item.CalculateTotal());
-        Total = Math.Max(0, Subtotal - Discount);
+        Subtotal = decimal.Round(Items.Sum(item => item.CalculateTotal()), 2, MidpointRounding.AwayFromZero);
+        var net = Subtotal - decimal.Round(Discount, 2, MidpointRounding.AwayFromZero);
+        Total = decimal.Round(net < 0 ? 0 : net, 2, MidpointRounding.AwayFromZero);
     }
 
     public void AdvanceRowVersion() => RowVersion = Guid.NewGuid().ToByteArray();

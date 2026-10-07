@@ -1,6 +1,174 @@
 @page "{id:guid}"
 @model OrcaFacil.Web.Areas.Admin.Pages.Accounts.DetailsModel
-@{ViewData["Title"]="Conta 360";var a=Model.Account;}
-<header class="of-page-heading"><p class="of-eyebrow">Conta 360</p><h1>@a.Name</h1><p>Compreenda identificação, acesso, uso e risco antes de executar qualquer ação.</p></header>
-<div class="of-account360"><section><h2>Identificação</h2><dl><dt>Documento</dt><dd>@a.MaskedDocument</dd><dt>E-mail</dt><dd>@a.Email</dd><dt>Criação</dt><dd>@a.CreatedAt.ToString("dd/MM/yyyy")</dd><dt>Situação</dt><dd>@a.Status</dd></dl></section><section><h2>Plano e pagamento</h2><dl><dt>Escolhido</dt><dd>@a.SelectedPlan</dd><dt>Pagamento</dt><dd>@a.PaymentStatus</dd><dt>Vencimento</dt><dd>@a.DueAt?.ToString("dd/MM/yyyy")</dd></dl><p>Benefícios podem ser pausados; os dados permanecem preservados.</p></section><section><h2>Uso</h2><dl><dt>Membros preservados</dt><dd>@a.Members</dd></dl><p>Limites devem ser avaliados pelo plano disponível antes de novas criações ou reativações.</p></section><section><h2>Operação</h2><p>Use auditoria, notificações, erros e atividade para formar contexto.</p><a asp-area="Admin" asp-page="/Logs">Abrir auditoria</a></section></div>
-<section class="of-admin-section"><h2>Ações seguras</h2><p>Liberação temporária não altera pagamento, situação do provedor nem aprovação financeira. Toda ação exige motivo e auditoria.</p><button type="button" disabled title="Fluxo indisponível sem prévia">Gerar prévia antes de agir</button></section>
+@{
+    ViewData["Title"] = "Conta 360 - Governança MNSOFT";
+    var a = Model.Account;
+}
+
+<header class="of-page-heading">
+    <p class="of-eyebrow">Governança Global MNSOFT</p>
+    <h1>Conta 360 · @a.Name</h1>
+    <p>Compreenda identificação, acesso, uso e governança antes de executar qualquer ação administrativa.</p>
+</header>
+
+@if (TempData["Success"] is string success)
+{
+    <div class="of-alert of-alert--success" style="background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; color: #22c55e; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+        <strong>Sucesso:</strong> @success
+    </div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="of-alert of-alert--danger" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #ef4444; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+        <strong>Atenção:</strong> @error
+    </div>
+}
+
+<div class="of-account360">
+    <section>
+        <h2>Identificação da Conta</h2>
+        <dl>
+            <dt>Documento</dt><dd>@a.MaskedDocument</dd>
+            <dt>E-mail</dt><dd>@a.Email</dd>
+            <dt>Criação</dt><dd>@a.CreatedAt.ToString("dd/MM/yyyy")</dd>
+            <dt>Situação</dt><dd><span class="of-status-badge @(a.IsActive ? "of-status--active" : "of-status--blocked")">@a.Status</span></dd>
+        </dl>
+    </section>
+
+    <section>
+        <h2>Plano e Situação Financeira</h2>
+        <dl>
+            <dt>Plano em vigor</dt><dd><strong>@a.SelectedPlan</strong></dd>
+            <dt>Status financeiro</dt><dd>@a.PaymentStatus</dd>
+            <dt>Vencimento</dt><dd>@(a.DueAt?.ToString("dd/MM/yyyy") ?? "Sem cobrança ativa")</dd>
+        </dl>
+        <p>Benefícios podem ser pausados em caso de inadimplência, mas dados comerciais permanecem preservados.</p>
+    </section>
+
+    <section>
+        <h2>Capacidade e Membros</h2>
+        <dl>
+            <dt>Membros ativos</dt><dd>@a.Members membro(s)</dd>
+        </dl>
+        <p>Ações administrativas respeitam a segregação estrita entre clientes (multi-tenant isolation).</p>
+    </section>
+
+    <section>
+        <h2>Auditoria e Conformidade</h2>
+        <p>Todas as ações de governança registram usuário autor, carimbo de tempo, justificativa e valores anteriores.</p>
+        <a asp-area="Admin" asp-page="/Logs">Abrir trilha geral de auditoria</a>
+    </section>
+</div>
+
+<section class="of-admin-section" style="margin-top: 32px; padding: 24px; background: var(--color-surface, #1e293b); border-radius: 12px; border: 1px solid var(--color-border, #334155);">
+    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 8px;">Ações de Governança MNSOFT</h2>
+    <p style="margin-bottom: 20px; color: var(--color-text-muted, #94a3b8);">
+        Ações de desbloqueio, liberação manual ou alteração de plano exigem justificativa fundamentada para registro imutável em auditoria.
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        <!-- Bloqueio / Desbloqueio -->
+        <article style="padding: 16px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid #475569;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 8px;">@(a.IsActive ? "Bloquear Conta" : "Desbloquear Conta")</h3>
+            <p style="font-size: 0.875rem; color: #94a3b8; margin-bottom: 12px;">
+                @(a.IsActive ? "Suspende o acesso de todos os membros desta conta à plataforma." : "Restaura o acesso dos membros à plataforma.")
+            </p>
+            <form method="post" asp-page-handler="ToggleStatus">
+                <input type="hidden" name="id" value="@a.Id" />
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 0.8rem; margin-bottom: 4px;">Justificativa obrigatória:</label>
+                    <input type="text" name="reason" placeholder="Ex: Solicitação do cliente / Averiguação de segurança" required style="width: 100%; padding: 8px; border-radius: 6px; background: #0f172a; border: 1px solid #475569; color: #fff;" />
+                </div>
+                <button type="submit" class="of-button @(a.IsActive ? "of-button--danger" : "of-button--primary")" style="width: 100%; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                    @(a.IsActive ? "Bloquear Conta Imediatamente" : "Reativar / Desbloquear Conta")
+                </button>
+            </form>
+        </article>
+
+        <!-- Liberação Manual -->
+        <article style="padding: 16px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid #475569;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 8px;">Liberação Manual de Benefícios</h3>
+            <p style="font-size: 0.875rem; color: #94a3b8; margin-bottom: 12px;">
+                Concede prazo adicional (cortesia ou suporte) mantendo benefícios ativos sem cobrança imediata.
+            </p>
+            <form method="post" asp-page-handler="ManualRelease">
+                <input type="hidden" name="id" value="@a.Id" />
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; margin-bottom: 4px;">Dias:</label>
+                        <select name="days" style="width: 100%; padding: 8px; border-radius: 6px; background: #0f172a; border: 1px solid #475569; color: #fff;">
+                            <option value="7">7 dias</option>
+                            <option value="15">15 dias</option>
+                            <option value="30" selected>30 dias</option>
+                            <option value="60">60 dias</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; margin-bottom: 4px;">Justificativa:</label>
+                        <input type="text" name="reason" placeholder="Ex: Suporte técnico em andamento" required style="width: 100%; padding: 8px; border-radius: 6px; background: #0f172a; border: 1px solid #475569; color: #fff;" />
+                    </div>
+                </div>
+                <button type="submit" class="of-button of-button--primary" style="width: 100%; padding: 8px 16px; border-radius: 6px; background: #2563eb; color: #fff; cursor: pointer; border: none;">
+                    Aplicar Liberação Manual
+                </button>
+            </form>
+        </article>
+
+        <!-- Alteração de Plano -->
+        <article style="padding: 16px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid #475569;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 8px;">Override Administrativo de Plano</h3>
+            <p style="font-size: 0.875rem; color: #94a3b8; margin-bottom: 12px;">
+                Altera o nível de plano da conta (Free, Professional, Business, Enterprise) de forma direta.
+            </p>
+            <form method="post" asp-page-handler="OverridePlan">
+                <input type="hidden" name="id" value="@a.Id" />
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; margin-bottom: 4px;">Novo Plano:</label>
+                        <select name="planCode" style="width: 100%; padding: 8px; border-radius: 6px; background: #0f172a; border: 1px solid #475569; color: #fff;">
+                            <option value="Free">Free (Grátis)</option>
+                            <option value="Professional" selected>Professional</option>
+                            <option value="Business">Business</option>
+                            <option value="Enterprise">Enterprise</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; margin-bottom: 4px;">Justificativa:</label>
+                        <input type="text" name="reason" placeholder="Ex: Upgrade comercial autorizado" required style="width: 100%; padding: 8px; border-radius: 6px; background: #0f172a; border: 1px solid #475569; color: #fff;" />
+                    </div>
+                </div>
+                <button type="submit" class="of-button of-button--secondary" style="width: 100%; padding: 8px 16px; border-radius: 6px; background: #475569; color: #fff; cursor: pointer; border: none;">
+                    Atualizar Plano da Conta
+                </button>
+            </form>
+        </article>
+    </div>
+</section>
+
+@if (Model.RecentAuditLogs.Count > 0)
+{
+    <section class="of-admin-section" style="margin-top: 32px; padding: 24px; background: var(--color-surface, #1e293b); border-radius: 12px; border: 1px solid var(--color-border, #334155);">
+        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 16px;">Histórico Recente de Auditoria Desta Conta</h2>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                <thead>
+                    <tr style="border-bottom: 1px solid #475569; text-align: left; color: #94a3b8;">
+                        <th style="padding: 8px;">Data/Hora</th>
+                        <th style="padding: 8px;">Ação</th>
+                        <th style="padding: 8px;">Resumo / Justificativa</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model.RecentAuditLogs)
+                    {
+                        <tr style="border-bottom: 1px solid #334155;">
+                            <td style="padding: 8px; white-space: nowrap;">@log.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            <td style="padding: 8px;"><code style="background: #0f172a; padding: 2px 6px; border-radius: 4px;">@log.Action</code></td>
+                            <td style="padding: 8px;">@log.Summary</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}

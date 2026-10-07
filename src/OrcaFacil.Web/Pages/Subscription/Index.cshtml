@@ -1,13 +1,270 @@
 @page
 @model OrcaFacil.Web.Pages.Subscription.IndexModel
 @section Styles { <link rel="stylesheet" href="~/css/billing.css" asp-append-version="true" /> }
-@{ViewData["Title"]="Meu plano";var p=Model.Plan;}
-<header class="of-page-heading"><p class="of-eyebrow">Plano e acesso</p><h1>Entenda o que está disponível agora</h1><p>Planos controlam acesso e capacidade. Eles não apagam os dados.</p></header>
+@{
+    ViewData["Title"] = "Meu Plano e Assinatura";
+    var p = Model.Plan;
+}
+
+<header class="of-page-heading">
+    <p class="of-eyebrow">Plano e Capacidade Operacional</p>
+    <h1>Entenda o que está disponível agora</h1>
+    <p>Planos controlam acesso e capacidade da sua equipe. Seus dados continuam 100% seguros mesmo em períodos de transição.</p>
+</header>
+
+@if (TempData["Success"] is string success)
+{
+    <div class="of-alert of-alert--success" style="background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; color: #22c55e; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+        <strong>Sucesso:</strong> @success
+    </div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="of-alert of-alert--danger" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #ef4444; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+        <strong>Atenção:</strong> @error
+    </div>
+}
+
 <partial name="Partials/_ContextGuide" model='new ContextGuideViewModel("Escolha a capacidade da sua operação","Entender benefícios, limites e situação do plano.","Preferências de plano e dados necessários à cobrança.","Benefícios mudam sem apagar seus dados comerciais.","Revise valores e periodicidade antes de contratar ou regularizar.")' />
-@if(p.IsUsingFreeFallback){<section class="of-plan-warning"><strong>Seus benefícios pagos estão pausados.</strong><p>Você está usando o plano Grátis neste momento. Seus clientes, documentos e configurações continuam seguros.</p><a href="https://wa.me/5591981809035">Regularizar</a><button type="button" data-preserved-open>Ver o que está pausado</button></section>}
-<section class="of-plan-state"><article><span>Plano escolhido</span><h2>@p.SelectedPlanName</h2><p>Código @p.SelectedPlanCode · plano escolhido para sua conta.</p></article><article><span>Plano disponível agora</span><h2>@p.EffectivePlanName</h2><p>Código @p.EffectivePlanCode · benefícios liberados neste momento.</p></article><div><span>Situação</span><strong>@p.Status</strong>@if(p.DueAt.HasValue){<small>Vencimento: @p.DueAt.Value.ToString("dd/MM/yyyy")</small>}</div></section>
-<section class="of-subscription-section"><h2>Uso e limites</h2>@if(p.UsageItems.Count==0){<p>Não há limites mensais configurados para mostrar neste momento.</p>}@foreach(var item in p.UsageItems){<div class="of-usage-row"><div><strong>@item.Label</strong>@if(item.Limit.HasValue){<span>@item.Used de @item.Limit usados.</span>}else{<span>Uso sem limite definido para este recurso.</span>}</div>@if(item.Limit.HasValue){<progress value="@item.Used" max="@item.Limit"></progress>}</div>}</section>
-<div class="of-benefit-columns"><section><h2>Benefícios ativos</h2><ul>@foreach(var item in p.ActiveBenefits){<li>@item</li>}</ul></section><section><h2>Benefícios pausados</h2>@if(p.PausedBenefits.Count==0){<p>Nenhum benefício está pausado.</p>}else{<ul>@foreach(var item in p.PausedBenefits){<li>@item</li>}</ul>}</section></div>
-<section class="of-subscription-section"><div class="of-section-heading"><div><p class="of-eyebrow">Comparação carregada do catálogo</p><h2>Escolha pelos resultados que precisa</h2></div></div><div class="of-plan-comparison">@foreach(var plan in p.Plans){<article class="@(plan.IsRecommended?"is-recommended":null)">@if(plan.IsRecommended){<span>Recomendado</span>}<h3>@plan.Name</h3><p>@plan.Description</p><strong>@plan.MonthlyPrice.ToString("C")<small>/mês</small></strong><p>Anual: @plan.AnnualPrice.ToString("C")</p><a asp-page="/Discover">Ver demonstrações</a></article>}</div></section>
-<section class="of-preservation"><h2>Seus dados continuam aqui</h2><p>Mesmo se os benefícios mudarem, estes itens permanecem armazenados e disponíveis conforme as regras de acesso:</p><ul>@foreach(var item in p.PreservedDataItems){<li>@item</li>}</ul><p><strong>Quando regularizar:</strong> os benefícios são restaurados e suas configurações voltam a ser aplicadas, sem recriar ou duplicar dados.</p></section>
-<section class="of-subscription-section"><h2>Pagamento e cobrança</h2><p>@p.ContextualRecommendation</p><a asp-page="/Subscription/BillingProfile">Atualizar perfil de cobrança</a> <a href="https://wa.me/5591981809035">Falar com a MNSOFT</a></section>
+
+@if (p.IsUsingFreeFallback)
+{
+    <section class="of-plan-warning" style="background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+        <strong style="color: #eab308; font-size: 1.1rem; display: block; margin-bottom: 6px;">Seus benefícios pagos estão pausados.</strong>
+        <p style="margin-bottom: 12px;">Você está usando o plano Grátis neste momento. Seus clientes, documentos e configurações continuam totalmente seguros e intactos.</p>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <a href="#planos" class="of-button of-button--primary" style="background: #eab308; color: #000; font-weight: 600; padding: 8px 16px; border-radius: 6px; text-decoration: none;">Regularizar Assinatura Agora</a>
+            <a href="https://wa.me/5591981809035" target="_blank" style="color: #94a3b8; font-size: 0.875rem;">Falar com suporte MNSOFT</a>
+        </div>
+    </section>
+}
+
+@if (Model.BillingProfile is null || string.IsNullOrWhiteSpace(Model.BillingProfile.DocumentNumber))
+{
+    <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <strong style="color: #60a5fa;">Perfil de cobrança incompleto:</strong>
+            <span style="color: #94a3b8; margin-left: 8px;">Cadastre seu CPF ou CNPJ para emissão automática de recibos e notas de assinatura.</span>
+        </div>
+        <a asp-page="/Subscription/BillingProfile" style="color: #60a5fa; font-weight: 500; text-decoration: underline;">Completar Perfil</a>
+    </div>
+}
+
+<section class="of-plan-state">
+    <article>
+        <span>Plano contratado</span>
+        <h2>@p.SelectedPlanName</h2>
+        <p>Código <code>@p.SelectedPlanCode</code> · plano definido para sua conta.</p>
+    </article>
+    <article>
+        <span>Plano ativo agora</span>
+        <h2>@p.EffectivePlanName</h2>
+        <p>Código <code>@p.EffectivePlanCode</code> · benefícios liberados neste momento.</p>
+    </article>
+    <div>
+        <span>Situação do faturamento</span>
+        <strong>@p.Status</strong>
+        @if (p.DueAt.HasValue)
+        {
+            <small>Próximo vencimento: @p.DueAt.Value.ToString("dd/MM/yyyy")</small>
+        }
+    </div>
+</section>
+
+@if (Model.ActiveCheckoutPayment != null && !string.IsNullOrWhiteSpace(Model.ActiveCheckoutPayment.PixQrCode))
+{
+    <section class="of-subscription-section" style="background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+        <h2 style="color: #22c55e; margin-bottom: 8px;">Pagamento Pix Pendente para Ativação</h2>
+        <p style="margin-bottom: 12px;">Seu checkout gerou um código Pix copia-e-cola. Ao confirmar o pagamento no seu banco, os benefícios são ativados automaticamente em segundos.</p>
+        <div style="background: #0f172a; padding: 12px; border-radius: 8px; word-break: break-all; font-family: monospace; font-size: 0.85rem; margin-bottom: 12px; border: 1px solid #334155;">
+            @Model.ActiveCheckoutPayment.PixQrCode
+        </div>
+        <button type="button" onclick="navigator.clipboard.writeText('@Model.ActiveCheckoutPayment.PixQrCode'); alert('Código Pix copiado!');" class="of-button of-button--primary" style="cursor: pointer;">
+            Copiar Código Pix
+        </button>
+    </section>
+}
+
+<section class="of-subscription-section">
+    <h2>Uso e limites da conta</h2>
+    @if (p.UsageItems.Count == 0)
+    {
+        <p>Não há limites mensais configurados para mostrar neste momento.</p>
+    }
+    @foreach (var item in p.UsageItems)
+    {
+        <div class="of-usage-row">
+            <div>
+                <strong>@item.Label</strong>
+                @if (item.Limit.HasValue)
+                {
+                    <span>@item.Used de @item.Limit usados.</span>
+                }
+                else
+                {
+                    <span>Uso sem limite definido para este recurso.</span>
+                }
+            </div>
+            @if (item.Limit.HasValue)
+            {
+                <progress value="@item.Used" max="@item.Limit"></progress>
+            }
+        </div>
+    }
+</section>
+
+<div class="of-benefit-columns">
+    <section>
+        <h2>Benefícios ativos</h2>
+        <ul>
+            @foreach (var item in p.ActiveBenefits)
+            {
+                <li>@item</li>
+            }
+        </ul>
+    </section>
+    <section>
+        <h2>Benefícios pausados</h2>
+        @if (p.PausedBenefits.Count == 0)
+        {
+            <p>Nenhum benefício está pausado. Você tem acesso integral ao plano.</p>
+        }
+        else
+        {
+            <ul>
+                @foreach (var item in p.PausedBenefits)
+                {
+                    <li>@item</li>
+                }
+            </ul>
+        }
+    </section>
+</div>
+
+<!-- Planos Comerciais e Checkout -->
+<section id="planos" class="of-subscription-section">
+    <div class="of-section-heading">
+        <div>
+            <p class="of-eyebrow">Planos e Assinaturas</p>
+            <h2>Escolha a capacidade ideal para o seu crescimento</h2>
+        </div>
+    </div>
+
+    <div class="of-plan-comparison">
+        @foreach (var plan in p.Plans)
+        {
+            var isCurrent = p.SelectedPlanCode.Equals(plan.Code, StringComparison.OrdinalIgnoreCase);
+            var isFree = plan.Code.Equals("FREE", StringComparison.OrdinalIgnoreCase) || plan.MonthlyPrice <= 0;
+
+            <article class="@(plan.IsRecommended ? "is-recommended" : null)">
+                @if (plan.IsRecommended)
+                {
+                    <span>Recomendado</span>
+                }
+                <h3>@plan.Name</h3>
+                <p>@plan.Description</p>
+                @if (isFree)
+                {
+                    <strong>Grátis<small> para sempre</small></strong>
+                    <p>Sem cobrança recorrente</p>
+                }
+                else
+                {
+                    <strong>@plan.MonthlyPrice.ToString("C")<small>/mês</small></strong>
+                    <p>Anual: <strong>@plan.AnnualPrice.ToString("C")</strong> <small style="color: #22c55e;">(economia de até 2 meses)</small></p>
+                }
+
+                <div style="margin-top: 16px;">
+                    @if (isFree)
+                    {
+                        @if (isCurrent)
+                        {
+                            <span class="of-status-badge" style="display: block; text-align: center; padding: 8px;">Seu plano atual</span>
+                        }
+                    }
+                    else
+                    {
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <form method="post" asp-page-handler="Checkout">
+                                <input type="hidden" name="planCode" value="@plan.Code" />
+                                <input type="hidden" name="billingCycle" value="monthly" />
+                                <button type="submit" class="of-button of-button--primary" style="width: 100%; cursor: pointer;">
+                                    @(isCurrent && p.IsUsingFreeFallback ? "Regularizar Mensal (" + plan.MonthlyPrice.ToString("C") + ")" : "Contratar Mensal (" + plan.MonthlyPrice.ToString("C") + ")")
+                                </button>
+                            </form>
+                            <form method="post" asp-page-handler="Checkout">
+                                <input type="hidden" name="planCode" value="@plan.Code" />
+                                <input type="hidden" name="billingCycle" value="annual" />
+                                <button type="submit" class="of-button of-button--secondary" style="width: 100%; cursor: pointer; border: 1px solid #3b82f6; background: transparent; color: #60a5fa;">
+                                    Contratar Anual (@plan.AnnualPrice.ToString("C"))
+                                </button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            </article>
+        }
+    </div>
+</section>
+
+<!-- Histórico de Cobranças / Faturas -->
+@if (Model.Invoices.Count > 0)
+{
+    <section class="of-subscription-section" style="margin-top: 32px;">
+        <h2>Histórico de Cobranças e Quitações</h2>
+        <p style="color: #94a3b8; margin-bottom: 16px;">Registro contábil das faturas emitidas para esta conta e quitação confirmada.</p>
+        <div style="overflow-x: auto;">
+            <table class="of-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Número da Fatura</th>
+                        <th>Vencimento</th>
+                        <th>Valor Total</th>
+                        <th>Valor Pago</th>
+                        <th>Situação</th>
+                        <th>Data de Quitação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var inv in Model.Invoices)
+                    {
+                        var isPaid = inv.Status.Equals("Paid", StringComparison.OrdinalIgnoreCase);
+                        <tr>
+                            <td><strong>@inv.Number</strong></td>
+                            <td>@inv.DueAt.ToString("dd/MM/yyyy")</td>
+                            <td>@inv.Amount.ToString("C")</td>
+                            <td>@inv.PaidAmount.ToString("C")</td>
+                            <td>
+                                <span class="of-status-badge @(isPaid ? "of-status--active" : "of-status--pending")">
+                                    @(isPaid ? "Quitado" : inv.Status)
+                                </span>
+                            </td>
+                            <td>@(inv.PaidAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+
+<section class="of-preservation">
+    <h2>Seus dados continuam aqui</h2>
+    <p>Mesmo se os benefícios mudarem ou o plano estiver em pausa, estes itens permanecem armazenados e disponíveis conforme as regras de acesso:</p>
+    <ul>
+        @foreach (var item in p.PreservedDataItems)
+        {
+            <li>@item</li>
+        }
+    </ul>
+    <p><strong>Quando regularizar:</strong> os benefícios são restaurados e suas configurações voltam a ser aplicadas, sem recriar ou duplicar dados.</p>
+</section>
+
+<section class="of-subscription-section">
+    <h2>Pagamento e governança de cobrança</h2>
+    <p>@p.ContextualRecommendation</p>
+    <div style="display: flex; gap: 12px; margin-top: 12px;">
+        <a asp-page="/Subscription/BillingProfile" class="of-button of-button--secondary">Atualizar perfil de cobrança</a>
+        <a href="https://wa.me/5591981809035" target="_blank" class="of-button of-button--secondary">Falar com a MNSOFT</a>
+    </div>
+</section>

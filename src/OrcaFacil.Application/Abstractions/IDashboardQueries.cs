@@ -4,5 +4,9 @@ namespace OrcaFacil.Application.Abstractions;
 
 public interface IDashboardQueries
 {
-    Task<DashboardDto> GetDashboardAsync(Guid userId, CancellationToken ct = default);
+    /// <summary>
+    /// Actor identity stays on <paramref name="actorUserId"/> (plan and usage of the person).
+    /// Commercial document metrics are scoped to <paramref name="accountId"/>.
+    /// </summary>
+    Task<DashboardDto> GetDashboardAsync(Guid actorUserId, Guid accountId, CancellationToken ct = default);
 }

@@ -13,7 +13,7 @@
 
     @if (Model.LoadMessage is not null)
     {
-        <section class="alert is-danger" role="alert" aria-live="assertive"><h2>Diagnóstico indisponível</h2><p>@Model.LoadMessage</p></section>
+        <section class="of-feedback is-danger" role="alert" aria-live="assertive"><h2>Diagnóstico indisponível</h2><p>@Model.LoadMessage</p></section>
     }
     else if (snapshot is not null)
     {
@@ -23,18 +23,18 @@
             <article class="summary-card"><span>Rotas testadas</span><strong>@snapshot.Rules.Count(x => x.Category == "Rotas")</strong></article>
             <article class="summary-card"><span>Última execução</span><strong>@snapshot.ExecutedAt.ToLocalTime().ToString("dd/MM HH:mm")</strong></article>
         </section>
-        <section class="schema-health-card"><div class="section-header"><div><h2>Resultado dos controles</h2><p>Responsável: @snapshot.Responsible</p></div><span class="status-badge @(snapshot.IsApproved ? "is-success" : "is-warning")">@(snapshot.IsApproved ? "Saudável" : "Atenção")</span></div>
+        <section class="schema-health-card"><div class="section-header"><div><h2>Resultado dos controles</h2><p>Responsável: @snapshot.Responsible</p></div><span class="status-badge @(snapshot.IsApproved ?"is-success" : "is-warning")">@(snapshot.IsApproved ? "Saudável" : "Atenção")</span></div>
             <div class="quality-rule-list">
             @foreach (var rule in snapshot.Rules)
             {
-                <article class="quality-gate-card @(rule.Passed ? "is-passed" : "is-failed")">
+                <article class="quality-gate-card @(rule.Passed ?"is-passed" : "is-failed")">
                     <div><span class="risk-badge">@rule.Category</span><h3>@rule.Description</h3><p>@rule.Evidence</p></div>
-                    <span class="status-badge @(rule.Passed ? "is-success" : "is-danger")">@(rule.Passed ? "Aprovada" : "Falhou")</span>
+                    <span class="status-badge @(rule.Passed ?"is-success" : "is-danger")">@(rule.Passed ? "Aprovada" : "Falhou")</span>
                 </article>
             }
             </div>
         </section>
-        <aside class="alert is-info" role="status" aria-live="polite"><strong>Próxima ação recomendada</strong><p>@snapshot.NextAction</p></aside>
+        <aside class="of-feedback is-info" role="status" aria-live="polite"><strong>Próxima ação recomendada</strong><p>@snapshot.NextAction</p></aside>
     }
     else { <section class="loading-state" aria-busy="true"><span class="skeleton-card"></span><p>Preparando diagnóstico…</p></section> }
 </div>

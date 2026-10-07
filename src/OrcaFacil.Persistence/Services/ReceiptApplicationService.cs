@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Commercial;
 using OrcaFacil.Application.Receipts;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
@@ -10,7 +11,8 @@ namespace OrcaFacil.Persistence.Services;
 public sealed class ReceiptApplicationService(
     OrcaFacilDbContext db,
     ICurrentAccountService currentAccount,
-    INumberToWordsService numberToWords) : IReceiptApplicationService
+    INumberToWordsService numberToWords,
+    IManualPaymentRegistrationService payments) : IReceiptApplicationService
 {
     private const string RedirectPage = "/Receipts/Details";
 
@@ -29,7 +31,12 @@ public sealed class ReceiptApplicationService(
             x => x.AccountId == accountId && x.IdempotencyKey == request.IdempotencyKey, ct);
         if (duplicate is not null)
         {
-            var existingReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(x => x.PaymentId == duplicate.Id, ct);
+            var paidAt = CommercialClock.NormalizeToUtc(request.PaidAt);
+            var same = ManualPaymentIdempotency.Matches(request.WorkOrderId, CommercialCalculator.Round(request.Amount), canonicalPaymentMethod, paidAt,
+                duplicate.WorkOrderId, duplicate.Amount, duplicate.PaymentMethod, duplicate.PaidAt);
+            if (!same)
+                return Failure(CreateReceiptCode.ConcurrencyConflict, "Esta chave já foi usada para outro recebimento. O lançamento original foi mantido.", correlationId);
+            var existingReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(x => x.PaymentId == duplicate.Id && !x.IsDeleted, ct);
             return new(true, CreateReceiptCode.DuplicateRequest, "Este recebimento já havia sido registrado.", duplicate.Id,
                 existingReceipt?.Id, existingReceipt?.Number, RedirectPage, correlationId);
         }
@@ -45,6 +52,14 @@ public sealed class ReceiptApplicationService(
             !await db.Documents.AnyAsync(x => x.Id == documentId && x.AccountId == accountId && !x.IsDeleted && x.Type == DocumentType.Budget, ct)))
             return Failure(CreateReceiptCode.DocumentNotFound, "Orçamento não encontrado nesta conta.", correlationId);
         if (!Enum.IsDefined(request.OriginType)) return Failure(CreateReceiptCode.InvalidOrigin, "Selecione uma origem válida.", correlationId);
+        if (request.WorkOrderId is Guid linkedWorkOrderId)
+        {
+            var registered = await payments.RegisterAsync(new ManualPaymentRequest(
+                linkedWorkOrderId, request.Amount, canonicalPaymentMethod, request.PaidAt, request.Notes, request.IdempotencyKey), ct);
+            if (!registered.Succeeded || registered.EntityId is not Guid paymentId)
+                return Failure(registered.Code == "IdempotencyConflict" ? CreateReceiptCode.ConcurrencyConflict : CreateReceiptCode.InvalidAmount, registered.Message, correlationId);
+            return await CreateForPaymentAsync(paymentId, request.ServiceDescription, request.City, request.Notes, ct);
+        }
 
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
         var payment = new ManualPayment
@@ -57,7 +72,7 @@ public sealed class ReceiptApplicationService(
         };
         db.ManualPayments.Add(payment);
 
-        var number = await NextReceiptNumberAsync(accountId, ct);
+        var number = await ReceiptNumberAllocator.NextAsync(db, accountId, ct);
         var receipt = new Receipt
         {
             AccountId = accountId, PaymentId = payment.Id, ClientId = client.Id,
@@ -106,7 +121,7 @@ public sealed class ReceiptApplicationService(
             AccountId = accountId, PaymentId = payment.Id, ClientId = payment.ClientId,
             WorkOrderId = payment.WorkOrderId, DocumentId = payment.DocumentId,
             OriginType = payment.WorkOrderId.HasValue ? ReceiptOriginType.WorkOrder : payment.DocumentId.HasValue ? ReceiptOriginType.Budget : ReceiptOriginType.Standalone,
-            Number = await NextReceiptNumberAsync(accountId, ct), Amount = payment.Amount,
+            Number = await ReceiptNumberAllocator.NextAsync(db, accountId, ct), Amount = payment.Amount,
             AmountInWords = numberToWords.ToCurrencyWords(payment.Amount), PaymentMethod = payment.PaymentMethod,
             IssuedAt = DateTime.UtcNow, City = city?.Trim(), Notes = notes?.Trim(),
             ServiceDescription = serviceDescription.Trim(),
@@ -118,26 +133,6 @@ public sealed class ReceiptApplicationService(
         await transaction.CommitAsync(ct);
         return new(true, CreateReceiptCode.None, "Recibo emitido com sucesso.", payment.Id, receipt.Id,
             receipt.Number, RedirectPage, correlationId);
-    }
-
-    private async Task<string> NextReceiptNumberAsync(Guid accountId, CancellationToken ct)
-    {
-        var year = DateTime.UtcNow.Year;
-        await db.Database.ExecuteSqlInterpolatedAsync($"""
-            INSERT INTO orcafacil.receipt_sequences
-                (id, account_id, year, current_number, prefix, created_at, is_deleted)
-            VALUES ({Guid.NewGuid()}, {accountId}, {year}, 0, {"REC"}, now(), false)
-            ON CONFLICT (account_id, year) DO NOTHING
-            """, ct);
-        var sequence = await db.ReceiptSequences.FromSqlInterpolated($"""
-            SELECT * FROM orcafacil.receipt_sequences
-             WHERE account_id = {accountId} AND year = {year}
-             FOR UPDATE
-            """).SingleAsync(ct);
-        sequence.CurrentNumber++;
-        sequence.Touch();
-        await db.SaveChangesAsync(ct);
-        return $"{sequence.Prefix}-{year}-{sequence.CurrentNumber:000000}";
     }
 
     public async Task<bool> CancelAsync(Guid receiptId, string reason, CancellationToken ct = default)

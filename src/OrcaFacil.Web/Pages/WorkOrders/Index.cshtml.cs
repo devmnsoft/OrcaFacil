@@ -14,12 +14,18 @@ public sealed class IndexModel(OrcaFacilDbContext db, ICurrentAccountService acc
     public string? Search { get; private set; }
     public WorkOrderStatus? Status { get; private set; }
     public string? Origin { get; private set; }
-    public async Task OnGetAsync(string? search, WorkOrderStatus? status, string? origin, DateTime? from, DateTime? to, CancellationToken ct)
+    public async Task OnGetAsync(string? search, WorkOrderStatus? status, string? origin, DateTime? from, DateTime? to, string? phase, string? finance, CancellationToken ct)
     {
         Search = search; Status = status; Origin = origin; var accountId = account.AccountId; if (accountId is null) return;
         var query = db.WorkOrders.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted);
         if (!string.IsNullOrWhiteSpace(search)) query = query.Where(x => x.Number.Contains(search) || x.Title.Contains(search));
         if (status.HasValue) query = query.Where(x => x.Status == status);
+        if (string.Equals(phase, "active", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(x => x.Status != WorkOrderStatus.Completed && x.Status != WorkOrderStatus.Cancelled);
+        if (string.Equals(finance, "open", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(order => order.Status != WorkOrderStatus.Cancelled && order.TotalSnapshot >
+                (db.ManualPayments.Where(payment => payment.AccountId == accountId && payment.WorkOrderId == order.Id && !payment.IsDeleted && payment.Status == FinancialRecordStatus.Active)
+                    .Sum(payment => (decimal?)payment.Amount) ?? 0m));
         if (origin == "proposal") query = query.Where(x => x.SourceDocumentId != null);
         if (origin == "manual") query = query.Where(x => x.SourceDocumentId == null);
         if (from.HasValue) query = query.Where(x => x.ScheduledStart >= from.Value.ToUniversalTime());

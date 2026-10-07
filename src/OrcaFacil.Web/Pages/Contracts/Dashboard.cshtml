@@ -3,7 +3,7 @@
 @{ ViewData["Title"] = "Dashboard de contratos"; }
 <link rel="stylesheet" href="~/css/contracts.css" asp-append-version="true" />
 <section class="contracts-dashboard">
-<header class="contracts-hero"><div><span class="eyebrow">Operação V2.3</span><h1>Dashboard de contratos</h1><p>SLA, recorrência e renovações com dados reais da conta.</p></div><a class="btn btn-primary" asp-page="/Contracts/Index">Ver contratos</a></header>
+<header class="contracts-hero"><div><span class="eyebrow">Operação V2.3</span><h1>Dashboard de contratos</h1><p>SLA, recorrência e renovações com dados reais da conta.</p></div><a class="of-button of-button-primary" asp-page="/Contracts/Index">Ver contratos</a></header>
 <div class="contract-kpis">
 <article><span>Ativos</span><strong>@Model.Active</strong></article><article><span>Vencendo em 90 dias</span><strong>@Model.Expiring</strong></article><article><span>Vencidos</span><strong>@Model.Expired</strong></article><article><span>Suspensos</span><strong>@Model.Suspended</strong></article><article><span>SLA violado</span><strong>@Model.SlaBreaches</strong></article><article><span>Franquia excedida</span><strong>@Model.UsageExceeded</strong></article><article class="financial"><span>MRR operacional</span><strong>@Model.MonthlyRevenue.ToString("C")</strong></article>
 </div>
