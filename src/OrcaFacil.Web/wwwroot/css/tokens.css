@@ -26,12 +26,13 @@
   --of-input-border-dark: #9cb2c8;
   --of-input-helper-dark: #dbe8f6;
   --of-link-inverse: #a9ccff;
+  --of-danger-on-dark: #ffd7d1;
   --of-disabled-background: #e4eaf1;
   --of-disabled-text: #526174;
   --of-input-background: #ffffff;
   --of-input-border: #b7c4d2;
   --of-input-border-hover: #7d90a5;
-  --of-input-placeholder: #68778a;
+  --of-input-placeholder: #5f6f82;
   --of-selection: #cddcff;
   --of-skeleton: #dfe7f0;
   --of-border: #dde5ee;

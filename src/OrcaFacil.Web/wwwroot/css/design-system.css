@@ -56,7 +56,7 @@
 .of-section-light { color: var(--of-navy, #14273f); background: var(--of-surface, #fff); }
 .of-section-dark { color: #f7fbff; background: #102a43; }
 .of-section-dark :is(h1, h2, h3, h4) { color: #f7fbff; }
-.of-section-dark :is(p, small, .text-muted) { color: #e5eef6; }
+.of-section-dark :is(p, small, .text-muted):where(:not(.text-danger)) { color: #e5eef6; }
 .of-budget-ai-hero { display: grid; gap: .45rem; margin-bottom: 1.25rem; padding: clamp(1.25rem, 3vw, 2rem); border-radius: 1rem; background: #102a43; color: #f7fbff; }
 .of-budget-ai-hero :is(h1, p, .of-eyebrow) { margin: 0; }
 .of-budget-ai-hero p, .of-budget-ai-hero .of-eyebrow { color: #d7e6f2; }

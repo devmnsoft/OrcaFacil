@@ -10,7 +10,9 @@
         "dependencies": {
           "BCrypt.Net-Next": "4.0.3",
           "Dapper": "2.1.66",
+          "Microsoft.EntityFrameworkCore": "10.0.10",
           "Microsoft.EntityFrameworkCore.Design": "10.0.10",
+          "Microsoft.EntityFrameworkCore.Relational": "10.0.10",
           "Microsoft.Extensions.Configuration": "10.0.10",
           "OrcaFacil.Application": "1.0.0",
           "OrcaFacil.Domain": "1.0.0",
@@ -652,6 +654,7 @@
       "OrcaFacil.Domain/1.0.0": {
         "dependencies": {
           "Microsoft.EntityFrameworkCore": "10.0.10",
+          "Microsoft.EntityFrameworkCore.Relational": "10.0.10",
           "Npgsql": "10.0.3",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "10.0.3"
         },
@@ -665,6 +668,7 @@
       "OrcaFacil.Shared/1.0.0": {
         "dependencies": {
           "Microsoft.EntityFrameworkCore": "10.0.10",
+          "Microsoft.EntityFrameworkCore.Relational": "10.0.10",
           "Npgsql": "10.0.3",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "10.0.3"
         },

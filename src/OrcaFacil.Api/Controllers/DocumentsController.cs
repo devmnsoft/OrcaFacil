@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Commercial;
 using OrcaFacil.Application.Documents;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
@@ -17,18 +18,23 @@ public class DocumentsController : ControllerBase
     private readonly IDocumentQueries _queries;
     private readonly ICurrentUserService _currentUser;
     private readonly IPdfService _pdfService;
+    private readonly ICommercialJourneyService _journey;
     private readonly IRepository<Document> _documentRepository;
     private readonly IRepository<IssuerProfile> _profiles;
     private readonly IRepository<UserAccount> _users;
     private readonly IAuditService _audit;
     private readonly ILogger<DocumentsController> _logger;
 
-    public DocumentsController(DocumentService documents, IDocumentQueries queries, ICurrentUserService currentUser, IPdfService pdfService, IRepository<Document> documentRepository, IRepository<IssuerProfile> profiles, IRepository<UserAccount> users, IAuditService audit, ILogger<DocumentsController> logger)
+    public DocumentsController(DocumentService documents, IDocumentQueries queries, ICurrentUserService currentUser,
+        IPdfService pdfService, ICommercialJourneyService journey, IRepository<Document> documentRepository,
+        IRepository<IssuerProfile> profiles, IRepository<UserAccount> users, IAuditService audit,
+        ILogger<DocumentsController> logger)
     {
         _documents = documents;
         _queries = queries;
         _currentUser = currentUser;
         _pdfService = pdfService;
+        _journey = journey;
         _documentRepository = documentRepository;
         _profiles = profiles;
         _users = users;
@@ -55,19 +61,12 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpPost("receipt")]
-    public async Task<ActionResult<Result<Guid>>> Receipt(CreateDocumentCommand command, CancellationToken ct)
+    public ActionResult Receipt(CreateDocumentCommand command) => BadRequest(new
     {
-        try
-        {
-            var result = await _documents.CreateReceiptAsync(command with { UserId = _currentUser.UserId, Type = DocumentType.Receipt, Number = string.Empty }, ct);
-            return result.Succeeded ? Ok(result) : BadRequest(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao criar recibo");
-            throw;
-        }
-    }
+        Succeeded = false,
+        Code = "ReceiptRequiresPayment",
+        Message = "Recibos devem ser emitidos a partir de um pagamento registrado. Use a jornada de recebimentos/recibos."
+    });
 
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<Result>> Update(Guid id, UpdateDocumentCommand command, CancellationToken ct)
@@ -104,5 +103,21 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/public-link")]
-    public Task<Result<string>> Link(Guid id, CancellationToken ct) => _documents.GeneratePublicLinkAsync(_currentUser.UserId, id, ct);
+    public async Task<IActionResult> Link(Guid id, CancellationToken ct)
+    {
+        var result = await _journey.CreatePublicAccessAsync(id, TimeSpan.FromDays(30), ct);
+        var body = new
+        {
+            result.Succeeded,
+            Code = result.Code.ToString(),
+            result.Message,
+            Token = result.PublicToken,
+            result.DocumentId,
+            result.RevisionId,
+            result.PublicAccessId,
+            Status = result.CurrentStatus?.ToString(),
+            result.CorrelationId
+        };
+        return result.Succeeded ? Ok(body) : BadRequest(body);
+    }
 }

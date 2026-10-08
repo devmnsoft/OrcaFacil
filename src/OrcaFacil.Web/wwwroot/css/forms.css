@@ -1,6 +1,6 @@
 label,.form-label { display: inline-block; margin-bottom: .35rem; color: var(--of-text); font-weight: 650; }
 .of-field { color: var(--of-text); }
-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]),
+input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"])),
 select,textarea,.form-control,.form-select,.of-field-control {
   width: 100%; min-height: 44px; padding: .65rem .75rem; border: 1px solid var(--of-border-strong);
   border-radius: var(--of-radius-sm); background: var(--of-input-background); color: var(--of-text); caret-color: var(--of-text);
@@ -11,15 +11,21 @@ input:-webkit-autofill, textarea:-webkit-autofill, select:-webkit-autofill {
   -webkit-text-fill-color: var(--of-text); caret-color: var(--of-text);
   box-shadow: 0 0 0 1000px var(--of-input-background) inset;
 }
-input:read-only, textarea:read-only { background: var(--of-subtle); color: var(--of-text); }
+input:read-only:not(:disabled), textarea:read-only:not(:disabled) { background: var(--of-subtle); color: var(--of-text); }
 .of-section-dark,
 .of-surface-dark { color: var(--of-text-inverse); }
-.of-section-dark :is(h1, h2, h3, h4, p, label, .form-label, .of-field, .of-field label, .of-icon),
-.of-surface-dark :is(h1, h2, h3, h4, p, label, .form-label, .of-field, .of-field label, .of-icon) { color: var(--of-text-inverse); }
-.of-section-dark :is(a, .of-button-secondary),
-.of-surface-dark :is(a, .of-button-secondary) { color: var(--of-link-inverse); }
+.of-section-dark :is(h1, h2, h3, h4, p, label, .form-label, .of-field, .of-icon),
+.of-surface-dark :is(h1, h2, h3, h4, p, label, .form-label, .of-field, .of-icon),
+.of-section-dark .of-field label,
+.of-surface-dark .of-field label { color: var(--of-text-inverse); }
+.of-section-dark a:where(:not(.of-button):not(.of-button-primary):not(.of-button-secondary):not(.of-hero-action)),
+.of-surface-dark a:where(:not(.of-button):not(.of-button-primary):not(.of-button-secondary):not(.of-hero-action)) { color: var(--of-link-inverse); }
 .of-section-dark :is(.form-text, .text-muted, small, .of-help-text),
 .of-surface-dark :is(.form-text, .text-muted, small, .of-help-text) { color: var(--of-input-helper-dark); }
+.of-section-dark :is(p, span, .field-validation-error).text-danger,
+.of-surface-dark :is(p, span, .field-validation-error).text-danger,
+.of-section-dark .text-danger,
+.of-surface-dark .text-danger { color: var(--of-danger-on-dark); }
 .of-section-dark :is(input, textarea, select, .form-control, .form-select, .of-field-control),
 .of-surface-dark :is(input, textarea, select, .form-control, .form-select, .of-field-control) {
   border-color: var(--of-input-border-dark);
@@ -27,14 +33,55 @@ input:read-only, textarea:read-only { background: var(--of-subtle); color: var(-
   color: var(--of-text);
 }
 .of-section-dark :is(input, textarea)::placeholder,
-.of-surface-dark :is(input, textarea)::placeholder { color: #5f6f82; }
+.of-surface-dark :is(input, textarea)::placeholder { color: var(--of-input-placeholder); }
+.of-section-dark :is(.of-surface, .of-card, .of-section-light, .of-budget-ai-review, .of-auth-card, .of-infrastructure),
+.of-surface-dark :is(.of-surface, .of-card, .of-section-light, .of-budget-ai-review, .of-auth-card, .of-infrastructure) { color: var(--of-text); }
+.of-section-dark :is(.of-surface, .of-card, .of-section-light, .of-budget-ai-review, .of-auth-card, .of-infrastructure) :is(h1, h2, h3, h4, p, label, .form-label, .of-field, .of-field label, .of-icon),
+.of-surface-dark :is(.of-surface, .of-card, .of-section-light, .of-budget-ai-review, .of-auth-card, .of-infrastructure) :is(h1, h2, h3, h4, p, label, .form-label, .of-field, .of-field label, .of-icon) { color: var(--of-text); }
+.of-section-dark :is(.of-surface, .of-card, .of-section-light, .of-budget-ai-review, .of-auth-card, .of-infrastructure) a,
+.of-surface-dark :is(.of-surface, .of-card, .of-section-light, .of-budget-ai-review, .of-auth-card, .of-infrastructure) a { color: var(--of-primary); }
+.of-section-dark .of-card a,
+.of-surface-dark .of-card a,
+.of-section-dark .of-surface a,
+.of-surface-dark .of-surface a,
+.of-section-dark .of-section-light a,
+.of-surface-dark .of-section-light a { color: var(--of-primary); }
+.of-section-dark :is(.of-surface, .of-card, .of-section-light, .of-budget-ai-review, .of-auth-card, .of-infrastructure) .of-button-secondary,
+.of-surface-dark :is(.of-surface, .of-card, .of-section-light, .of-budget-ai-review, .of-auth-card, .of-infrastructure) .of-button-secondary { color: var(--of-text); background: var(--of-surface); }
+.of-section-dark :is(.of-surface, .of-card, .of-section-light, .of-budget-ai-review, .of-auth-card, .of-infrastructure) :is(.form-text, .text-muted, small, .of-help-text),
+.of-surface-dark :is(.of-surface, .of-card, .of-section-light, .of-budget-ai-review, .of-auth-card, .of-infrastructure) :is(.form-text, .text-muted, small, .of-help-text) { color: var(--of-text-secondary); }
+.of-section-dark :is(.of-surface, .of-card, .of-section-light, .of-budget-ai-review, .of-auth-card, .of-infrastructure) :is(.field-validation-error, .text-danger),
+.of-surface-dark :is(.of-surface, .of-card, .of-section-light, .of-budget-ai-review, .of-auth-card, .of-infrastructure) :is(.field-validation-error, .text-danger) { color: var(--of-danger); }
+.of-section-dark :is(.of-surface, .of-card, .of-section-light, .of-budget-ai-review, .of-auth-card, .of-infrastructure) :is(input, textarea, select, .form-control, .form-select, .of-field-control),
+.of-surface-dark :is(.of-surface, .of-card, .of-section-light, .of-budget-ai-review, .of-auth-card, .of-infrastructure) :is(input, textarea, select, .form-control, .form-select, .of-field-control) {
+  border-color: var(--of-border-strong);
+  background: var(--of-input-background);
+  color: var(--of-text);
+}
 .field-validation-error::before, .of-field-error:not(:empty)::before { content: "Erro: "; }
 input:not([type="checkbox"]):not([type="radio"]):focus-visible,select:focus-visible,textarea:focus-visible { border-color:var(--of-focus); outline:0; box-shadow:var(--of-focus-ring); }
 input.input-validation-error,select.input-validation-error,textarea.input-validation-error,[aria-invalid="true"] { border-color:var(--of-danger); background:linear-gradient(0deg,var(--of-danger-soft),var(--of-danger-soft)) padding-box,var(--of-surface); }
 .of-required::after,label[data-required]::after { margin-inline-start:.25rem; color:var(--of-danger); content:"*"; }
 [data-submit-lock][aria-busy="true"] { cursor:progress; opacity:.78; }
 textarea { min-height: 7rem; resize: vertical; }
-input:disabled,select:disabled,textarea:disabled { background: var(--of-disabled-background); color: var(--of-disabled-text); cursor: not-allowed; }
+input:disabled,select:disabled,textarea:disabled,
+:is(.of-section-dark, .of-surface-dark) :is(input, select, textarea):disabled {
+  background: var(--of-disabled-background); color: var(--of-disabled-text); -webkit-text-fill-color: var(--of-disabled-text); cursor: not-allowed;
+}
+:is(.of-section-dark, .of-surface-dark) :is(input, textarea):read-only:not(:disabled) {
+  background: var(--of-subtle); color: var(--of-text); -webkit-text-fill-color: var(--of-text);
+}
+:is(.of-section-dark, .of-surface-dark) :is(input, select, textarea).input-validation-error,
+:is(.of-section-dark, .of-surface-dark) :is(input, select, textarea)[aria-invalid="true"] {
+  border-color: var(--of-danger); background: var(--of-danger-soft); color: var(--of-text); -webkit-text-fill-color: var(--of-text);
+}
+:is(.of-section-dark, .of-surface-dark) :is(input, textarea, select):-webkit-autofill {
+  -webkit-text-fill-color: var(--of-text); caret-color: var(--of-text);
+  box-shadow: 0 0 0 1000px var(--of-input-background-dark) inset;
+}
+:is(.of-section-dark, .of-surface-dark) :is(.of-surface, .of-card, .of-section-light, .of-budget-ai-review, .of-auth-card) :is(input, textarea, select):-webkit-autofill {
+  box-shadow: 0 0 0 1000px var(--of-input-background) inset;
+}
 .field-validation-error,.text-danger { color: var(--of-danger); font-size: var(--of-text-sm); }
 .form-text { color: var(--of-text-secondary); font-size: var(--of-text-sm); }
 button,.btn { min-height: 44px; }

@@ -85,7 +85,7 @@ public sealed class EfPlanAccessDataSource(OrcaFacilDbContext db) : IPlanAccessD
             "templates.basic_limit" => await db.BudgetTemplates.CountAsync(x => !x.IsDeleted && x.IsActive &&
                 (x.IsSystemTemplate || x.AccountId == accountId), ct),
             PlanFeatureCodes.AiMonthlyLimit => await db.AiUsageLogs.CountAsync(x => x.AccountId == accountId &&
-                x.CreatedAt >= periodStartUtc && x.CreatedAt < periodEndUtc && (x.Status == "Succeeded" || x.Status == "Failed"), ct),
+                x.CreatedAt >= periodStartUtc && x.CreatedAt < periodEndUtc && (x.Status == "Succeeded" || x.Status == "Failed" || x.Status == "Cancelled"), ct),
             _ => 0
         };
     }

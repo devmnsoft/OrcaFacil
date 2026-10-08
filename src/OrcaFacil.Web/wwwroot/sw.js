@@ -1,6 +1,7 @@
-/* OrçaFácil V1.8: only immutable/public shell assets are stored offline. */
+/* OrçaFácil: cache público versionado. Páginas autenticadas e respostas privadas ficam fora. */
 'use strict';
-const CACHE_NAME = 'orcafacil-public-v1.8.1';
+const CACHE_PREFIX = 'orcafacil-public-';
+const CACHE_NAME = 'orcafacil-public-v1.8.2';
 const PUBLIC_ASSETS = [
   '/Offline',
   '/favicon.svg',
@@ -31,16 +32,30 @@ const PUBLIC_ASSETS = [
   '/js/pwa-install.js',
   '/js/offline-status.js'
 ];
-const SENSITIVE_PATH = /^\/(Admin|Api|Auth|Clients|Documents|Files|Notifications|Payments|PublicQuotes|Receipts|Receivables|Settings|WorkOrders)(\/|$)/i;
+const SENSITIVE_PATH = /^\/(Admin|Api|Auth|Clients|Documents|Files|Notifications|Payments|PublicQuotes|Receipts|Receivables|Settings|WorkOrders|Subscription|Services|Profile)(\/|$)/i;
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(PUBLIC_ASSETS)));
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await Promise.all(PUBLIC_ASSETS.map(async path => {
+      try {
+        const response = await fetch(new Request(path, { cache: 'reload' }));
+        if (response.ok && response.type === 'basic') await cache.put(path, response);
+      } catch {
+        /* Um asset ausente não impede o registro desta versão. */
+      }
+    }));
+  })());
   self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))));
-  self.clients.claim();
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys
+      .filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
+      .map(key => caches.delete(key)));
+  })());
 });
 
 self.addEventListener('fetch', event => {
@@ -55,5 +70,12 @@ self.addEventListener('fetch', event => {
   }
 
   if (!PUBLIC_ASSETS.includes(url.pathname)) return;
-  event.respondWith(caches.match(url.pathname).then(cached => cached || fetch(request)));
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(url.pathname);
+    if (cached) return cached;
+    const response = await fetch(request);
+    if (response.ok && response.type === 'basic') await cache.put(url.pathname, response.clone());
+    return response;
+  })());
 });

@@ -98,7 +98,12 @@ public sealed class BudgetAssistantModel : PageModel
         if (!await HasAsync(PermissionCodes.AiApplySuggestions, ct)) return Forbid();
         if (!await HasAsync("documents.create", ct)) return Forbid();
 
-        var selection = BuildSelection(selectedCatalogIds);
+        var selection = BuildSelection(selectedCatalogIds, out var selectionError);
+        if (selectionError is not null)
+        {
+            ErrorMessage = selectionError;
+            return await PageWithStateAsync(accountId, reviewId, ct);
+        }
         var result = await _apply.ApplyAsync(_account.UserId, accountId, reviewId, selection, ct);
         if (result.Succeeded && result.DocumentId is Guid documentId)
             return RedirectToPage("/Documents/CreateBudget", new { id = documentId });
@@ -115,16 +120,30 @@ public sealed class BudgetAssistantModel : PageModel
         return RedirectToPage();
     }
 
-    private List<BudgetSuggestionApplyItem> BuildSelection(Guid[]? selectedCatalogIds)
+    private List<BudgetSuggestionApplyItem> BuildSelection(Guid[]? selectedCatalogIds, out string? error)
     {
+        error = null;
+        var ids = (selectedCatalogIds ?? []).Where(x => x != Guid.Empty).Distinct().ToList();
+        if (ids.Count > BudgetSuggestionApplyService.MaxSelectedItems)
+        {
+            error = $"A aplicação aceita no máximo {BudgetSuggestionApplyService.MaxSelectedItems} itens.";
+            return [];
+        }
+
         var selected = new List<BudgetSuggestionApplyItem>();
-        foreach (var id in (selectedCatalogIds ?? []).Where(x => x != Guid.Empty).Distinct().Take(BudgetSuggestionApplyService.MaxSelectedItems))
+        var culture = System.Globalization.CultureInfo.GetCultureInfo("pt-BR");
+        foreach (var id in ids)
         {
             decimal? quantity = null;
-            var raw = Request.Form[$"qty_{id:N}"].ToString();
-            if (!string.IsNullOrWhiteSpace(raw)
-                && decimal.TryParse(raw, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var parsed))
-                quantity = parsed;
+            var raw = Request.Form[$"qty_{id:N}"].ToString().Trim();
+            if (!string.IsNullOrWhiteSpace(raw))
+            {
+                if (decimal.TryParse(raw, System.Globalization.NumberStyles.Number, culture, out var parsed)
+                    || decimal.TryParse(raw, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out parsed))
+                    quantity = parsed;
+                else
+                    quantity = 0;
+            }
             selected.Add(new(id, quantity));
         }
         return selected;

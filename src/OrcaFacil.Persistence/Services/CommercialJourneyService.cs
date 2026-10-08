@@ -151,8 +151,12 @@ public sealed class CommercialJourneyService(
             await db.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
         }
-        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        catch (Exception ex) when (IsUniqueViolation(ex) || IsRetryableConflict(ex))
         {
+            if (IsRetryableConflict(ex))
+            {
+                try { await transaction.RollbackAsync(ct); } catch (Exception) { }
+            }
             db.ChangeTracker.Clear();
             var raced = await db.PublicDocumentDecisions.AsNoTracking().SingleOrDefaultAsync(
                 x => x.AccountId == access.AccountId && (x.IdempotencyKey == idempotencyKey || x.DocumentRevisionId == access.DocumentRevisionId), ct);
@@ -557,7 +561,7 @@ public sealed class CommercialJourneyService(
             && existing.AcceptedTerms == acceptedTerms;
     }
 
-    private static bool IsUniqueViolation(DbUpdateException ex) =>
+    private static bool IsUniqueViolation(Exception ex) =>
         ex.GetBaseException() is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation };
 
     private static bool IsRetryableConflict(Exception ex) =>

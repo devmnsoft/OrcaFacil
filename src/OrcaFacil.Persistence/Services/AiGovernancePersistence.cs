@@ -5,34 +5,31 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 using OrcaFacil.Application.Ai;
+using OrcaFacil.Application.Plans;
 using OrcaFacil.Domain.Entities;
+using OrcaFacil.Domain.Plans;
 
 namespace OrcaFacil.Persistence.Services;
 
-public sealed class AiConsumptionService(OrcaFacilDbContext db, IOptions<AiOptions> options) : IAiConsumptionService
+public sealed class AiConsumptionService(OrcaFacilDbContext db, IOptions<AiOptions> options, IPlanAccessService plans) : IAiConsumptionService
 {
-    private static readonly string[] CountedStatuses = ["Succeeded", "Failed"];
+    private static readonly string[] CountedStatuses = ["Succeeded", "Failed", "Cancelled"];
 
     public async Task<bool> HasCapacityAsync(Guid accountId, Guid userId, CancellationToken ct = default)
     {
-        var limits = options.Value;
-        if (limits.MonthlyAccountLimit <= 0 || limits.DailyUserLimit <= 0) return false;
-        var now = DateTime.UtcNow;
-        var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-        var dayStart = now.Date;
-        var monthly = await db.AiUsageLogs.AsNoTracking().CountAsync(
-            x => x.AccountId == accountId && x.CreatedAt >= monthStart && CountedStatuses.Contains(x.Status), ct);
-        if (monthly >= limits.MonthlyAccountLimit) return false;
-        var daily = await db.AiUsageLogs.AsNoTracking().CountAsync(
-            x => x.AccountId == accountId && x.UserId == userId && x.CreatedAt >= dayStart && CountedStatuses.Contains(x.Status), ct);
-        return daily < limits.DailyUserLimit;
+        var limits = await ResolveLimitsAsync(accountId, ct);
+        if (limits.DenyReason is not null || limits.Monthly <= 0 || limits.Daily <= 0) return false;
+        var monthly = await CountMonthlyAsync(accountId, ct);
+        if (monthly >= limits.Monthly) return false;
+        var daily = await CountDailyAsync(accountId, userId, ct);
+        return daily < limits.Daily;
     }
 
     public async Task<AiQuotaReservation> TryReserveAsync(Guid accountId, Guid userId, string operationType, string correlationId, CancellationToken ct = default)
     {
-        var limits = options.Value;
-        if (limits.MonthlyAccountLimit <= 0 || limits.DailyUserLimit <= 0)
-            return new(false, "A cota inteligente está desativada.", 0, 0);
+        var limits = await ResolveLimitsAsync(accountId, ct);
+        if (limits.DenyReason is not null)
+            return new(false, limits.DenyReason, 0, 0);
         var correlation = (correlationId ?? string.Empty).Trim();
         var operation = (operationType ?? string.Empty).Trim();
         if (correlation.Length is 0 or > 100 || operation.Length is 0 or > 80)
@@ -43,7 +40,7 @@ public sealed class AiConsumptionService(OrcaFacilDbContext db, IOptions<AiOptio
         {
             try
             {
-                return await ReserveBucketsAsync(accountId, userId, operation, correlation, limits.MonthlyAccountLimit, limits.DailyUserLimit, ct);
+                return await ReserveBucketsAsync(accountId, userId, operation, correlation, limits.Monthly, limits.Daily, ct);
             }
             catch (Exception ex) when (IsUndefinedTable(ex))
             {
@@ -55,7 +52,7 @@ public sealed class AiConsumptionService(OrcaFacilDbContext db, IOptions<AiOptio
 
     public async Task<AiQuotaBalance> GetBalanceAsync(Guid accountId, Guid userId, CancellationToken ct = default)
     {
-        var limits = options.Value;
+        var limits = await ResolveLimitsAsync(accountId, ct);
         var monthlyUsed = await CountMonthlyAsync(accountId, ct);
         var dailyUsed = await CountDailyAsync(accountId, userId, ct);
         if (db.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
@@ -73,11 +70,12 @@ public sealed class AiConsumptionService(OrcaFacilDbContext db, IOptions<AiOptio
             }
         }
         string? reason = null;
-        if (limits.MonthlyAccountLimit <= 0 || limits.DailyUserLimit <= 0) reason = "A cota inteligente está desativada.";
-        else if (monthlyUsed >= limits.MonthlyAccountLimit) reason = "A cota mensal da conta foi atingida.";
-        else if (dailyUsed >= limits.DailyUserLimit) reason = "A cota diária do usuário foi atingida.";
-        return new(limits.MonthlyAccountLimit, monthlyUsed, limits.DailyUserLimit, dailyUsed,
-            Remaining(limits.MonthlyAccountLimit, monthlyUsed), Remaining(limits.DailyUserLimit, dailyUsed), reason, true);
+        if (limits.DenyReason is not null) reason = limits.DenyReason;
+        else if (limits.Monthly <= 0 || limits.Daily <= 0) reason = "A cota inteligente está desativada.";
+        else if (monthlyUsed >= limits.Monthly) reason = "A cota mensal da conta foi atingida.";
+        else if (dailyUsed >= limits.Daily) reason = "A cota diária do usuário foi atingida.";
+        return new(limits.Monthly, monthlyUsed, limits.Daily, dailyUsed,
+            Remaining(limits.Monthly, monthlyUsed), Remaining(limits.Daily, dailyUsed), reason, true);
     }
 
     public async Task RecordAsync(AiUsageEntry entry, CancellationToken ct = default)
@@ -168,8 +166,10 @@ public sealed class AiConsumptionService(OrcaFacilDbContext db, IOptions<AiOptio
             await transaction.CommitAsync(ct);
             return await BalanceReservationAsync(accountId, userId, true, "A mesma operação já consumiu a cota.", ct);
         }
-        var month = await IncrementBucketAsync(connection, transaction, accountId, monthKey, monthlyLimit, ct);
-        var day = month.HasValue ? await IncrementBucketAsync(connection, transaction, accountId, dayKey, dailyLimit, ct) : null;
+        var monthBaseline = await CountMonthlyAsync(accountId, ct);
+        var dayBaseline = await CountDailyAsync(accountId, userId, ct);
+        var month = await IncrementBucketAsync(connection, transaction, accountId, monthKey, monthlyLimit, monthBaseline, ct);
+        var day = month.HasValue ? await IncrementBucketAsync(connection, transaction, accountId, dayKey, dailyLimit, dayBaseline, ct) : null;
         if (month is null || day is null)
         {
             await transaction.RollbackAsync(ct);
@@ -179,20 +179,48 @@ public sealed class AiConsumptionService(OrcaFacilDbContext db, IOptions<AiOptio
         return new(true, null, Math.Max(0, monthlyLimit - month.Value), Math.Max(0, dailyLimit - day.Value));
     }
 
-    private static async Task<int?> IncrementBucketAsync(DbConnection connection, IDbContextTransaction transaction, Guid accountId, string periodKey, int limit, CancellationToken ct)
+    private async Task<(int Monthly, int Daily, string? DenyReason)> ResolveLimitsAsync(Guid accountId, CancellationToken ct)
     {
+        var configuredMonthly = options.Value.MonthlyAccountLimit;
+        var daily = options.Value.DailyUserLimit;
+        PlanAccessDecision decision;
+        try
+        {
+            decision = await plans.CanUseAsync(accountId, PlanFeatureCodes.AiMonthlyLimit, ct);
+        }
+        catch (Exception)
+        {
+            return (configuredMonthly, daily, "A cota do plano efetivo não pôde ser confirmada.");
+        }
+
+        if (decision.InternalReason is "AccountBlocked" or "AccountInactive" or "FeatureNotIncluded" or "PlanLimitReached")
+            return (decision.Limit ?? configuredMonthly, daily, decision.UserMessage);
+
+        var monthly = configuredMonthly;
+        if (decision.Limit is int planLimit)
+            monthly = configuredMonthly <= 0 ? planLimit : Math.Min(configuredMonthly, planLimit);
+        if (monthly <= 0 || daily <= 0)
+            return (monthly, daily, "A cota inteligente está desativada.");
+        return (monthly, daily, null);
+    }
+
+    private static async Task<int?> IncrementBucketAsync(DbConnection connection, IDbContextTransaction transaction, Guid accountId, string periodKey, int limit, int baseline, CancellationToken ct)
+    {
+        if (baseline >= limit) return null;
         await using var command = connection.CreateCommand();
         command.Transaction = transaction.GetDbTransaction();
         command.CommandText = """
             INSERT INTO orcafacil.ai_quota_buckets (account_id, period_key, used, updated_at)
-            VALUES (@account, @period, 1, now())
+            VALUES (@account, @period, @next, now())
             ON CONFLICT (account_id, period_key)
-            DO UPDATE SET used = orcafacil.ai_quota_buckets.used + 1, updated_at = now()
-            WHERE orcafacil.ai_quota_buckets.used < @limit
+            DO UPDATE SET used = GREATEST(orcafacil.ai_quota_buckets.used, @baseline) + 1, updated_at = now()
+            WHERE GREATEST(orcafacil.ai_quota_buckets.used, @baseline) < @limit
             RETURNING used
             """;
         Add(command, "@account", accountId);
         Add(command, "@period", periodKey);
+        Add(command, "@next", baseline + 1);
+        Add(command, "@baseline", baseline);
         Add(command, "@limit", limit);
         var value = await command.ExecuteScalarAsync(ct);
         return value is null || value is DBNull ? null : Convert.ToInt32(value);
@@ -291,6 +319,7 @@ public sealed class AiSuggestionReviewService(OrcaFacilDbContext db) : IAiSugges
                 result.Items.Where(x => x.CatalogItemId.HasValue).Select(x => new StoredItem(
                     x.CatalogItemId!.Value, x.Description, x.Quantity, x.UnitPrice, x.UnitCode)).ToArray()), JsonOptions)
         };
+        card.Touch();
         db.AiSuggestionCards.Add(card);
         await db.SaveChangesAsync(ct);
         return card.Id;
@@ -320,12 +349,13 @@ public sealed class AiSuggestionReviewService(OrcaFacilDbContext db) : IAiSugges
     public async Task<bool> MarkAsync(Guid accountId, Guid id, string status, CancellationToken ct = default)
     {
         if (status is not ("Applied" or "Dismissed")) return false;
-        var card = await db.AiSuggestionCards.SingleOrDefaultAsync(x => x.Id == id && x.AccountId == accountId, ct);
-        if (card is null || card.Status != "PendingReview") return false;
-        card.Status = status;
-        card.Touch();
-        await db.SaveChangesAsync(ct);
-        return true;
+        var now = DateTime.UtcNow;
+        var updated = await db.AiSuggestionCards
+            .Where(x => x.Id == id && x.AccountId == accountId && x.Status == "PendingReview")
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.Status, status)
+                .SetProperty(x => x.UpdatedAt, now), ct);
+        return updated == 1;
     }
 
     public async Task<bool> TryMarkAppliedAsync(Guid accountId, Guid id, string applyFingerprint, Guid documentId, CancellationToken ct = default)

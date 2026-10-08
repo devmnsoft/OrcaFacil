@@ -1792,3 +1792,6 @@ CREATE INDEX IF NOT EXISTS ix_public_document_decisions_account_document ON orca
 -- V6.9: aplicação atômica de sugestões de IA, permissões de IA, benefício por plano
 -- e reparo explícito dos índices de unicidade do V6.8.
 \ir hotfix_ai_apply_governance_v69.sql
+
+-- V7.0: default de rowversion em clients, para o INSERT devolver xid.
+\ir hotfix_client_rowversion_v70.sql

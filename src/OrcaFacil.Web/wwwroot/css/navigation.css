@@ -3,7 +3,19 @@
 .of-menu a:hover { color:var(--of-text-inverse); background:rgb(255 255 255 / 9%); translate:2px 0; }
 .of-menu a.is-active { color:#fff; background:rgb(36 107 254 / 32%); box-shadow:inset 3px 0 var(--of-primary); }
 .of-menu-heading { margin:var(--of-space-4) .8rem var(--of-space-1); color:rgb(207 224 242 / 70%); font-size:.68rem; font-weight:800; letter-spacing:.11em; text-transform:uppercase; }
-.of-mobile-menu { overscroll-behavior:contain; }
+.of-app-shell { min-height: 100vh; background: var(--of-page); }
+.of-app-shell .of-sidebar { position: sticky; top: 0; height: 100vh; overflow: auto; padding: var(--of-space-4); background: var(--of-navy); color: var(--of-text-inverse); }
+.of-app-shell .of-main { min-width: 0; }
+.of-app-shell .of-mobilebar, .of-app-shell .of-mobile-menu { display: none; }
+.of-mobile-menu { overscroll-behavior:contain; background: var(--of-navy); color: var(--of-text-inverse); }
+@media (max-width: 1023px) {
+  .of-app-shell .of-sidebar { display: none; }
+  .of-app-shell .of-mobilebar { position: sticky; top: 0; z-index: var(--of-z-nav); min-height: 64px; display: flex; align-items: center; gap: var(--of-space-3); padding: 0 var(--of-space-4); background: var(--of-navy); color: var(--of-text-inverse); }
+  .of-app-shell .of-menu-toggle { min-width: 44px; min-height: 44px; border: 0; border-radius: var(--of-radius-sm); color: inherit; background: transparent; }
+  .of-app-shell .of-mobile-menu { position: fixed; z-index: var(--of-z-overlay); inset: 0 auto 0 0; display: flex; flex-direction: column; width: min(88vw, 20rem); overflow: auto; transform: translateX(-105%); box-shadow: var(--of-shadow-lg); }
+  .of-app-shell .of-mobile-menu.is-open { transform: none; }
+  body.of-menu-open::before { content: ""; position: fixed; inset: 0; z-index: calc(var(--of-z-overlay) - 1); background: var(--of-overlay); }
+}
 .of-mobile-menu.is-open, .of-public-menu.is-open, .of-profile-menu:not([hidden]) { z-index: var(--of-z-overlay); }
 .of-mobile-menu__header { display:flex; align-items:center; justify-content:space-between; min-height:3.5rem; padding:var(--of-space-3) var(--of-space-4); border-bottom:1px solid rgb(255 255 255 / 12%); }
 .of-mobile-menu__header button { min-width:44px; min-height:44px; border:0; border-radius:var(--of-radius-sm); color:inherit; background:transparent; font-size:1.5rem; }

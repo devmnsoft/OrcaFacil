@@ -3,9 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Auth;
+using OrcaFacil.Application.Commercial;
 using OrcaFacil.Application.Documents;
 using OrcaFacil.Application.Plans;
 using OrcaFacil.Application.Profile;
+using OrcaFacil.Application.Receipts;
+using OrcaFacil.Application.WorkOrders;
+using OrcaFacil.Api.Services;
 using OrcaFacil.Application.Notifications;
 using OrcaFacil.Infrastructure;
 using OrcaFacil.Infrastructure.Pdf;
@@ -13,6 +17,8 @@ using OrcaFacil.Persistence;
 using OrcaFacil.Persistence.Queries;
 using OrcaFacil.Persistence.Repositories;
 using OrcaFacil.Persistence.Diagnostics;
+using OrcaFacil.Persistence.Plans;
+using OrcaFacil.Persistence.Services;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,14 +43,28 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IDocumentQueries, DocumentQueries>();
 builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<ICurrentAccountService, ApiCurrentAccountService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<ILoggerService, LoggerService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<DocumentService>();
+builder.Services.AddScoped<IDocumentStatusTransitionService, DocumentStatusTransitionService>();
+builder.Services.AddSingleton<IPublicDocumentTokenService, PublicDocumentTokenService>();
+builder.Services.AddSingleton<IDocumentSnapshotSerializer, DocumentSnapshotSerializer>();
+builder.Services.AddScoped<IWorkOrderStatusTransitionService, WorkOrderStatusTransitionService>();
+builder.Services.AddSingleton<ITechnicalFingerprintService>(_ =>
+    new TechnicalFingerprintService(ResolveTechnicalFingerprintPepper(builder.Configuration, builder.Environment.EnvironmentName)));
+builder.Services.AddScoped<CommercialJourneyService>();
+builder.Services.AddScoped<ICommercialJourneyService>(sp => sp.GetRequiredService<CommercialJourneyService>());
+builder.Services.AddScoped<IPublicDocumentAccessService>(sp => sp.GetRequiredService<CommercialJourneyService>());
+builder.Services.AddScoped<IManualPaymentRegistrationService>(sp => sp.GetRequiredService<CommercialJourneyService>());
+builder.Services.AddScoped<IReceiptApplicationService, ReceiptApplicationService>();
 builder.Services.AddScoped<IDocumentNumberService, DocumentNumberService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<PlanLimitService>();
 builder.Services.AddScoped<PlanEntitlementService>();
+builder.Services.AddScoped<IPlanAccessService, PlanAccessService>();
+builder.Services.AddScoped<IPlanAccessDataSource, EfPlanAccessDataSource>();
 builder.Services.AddScoped<TrialProService>();
 builder.Services.Configure<PlanOptions>(builder.Configuration.GetSection("Plans"));
 builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -93,3 +113,12 @@ app.MapGet("/health/version", () => new { app = "OrcaFacil", version = "1.0.0", 
 app.MapControllers();
 app.MapRazorPages();
 app.Run();
+
+static string ResolveTechnicalFingerprintPepper(IConfiguration configuration, string environmentName)
+{
+    var configuredValue = configuration["Security:TechnicalFingerprintPepper"];
+    if (!string.IsNullOrWhiteSpace(configuredValue)) return configuredValue;
+    if (string.Equals(environmentName, "Testing", StringComparison.OrdinalIgnoreCase))
+        return "orcafacil-testing-only-technical-fingerprint-pepper";
+    throw new InvalidOperationException("Security:TechnicalFingerprintPepper não configurado.");
+}

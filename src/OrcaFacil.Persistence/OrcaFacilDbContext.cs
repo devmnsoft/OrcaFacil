@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using OrcaFacil.Domain.Entities;
 
 namespace OrcaFacil.Persistence;
@@ -426,6 +427,8 @@ public class OrcaFacilDbContext : DbContext
         {
             foreach (var property in entity.GetProperties())
             {
+                if (property.FindAnnotation(RelationalAnnotationNames.ColumnName) is not null)
+                    continue;
                 property.SetColumnName(ToSnakeCase(property.Name));
             }
         }

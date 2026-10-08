@@ -16,6 +16,8 @@
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -30,6 +32,7 @@
     <EmbeddedResource Include="..\..\database\hotfix_billing_coverage_v67.sql" Link="Migrations\hotfix_billing_coverage_v67.sql" />
     <EmbeddedResource Include="..\..\database\hotfix_ai_quota_reservation_v68.sql" Link="Migrations\hotfix_ai_quota_reservation_v68.sql" />
     <EmbeddedResource Include="..\..\database\hotfix_ai_apply_governance_v69.sql" Link="Migrations\hotfix_ai_apply_governance_v69.sql" />
+    <EmbeddedResource Include="..\..\database\hotfix_client_rowversion_v70.sql" Link="Migrations\hotfix_client_rowversion_v70.sql" />
   </ItemGroup>
 
 </Project>

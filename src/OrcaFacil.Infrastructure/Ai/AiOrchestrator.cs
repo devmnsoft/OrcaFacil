@@ -110,6 +110,8 @@ public sealed class AiOrchestrator : IAiOrchestrator
             return FallbackToRules(reservation.Reason ?? AiQuotaService.LimitMessage);
 
         string? lastError = null;
+        try
+        {
         foreach (var chosen in ordered)
         {
             var response = await chosen.ExecuteChatAsync(safeRequest, ct);
@@ -139,6 +141,12 @@ public sealed class AiOrchestrator : IAiOrchestrator
 
         await RecordAsync(context, purpose, ordered[0].ProviderName, "ExternalProvider", "Failed", 0, 0, lastError, correlation, ct);
         return FallbackToRules(string.IsNullOrWhiteSpace(lastError) ? "Falha na resposta do provedor de IA." : lastError);
+        }
+        catch (OperationCanceledException)
+        {
+            await RecordAsync(context, purpose, ordered[0].ProviderName, "ExternalProvider", "Cancelled", 0, 0, "cancelled", correlation, CancellationToken.None);
+            throw;
+        }
     }
 
     private async Task<AiQuotaReservation?> ReserveAsync(AiRequestContext context, string purpose, string correlation, CancellationToken ct)

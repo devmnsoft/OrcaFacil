@@ -64,16 +64,21 @@ public abstract class DocumentPdfTemplate
                 });
                 column.Item().Table(table =>
                 {
-                    table.ColumnsDefinition(c => { c.RelativeColumn(4); c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn(); });
+                    table.ColumnsDefinition(c => { c.RelativeColumn(5); c.ConstantColumn(52); c.ConstantColumn(108); c.ConstantColumn(118); });
                     table.Header(h => { h.Cell().Background("#EAF1F8").Padding(6).Text("Descrição").FontColor(Primary).Bold(); h.Cell().Background("#EAF1F8").Padding(6).AlignRight().Text("Qtd.").FontColor(Primary).Bold(); h.Cell().Background("#EAF1F8").Padding(6).AlignRight().Text("Unitário").FontColor(Primary).Bold(); h.Cell().Background("#EAF1F8").Padding(6).AlignRight().Text("Total").FontColor(Primary).Bold(); });
                     foreach (var item in Document.Items)
                     {
-                        table.Cell().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).Text(item.Description);
-                        table.Cell().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).AlignRight().Text(item.Quantity.ToString("N2"));
-                        table.Cell().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).AlignRight().Text(item.UnitPrice.ToString("C"));
-                        table.Cell().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).AlignRight().Text(item.CalculateTotal().ToString("C"));
+                        table.Cell().ShowEntire().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).Text(item.Description);
+                        table.Cell().ShowEntire().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).AlignRight().Text(item.Quantity.ToString("N2"));
+                        table.Cell().ShowEntire().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).AlignRight().Text(item.UnitPrice.ToString("C"));
+                        table.Cell().ShowEntire().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).AlignRight().Text(item.CalculateTotal().ToString("C"));
                     }
                 });
+                if (Document.Discount > 0)
+                {
+                    column.Item().AlignRight().Text($"Subtotal: {Document.Subtotal:C}");
+                    column.Item().AlignRight().Text($"Desconto: {Document.Discount:C}");
+                }
                 column.Item().AlignRight().Background("#E9F7F1").Padding(12).Text($"Total: {Document.Total:C}").FontColor(Success).Bold().FontSize(18);
                 if (!string.IsNullOrWhiteSpace(Document.Notes)) column.Item().Text(Document.Notes);
                 AddSpecificContent(column);

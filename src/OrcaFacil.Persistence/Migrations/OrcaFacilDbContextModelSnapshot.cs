@@ -965,11 +965,11 @@ namespace OrcaFacil.Persistence.Migrations
 
                     b.Property<string>("WhatsApp")
                         .HasColumnType("text")
-                        .HasColumnName("whats_app");
+                        .HasColumnName("whatsapp");
 
                     b.Property<string>("WhatsAppMessage")
                         .HasColumnType("text")
-                        .HasColumnName("whats_app_message");
+                        .HasColumnName("whatsapp_message");
 
                     b.Property<string>("WorkOrderPrefix")
                         .IsRequired()
@@ -1235,6 +1235,133 @@ namespace OrcaFacil.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("admin_settings", "orcafacil");
+                });
+
+            modelBuilder.Entity("OrcaFacil.Domain.Entities.AiSuggestionCard", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<DateTime?>("AppliedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("applied_at");
+
+                    b.Property<Guid?>("AppliedDocumentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("applied_document_id");
+
+                    b.Property<string>("ApplyFingerprint")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("apply_fingerprint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DataJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("data_json");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId", "CreatedAt");
+
+                    b.ToTable("ai_suggestion_cards", "orcafacil");
+                });
+
+            modelBuilder.Entity("OrcaFacil.Domain.Entities.AiUsageLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("CorrelationId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("correlation_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("DurationMs")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_ms");
+
+                    b.Property<decimal>("EstimatedCost")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("estimated_cost");
+
+                    b.Property<int>("EstimatedTokens")
+                        .HasColumnType("integer")
+                        .HasColumnName("estimated_tokens");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("mode");
+
+                    b.Property<string>("OperationType")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("operation_type");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("provider");
+
+                    b.Property<string>("SanitizedError")
+                        .HasColumnType("text")
+                        .HasColumnName("sanitized_error");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId", "CreatedAt");
+
+                    b.ToTable("ai_usage_logs", "orcafacil");
                 });
 
             modelBuilder.Entity("OrcaFacil.Domain.Entities.AnalyticsSnapshot", b =>
@@ -2666,6 +2793,80 @@ namespace OrcaFacil.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("bank_transactions", "orcafacil");
+                });
+
+            modelBuilder.Entity("OrcaFacil.Domain.Entities.BillingCoverageApplication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<int>("CycleMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("cycle_months");
+
+                    b.Property<string>("Effect")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("effect");
+
+                    b.Property<string>("ExternalPaymentId")
+                        .IsRequired()
+                        .HasMaxLength(180)
+                        .HasColumnType("character varying(180)")
+                        .HasColumnName("external_payment_id");
+
+                    b.Property<Guid?>("InvoiceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<Guid?>("PaymentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payment_id");
+
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("subscription_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("SubscriptionId");
+
+                    b.HasIndex("ExternalPaymentId", "Effect")
+                        .IsUnique();
+
+                    b.ToTable("billing_coverage_applications", "orcafacil");
                 });
 
             modelBuilder.Entity("OrcaFacil.Domain.Entities.BillingCustomerProfile", b =>

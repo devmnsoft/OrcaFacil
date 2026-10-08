@@ -170,7 +170,9 @@ public sealed class JourneyPostgresTests
             var member = new AccountMember { AccountId = account.Id, UserId = user.Id, RoleCode = "Owner" };
             member.Join();
             await using var db = new OrcaFacilDbContext(Options(connection));
-            db.AddRange(account, other, user, client, member);
+            db.AddRange(account, other, user);
+            await db.SaveChangesAsync();
+            db.AddRange(client, member);
             await db.SaveChangesAsync();
             return new JourneyFixture(connection, account.Id, other.Id, user.Id, client.Id);
         }
@@ -254,6 +256,7 @@ public sealed class JourneyPostgresTests
             var payments = await db.ManualPayments.Where(x => x.AccountId == AccountId || x.AccountId == OtherAccountId).ToListAsync();
             var receipts = await db.Receipts.Where(x => x.AccountId == AccountId || x.AccountId == OtherAccountId).ToListAsync();
             db.RemoveRange(receipts);
+            await db.SaveChangesAsync();
             db.RemoveRange(payments);
             await db.SaveChangesAsync();
         }
