@@ -16,7 +16,7 @@ public class DocumentNumberService : IDocumentNumberService
         _logger = logger;
     }
 
-    public Task<string> NextAsync(Guid userId, DocumentType type, CancellationToken ct = default)
+    public Task<string> NextAsync(Guid userId, DocumentType type, Guid? accountId = null, CancellationToken ct = default)
     {
         var prefix = type == DocumentType.Receipt ? "REC" : "ORC";
         var existing = _documents.Query()

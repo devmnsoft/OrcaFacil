@@ -59,7 +59,7 @@ builder.Services.AddScoped<ICommercialJourneyService>(sp => sp.GetRequiredServic
 builder.Services.AddScoped<IPublicDocumentAccessService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IManualPaymentRegistrationService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IReceiptApplicationService, ReceiptApplicationService>();
-builder.Services.AddScoped<IDocumentNumberService, DocumentNumberService>();
+builder.Services.AddScoped<IDocumentNumberService, AtomicDocumentNumberService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<PlanLimitService>();
 builder.Services.AddScoped<PlanEntitlementService>();

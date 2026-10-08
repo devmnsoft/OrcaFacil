@@ -133,7 +133,7 @@ public sealed class BudgetWizardService
         }
         if (!string.IsNullOrWhiteSpace(suggestionText))
             document.Notes = suggestionText.Length > 4000 ? suggestionText[..4000] : suggestionText;
-        document.IssueNumber(await _numbers.NextAsync(userId, DocumentType.Budget, ct));
+        document.IssueNumber(await _numbers.NextAsync(userId, DocumentType.Budget, accountId, ct));
         if (clientId.HasValue)
         {
             var client = FindClient(userId, accountId, clientId.Value);

@@ -176,7 +176,7 @@ builder.Services.AddScoped<IGuidedBudgetStartService, GuidedBudgetStartService>(
 builder.Services.AddSingleton<IPricingEngineService, PricingEngineService>();
 builder.Services.AddScoped<OrcaFacil.Application.Services.IServiceCatalogApplicationService, ServiceCatalogApplicationService>();
 builder.Services.AddSingleton<OrcaFacil.Application.Services.IServiceUnitCatalog, OrcaFacil.Application.Services.ServiceUnitCatalog>();
-builder.Services.AddScoped<IDocumentNumberService, DocumentNumberService>();
+builder.Services.AddScoped<IDocumentNumberService, AtomicDocumentNumberService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<SupportDeskService>();
 builder.Services.AddScoped<AssetOperationsService>();

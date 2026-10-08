@@ -33,7 +33,7 @@ public class DocumentService
         try
         {
             var document = new Document { UserId = command.UserId, Type = command.Type, ClientName = command.ClientName.Trim(), Discount = command.Discount, Notes = command.Notes };
-            document.IssueNumber(string.IsNullOrWhiteSpace(command.Number) ? await _numberService.NextAsync(command.UserId, command.Type, ct) : command.Number);
+            document.IssueNumber(string.IsNullOrWhiteSpace(command.Number) ? await _numberService.NextAsync(command.UserId, command.Type, document.AccountId, ct) : command.Number);
             document.Items = command.Items.Select(item => new DocumentItem { Description = item.Description, Quantity = item.Quantity, UnitPrice = item.UnitPrice, Discount = item.Discount }).ToList();
             document.CalculateTotals();
             await _documents.AddAsync(document, ct);
@@ -92,7 +92,7 @@ public class DocumentService
         var original = await _documents.GetAsync(command.DocumentId, ct);
         if (original is null || original.UserId != command.UserId || original.IsDeleted) return Result<Guid>.Fail("Documento não encontrado.");
         var copy = new Document { UserId = original.UserId, Type = original.Type, Status = "Draft", ClientName = original.ClientName, ClientDocument = original.ClientDocument, ClientPhone = original.ClientPhone, ClientEmail = original.ClientEmail, ClientCity = original.ClientCity, IssueDate = DateTime.UtcNow, Notes = original.Notes, Discount = original.Discount };
-        copy.IssueNumber(await _numberService.NextAsync(command.UserId, original.Type, ct));
+        copy.IssueNumber(await _numberService.NextAsync(command.UserId, original.Type, original.AccountId, ct));
         copy.Items = original.Items.Select(item => new DocumentItem { Description = item.Description, Quantity = item.Quantity, UnitPrice = item.UnitPrice, Discount = item.Discount }).ToList();
         copy.CalculateTotals();
         await _documents.AddAsync(copy, ct);

@@ -252,7 +252,7 @@ public sealed class BudgetSuggestionApplyTests
     private sealed class FakeNumbers : IDocumentNumberService
     {
         private int _value;
-        public Task<string> NextAsync(Guid userId, DocumentType type, CancellationToken ct = default) => Task.FromResult($"ORC-{++_value}");
+        public Task<string> NextAsync(Guid userId, DocumentType type, Guid? accountId = null, CancellationToken ct = default) => Task.FromResult($"ORC-{++_value}");
     }
 
     private sealed class FakeUnitOfWork : IUnitOfWork
