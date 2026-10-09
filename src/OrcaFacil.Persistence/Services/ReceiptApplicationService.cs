@@ -1,6 +1,8 @@
 using System.Data;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Npgsql;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Commercial;
 using OrcaFacil.Application.Receipts;
@@ -120,6 +122,12 @@ public sealed class ReceiptApplicationService(
                     x => x.AccountId == accountId && x.IdempotencyKey == request.IdempotencyKey, ct);
                 if (duplicateInAttempt is not null)
                 {
+                    if (!IsSameRequest(request, normalizedAmount, canonicalPaymentMethod, paidAtUtc, duplicateInAttempt))
+                    {
+                        return Failure(CreateReceiptCode.ConcurrencyConflict,
+                            "Esta chave já foi usada para outro recebimento com dados diferentes. O lançamento original foi mantido.", correlationId);
+                    }
+
                     var existingReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(x => x.PaymentId == duplicateInAttempt.Id && !x.IsDeleted, ct);
                     if (existingReceipt is null && duplicateInAttempt.Status == FinancialRecordStatus.Active)
                         return await CreateForPaymentAsync(duplicateInAttempt.Id, request.ServiceDescription, request.City, request.Notes, ct);
@@ -201,16 +209,24 @@ public sealed class ReceiptApplicationService(
                 return new(true, CreateReceiptCode.None, "Recibo emitido com sucesso.", payment.Id, receipt.Id,
                     receipt.Number, RedirectPage, correlationId);
             }
-            catch (Exception ex) when (IsPersistenceConflict(ex) && attempt < maxRetries)
+            catch (Exception ex) when (ShouldRetryPersistenceConflict(ex) && attempt < maxRetries)
             {
+                DetachFinancialAttemptEntries();
                 await Task.Delay(50 * attempt, ct);
             }
-            catch (Exception ex) when (IsPersistenceConflict(ex))
+            catch (Exception ex) when (ShouldHandlePersistenceConflict(ex))
             {
+                DetachFinancialAttemptEntries();
                 var duplicateRecover = await db.ManualPayments.AsNoTracking().FirstOrDefaultAsync(
                     x => x.AccountId == accountId && x.IdempotencyKey == request.IdempotencyKey, ct);
                 if (duplicateRecover is not null)
                 {
+                    if (!IsSameRequest(request, normalizedAmount, canonicalPaymentMethod, paidAtUtc, duplicateRecover))
+                    {
+                        return Failure(CreateReceiptCode.ConcurrencyConflict,
+                            "Esta chave já foi usada para outro recebimento com dados diferentes. O lançamento original foi mantido.", correlationId);
+                    }
+
                     var existingReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(x => x.PaymentId == duplicateRecover.Id && !x.IsDeleted, ct);
                     return new(true, CreateReceiptCode.DuplicateRequest, "Este recebimento já havia sido registrado.", duplicateRecover.Id,
                         existingReceipt?.Id, existingReceipt?.Number, RedirectPage, correlationId);
@@ -251,25 +267,30 @@ public sealed class ReceiptApplicationService(
         {
             try
             {
+                var activePayment = await db.ManualPayments.AsNoTracking().SingleOrDefaultAsync(
+                    x => x.Id == paymentId && x.AccountId == accountId && !x.IsDeleted, ct);
+                if (activePayment is null || activePayment.Status != FinancialRecordStatus.Active)
+                    return Failure(CreateReceiptCode.AccessDenied, "Pagamento ativo não encontrado nesta conta.", correlationId);
+
                 var existingInLoop = await db.Receipts.AsNoTracking().SingleOrDefaultAsync(
                     x => x.AccountId == accountId && x.PaymentId == paymentId && !x.IsDeleted, ct);
                 if (existingInLoop is not null)
-                    return new(true, CreateReceiptCode.DuplicateRequest, "Este pagamento já possui recibo.", payment.Id,
+                    return new(true, CreateReceiptCode.DuplicateRequest, "Este pagamento já possui recibo.", activePayment.Id,
                         existingInLoop.Id, existingInLoop.Number, RedirectPage, correlationId);
 
                 await using var transaction = await db.Database.BeginTransactionAsync(ct);
                 var receipt = new Receipt
                 {
                     AccountId = accountId,
-                    PaymentId = payment.Id,
-                    ClientId = payment.ClientId,
-                    WorkOrderId = payment.WorkOrderId,
-                    DocumentId = payment.DocumentId,
-                    OriginType = payment.WorkOrderId.HasValue ? ReceiptOriginType.WorkOrder : payment.DocumentId.HasValue ? ReceiptOriginType.Budget : ReceiptOriginType.Standalone,
+                    PaymentId = activePayment.Id,
+                    ClientId = activePayment.ClientId,
+                    WorkOrderId = activePayment.WorkOrderId,
+                    DocumentId = activePayment.DocumentId,
+                    OriginType = activePayment.WorkOrderId.HasValue ? ReceiptOriginType.WorkOrder : activePayment.DocumentId.HasValue ? ReceiptOriginType.Budget : ReceiptOriginType.Standalone,
                     Number = await ReceiptNumberAllocator.NextAsync(db, accountId, ct),
-                    Amount = payment.Amount,
-                    AmountInWords = numberToWords.ToCurrencyWords(payment.Amount),
-                    PaymentMethod = payment.PaymentMethod,
+                    Amount = activePayment.Amount,
+                    AmountInWords = numberToWords.ToCurrencyWords(activePayment.Amount),
+                    PaymentMethod = activePayment.PaymentMethod,
                     IssuedAt = DateTime.UtcNow,
                     City = city?.Trim(),
                     Notes = notes?.Trim(),
@@ -280,15 +301,17 @@ public sealed class ReceiptApplicationService(
                 db.Receipts.Add(receipt);
                 await db.SaveChangesAsync(ct);
                 await transaction.CommitAsync(ct);
-                return new(true, CreateReceiptCode.None, "Recibo emitido com sucesso.", payment.Id, receipt.Id,
+                return new(true, CreateReceiptCode.None, "Recibo emitido com sucesso.", activePayment.Id, receipt.Id,
                     receipt.Number, RedirectPage, correlationId);
             }
-            catch (Exception ex) when (IsPersistenceConflict(ex) && attempt < maxRetries)
+            catch (Exception ex) when (ShouldRetryPersistenceConflict(ex) && attempt < maxRetries)
             {
+                DetachFinancialAttemptEntries();
                 await Task.Delay(50 * attempt, ct);
             }
-            catch (Exception ex) when (IsPersistenceConflict(ex))
+            catch (Exception ex) when (ShouldHandlePersistenceConflict(ex))
             {
+                DetachFinancialAttemptEntries();
                 var existingFinal = await db.Receipts.AsNoTracking().SingleOrDefaultAsync(
                     x => x.AccountId == accountId && x.PaymentId == paymentId && !x.IsDeleted, ct);
                 if (existingFinal is not null)
@@ -373,15 +396,54 @@ public sealed class ReceiptApplicationService(
     private static CreateReceiptResult Failure(CreateReceiptCode code, string message, string correlationId) =>
         new(false, code, message, null, null, null, RedirectPage, correlationId);
 
-    private static bool IsPersistenceConflict(Exception exception)
+    private static bool IsSameRequest(CreateReceiptRequest request, decimal amount, string methodCode, DateTime paidAtUtc, ManualPayment existing) =>
+        ManualPaymentIdempotency.Matches(
+            request.ClientId, request.DocumentId, request.WorkOrderId,
+            amount, methodCode, paidAtUtc,
+            existing.ClientId, existing.DocumentId, existing.WorkOrderId,
+            existing.Amount, existing.PaymentMethod, existing.PaidAt);
+
+    private void DetachFinancialAttemptEntries()
+    {
+        foreach (var entry in db.ChangeTracker.Entries().Where(IsFinancialAttemptEntry).ToArray())
+            entry.State = EntityState.Detached;
+    }
+
+    private static bool IsFinancialAttemptEntry(EntityEntry entry) =>
+        entry.Entity is ManualPayment or Receipt or ReceiptSequence &&
+        entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted;
+
+    private static bool ShouldRetryPersistenceConflict(Exception exception)
+    {
+        if (exception is DbUpdateConcurrencyException) return true;
+        var sqlState = FindSqlState(exception);
+        return sqlState is PostgresErrorCodes.SerializationFailure or PostgresErrorCodes.DeadlockDetected;
+    }
+
+    private static bool ShouldHandlePersistenceConflict(Exception exception)
+    {
+        if (ShouldRetryPersistenceConflict(exception)) return true;
+        return FindSqlState(exception) == PostgresErrorCodes.UniqueViolation &&
+               FindConstraintName(exception) is "ux_manual_payments_idempotency" or "ux_receipts_payment" or "ux_receipts_number";
+    }
+
+    private static string? FindSqlState(Exception exception)
     {
         for (var current = exception; current is not null; current = current.InnerException)
         {
-            var name = current.GetType().Name;
-            if (name is "DbUpdateConcurrencyException") return true;
-            var state = current.GetType().GetProperty("SqlState")?.GetValue(current) as string;
-            if (state is "23505" or "40001") return true;
+            if (current is PostgresException postgres) return postgres.SqlState;
+            if (current.GetType().GetProperty("SqlState")?.GetValue(current) is string state) return state;
         }
-        return false;
+        return null;
+    }
+
+    private static string? FindConstraintName(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is PostgresException postgres) return postgres.ConstraintName;
+            if (current.GetType().GetProperty("ConstraintName")?.GetValue(current) is string constraint) return constraint;
+        }
+        return null;
     }
 }

@@ -366,19 +366,9 @@ public sealed class JourneyIntegrityCycleHomologationTests
         var snapshot = new DocumentSnapshot(
             new IssuerSnapshot("Emitente congelado", "18160057000113", "old@example.com", "11999999999", "Rua A", "Belém", "PA", "/uploads/branding/logo-v1.png", "pix-old", null),
             new CustomerSnapshot("Cliente aprovado", "Company", "12345678000190", "11988887777", "client@example.com", "Rua B", "Recife", null),
-            new QuoteSnapshot("ORC-REV-001", DateTime.UtcNow.Date, DateTime.UtcNow.Date.AddDays(15), "10 dias", "Pix", "À vista com garantia aprovada", "Observação aprovada", "premium", "#111111", "Garantia de 90 dias", false, 1000m, 100m, 900m, "en-US", "BRL"),
+            new QuoteSnapshot("ORC-REV-001", DateTime.UtcNow.Date, DateTime.UtcNow.Date.AddDays(15), "10 dias", "Pix", "À vista com garantia aprovada", "Observação aprovada", "premium", "#111111", "Garantia de 90 dias", false, 900m, 0m, 900m, "en-US", "BRL"),
             [new QuoteItemSnapshot("Serviço aprovado", "h", 2m, 500m, 100m, 1000m, 900m)]);
         var serialized = serializer.Serialize(snapshot);
-        var revision = new DocumentRevision
-        {
-            AccountId = accountId,
-            DocumentId = Guid.NewGuid(),
-            VersionNumber = 3,
-            IsCurrent = true,
-            ProtectedSnapshot = serialized.Json,
-            SnapshotHash = serialized.Hash,
-            Total = 900m
-        };
         var mutableDocument = new Document
         {
             AccountId = accountId,
@@ -390,6 +380,16 @@ public sealed class JourneyIntegrityCycleHomologationTests
         mutableDocument.IssueNumber("ORC-MUTABLE");
         mutableDocument.Items.Add(new DocumentItem { Description = "Item mutável", Quantity = 1, UnitPrice = 1m });
         mutableDocument.CalculateTotals();
+        var revision = new DocumentRevision
+        {
+            AccountId = accountId,
+            DocumentId = mutableDocument.Id,
+            VersionNumber = 3,
+            IsCurrent = true,
+            ProtectedSnapshot = serialized.Json,
+            SnapshotHash = serialized.Hash,
+            Total = 900m
+        };
 
         var result = new CommercialRevisionResolver().Resolve(
             mutableDocument,
@@ -397,16 +397,43 @@ public sealed class JourneyIntegrityCycleHomologationTests
             new IssuerProfile { BusinessName = "Emitente atual" },
             PlanType.Free);
 
-        Assert.True(result.Succeeded);
+        Assert.True(result.Succeeded, $"{result.Code}: {result.Message}");
         Assert.True(result.Value!.IsSnapshotSource);
         Assert.Equal("ORC-REV-001", result.Value.Document.Number);
         Assert.Equal("Cliente aprovado", result.Value.Document.ClientName);
         Assert.Equal("À vista com garantia aprovada", result.Value.Document.ConditionsText);
-        Assert.Equal("Serviço aprovado", Assert.Single(result.Value.Document.Items).Description);
+        var item = Assert.Single(result.Value.Document.Items);
+        Assert.Equal("Serviço aprovado", item.Description);
+        Assert.Equal(900m, result.Value.Document.Subtotal);
+        Assert.Equal(100m, item.Discount);
+        Assert.Equal(0m, result.Value.Document.Discount);
+        Assert.Equal(900m, result.Value.Document.Total);
         Assert.Equal("Emitente congelado", result.Value.Issuer.BusinessName);
         Assert.Equal("en-US", result.Value.LanguageCode);
         Assert.Equal("BRL", result.Value.CurrencyCode);
         Assert.Equal(PlanType.Professional, result.Value.EffectivePlan);
+    }
+
+    [Fact]
+    public void CommercialRevisionResolver_RejectsInconsistentSnapshotTotals()
+    {
+        var accountId = Guid.NewGuid();
+        var serializer = new DocumentSnapshotSerializer();
+        var snapshot = new DocumentSnapshot(
+            new IssuerSnapshot("Emitente", null, null, null, null, null, null, null, null, null),
+            new CustomerSnapshot("Cliente", null, null, null, null, null, null, null),
+            new QuoteSnapshot("ORC-BAD", DateTime.UtcNow.Date, null, null, null, null, null, "essential", null, null, false, 1000m, 100m, 900m, "pt-BR", "BRL"),
+            [new QuoteItemSnapshot("Serviço", "un", 1m, 1000m, 100m, 1000m, 900m)]);
+        var serialized = serializer.Serialize(snapshot);
+
+        var result = new CommercialRevisionResolver().Resolve(
+            new Document { AccountId = accountId, Type = DocumentType.Budget },
+            new DocumentRevision { AccountId = accountId, VersionNumber = 1, ProtectedSnapshot = serialized.Json, SnapshotHash = serialized.Hash, Total = 900m },
+            new IssuerProfile { BusinessName = "Emitente atual" },
+            PlanType.Professional);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("InvalidSnapshot", result.Code);
     }
 
     [Fact]

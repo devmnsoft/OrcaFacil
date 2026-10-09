@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OrcaFacil.UnitTests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6dc515c6db67d4b3b6698940443f16014e74a52f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c7de4798660166ae0bf4fa31f91a606dd2eaf4ca")]
 [assembly: System.Reflection.AssemblyProductAttribute("OrcaFacil.UnitTests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OrcaFacil.UnitTests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
