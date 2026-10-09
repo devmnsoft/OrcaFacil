@@ -37,12 +37,30 @@ public sealed class CreateModel(IReceiptApplicationService receipts, ICurrentAcc
         if (workOrderId is Guid orderId)
         {
             var order = await db.WorkOrders.AsNoTracking().SingleOrDefaultAsync(x => x.Id == orderId && x.AccountId == account.AccountId && !x.IsDeleted, ct);
-            if (order is not null) { Input.ClientId = order.ClientId; Input.Amount = order.TotalSnapshot; Input.ServiceDescription = order.Title; }
+            if (order is not null)
+            {
+                var alreadyPaid = await db.ManualPayments.AsNoTracking()
+                    .Where(x => x.AccountId == account.AccountId && x.WorkOrderId == orderId && !x.IsDeleted && x.Status == FinancialRecordStatus.Active)
+                    .SumAsync(x => (decimal?)x.Amount, ct) ?? 0m;
+                var balance = Math.Max(0m, order.TotalSnapshot - alreadyPaid);
+                Input.ClientId = order.ClientId;
+                Input.Amount = balance;
+                Input.ServiceDescription = order.Title;
+            }
         }
         if (documentId is Guid budgetId)
         {
             var budget = await db.Documents.AsNoTracking().SingleOrDefaultAsync(x => x.Id == budgetId && x.AccountId == account.AccountId && !x.IsDeleted, ct);
-            if (budget is not null) { Input.ClientId = budget.ClientId ?? Guid.Empty; Input.Amount = budget.Total; Input.ServiceDescription = $"Orçamento {budget.Number}"; }
+            if (budget is not null)
+            {
+                var alreadyPaid = await db.ManualPayments.AsNoTracking()
+                    .Where(x => x.AccountId == account.AccountId && x.DocumentId == budgetId && !x.IsDeleted && x.Status == FinancialRecordStatus.Active)
+                    .SumAsync(x => (decimal?)x.Amount, ct) ?? 0m;
+                var balance = Math.Max(0m, budget.Total - alreadyPaid);
+                Input.ClientId = budget.ClientId ?? Guid.Empty;
+                Input.Amount = balance;
+                Input.ServiceDescription = $"Orçamento {budget.Number}";
+            }
         }
         if (paymentId is Guid existingPayment)
         {

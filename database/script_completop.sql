@@ -1192,8 +1192,8 @@ INSERT INTO orcafacil.role_permissions(role_id,permission_id,created_at,is_delet
 -- Sprint 30 governed AI schema.
 \ir sprint30_governed_ai.sql
 
--- Sprint 33 is applied by database/sprint33_growth_v34.sql after this baseline schema.
--- Sprint 35 localization rollout: execute database/sprint35_localization_v36.sql after this baseline.
+-- Sprint 35 localization rollout: idempotente e cumulativo.
+\ir sprint35_localization_v36.sql
 BEGIN;
 CREATE SCHEMA IF NOT EXISTS orcafacil;
 CREATE TABLE IF NOT EXISTS orcafacil.tenant_domains (

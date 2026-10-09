@@ -51,6 +51,29 @@ public sealed class TrialProService
         return Result.Ok();
     }
 
+    public async Task<Result> ActivateManualTrialForAccountAsync(Guid accountId, Guid adminUserId, int days, CancellationToken ct = default)
+    {
+        var subscription = _subscriptions.Query().SingleOrDefault(x => x.AccountId == accountId && !x.IsDeleted)
+            ?? new Subscription { AccountId = accountId, Provider = "Manual", Plan = PlanType.Professional };
+
+        var now = DateTime.UtcNow;
+        subscription.Plan = PlanType.Professional;
+        subscription.Status = SubscriptionStatus.Trial;
+        subscription.TrialStartedAt = now;
+        subscription.TrialEndsAt = now.AddDays(Math.Max(1, days > 0 ? days : _options.TrialProDays));
+        subscription.TrialUsed = true;
+        subscription.TrialStatus = TrialStatus.Active;
+        subscription.StartedAt ??= now;
+        subscription.ExpiresAt = subscription.TrialEndsAt;
+        subscription.Touch();
+
+        if (!_subscriptions.Query().Any(x => x.Id == subscription.Id))
+            await _subscriptions.AddAsync(subscription, ct);
+
+        await _uow.SaveChangesAsync(ct);
+        return Result.Ok();
+    }
+
     public async Task<int> ExpireTrialsAsync(CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;
@@ -64,16 +87,16 @@ public sealed class TrialProService
                 continue;
             }
 
-            subscription.Status = SubscriptionStatus.Free;
-            subscription.Plan = PlanType.Free;
+            subscription.Status = SubscriptionStatus.Expired;
             subscription.TrialStatus = TrialStatus.Expired;
             subscription.Touch();
+
             var user = await _users.GetAsync(subscription.UserId, ct);
             if (user is not null && user.Plan != PlanType.Professional && user.Plan != PlanType.Enterprise)
             {
-                user.Plan = PlanType.Free;
                 user.Touch();
             }
+
             await _notifications.CreateForUserAsync(subscription.UserId, "Período de teste de 15 dias encerrado", "Seu teste de 15 dias terminou. Escolha um plano para continuar gerando propostas.", NotificationType.Warning, NotificationCategory.Plan, "/Subscription", "Conhecer planos", ct);
         }
         await _uow.SaveChangesAsync(ct);

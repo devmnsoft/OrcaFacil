@@ -6,12 +6,13 @@ namespace OrcaFacil.Infrastructure.Pdf;
 
 public class BudgetPdfTemplate : DocumentPdfTemplate
 {
-    public BudgetPdfTemplate(Domain.Entities.Document document, IssuerProfile? issuer, PlanType plan) : base(document, issuer, plan) { }
+    public BudgetPdfTemplate(Domain.Entities.Document document, IssuerProfile? issuer, PlanType plan, string? languageCode = null, string? currencyCode = "BRL")
+        : base(document, issuer, plan, languageCode, currencyCode) { }
 
-    protected override string Title => "Orçamento";
+    protected override string Title => GetLabel("QuoteTitle");
 
     protected override void AddSpecificContent(ColumnDescriptor column)
     {
-        column.Item().Text("Bloco de aprovação do cliente disponível pelo link público.");
+        column.Item().Text(GetLabel("PublicApprovalNotice"));
     }
 }

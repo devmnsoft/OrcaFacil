@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Commercial;
+using OrcaFacil.Application.Common;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
 
@@ -457,6 +458,52 @@ public sealed class BudgetWizardService
         }
         return false;
     }
+
+    public async Task<OperationResult<Guid>> SaveAsTemplateAsync(Guid userId, Guid? accountId, Guid documentId, string templateTitle, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(templateTitle))
+            return OperationResult<Guid>.Failure("TitleRequired", "Informe o nome do modelo.");
+
+        var document = FindDocument(userId, accountId, documentId);
+        if (document is null)
+            return OperationResult<Guid>.Failure("NotFound", "Orçamento não encontrado nesta conta.");
+
+        var items = _items.Query().Where(x => x.DocumentId == document.Id && !x.IsDeleted).OrderBy(x => x.SortOrder).ToList();
+        if (items.Count == 0)
+            return OperationResult<Guid>.Failure("NoItems", "O orçamento precisa conter itens para gerar um modelo.");
+
+        var template = new BudgetTemplate
+        {
+            AccountId = accountId,
+            UserId = userId,
+            Profession = "Personalizado",
+            Title = templateTitle.Trim(),
+            Description = document.Notes ?? string.Empty,
+            IsSystemTemplate = false,
+            IsActive = true
+        };
+
+        await _templates.AddAsync(template, ct);
+
+        var sortOrder = 1;
+        foreach (var item in items)
+        {
+            var templateItem = new BudgetTemplateItem
+            {
+                BudgetTemplateId = template.Id,
+                Description = item.Description,
+                Unit = string.IsNullOrWhiteSpace(item.Unit) ? "un" : item.Unit,
+                Quantity = item.Quantity,
+                UnitPrice = item.UnitPrice,
+                SortOrder = sortOrder++
+            };
+            await _templateItems.AddAsync(templateItem, ct);
+        }
+
+        await _unitOfWork.SaveChangesAsync(ct);
+        return OperationResult<Guid>.Success(template.Id, "Modelo criado com sucesso a partir do orçamento.");
+    }
+
     private static string? ValidateCommercial(SaveBudgetDraftRequest request, bool strict)
     {
         if (request.Discount < 0) return "O desconto não pode ser negativo.";

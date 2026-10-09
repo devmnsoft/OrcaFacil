@@ -9,19 +9,24 @@ public class ReceiptPdfTemplate : DocumentPdfTemplate
 {
     private static readonly NumberToWordsPtBrService NumberService = new();
 
-    public ReceiptPdfTemplate(Domain.Entities.Document document, IssuerProfile? issuer, PlanType plan) : base(document, issuer, plan) { }
+    public ReceiptPdfTemplate(Domain.Entities.Document document, IssuerProfile? issuer, PlanType plan, string? languageCode = null, string? currencyCode = "BRL")
+        : base(document, issuer, plan, languageCode, currencyCode) { }
 
-    protected override string Title => "Recibo";
+    protected override string Title => GetLabel("ReceiptTitle");
 
     protected override void AddSpecificContent(ColumnDescriptor column)
     {
-        var extenso = NumberService.ToCurrencyWords(Document.Total);
+        var extenso = NumberService.ToCurrencyWords(Document.Total, LanguageCode, CurrencyCode);
+        var formattedTotal = FormatCurrency(Document.Total);
+        var receiptText = string.Format(GetLabel("ReceiptNotice"), formattedTotal, extenso);
+
         column.Item().Border(1).BorderColor("#CBD5E1").Background("#F8FAFC").Padding(12).Column(c =>
         {
-            c.Item().Text($"Recebemos a quantia de {Document.Total:C} ({extenso}) referente aos serviços e itens discriminados neste documento.").SemiBold();
+            c.Item().Text(receiptText).SemiBold();
             if (!string.IsNullOrWhiteSpace(Document.PaymentMethod))
             {
-                c.Item().PaddingTop(4).Text($"Forma de quitação / recebimento: {Document.PaymentMethod}").FontSize(9);
+                var methodText = string.Format(GetLabel("PaymentMethod"), Document.PaymentMethod);
+                c.Item().PaddingTop(4).Text(methodText).FontSize(9);
             }
         });
     }

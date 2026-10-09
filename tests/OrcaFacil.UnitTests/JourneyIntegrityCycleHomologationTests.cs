@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using OrcaFacil.Application.Commercial;
 using OrcaFacil.Application.Plans;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
@@ -42,6 +43,80 @@ public sealed class JourneyIntegrityCycleHomologationTests
         Assert.False(decision.IsAllowed);
         Assert.Equal("TrialExpired", decision.InternalReason);
         Assert.Contains("15 dias", decision.UserMessage);
+    }
+
+    [Fact]
+    public async Task TrialPro_BeforeAndAfterWorker_YieldsIdenticalExpiredDecision()
+    {
+        var accountId = Guid.NewGuid();
+
+        // 1. ANTES do worker rodar: subscription em Trial com data expirada
+        var beforeWorkerDataSource = new MockPlanAccessDataSource(accountId)
+        {
+            Subscription = new Subscription
+            {
+                AccountId = accountId,
+                Status = SubscriptionStatus.Trial,
+                TrialStatus = TrialStatus.Active,
+                TrialStartedAt = DateTime.UtcNow.AddDays(-16),
+                TrialEndsAt = DateTime.UtcNow.AddDays(-1),
+                ManualReleaseUntil = null
+            }
+        };
+        var serviceBefore = new PlanAccessService(beforeWorkerDataSource);
+        var decisionBefore = await serviceBefore.CanUseAsync(accountId, "documents.create");
+
+        // 2. DEPOIS do worker rodar: subscription em Expired
+        var afterWorkerDataSource = new MockPlanAccessDataSource(accountId)
+        {
+            Subscription = new Subscription
+            {
+                AccountId = accountId,
+                Status = SubscriptionStatus.Expired,
+                TrialStatus = TrialStatus.Expired,
+                TrialStartedAt = DateTime.UtcNow.AddDays(-16),
+                TrialEndsAt = DateTime.UtcNow.AddDays(-1),
+                ManualReleaseUntil = null
+            }
+        };
+        var serviceAfter = new PlanAccessService(afterWorkerDataSource);
+        var decisionAfter = await serviceAfter.CanUseAsync(accountId, "documents.create");
+
+        Assert.False(decisionBefore.IsAllowed);
+        Assert.False(decisionAfter.IsAllowed);
+        Assert.Equal(decisionBefore.InternalReason, decisionAfter.InternalReason);
+        Assert.Equal("TrialExpired", decisionAfter.InternalReason);
+        Assert.Equal(decisionBefore.UserMessage, decisionAfter.UserMessage);
+
+        // Garante que o plano efetivo não volta a ser Free com permissões de criação
+        var versionAfter = await serviceAfter.GetEffectivePlanVersionAsync(accountId, DateTime.UtcNow);
+        Assert.Null(versionAfter);
+    }
+
+    [Fact]
+    public async Task TrialPro_PaidSubscriptionApprovedDuringTrial_KeepsPaidAccess()
+    {
+        var accountId = Guid.NewGuid();
+        var dataSource = new MockPlanAccessDataSource(accountId)
+        {
+            Subscription = new Subscription
+            {
+                AccountId = accountId,
+                Status = SubscriptionStatus.Active, // Pagamento aprovado durante trial
+                Plan = PlanType.Professional,
+                TrialStatus = TrialStatus.Active,
+                TrialStartedAt = DateTime.UtcNow.AddDays(-5),
+                TrialEndsAt = DateTime.UtcNow.AddDays(10),
+                PaidThroughAt = DateTime.UtcNow.AddMonths(1)
+            }
+        };
+
+        var service = new PlanAccessService(dataSource);
+        var isExpired = PlanAccessService.IsTrialExpired(dataSource.Subscription, DateTime.UtcNow);
+        Assert.False(isExpired);
+
+        var decision = await service.CanUseAsync(accountId, "documents.create");
+        Assert.True(decision.IsAllowed);
     }
 
     [Fact]
@@ -107,6 +182,49 @@ public sealed class JourneyIntegrityCycleHomologationTests
     }
 
     [Fact]
+    public async Task QuestPdfGenerator_CorruptedOrTraversalLogo_KeepsPdfFunctional()
+    {
+        var generator = new QuestPdfDocumentService();
+        var accountId = Guid.NewGuid();
+        var doc = new Document
+        {
+            AccountId = accountId,
+            Type = DocumentType.Budget,
+            ClientName = "Cliente Teste",
+            IssueDate = DateTime.UtcNow
+        };
+        doc.IssueNumber("ORC-2026-0002");
+        doc.Items.Add(new DocumentItem
+        {
+            Description = "Item Seguro",
+            Quantity = 1,
+            UnitPrice = 250m
+        });
+        doc.CalculateTotals();
+
+        // Tentativa de path traversal
+        var issuerTraversal = new IssuerProfile
+        {
+            BusinessName = "Empresa Segura",
+            LogoPath = "../../../../Windows/System32/calc.exe"
+        };
+        var bytesTraversal = await generator.GenerateDocumentPdfAsync(doc, issuerTraversal, PlanType.Professional);
+        Assert.NotNull(bytesTraversal);
+        Assert.True(bytesTraversal.Length > 100);
+
+        // Tentativa de acessar branding de outra conta comercial
+        var foreignAccount = Guid.NewGuid();
+        var issuerForeign = new IssuerProfile
+        {
+            BusinessName = "Empresa Segura",
+            LogoPath = $"/uploads/branding/{foreignAccount:N}/logo.png"
+        };
+        var bytesForeign = await generator.GenerateDocumentPdfAsync(doc, issuerForeign, PlanType.Professional);
+        Assert.NotNull(bytesForeign);
+        Assert.True(bytesForeign.Length > 100);
+    }
+
+    [Fact]
     public async Task ReceiptPdfGenerator_WritesAmountInWords()
     {
         var generator = new QuestPdfDocumentService();
@@ -136,6 +254,52 @@ public sealed class JourneyIntegrityCycleHomologationTests
 
         Assert.NotNull(bytes);
         Assert.True(bytes.Length > 100);
+    }
+
+    [Fact]
+    public void NumberToWordsService_OutputsAccurateCurrencyText()
+    {
+        var service = new NumberToWordsPtBrService();
+        Assert.Equal("um real", service.ToCurrencyWords(1m));
+        Assert.Equal("dois reais", service.ToCurrencyWords(2m));
+        Assert.Equal("um mil e quinhentos reais", service.ToCurrencyWords(1500m).ToLowerInvariant());
+        Assert.Equal("dois reais e cinquenta centavos", service.ToCurrencyWords(2.50m).ToLowerInvariant());
+    }
+
+    [Fact]
+    public void ManualPaymentIdempotency_MatchesFullPayloadAndDetectsMismatches()
+    {
+        var clientA = Guid.NewGuid();
+        var clientB = Guid.NewGuid();
+        var docA = Guid.NewGuid();
+        var docB = Guid.NewGuid();
+        var workOrderA = Guid.NewGuid();
+        var paidAt = DateTime.UtcNow;
+
+        // Mesmos parâmetros exatos
+        Assert.True(ManualPaymentIdempotency.Matches(
+            clientA, docA, workOrderA, 500m, "pix", paidAt,
+            clientA, docA, workOrderA, 500m, "pix", paidAt));
+
+        // Cliente divergente
+        Assert.False(ManualPaymentIdempotency.Matches(
+            clientA, docA, workOrderA, 500m, "pix", paidAt,
+            clientB, docA, workOrderA, 500m, "pix", paidAt));
+
+        // Documento divergente
+        Assert.False(ManualPaymentIdempotency.Matches(
+            clientA, docA, workOrderA, 500m, "pix", paidAt,
+            clientA, docB, workOrderA, 500m, "pix", paidAt));
+
+        // Valor divergente
+        Assert.False(ManualPaymentIdempotency.Matches(
+            clientA, docA, workOrderA, 500m, "pix", paidAt,
+            clientA, docA, workOrderA, 600m, "pix", paidAt));
+
+        // Método de pagamento divergente
+        Assert.False(ManualPaymentIdempotency.Matches(
+            clientA, docA, workOrderA, 500m, "pix", paidAt,
+            clientA, docA, workOrderA, 500m, "cash", paidAt));
     }
 
     private sealed class MockPlanAccessDataSource(Guid accountId) : IPlanAccessDataSource

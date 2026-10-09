@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="..\..\database\patch_sprint43_assets_v44.sql" Link="Migrations\patch_sprint43_assets_v44.sql" />
+    <EmbeddedResource Include="..\..\database\sprint35_localization_v36.sql" Link="Migrations\sprint35_localization_v36.sql" />
     <EmbeddedResource Include="..\..\database\hotfix_saas_enterprise_modules_v66.sql" Link="Migrations\hotfix_saas_enterprise_modules_v66.sql" />
     <EmbeddedResource Include="..\..\database\hotfix_ai_budget_assistant_v67.sql" Link="Migrations\hotfix_ai_budget_assistant_v67.sql" />
     <EmbeddedResource Include="..\..\database\hotfix_billing_coverage_v67.sql" Link="Migrations\hotfix_billing_coverage_v67.sql" />

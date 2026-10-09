@@ -396,13 +396,63 @@ app.MapPost("/locale", async (HttpContext context) =>
     var culture = form["culture"].ToString();
     var returnUrl = form["returnUrl"].ToString();
     var normalized = SupportedLocales.Normalize(culture);
+
+    var safeReturnUrl = !string.IsNullOrWhiteSpace(returnUrl)
+        && Uri.IsWellFormedUriString(returnUrl, UriKind.Relative)
+        && returnUrl.StartsWith('/')
+        && !returnUrl.StartsWith("//")
+        && !returnUrl.StartsWith("/\\")
+        ? returnUrl : "/";
+
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        var antiforgery = context.RequestServices.GetRequiredService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+        try
+        {
+            await antiforgery.ValidateRequestAsync(context);
+        }
+        catch (Microsoft.AspNetCore.Antiforgery.AntiforgeryValidationException)
+        {
+            return Results.BadRequest("Token antiforgery inválido.");
+        }
+
+        var userIdClaim = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var accountIdClaim = context.User.FindFirstValue("account_id");
+        if (Guid.TryParse(userIdClaim, out var userId))
+        {
+            try
+            {
+                var db = context.RequestServices.GetRequiredService<OrcaFacilDbContext>();
+                Guid? accountId = Guid.TryParse(accountIdClaim, out var parsedAccountId) ? parsedAccountId : null;
+                await db.Database.ExecuteSqlInterpolatedAsync($"""
+                    INSERT INTO orcafacil.user_locale_preferences (user_id, account_id, language_code, updated_at)
+                    VALUES ({userId}, {accountId}, {normalized}, now())
+                    ON CONFLICT (user_id) DO UPDATE
+                    SET language_code = EXCLUDED.language_code,
+                        account_id = COALESCE(EXCLUDED.account_id, orcafacil.user_locale_preferences.account_id),
+                        updated_at = now();
+                    """, context.RequestAborted);
+            }
+            catch (Exception ex)
+            {
+                var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogWarning(ex, "Erro ao persistir user_locale_preferences para {UserId}", userId);
+            }
+        }
+    }
+
     context.Response.Cookies.Append(
         CookieRequestCultureProvider.DefaultCookieName,
         CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(normalized)),
-        new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), HttpOnly = true, IsEssential = true,
-            SameSite = SameSiteMode.Lax, Secure = context.Request.IsHttps });
-    var safeReturnUrl = !string.IsNullOrWhiteSpace(returnUrl) && Uri.IsWellFormedUriString(returnUrl, UriKind.Relative) && returnUrl.StartsWith('/')
-        ? returnUrl : "/";
+        new CookieOptions
+        {
+            Expires = DateTimeOffset.UtcNow.AddYears(1),
+            HttpOnly = true,
+            IsEssential = true,
+            SameSite = SameSiteMode.Lax,
+            Secure = context.Request.IsHttps
+        });
+
     return Results.LocalRedirect(safeReturnUrl);
 }).DisableAntiforgery();
 static Task WritePublicHealth(HttpContext context, HealthReport report)

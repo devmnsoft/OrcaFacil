@@ -374,3 +374,6 @@ C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\qlgi2ainwa-{0
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\70zjfp99dk-{0}-nvad2eznz9-nvad2eznz9.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\pps3pm1o3e-{0}-gz0vqdnb1m-gz0vqdnb1m.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\4ghim849k7-{0}-hsli7f7u1f-hsli7f7u1f.gz
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\bin\Debug\net10.0\Localization\resources.en-US.json
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\bin\Debug\net10.0\Localization\resources.es-419.json
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\bin\Debug\net10.0\Localization\resources.es-ES.json

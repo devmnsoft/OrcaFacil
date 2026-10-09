@@ -15,7 +15,19 @@
 </head>
 <body class="of-public-quote">
     <a class="of-skip-link" href="#quote-content">Ir para o orçamento</a>
-    <header class="of-quote-brand of-container"><img src="~/img/brand/orcafacil-wordmark-dark.svg" width="180" alt="OrçaFácil — um produto MNSOFT" /></header>
+    <header class="of-quote-brand of-container">
+        <img src="~/img/brand/orcafacil-wordmark-dark.svg" width="180" alt="OrçaFácil — um produto MNSOFT" />
+        <form method="post" action="/locale" class="of-locale-selector">
+            <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+            <label class="of-sr-only" for="public-quote-locale">Idioma</label>
+            <select id="public-quote-locale" name="culture" aria-label="Idioma" onchange="this.form.submit()">
+                @foreach (var locale in OrcaFacil.Application.Localization.SupportedLocales.All.Values.Where(x => x.IsActive && x.IsPortalEnabled))
+                {
+                    <option value="@locale.Code" selected="@(locale.Code == System.Globalization.CultureInfo.CurrentUICulture.Name)">@locale.NativeName</option>
+                }
+            </select>
+        </form>
+    </header>
     <main id="quote-content">@RenderBody()</main>
     <footer class="of-container of-quote-footer"><small>OrçaFácil · Um produto MNSOFT</small></footer>
     @await RenderSectionAsync("Scripts", false)

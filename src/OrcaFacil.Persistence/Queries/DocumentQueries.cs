@@ -18,28 +18,41 @@ public class DocumentQueries : IDocumentQueries
         _logger = logger;
     }
 
-    public async Task<IReadOnlyList<DocumentSummaryDto>> ListDocumentsAsync(Guid userId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<DocumentSummaryDto>> ListDocumentsAsync(Guid userId, Guid? accountId = null, CancellationToken ct = default)
     {
         try
         {
             await using var connection = new NpgsqlConnection(_configuration.GetConnectionString("DefaultConnection"));
-            const string sql = """
-                select id as Id,
-                       type::text as Type,
-                       number as Number,
-                       status as Status,
-                       client_name as ClientName,
-                       total as Total,
-                       created_at as CreatedAt
-                  from orcafacil.documents
-                 where user_id = @userId and is_deleted = false
-                 order by created_at desc
-                """;
-            return (await connection.QueryAsync<DocumentSummaryDto>(new CommandDefinition(sql, new { userId }, cancellationToken: ct))).AsList();
+            var sql = accountId.HasValue
+                ? """
+                    select id as Id,
+                           type::text as Type,
+                           number as Number,
+                           status as Status,
+                           client_name as ClientName,
+                           total as Total,
+                           created_at as CreatedAt
+                      from orcafacil.documents
+                     where account_id = @accountId and is_deleted = false
+                     order by created_at desc
+                    """
+                : """
+                    select id as Id,
+                           type::text as Type,
+                           number as Number,
+                           status as Status,
+                           client_name as ClientName,
+                           total as Total,
+                           created_at as CreatedAt
+                      from orcafacil.documents
+                     where user_id = @userId and account_id is null and is_deleted = false
+                     order by created_at desc
+                    """;
+            return (await connection.QueryAsync<DocumentSummaryDto>(new CommandDefinition(sql, new { userId, accountId }, cancellationToken: ct))).AsList();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao consultar documentos do usuário {UserId}", userId);
+            _logger.LogError(ex, "Erro ao consultar documentos da conta {AccountId} / usuário {UserId}", accountId, userId);
             throw;
         }
     }

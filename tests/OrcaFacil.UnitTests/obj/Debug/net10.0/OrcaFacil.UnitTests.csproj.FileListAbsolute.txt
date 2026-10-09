@@ -499,3 +499,6 @@ C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\obj\Debug\net10.0\OrcaFacil.UnitTe
 C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\obj\Debug\net10.0\OrcaFacil.UnitTests.genruntimeconfig.cache
 C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\obj\Debug\net10.0\ref\OrcaFacil.UnitTests.dll
 C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\bin\Debug\net10.0\testhost.exe
+C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\bin\Debug\net10.0\Localization\resources.en-US.json
+C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\bin\Debug\net10.0\Localization\resources.es-419.json
+C:\MNSOFT\OrcaFacil\tests\OrcaFacil.UnitTests\bin\Debug\net10.0\Localization\resources.es-ES.json

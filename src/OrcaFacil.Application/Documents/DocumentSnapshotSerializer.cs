@@ -9,7 +9,23 @@ namespace OrcaFacil.Application.Documents;
 public sealed record DocumentSnapshot(IssuerSnapshot Issuer, CustomerSnapshot Customer, QuoteSnapshot Quote, IReadOnlyList<QuoteItemSnapshot> Items);
 public sealed record IssuerSnapshot(string Name, string? Document, string? Email, string? Phone, string? Address, string? City, string? State, string? Logo, string? Pix, string? CommercialData);
 public sealed record CustomerSnapshot(string Name, string? Type, string? Document, string? Phone, string? Email, string? Address, string? City, string? State);
-public sealed record QuoteSnapshot(string Number, DateTime IssueDate, DateTime? ValidUntil, string? DeliveryTime, string? Payment, string? Conditions, string? Notes, string Template, string? PrimaryColor, string? Footer, bool ShowPlatformBrand, decimal Subtotal, decimal Discount, decimal Total);
+public sealed record QuoteSnapshot(
+    string Number,
+    DateTime IssueDate,
+    DateTime? ValidUntil,
+    string? DeliveryTime,
+    string? Payment,
+    string? Conditions,
+    string? Notes,
+    string Template,
+    string? PrimaryColor,
+    string? Footer,
+    bool ShowPlatformBrand,
+    decimal Subtotal,
+    decimal Discount,
+    decimal Total,
+    string? LanguageCode = "pt-BR",
+    string? CurrencyCode = "BRL");
 public sealed record QuoteItemSnapshot(string Description, string? Unit, decimal Quantity, decimal UnitPrice, decimal Discount, decimal Subtotal, decimal Total);
 public sealed record SerializedDocumentSnapshot(string Json, string Hash);
 
@@ -47,6 +63,22 @@ public sealed class DocumentSnapshotSerializer : IDocumentSnapshotSerializer
     private static DateTime T(DateTime value) => value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
     private static IssuerSnapshot Normalize(IssuerSnapshot x) => new(N(x.Name), O(x.Document), O(x.Email)?.ToLowerInvariant(), O(x.Phone), O(x.Address), O(x.City), O(x.State)?.ToUpperInvariant(), O(x.Logo), O(x.Pix), O(x.CommercialData));
     private static CustomerSnapshot Normalize(CustomerSnapshot x) => new(N(x.Name), O(x.Type), O(x.Document), O(x.Phone), O(x.Email)?.ToLowerInvariant(), O(x.Address), O(x.City), O(x.State)?.ToUpperInvariant());
-    private static QuoteSnapshot Normalize(QuoteSnapshot x) => new(N(x.Number), T(x.IssueDate), x.ValidUntil is null ? null : T(x.ValidUntil.Value), O(x.DeliveryTime), O(x.Payment), O(x.Conditions), O(x.Notes), N(x.Template).ToLowerInvariant(), O(x.PrimaryColor)?.ToUpperInvariant(), O(x.Footer), x.ShowPlatformBrand, D(x.Subtotal), D(x.Discount), D(x.Total));
+    private static QuoteSnapshot Normalize(QuoteSnapshot x) => new(
+        N(x.Number),
+        T(x.IssueDate),
+        x.ValidUntil is null ? null : T(x.ValidUntil.Value),
+        O(x.DeliveryTime),
+        O(x.Payment),
+        O(x.Conditions),
+        O(x.Notes),
+        N(x.Template).ToLowerInvariant(),
+        O(x.PrimaryColor)?.ToUpperInvariant(),
+        O(x.Footer),
+        x.ShowPlatformBrand,
+        D(x.Subtotal),
+        D(x.Discount),
+        D(x.Total),
+        string.IsNullOrWhiteSpace(x.LanguageCode) ? "pt-BR" : x.LanguageCode.Trim(),
+        string.IsNullOrWhiteSpace(x.CurrencyCode) ? "BRL" : x.CurrencyCode.Trim().ToUpperInvariant());
     private static QuoteItemSnapshot Normalize(QuoteItemSnapshot x) => new(N(x.Description), O(x.Unit)?.ToLowerInvariant(), D(x.Quantity), D(x.UnitPrice), D(x.Discount), D(x.Subtotal), D(x.Total));
 }

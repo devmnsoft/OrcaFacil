@@ -109,6 +109,17 @@
                             <svg class="of-icon" aria-hidden="true"><use href="#of-icon-notification" /></svg>
                             @if (shell.UnreadNotifications > 0) { <span class="of-notification-count">@shell.UnreadNotifications</span> }
                         </a>
+                        <form method="post" action="/locale" class="of-locale-selector of-locale-topbar">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+                            <label class="of-sr-only" for="client-topbar-locale">Idioma da interface</label>
+                            <select id="client-topbar-locale" name="culture" aria-label="Idioma da interface" onchange="this.form.submit()">
+                                @foreach (var locale in OrcaFacil.Application.Localization.SupportedLocales.All.Values.Where(x => x.IsActive))
+                                {
+                                    <option value="@locale.Code" selected="@(locale.Code == System.Globalization.CultureInfo.CurrentUICulture.Name)">@locale.NativeName</option>
+                                }
+                            </select>
+                        </form>
                         <button class="of-topbar-avatar" type="button" data-profile-menu-trigger aria-label="Abrir menu do usuário" aria-haspopup="menu" aria-expanded="false">@shell.FirstName[..1].ToUpperInvariant()</button>
                         <div class="of-profile-menu" data-profile-menu hidden role="menu">
                             <header><span class="of-avatar" aria-hidden="true">@shell.FirstName[..1].ToUpperInvariant()</span><span><strong>@shell.FirstName</strong><small>@shell.MaskedEmail</small></span></header>

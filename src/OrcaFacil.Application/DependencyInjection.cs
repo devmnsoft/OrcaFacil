@@ -44,6 +44,8 @@ public static class DependencyInjection
         services.TryAddSingleton<TranslationImportService>();
         services.TryAddSingleton<TranslationExportService>();
         services.TryAddSingleton<HreflangService>();
+        services.TryAddSingleton<IMissingKeyTracker, InMemoryMissingKeyTracker>();
+        services.TryAddSingleton<ITextLocalizer, JsonTextLocalizer>();
         services.TryAddSingleton<IPaymentWebhookVerifier, HmacPaymentWebhookVerifier>();
         services.TryAddSingleton<PaymentReconciliationService>();
         services.TryAddScoped<FieldTeamService>();
