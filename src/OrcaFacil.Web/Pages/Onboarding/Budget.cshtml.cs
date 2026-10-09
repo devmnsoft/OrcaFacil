@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Documents;
 using OrcaFacil.Application.Onboarding;
-using OrcaFacil.Domain.Enums;
+using OrcaFacil.Domain.Entities;
 using OrcaFacil.Persistence;
 
 namespace OrcaFacil.Web.Pages.Onboarding;
@@ -18,53 +18,77 @@ public sealed class BudgetModel(
     OrcaFacilDbContext db) : PageModel
 {
     public OnboardingStateView State { get; private set; } = null!;
+    public IReadOnlyList<Client> AvailableClients { get; private set; } = [];
+    public IReadOnlyList<ServiceCatalogItem> AvailableServices { get; private set; } = [];
+
+    [BindProperty]
+    public Guid? SelectedClientId { get; set; }
+
+    [BindProperty]
+    public Guid? SelectedServiceId { get; set; }
+
     public string? ClientName { get; private set; }
     public string? ServiceName { get; private set; }
     public decimal ServicePrice { get; private set; }
 
-    public async Task OnGetAsync(CancellationToken ct)
+    public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
-        State = (await onboarding.GetAsync(ct)).Value!;
-        if (currentAccount.AccountId is Guid accountId)
-        {
-            var client = await db.Clients.AsNoTracking()
-                .Where(x => x.AccountId == accountId && !x.IsDeleted)
-                .OrderBy(x => x.CreatedAt)
-                .FirstOrDefaultAsync(ct);
-            ClientName = client?.Name;
+        if (currentAccount.AccountId is not Guid accountId) return Forbid();
+        try { await currentAccount.EnsureAccountAccessAsync(ct); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
 
-            var service = await db.ServiceCatalogItems.AsNoTracking()
-                .Where(x => x.AccountId == accountId && !x.IsDeleted)
-                .OrderBy(x => x.CreatedAt)
-                .FirstOrDefaultAsync(ct);
-            ServiceName = service?.Name;
-            ServicePrice = service?.StandardPrice ?? 0;
-        }
+        var stateResult = await onboarding.GetAsync(ct);
+        if (!stateResult.Succeeded || stateResult.Value is null) return RedirectToPage("Business");
+        State = stateResult.Value;
+
+        await LoadOptionsAsync(accountId, ct);
+
+        SelectedClientId ??= AvailableClients.FirstOrDefault()?.Id;
+        SelectedServiceId ??= AvailableServices.FirstOrDefault()?.Id;
+
+        UpdateSelectedLabels();
+        return Page();
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
         if (currentAccount.AccountId is not Guid accountId) return Forbid();
+        try { await currentAccount.EnsureAccountAccessAsync(ct); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
 
-        await onboarding.StartBudgetAsync(ct);
+        var startResult = await onboarding.StartBudgetAsync(ct);
+        if (!startResult.Succeeded)
+        {
+            TempData["Error"] = startResult.Message ?? "Não foi possível avançar para a etapa de orçamento.";
+            return RedirectToPage();
+        }
 
-        var client = await db.Clients.AsNoTracking()
-            .Where(x => x.AccountId == accountId && !x.IsDeleted)
-            .OrderBy(x => x.CreatedAt)
-            .FirstOrDefaultAsync(ct);
+        await LoadOptionsAsync(accountId, ct);
 
-        var service = await db.ServiceCatalogItems.AsNoTracking()
-            .Where(x => x.AccountId == accountId && !x.IsDeleted)
-            .OrderBy(x => x.CreatedAt)
-            .FirstOrDefaultAsync(ct);
+        var client = SelectedClientId.HasValue
+            ? AvailableClients.FirstOrDefault(x => x.Id == SelectedClientId.Value)
+            : AvailableClients.FirstOrDefault();
+
+        var service = SelectedServiceId.HasValue
+            ? AvailableServices.FirstOrDefault(x => x.Id == SelectedServiceId.Value)
+            : AvailableServices.FirstOrDefault();
 
         var seedServices = service is not null ? new[] { service.Id } : Array.Empty<Guid>();
         var idempotencyKey = $"onboarding-{accountId:N}";
 
+        // Se o orçamento dessa chave já foi emitido/finalizado, redireciona diretamente
+        var existingDoc = await db.Documents.AsNoTracking().FirstOrDefaultAsync(
+            d => d.AccountId == accountId && d.LastAutosaveKey == idempotencyKey && !d.IsDeleted, ct);
+
+        if (existingDoc is not null && !string.Equals(existingDoc.Status, "Draft", StringComparison.OrdinalIgnoreCase))
+        {
+            return RedirectToPage("/Documents/Details", new { id = existingDoc.Id });
+        }
+
         var openResult = await wizard.OpenAsync(
             currentAccount.UserId,
             accountId,
-            documentId: null,
+            documentId: existingDoc?.Id,
             clientId: client?.Id,
             ct: ct,
             serviceIds: seedServices,
@@ -76,6 +100,7 @@ public sealed class BudgetModel(
             return RedirectToPage("/Documents/CreateBudget", new { id = openResult.Draft.DocumentId });
         }
 
+        TempData["Error"] = openResult.Error ?? "Não foi possível preparar o rascunho de orçamento.";
         return RedirectToPage("/Documents/New");
     }
 
@@ -83,5 +108,28 @@ public sealed class BudgetModel(
     {
         var r = await onboarding.CompleteAsync(ct);
         return r.Succeeded ? RedirectToPage("Done") : RedirectToPage("Business");
+    }
+
+    private async Task LoadOptionsAsync(Guid accountId, CancellationToken ct)
+    {
+        AvailableClients = await db.Clients.AsNoTracking()
+            .Where(x => x.AccountId == accountId && !x.IsDeleted)
+            .OrderBy(x => x.Name)
+            .ToListAsync(ct);
+
+        AvailableServices = await db.ServiceCatalogItems.AsNoTracking()
+            .Where(x => x.AccountId == accountId && x.IsActive && !x.IsDeleted)
+            .OrderBy(x => x.Name)
+            .ToListAsync(ct);
+    }
+
+    private void UpdateSelectedLabels()
+    {
+        var client = AvailableClients.FirstOrDefault(x => x.Id == SelectedClientId);
+        ClientName = client?.Name;
+
+        var service = AvailableServices.FirstOrDefault(x => x.Id == SelectedServiceId);
+        ServiceName = service?.Name;
+        ServicePrice = service?.StandardPrice ?? 0;
     }
 }

@@ -1808,3 +1808,11 @@ CREATE INDEX IF NOT EXISTS ix_public_document_decisions_account_document ON orca
 
 -- V7.1: sequências atômicas de documentos por conta, proteção de histórico e padronização.
 \ir hotfix_document_sequences_v71.sql
+
+-- V7.2: campos comerciais nos modelos de orçamento (condições, garantia, pagamento, descontos)
+\ir hotfix_budget_templates_commercial_fields_v72.sql
+ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS conditions_text text;
+ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS warranty_text varchar(2000);
+ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS payment_method varchar(60);
+ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS discount numeric(18,2) NOT NULL DEFAULT 0;
+ALTER TABLE orcafacil.budget_template_items ADD COLUMN IF NOT EXISTS discount numeric(18,2) NOT NULL DEFAULT 0;

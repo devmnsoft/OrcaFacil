@@ -20,6 +20,12 @@ public sealed class AddBudgetTemplateCommercialFieldsV72 : Migration
             """);
     }
 
+    /// <summary>
+    /// ATENÇÃO: O rollback (Down) remove as colunas comerciais dos modelos e de seus itens
+    /// (conditions_text, warranty_text, payment_method, discount). Qualquer conteúdo inserido
+    /// ou customizado pelos usuários nesses campos será irremediavelmente perdido.
+    /// Não execute este rollback como mecanismo de recuperação sem perda após a utilização dos modelos.
+    /// </summary>
     protected override void Down(MigrationBuilder migrationBuilder)
     {
         migrationBuilder.Sql("""

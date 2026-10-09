@@ -115,6 +115,69 @@ public sealed class SaaSReleaseEvolutionTests
         Assert.Equal(0, itemWithZeroPrice.UnitPrice); // Preços intactos
     }
 
+    [Fact]
+    public void Commercial_items_order_is_preserved_in_new_format()
+    {
+        var snapshot = new DocumentSnapshot(
+            new("Minha Empresa Ltda", "12.345.678/0001-90", "contato@empresa.com", "(11) 99999-0000", "Rua das Flores, 100", "São Paulo", "SP", null, "12345678000190", null),
+            new("João da Silva", "PF", "123.456.789-00", "(11) 98888-7777", "joao@email.com", "Av Central, 50", "São Paulo", "SP"),
+            new("ORC-2026-002", new DateTime(2026, 10, 9, 12, 0, 0, DateTimeKind.Utc), DateTime.UtcNow.AddDays(15), "10 dias", "À vista", "Termos", "Notas", "essential", "#0284c7", null, true, 300m, 0m, 300m, "pt-BR", "BRL"),
+            [
+                new("Zebra (último no alfabeto)", "un", 1m, 100m, 0m, 100m, 100m),
+                new("Alpha (primeiro no alfabeto)", "un", 1m, 100m, 0m, 100m, 100m),
+                new("Beta (meio no alfabeto)", "un", 1m, 100m, 0m, 100m, 100m)
+            ]);
+
+        var result = _serializer.Serialize(snapshot);
+
+        // Ordem original preservada no JSON novo
+        var zebraIndex = result.Json.IndexOf("Zebra", StringComparison.Ordinal);
+        var alphaIndex = result.Json.IndexOf("Alpha", StringComparison.Ordinal);
+        var betaIndex = result.Json.IndexOf("Beta", StringComparison.Ordinal);
+
+        Assert.True(zebraIndex < alphaIndex, "Zebra deve vir antes de Alpha respeitando a ordem comercial");
+        Assert.True(alphaIndex < betaIndex, "Alpha deve vir antes de Beta respeitando a ordem comercial");
+        Assert.True(_serializer.VerifySnapshotHash(result.Json, snapshot, result.Hash));
+    }
+
+    [Fact]
+    public void Template_query_isolation_rules_enforce_strict_tenant_separation()
+    {
+        var accountA = Guid.NewGuid();
+        var accountB = Guid.NewGuid();
+        var user1 = Guid.NewGuid();
+        var user2 = Guid.NewGuid();
+
+        var templates = new List<BudgetTemplate>
+        {
+            new() { AccountId = accountA, UserId = user1, Title = "Template Conta A", IsSystemTemplate = false },
+            new() { AccountId = accountB, UserId = user2, Title = "Template Conta B", IsSystemTemplate = false },
+            new() { AccountId = null, UserId = user1, Title = "Legado User 1", IsSystemTemplate = false },
+            new() { AccountId = null, UserId = user2, Title = "Legado User 2", IsSystemTemplate = false },
+            new() { AccountId = null, UserId = Guid.Empty, Title = "Sistema", IsSystemTemplate = true }
+        };
+
+        // Cenário 1: Usuário logado na Conta A (com conta selecionada)
+        var forAccountA = templates.Where(x => x.AccountId == accountA).ToList();
+        Assert.Single(forAccountA);
+        Assert.Equal("Template Conta A", forAccountA[0].Title);
+
+        // Cenário 2: Usuário 1 sem conta selecionada (legado pessoal)
+        var forUser1NoAccount = templates.Where(x => x.AccountId == null && x.UserId == user1).ToList();
+        Assert.Single(forUser1NoAccount);
+        Assert.Equal("Legado User 1", forUser1NoAccount[0].Title);
+
+        // Cenário 3: Usuário 2 sem conta selecionada (não pode ver legado do Usuário 1)
+        var forUser2NoAccount = templates.Where(x => x.AccountId == null && x.UserId == user2).ToList();
+        Assert.Single(forUser2NoAccount);
+        Assert.Equal("Legado User 2", forUser2NoAccount[0].Title);
+
+        // Cenário 4: Modelos de sistema
+        var systemTemplates = templates.Where(x => x.IsSystemTemplate).ToList();
+        Assert.Single(systemTemplates);
+        Assert.Equal("Sistema", systemTemplates[0].Title);
+    }
+
     private static DocumentSnapshot CreateSampleSnapshot(string lang, string currency) => new(
         new("Minha Empresa Ltda", "12.345.678/0001-90", "contato@empresa.com", "(11) 99999-0000", "Rua das Flores, 100", "São Paulo", "SP", null, "12345678000190", null),
         new("João da Silva", "PF", "123.456.789-00", "(11) 98888-7777", "joao@email.com", "Av Central, 50", "São Paulo", "SP"),

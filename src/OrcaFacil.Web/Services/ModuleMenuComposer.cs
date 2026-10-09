@@ -14,16 +14,19 @@ public sealed class AccountMenuComposer(ICurrentAccountService current, IModuleE
 {
     private static readonly ModuleMenuItem[] Items =
     [
-        new("Principal", "Dashboard", "/Dashboard/Index", "CORE"),
+        new("Principal", "Visão geral", "/Dashboard/Index", "CORE"),
         new("Comercial", "Clientes", "/Clients/Index", "CLIENTS"),
-        new("Comercial", "Orçamentos e propostas", "/Documents/Index", "DOCUMENTS"),
+        new("Comercial", "Serviços", "/Services/Index", "DOCUMENTS"),
+        new("Comercial", "Orçamentos", "/Documents/Index", "DOCUMENTS"),
+        new("Comercial", "Modelos", "/Templates/Index", "DOCUMENTS"),
         new("Comercial", "Rotina comercial", "/CommercialRoutine/Index", "COMMERCIAL_ROUTINE"),
         new("Operações", "Ordens de serviço", "/WorkOrders/Index", "WORK_ORDERS"),
         new("Operações", "Agenda", "/Schedule/Index", "SCHEDULE"),
-        new("Gestão", "Financeiro", "/CashFlow/Index", "FINANCIAL"),
+        new("Financeiro", "Recebimentos", "/Payments/Index", "FINANCIAL"),
+        new("Financeiro", "Fluxo de caixa", "/CashFlow/Index", "FINANCIAL"),
         new("Relacionamento", "Suporte", "/Support/Index", "SUPPORT"),
         new("Sucesso", "Treinamento", "/Training/Index", "TRAINING"),
-        new("Administração", "Administração da conta", "/AccountAdmin/Index", "ACCOUNT_ADMIN")
+        new("Configurações", "Configurações", "/AccountAdmin/Index", "ACCOUNT_ADMIN")
     ];
 
     public async Task<IReadOnlyList<ModuleMenuItem>> ComposeAsync(CancellationToken ct = default)

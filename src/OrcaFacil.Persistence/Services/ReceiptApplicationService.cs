@@ -81,16 +81,23 @@ public sealed class ReceiptApplicationService(
                     "Esta chave já foi usada para outro recebimento com dados diferentes. O lançamento original foi mantido.", correlationId);
             }
 
-            var existingReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(
-                x => x.PaymentId == duplicate.Id && !x.IsDeleted && x.CancelledAt == null, ct);
-            if (existingReceipt is null && duplicate.Status == FinancialRecordStatus.Active)
-                return await CreateForPaymentAsync(duplicate.Id, request.ServiceDescription, request.City, request.Notes, ct);
+            var anyReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(
+                x => x.PaymentId == duplicate.Id && !x.IsDeleted, ct);
 
-            if (existingReceipt is not null)
+            if (anyReceipt?.CancelledAt != null)
+            {
+                return Failure(CreateReceiptCode.ConcurrencyConflict,
+                    "O recibo deste recebimento foi cancelado e mantido no histórico imutável. Para um novo recebimento, registre uma nova operação.", correlationId);
+            }
+
+            if (anyReceipt is not null && anyReceipt.CancelledAt == null)
             {
                 return new(true, CreateReceiptCode.DuplicateRequest, "Este recebimento já havia sido registrado.", duplicate.Id,
-                    existingReceipt.Id, existingReceipt.Number, RedirectPage, correlationId);
+                    anyReceipt.Id, anyReceipt.Number, RedirectPage, correlationId);
             }
+
+            if (anyReceipt is null && duplicate.Status == FinancialRecordStatus.Active)
+                return await CreateForPaymentAsync(duplicate.Id, request.ServiceDescription, request.City, request.Notes, ct);
 
             return Failure(CreateReceiptCode.AccessDenied, "O pagamento associado a esta chave não está ativo.", correlationId);
         }
@@ -140,19 +147,28 @@ public sealed class ReceiptApplicationService(
                             "Esta chave já foi usada para outro recebimento com dados diferentes. O lançamento original foi mantido.", correlationId);
                     }
 
-                    var existingReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(
-                        x => x.PaymentId == duplicateInAttempt.Id && !x.IsDeleted && x.CancelledAt == null, ct);
-                    if (existingReceipt is null && duplicateInAttempt.Status == FinancialRecordStatus.Active)
+                    var anyInAttempt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(
+                        x => x.PaymentId == duplicateInAttempt.Id && !x.IsDeleted, ct);
+
+                    if (anyInAttempt?.CancelledAt != null)
                     {
                         await transaction.RollbackAsync(ct);
-                        return await CreateForPaymentAsync(duplicateInAttempt.Id, request.ServiceDescription, request.City, request.Notes, ct);
+                        return Failure(CreateReceiptCode.ConcurrencyConflict,
+                            "O recibo deste recebimento foi cancelado e mantido no histórico imutável.", correlationId);
                     }
 
-                    if (existingReceipt is not null)
+                    if (anyInAttempt is not null && anyInAttempt.CancelledAt == null)
                     {
                         await transaction.CommitAsync(ct);
                         return new(true, CreateReceiptCode.DuplicateRequest, "Este recebimento já havia sido registrado.", duplicateInAttempt.Id,
-                            existingReceipt.Id, existingReceipt.Number, RedirectPage, correlationId);
+                            anyInAttempt.Id, anyInAttempt.Number, RedirectPage, correlationId);
+                    }
+
+                    if (anyInAttempt is null && duplicateInAttempt.Status == FinancialRecordStatus.Active)
+                    {
+                        await transaction.RollbackAsync(ct);
+                        await transaction.DisposeAsync();
+                        return await CreateForPaymentAsync(duplicateInAttempt.Id, request.ServiceDescription, request.City, request.Notes, ct);
                     }
 
                     await transaction.RollbackAsync(ct);
@@ -304,6 +320,11 @@ public sealed class ReceiptApplicationService(
 
             try
             {
+                // Garante releitura efetiva do pagamento sem reaproveitar estado obsoleto
+                var trackedPayment = db.ChangeTracker.Entries<ManualPayment>().FirstOrDefault(e => e.Entity.Id == paymentId);
+                if (trackedPayment is not null && trackedPayment.State != EntityState.Detached)
+                    trackedPayment.State = EntityState.Detached;
+
                 var activePayment = await db.ManualPayments.SingleOrDefaultAsync(
                     x => x.Id == paymentId && x.AccountId == accountId && !x.IsDeleted, ct);
                 if (activePayment is null || activePayment.Status != FinancialRecordStatus.Active)
@@ -312,13 +333,21 @@ public sealed class ReceiptApplicationService(
                     return Failure(CreateReceiptCode.AccessDenied, "Pagamento ativo não encontrado nesta conta.", correlationId);
                 }
 
-                var existingInLoop = await db.Receipts.FirstOrDefaultAsync(
-                    x => x.AccountId == accountId && x.PaymentId == paymentId && !x.IsDeleted && x.CancelledAt == null, ct);
-                if (existingInLoop is not null)
+                var anyInLoop = await db.Receipts.FirstOrDefaultAsync(
+                    x => x.AccountId == accountId && x.PaymentId == paymentId && !x.IsDeleted, ct);
+
+                if (anyInLoop?.CancelledAt != null)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return Failure(CreateReceiptCode.ConcurrencyConflict,
+                        "O recibo deste pagamento foi cancelado e mantido no histórico imutável. Não é permitido gerar outra emissão sobre o mesmo pagamento.", correlationId);
+                }
+
+                if (anyInLoop is not null && anyInLoop.CancelledAt == null)
                 {
                     await transaction.CommitAsync(ct);
                     return new(true, CreateReceiptCode.DuplicateRequest, "Este pagamento já possui recibo.", activePayment.Id,
-                        existingInLoop.Id, existingInLoop.Number, RedirectPage, correlationId);
+                        anyInLoop.Id, anyInLoop.Number, RedirectPage, correlationId);
                 }
 
                 var client = await db.Clients.AsNoTracking().SingleOrDefaultAsync(
@@ -475,17 +504,30 @@ public sealed class ReceiptApplicationService(
         return sqlState is PostgresErrorCodes.SerializationFailure or PostgresErrorCodes.DeadlockDetected;
     }
 
+    private static readonly HashSet<string> KnownFinancialUniqueConstraints = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "ix_manual_payments_account_id_idempotency_key",
+        "ux_manual_payments_account_id_idempotency_key",
+        "ix_receipts_account_id_payment_id",
+        "ux_receipts_account_id_payment_id",
+        "ix_receipts_account_id_number",
+        "ux_receipts_account_id_number",
+        "ix_receipt_sequences_account_id_year",
+        "ux_receipt_sequences_account_id_year"
+    };
+
     private static bool ShouldHandlePersistenceConflict(Exception exception)
     {
         if (ShouldRetryPersistenceConflict(exception)) return true;
         if (FindSqlState(exception) != PostgresErrorCodes.UniqueViolation) return false;
         var constraint = FindConstraintName(exception);
-        if (string.IsNullOrWhiteSpace(constraint)) return true;
-        return constraint.Contains("idempotency", StringComparison.OrdinalIgnoreCase) ||
-               constraint.Contains("receipt", StringComparison.OrdinalIgnoreCase) ||
-               constraint.Contains("payment", StringComparison.OrdinalIgnoreCase) ||
-               constraint.Contains("number", StringComparison.OrdinalIgnoreCase) ||
-               constraint.Contains("year", StringComparison.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(constraint)) return false;
+        var clean = constraint.Trim();
+        return KnownFinancialUniqueConstraints.Contains(clean) ||
+               clean.EndsWith("idempotency_key", StringComparison.OrdinalIgnoreCase) ||
+               clean.EndsWith("receipts_account_id_payment_id", StringComparison.OrdinalIgnoreCase) ||
+               clean.EndsWith("receipts_account_id_number", StringComparison.OrdinalIgnoreCase) ||
+               clean.EndsWith("receipt_sequences_account_id_year", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? FindSqlState(Exception exception)

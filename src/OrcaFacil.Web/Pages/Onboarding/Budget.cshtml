@@ -21,19 +21,57 @@
     <p style="margin-top:0.5rem; font-size:0.875rem;">Ao clicar em "Montar orçamento", seu cliente e o serviço cadastrados são reunidos em uma proposta real. A criação é idempotente e pode ser retomada no celular ou computador a qualquer momento.</p>
 </details>
 
+@if (TempData["Error"] is string error) { <div class="of-feedback of-feedback-error" role="alert" style="margin-bottom:1rem;">@error</div> }
+
 <div class="of-onboarding-success">
 <strong>Seu rascunho está pronto para começar</strong>
-<p>Cliente selecionado: <strong>@(Model.ClientName ?? "Cliente cadastrado")</strong></p>
-@if (!string.IsNullOrWhiteSpace(Model.ServiceName))
+@if (Model.AvailableClients.Count > 1)
 {
-    <p>Serviço pré-selecionado: <strong>@Model.ServiceName</strong> (@Model.ServicePrice.ToString("C"))</p>
+    <div style="margin-top:0.75rem;">
+        <label for="SelectedClientId" style="display:block; font-size:0.875rem; font-weight:600; margin-bottom:0.25rem;">Selecione o cliente para o primeiro orçamento:</label>
+        <select id="SelectedClientId" name="SelectedClientId" class="of-input" style="width:100%; max-width:360px;" form="onboarding-budget-form">
+            @foreach (var c in Model.AvailableClients)
+            {
+                <option value="@c.Id" selected="@(c.Id == Model.SelectedClientId ? "selected" : null)">@c.Name</option>
+            }
+        </select>
+    </div>
 }
-<small style="display:block; margin-top:0.5rem; color:var(--of-muted);">A prévia não consome geração de PDF e você poderá ajustar tudo no editor.</small>
+else
+{
+    <p style="margin-top:0.5rem;">Cliente selecionado: <strong>@(Model.ClientName ?? "Cliente cadastrado")</strong></p>
+}
+
+@if (Model.AvailableServices.Count > 1)
+{
+    <div style="margin-top:0.75rem;">
+        <label for="SelectedServiceId" style="display:block; font-size:0.875rem; font-weight:600; margin-bottom:0.25rem;">Selecione o serviço inicial do catálogo:</label>
+        <select id="SelectedServiceId" name="SelectedServiceId" class="of-input" style="width:100%; max-width:360px;" form="onboarding-budget-form">
+            @foreach (var s in Model.AvailableServices)
+            {
+                <option value="@s.Id" selected="@(s.Id == Model.SelectedServiceId ? "selected" : null)">@s.Name (@s.StandardPrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("pt-BR")))</option>
+            }
+        </select>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(Model.ServiceName))
+{
+    <p style="margin-top:0.5rem;">Serviço pré-selecionado: <strong>@Model.ServiceName</strong> (@Model.ServicePrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("pt-BR")))</p>
+}
+<small style="display:block; margin-top:0.75rem; color:var(--of-muted);">A prévia não consome geração de PDF e você poderá ajustar todos os campos no editor.</small>
 </div>
 
 <div class="of-onboarding-actions">
-<form method="post" data-onboarding-form>
+<form id="onboarding-budget-form" method="post" data-onboarding-form>
     @Html.AntiForgeryToken()
+    @if (Model.AvailableClients.Count <= 1 && Model.SelectedClientId.HasValue)
+    {
+        <input type="hidden" name="SelectedClientId" value="@Model.SelectedClientId.Value" />
+    }
+    @if (Model.AvailableServices.Count <= 1 && Model.SelectedServiceId.HasValue)
+    {
+        <input type="hidden" name="SelectedServiceId" value="@Model.SelectedServiceId.Value" />
+    }
     <button type="submit" class="of-onboarding-button of-onboarding-button--primary" data-submit-text="Abrindo editor…">Montar orçamento</button>
 </form>
 <form method="post" asp-page-handler="Done">

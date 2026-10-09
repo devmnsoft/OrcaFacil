@@ -35,7 +35,8 @@ public sealed class SaasModuleRegistryService
     {
         var alias = path.StartsWith("/CommercialPipeline", StringComparison.OrdinalIgnoreCase) ? "COMMERCIAL_ROUTINE" :
             path.StartsWith("/Payments", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/Receivables", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWith("/BankAccounts", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/Reports/Financial", StringComparison.OrdinalIgnoreCase) ? "FINANCIAL" : null;
+            path.StartsWith("/BankAccounts", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/Reports/Financial", StringComparison.OrdinalIgnoreCase) ? "FINANCIAL" :
+            path.StartsWith("/Templates", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/Services", StringComparison.OrdinalIgnoreCase) ? "DOCUMENTS" : null;
         if (alias is not null) return InitialModules.FirstOrDefault(x => x.Code == alias && x.IsActive);
         return InitialModules.Where(x => x.IsActive && path.StartsWith(x.RoutePrefix, StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(x => x.RoutePrefix.Length).FirstOrDefault();

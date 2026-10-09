@@ -45,14 +45,33 @@
         <div class="of-field"><label asp-for="Minimum">Valor mínimo</label><input asp-for="Minimum" class="of-field-control" inputmode="decimal" /><span asp-validation-for="Minimum"></span></div>
         <div class="of-field"><label asp-for="Maximum">Valor máximo</label><input asp-for="Maximum" class="of-field-control" inputmode="decimal" /><span asp-validation-for="Maximum"></span></div>
         <div class="of-field"><label asp-for="Sort">Ordenar</label><select asp-for="Sort" class="of-field-control"><option value="newest">Mais recentes</option><option value="oldest">Mais antigos</option><option value="value-desc">Maior valor</option><option value="value-asc">Menor valor</option><option value="validity">Validade</option></select></div>
-        <div class="of-field"><button class="of-btn of-btn-primary" type="submit">Aplicar filtros</button></div>
+        <div class="of-field" style="display:flex; gap:0.5rem; align-items:flex-end;">
+            <button class="of-btn of-btn-primary" type="submit">Aplicar filtros</button>
+            @if (Model.HasActiveFilters)
+            {
+                <a asp-page="./Index" class="of-btn of-btn-secondary" style="text-decoration:none;">Limpar filtros</a>
+            }
+        </div>
     </form>
+    @if (Model.HasActiveFilters)
+    {
+        <div style="margin-top:0.75rem; font-size:0.875rem; color:var(--of-muted);">
+            <span>Filtros ativos:</span>
+            @if (!string.IsNullOrEmpty(Model.Status)) { <span class="of-badge">Situação: @Model.Status</span> }
+            @if (!string.IsNullOrEmpty(Model.Search)) { <span class="of-badge">Termo: "@Model.Search"</span> }
+            @if (Model.ClientId.HasValue) { <span class="of-badge">Cliente filtrado</span> }
+            @if (Model.AssignedToUserId.HasValue) { <span class="of-badge">Responsável filtrado</span> }
+            @if (Model.From.HasValue || Model.To.HasValue) { <span class="of-badge">Período</span> }
+            @if (Model.Minimum.HasValue || Model.Maximum.HasValue) { <span class="of-badge">Faixa de valor</span> }
+        </div>
+    }
 </section>
 
 @if (Model.Quotes.Items.Count == 0)
 { <partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Title="Nenhuma proposta corresponde aos filtros", Text="Ajuste os filtros ou crie um orçamento para iniciar uma nova oportunidade.", ActionText="Criar orçamento", ActionPage="/Documents/New", Icon="quote", HelpText="Recibos são organizados separadamente na Central Financeira." }' /> }
 else
 {
+    var brlCulture = System.Globalization.CultureInfo.GetCultureInfo("pt-BR");
     <div class="of-data-list">
     @foreach (var quote in Model.Quotes.Items)
     {
@@ -74,13 +93,13 @@ else
                 }
             </div>
             <div>
-                <strong>@quote.Total.ToString("C")</strong>
+                <strong>@quote.Total.ToString("C", brlCulture)</strong>
                 <div style="font-size:0.8rem; margin-top:0.25rem;">
                     @if (quote.Paid > 0)
                     {
-                        <span style="color:var(--of-success, #16a34a); display:block;">Recebido: @quote.Paid.ToString("C")</span>
+                        <span style="color:var(--of-success, #16a34a); display:block;">Recebido: @quote.Paid.ToString("C", brlCulture)</span>
                     }
-                    <span style="color:var(--of-muted); display:block;">Saldo: @quote.Balance.ToString("C")</span>
+                    <span style="color:var(--of-muted); display:block;">Saldo: @quote.Balance.ToString("C", brlCulture)</span>
                 </div>
                 <small style="display:block; margin-top:0.25rem; color:var(--of-muted);">Validade: @(quote.ValidUntil?.ToString("dd/MM/yyyy") ?? "não definida")</small>
             </div>

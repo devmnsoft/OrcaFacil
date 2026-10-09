@@ -54,6 +54,7 @@ internal sealed record LegacyDocumentSnapshot(
 public interface IDocumentSnapshotSerializer
 {
     SerializedDocumentSnapshot Serialize(DocumentSnapshot snapshot);
+    SerializedDocumentSnapshot SerializeV2(DocumentSnapshot snapshot);
     SerializedDocumentSnapshot SerializeLegacy(DocumentSnapshot snapshot);
     string ComputeHash(string canonicalJson);
     bool IsHistoricalFormat(string rawJson);
@@ -73,6 +74,20 @@ public sealed class DocumentSnapshotSerializer : IDocumentSnapshotSerializer
     public SerializedDocumentSnapshot Serialize(DocumentSnapshot snapshot)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
+        // Formato atual canônico: preserva a sequência e ordem comercial escolhida pelo usuário
+        var canonical = new DocumentSnapshot(
+            Normalize(snapshot.Issuer),
+            Normalize(snapshot.Customer),
+            Normalize(snapshot.Quote),
+            snapshot.Items.Select(Normalize).ToArray());
+        var json = JsonSerializer.Serialize(canonical, Options);
+        return new(json, ComputeHash(json));
+    }
+
+    public SerializedDocumentSnapshot SerializeV2(DocumentSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        // Formato V2 histórico: itens ordenados alfabeticamente
         var canonical = new DocumentSnapshot(
             Normalize(snapshot.Issuer),
             Normalize(snapshot.Customer),
@@ -132,21 +147,17 @@ public sealed class DocumentSnapshotSerializer : IDocumentSnapshotSerializer
             return string.Equals(legacy.Hash, expectedHash, StringComparison.OrdinalIgnoreCase);
         }
 
-        // Formato atual com preservação de ordem comercial
+        // 1. Formato atual com preservação de ordem comercial
         var current = Serialize(snapshot);
         if (string.Equals(current.Hash, expectedHash, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        // Compatibilidade com snapshots V2 emitidos na transição que ordenavam itens alfabeticamente
-        var v2SortedItems = new DocumentSnapshot(
-            Normalize(snapshot.Issuer),
-            Normalize(snapshot.Customer),
-            Normalize(snapshot.Quote),
-            snapshot.Items.Select(Normalize).OrderBy(x => x.Description, StringComparer.Ordinal)
-                .ThenBy(x => x.Unit, StringComparer.Ordinal).ThenBy(x => x.Quantity).ThenBy(x => x.UnitPrice).ToArray());
-        var v2SortedJson = JsonSerializer.Serialize(v2SortedItems, Options);
-        var v2SortedHash = ComputeHash(v2SortedJson);
-        return string.Equals(v2SortedHash, expectedHash, StringComparison.OrdinalIgnoreCase);
+        // 2. Compatibilidade com snapshots V2 emitidos na transição que ordenavam itens alfabeticamente
+        var v2 = SerializeV2(snapshot);
+        if (string.Equals(v2.Hash, expectedHash, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
     }
 
     public string ComputeHash(string canonicalJson) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonicalJson ?? string.Empty)));

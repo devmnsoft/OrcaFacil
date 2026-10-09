@@ -65,41 +65,73 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
 
         var revisions = await db.DocumentRevisions.AsNoTracking()
             .Where(r => r.AccountId == accountId && docIds.Contains(r.DocumentId) && r.IsCurrent)
-            .Select(r => new { r.DocumentId, r.VersionNumber })
-            .ToDictionaryAsync(r => r.DocumentId, r => r.VersionNumber, cancellationToken);
+            .Select(r => new { r.DocumentId, r.VersionNumber, r.Total })
+            .ToDictionaryAsync(r => r.DocumentId, r => r, cancellationToken);
 
         var workOrders = await db.WorkOrders.AsNoTracking()
             .Where(w => w.AccountId == accountId && w.SourceDocumentId != null && docIds.Contains(w.SourceDocumentId.Value) && !w.IsDeleted)
+            .OrderByDescending(w => w.CreatedAt)
             .Select(w => new { w.Id, SourceDocumentId = w.SourceDocumentId!.Value, w.Number, w.TotalSnapshot })
             .ToListAsync(cancellationToken);
 
-        var woIds = workOrders.Select(w => w.Id).ToArray();
-        var payments = woIds.Length == 0 ? new Dictionary<Guid, decimal>() :
-            await db.ManualPayments.AsNoTracking()
-                .Where(p => p.AccountId == accountId && p.WorkOrderId != null && woIds.Contains(p.WorkOrderId.Value) && p.Status == FinancialRecordStatus.Active && !p.IsDeleted)
-                .GroupBy(p => p.WorkOrderId!.Value)
-                .Select(g => new { WorkOrderId = g.Key, TotalPaid = g.Sum(p => p.Amount) })
-                .ToDictionaryAsync(g => g.WorkOrderId, g => g.TotalPaid, cancellationToken);
+        // Agrupamento para não quebrar com colisão de chave se houver mais de uma ordem histórica
+        var woMap = workOrders
+            .GroupBy(w => w.SourceDocumentId)
+            .ToDictionary(g => g.Key, g => g.First());
 
-        var woMap = workOrders.ToDictionary(w => w.SourceDocumentId, w => w);
+        var woIds = workOrders.Select(w => w.Id).ToArray();
+        var woToDoc = workOrders.ToDictionary(w => w.Id, w => w.SourceDocumentId);
+
+        // Busca pagamentos ativos ligados diretamente ao orçamento OU ligados a ordens do orçamento
+        var paymentsQuery = db.ManualPayments.AsNoTracking()
+            .Where(p => p.AccountId == accountId && !p.IsDeleted && p.Status == FinancialRecordStatus.Active);
+
+        var candidatePayments = await paymentsQuery
+            .Where(p => (p.DocumentId != null && docIds.Contains(p.DocumentId.Value)) ||
+                        (p.WorkOrderId != null && woIds.Contains(p.WorkOrderId.Value)))
+            .Select(p => new { p.Id, p.DocumentId, p.WorkOrderId, p.Amount })
+            .ToListAsync(cancellationToken);
+
+        // Agrupa por documento sem duplicar o mesmo pagamento
+        var paidByDoc = new Dictionary<Guid, decimal>();
+        foreach (var p in candidatePayments)
+        {
+            Guid? targetDocId = null;
+            if (p.DocumentId.HasValue && docIds.Contains(p.DocumentId.Value))
+                targetDocId = p.DocumentId.Value;
+            else if (p.WorkOrderId.HasValue && woToDoc.TryGetValue(p.WorkOrderId.Value, out var mappedDocId))
+                targetDocId = mappedDocId;
+
+            if (targetDocId.HasValue)
+            {
+                paidByDoc[targetDocId.Value] = paidByDoc.GetValueOrDefault(targetDocId.Value) + p.Amount;
+            }
+        }
 
         var items = rows.Select(row => {
             var assigneeName = row.AssignedToUserId.HasValue && assignees.TryGetValue(row.AssignedToUserId.Value, out var name) ? name : null;
-            var revisionNumber = revisions.TryGetValue(row.Id, out var rev) ? rev : 0;
+            revisions.TryGetValue(row.Id, out var currentRev);
+            var revisionNumber = currentRev?.VersionNumber ?? 0;
             woMap.TryGetValue(row.Id, out var wo);
-            var paid = wo is not null && payments.TryGetValue(wo.Id, out var p) ? p : 0m;
-            var balance = wo is not null ? Math.Max(0, (wo.TotalSnapshot > 0 ? wo.TotalSnapshot : row.Total) - paid) : row.Total;
+
+            var paid = paidByDoc.GetValueOrDefault(row.Id, 0m);
+
+            // A base do saldo é o valor contratado na ordem, ou a revisão comercial emitida, ou o total do documento
+            var baseTotal = wo is not null && wo.TotalSnapshot > 0 ? wo.TotalSnapshot
+                : (currentRev is not null && currentRev.Total > 0 ? currentRev.Total : row.Total);
+
+            var balance = Math.Max(0, baseTotal - paid);
 
             return new QuoteWorkspaceItem(
                 row.Id,
                 row.Number,
                 row.Status,
                 row.ClientName,
-                row.Total,
+                baseTotal,
                 row.IssueDate,
                 row.ValidUntil,
                 row.CreatedAt,
-                NextAction(row.Id, row.Status),
+                NextAction(row.Id, row.Status, wo != null),
                 revisionNumber,
                 assigneeName,
                 paid,
@@ -111,15 +143,16 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
         return OperationResult<PagedResult<QuoteWorkspaceItem>>.Success(new(items, total, page, pageSize));
     }
 
-    private static NextActionDescriptor NextAction(Guid id, string status) => status.ToUpperInvariant() switch
+    private static NextActionDescriptor NextAction(Guid id, string status, bool hasWorkOrder) => status.ToUpperInvariant() switch
     {
-        "DRAFT" => Action("continue", "Continuar orçamento", "Complete os dados antes de compartilhar.", id),
+        "DRAFT" => Action("continue", "Continuar orçamento", "Complete os dados antes de compartilhar.", id, page: "/Documents/CreateBudget"),
         "ISSUED" or "READY" => Action("share", "Criar acesso", "Envie uma versão segura ao cliente.", id, "sharing"),
         "SENT" or "VIEWED" => Action("follow-up", "Programar retorno", "Mantenha a negociação avançando.", id, "negotiation"),
-        "APPROVED" => Action("work-order", "Criar ordem", "Transforme a aprovação em execução.", id, "summary"),
+        "APPROVED" when !hasWorkOrder => Action("work-order", "Criar ordem", "Transforme a aprovação em execução.", id, "summary"),
+        "APPROVED" => Action("payment", "Registrar recebimento", "Receba pagamento ou consulte o saldo.", id, page: "/Payments/Register"),
         _ => Action("review", "Revisar proposta", "Consulte o histórico e defina o próximo passo.", id)
     };
 
-    private static NextActionDescriptor Action(string code, string title, string description, Guid id, string tab = "summary") =>
-        new(code, title, description, "/Documents/Details", new Dictionary<string, string> { ["id"] = id.ToString(), ["tab"] = tab });
+    private static NextActionDescriptor Action(string code, string title, string description, Guid id, string tab = "summary", string page = "/Documents/Details") =>
+        new(code, title, description, page, page == "/Documents/Details" ? new Dictionary<string, string> { ["id"] = id.ToString(), ["tab"] = tab } : new Dictionary<string, string> { ["documentId"] = id.ToString() });
 }

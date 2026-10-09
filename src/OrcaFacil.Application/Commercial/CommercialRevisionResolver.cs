@@ -203,10 +203,10 @@ public sealed class CommercialRevisionResolver : ICommercialRevisionResolver
 
             var expectedSubtotal = CommercialCalculator.Round(item.Quantity * item.UnitPrice);
             var expectedDiscount = CommercialCalculator.Round(item.Discount);
-            var expectedItemTotal = CommercialCalculator.Round(expectedSubtotal - expectedDiscount);
-            if (expectedItemTotal < 0m) expectedItemTotal = 0m;
-            if (expectedItemTotal < 0m)
+            if (expectedDiscount > expectedSubtotal)
                 return OperationResult.Failure("InvalidSnapshot", $"A revisão {revision.VersionNumber} possui desconto de item maior que o subtotal.");
+
+            var expectedItemTotal = CommercialCalculator.Round(expectedSubtotal - expectedDiscount);
             if (!SameMoney(item.Subtotal, expectedSubtotal) || !SameMoney(item.Total, expectedItemTotal))
                 return OperationResult.Failure("InvalidSnapshot", $"A revisão {revision.VersionNumber} possui totais inconsistentes em item.");
 

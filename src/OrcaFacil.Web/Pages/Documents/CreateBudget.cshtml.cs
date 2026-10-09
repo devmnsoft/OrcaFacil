@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Ai;
 using OrcaFacil.Application.Documents;
+using OrcaFacil.Application.Security;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Persistence;
 
@@ -97,37 +98,89 @@ public sealed class CreateBudgetModel : PageModel
         try { await _account.EnsureAccountAccessAsync(ct); }
         catch (UnauthorizedAccessException) { return Forbid(); }
 
+        var canEdit = await HasPermissionAsync(PermissionCodes.DocumentsEdit, ct) || await HasPermissionAsync("documents.edit", ct);
+        if (!canEdit) return StatusCode(403, new { error = "Você não possui permissão para editar documentos." });
+
         var doc = await _db.Documents.Include(d => d.Items).SingleOrDefaultAsync(d => d.Id == input.DocumentId && d.AccountId == _account.AccountId && !d.IsDeleted, ct);
         if (doc is null) return NotFound(new { error = "Orçamento não encontrado." });
 
+        if (!string.Equals(doc.Status, "Draft", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { error = "Apenas orçamentos em rascunho podem receber sugestões de escopo. Revisões já emitidas não podem ser alteradas." });
+
         Client? client = doc.ClientId.HasValue ? await _db.Clients.SingleOrDefaultAsync(c => c.Id == doc.ClientId.Value && c.AccountId == _account.AccountId && !c.IsDeleted, ct) : null;
 
-        var context = new OrcaFacil.Application.Ai.AiRequestContext(_account.AccountId.Value, _current.UserId, new HashSet<string> { "documents.edit" });
+        var grantedPermissions = new HashSet<string>(StringComparer.Ordinal);
+        if (canEdit) grantedPermissions.Add("documents.edit");
+        if (await HasPermissionAsync(PermissionCodes.AiApplySuggestions, ct)) grantedPermissions.Add(PermissionCodes.AiApplySuggestions);
+
+        var context = new OrcaFacil.Application.Ai.AiRequestContext(_account.AccountId.Value, _current.UserId, grantedPermissions);
         var policy = new OrcaFacil.Application.Ai.AiGovernancePolicy(_account.AccountId.Value);
+        var correlationId = Guid.NewGuid().ToString("N");
 
         try
         {
             var review = await _aiReviewer.ReviewQuoteAsync(context, policy, doc, doc.Items, client, ct);
-            var currentText = !string.IsNullOrWhiteSpace(input.Notes) ? input.Notes : doc.Notes ?? "";
-            var improved = string.IsNullOrWhiteSpace(currentText)
-                ? "Serviço com escopo organizado:\n• Execução conforme especificações técnicas alinhadas\n• Materiais e mão de obra inclusos\n• Garantia e limpeza do local após a entrega"
-                : $"Escopo detalhado:\n{currentText.Trim()}\n\n• Atendimento às normas técnicas aplicáveis\n• Entrega no prazo combinado com aceite formal";
+            if (!review.Succeeded)
+            {
+                return new JsonResult(new
+                {
+                    succeeded = false,
+                    error = "A análise de escopo não pôde ser concluída no momento. Você pode continuar preenchendo manualmente.",
+                    correlationId
+                });
+            }
+
+            var currentText = !string.IsNullOrWhiteSpace(input.Notes) ? input.Notes.Trim() : (doc.Notes ?? "").Trim();
+            var sb = new System.Text.StringBuilder();
+
+            if (!string.IsNullOrWhiteSpace(currentText))
+            {
+                sb.AppendLine("Escopo organizado a partir das descrições informadas:");
+                var lines = currentText.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                foreach (var line in lines)
+                {
+                    var clean = line.TrimStart('-', '*', '•', ' ');
+                    if (!string.IsNullOrWhiteSpace(clean))
+                        sb.AppendLine($"• {clean}");
+                }
+            }
+            else if (doc.Items.Count > 0)
+            {
+                sb.AppendLine("Escopo proposto com base nos itens cadastrados:");
+                foreach (var item in doc.Items.Where(i => !string.IsNullOrWhiteSpace(i.Description)))
+                {
+                    sb.AppendLine($"• {item.Description.Trim()} (Qtd: {item.Quantity} {item.Unit})");
+                }
+            }
+            else
+            {
+                sb.AppendLine("Escopo a detalhar conforme alinhamento com o cliente.");
+            }
+
+            sb.AppendLine();
+            sb.AppendLine("Pontos de atenção e confirmações pendentes [Revisão humana necessária]:");
+            sb.AppendLine("• [ ] Prazo estimado de início e conclusão");
+            sb.AppendLine("• [ ] Fornecimento de materiais ou insumos (definir se por conta do cliente ou prestador)");
+            sb.AppendLine("• [ ] Condições de acesso ao local ou infraestrutura prévia");
 
             return new JsonResult(new
             {
                 succeeded = true,
-                improvedNotes = improved,
+                improvedNotes = sb.ToString().Trim(),
                 suggestedConditions = review.SuggestedConditions ?? doc.ConditionsText,
-                findings = review.Findings.Select(f => new { f.Category, f.Severity, f.Message, f.Suggestion })
+                findings = review.Findings.Select(f => new { f.Category, f.Severity, f.Message, f.Suggestion }),
+                isProviderGenerated = false,
+                notice = "Revisão baseada em regras de consistência da proposta. Nenhuma condição ou garantia foi inventada sem o seu consentimento.",
+                correlationId
             });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return new JsonResult(new
             {
                 succeeded = false,
-                error = "Não foi possível gerar a sugestão com IA no momento. Você pode continuar preenchendo manualmente.",
-                detail = ex.Message
+                error = "Não foi possível analisar o escopo com o assistente no momento. Você pode continuar preenchendo manualmente.",
+                correlationId
             });
         }
     }

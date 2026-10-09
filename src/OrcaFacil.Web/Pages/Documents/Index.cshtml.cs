@@ -27,6 +27,16 @@ public sealed class IndexModel(IQuoteWorkspaceService quotes, OrcaFacilDbContext
     public IReadOnlyList<ClientFilterOption> ClientsList { get; private set; } = [];
     public IReadOnlyList<AssigneeFilterOption> AssigneesList { get; private set; } = [];
 
+    public bool HasActiveFilters => !string.IsNullOrWhiteSpace(Search) 
+        || !string.IsNullOrWhiteSpace(Status) 
+        || ClientId.HasValue 
+        || AssignedToUserId.HasValue 
+        || From.HasValue 
+        || To.HasValue 
+        || Minimum.HasValue 
+        || Maximum.HasValue 
+        || (Sort != "newest" && !string.IsNullOrEmpty(Sort));
+
     public sealed record ClientFilterOption(Guid Id, string Name);
     public sealed record AssigneeFilterOption(Guid Id, string Name);
 
