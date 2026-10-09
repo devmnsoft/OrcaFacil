@@ -15,6 +15,7 @@ using OrcaFacil.Application.Saas.Modules;
 using OrcaFacil.Application.Saas.Billing;
 using OrcaFacil.Application.Auth;
 using OrcaFacil.Application.Ai;
+using OrcaFacil.Application.Commercial;
 
 namespace OrcaFacil.Application;
 
@@ -23,6 +24,8 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services, string repositoryRoot)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(repositoryRoot);
+
+        services.TryAddSingleton<ICommercialRevisionResolver, CommercialRevisionResolver>();
 
         services.TryAddSingleton<IAiRedactionService, AiRedactionService>();
         services.TryAddSingleton<PromptSanitizer>();

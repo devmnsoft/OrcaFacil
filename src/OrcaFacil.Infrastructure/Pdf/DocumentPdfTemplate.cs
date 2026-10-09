@@ -311,13 +311,15 @@ public abstract class DocumentPdfTemplate
                 .Replace('/', Path.DirectorySeparatorChar)
                 .Replace('\\', Path.DirectorySeparatorChar);
 
-            // Se for caminho em uploads/branding e a conta for conhecida, validar pertença à conta
+            // Se for caminho em uploads/branding e a conta for conhecida, validar pertença à conta com separador completo
             if (relativePath.StartsWith($"uploads{Path.DirectorySeparatorChar}branding{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
             {
                 if (accountId.HasValue && accountId.Value != Guid.Empty)
                 {
-                    var expectedPrefix = $"uploads{Path.DirectorySeparatorChar}branding{Path.DirectorySeparatorChar}{accountId.Value:N}";
-                    if (!relativePath.StartsWith(expectedPrefix, StringComparison.OrdinalIgnoreCase))
+                    var prefixN = $"uploads{Path.DirectorySeparatorChar}branding{Path.DirectorySeparatorChar}{accountId.Value:N}{Path.DirectorySeparatorChar}";
+                    var prefixD = $"uploads{Path.DirectorySeparatorChar}branding{Path.DirectorySeparatorChar}{accountId.Value:D}{Path.DirectorySeparatorChar}";
+                    if (!relativePath.StartsWith(prefixN, StringComparison.OrdinalIgnoreCase) &&
+                        !relativePath.StartsWith(prefixD, StringComparison.OrdinalIgnoreCase))
                     {
                         // Tentativa de acessar logo de outra conta: rejeitar
                         return null;

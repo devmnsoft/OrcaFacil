@@ -53,8 +53,17 @@ public sealed class TrialProService
 
     public async Task<Result> ActivateManualTrialForAccountAsync(Guid accountId, Guid adminUserId, int days, CancellationToken ct = default)
     {
+        if (adminUserId == Guid.Empty)
+            return Result.Fail("Administrador não autenticado para liberação manual de teste.");
+
         var subscription = _subscriptions.Query().SingleOrDefault(x => x.AccountId == accountId && !x.IsDeleted)
             ?? new Subscription { AccountId = accountId, Provider = "Manual", Plan = PlanType.Professional };
+
+        // Proteção: não substituir inadvertidamente uma assinatura paga ativa
+        if (subscription.Status == SubscriptionStatus.Active && (subscription.PaidThroughAt == null || subscription.PaidThroughAt > DateTime.UtcNow))
+        {
+            return Result.Fail("Esta conta possui uma assinatura paga ativa e não pode ser rebaixada para teste manual.");
+        }
 
         var now = DateTime.UtcNow;
         subscription.Plan = PlanType.Professional;
@@ -65,10 +74,18 @@ public sealed class TrialProService
         subscription.TrialStatus = TrialStatus.Active;
         subscription.StartedAt ??= now;
         subscription.ExpiresAt = subscription.TrialEndsAt;
+        subscription.ManualReleaseUntil = subscription.TrialEndsAt;
         subscription.Touch();
 
         if (!_subscriptions.Query().Any(x => x.Id == subscription.Id))
             await _subscriptions.AddAsync(subscription, ct);
+
+        if (subscription.UserId != Guid.Empty)
+        {
+            await _notifications.CreateForUserAsync(subscription.UserId, "Período de teste liberado",
+                $"O teste Pro de {days} dias foi liberado pela administração até {subscription.TrialEndsAt:dd/MM/yyyy}.",
+                NotificationType.Success, NotificationCategory.Plan, "/Subscription", "Ver assinatura", ct);
+        }
 
         await _uow.SaveChangesAsync(ct);
         return Result.Ok();

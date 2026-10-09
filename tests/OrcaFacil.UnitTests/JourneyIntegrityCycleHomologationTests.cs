@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using OrcaFacil.Application.Commercial;
+using OrcaFacil.Application.Documents;
 using OrcaFacil.Application.Plans;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
+using OrcaFacil.Domain.Plans;
 using OrcaFacil.Infrastructure.Pdf;
 using Xunit;
 
@@ -117,6 +119,60 @@ public sealed class JourneyIntegrityCycleHomologationTests
 
         var decision = await service.CanUseAsync(accountId, "documents.create");
         Assert.True(decision.IsAllowed);
+    }
+
+    [Fact]
+    public async Task TrialPro_PaidSubscriptionWithExpiredTrialHistory_KeepsPaidAccess()
+    {
+        var accountId = Guid.NewGuid();
+        var dataSource = new MockPlanAccessDataSource(accountId)
+        {
+            Subscription = new Subscription
+            {
+                AccountId = accountId,
+                Status = SubscriptionStatus.Active,
+                Plan = PlanType.Professional,
+                TrialStatus = TrialStatus.Expired,
+                TrialStartedAt = DateTime.UtcNow.AddDays(-30),
+                TrialEndsAt = DateTime.UtcNow.AddDays(-15),
+                PaidThroughAt = DateTime.UtcNow.AddMonths(1)
+            }
+        };
+
+        var service = new PlanAccessService(dataSource);
+
+        Assert.False(PlanAccessService.IsTrialExpired(dataSource.Subscription, DateTime.UtcNow));
+        var decision = await service.CanUseAsync(accountId, "documents.create");
+
+        Assert.True(decision.IsAllowed);
+        Assert.Equal("Allowed", decision.InternalReason);
+    }
+
+    [Fact]
+    public async Task TrialPro_Expired_AllowsHistoricalQueriesButBlocksCommercialCreation()
+    {
+        var accountId = Guid.NewGuid();
+        var dataSource = new MockPlanAccessDataSource(accountId)
+        {
+            Subscription = new Subscription
+            {
+                AccountId = accountId,
+                Status = SubscriptionStatus.Expired,
+                TrialStatus = TrialStatus.Expired,
+                TrialStartedAt = DateTime.UtcNow.AddDays(-30),
+                TrialEndsAt = DateTime.UtcNow.AddDays(-15)
+            }
+        };
+
+        var service = new PlanAccessService(dataSource);
+
+        var history = await service.CanUseAsync(accountId, PlanFeatureCodes.HistoryDaysVisible);
+        var creation = await service.CanUseAsync(accountId, "documents.create");
+
+        Assert.True(history.IsAllowed);
+        Assert.Equal("HistoricalAccessAllowed", history.InternalReason);
+        Assert.False(creation.IsAllowed);
+        Assert.Equal("TrialExpired", creation.InternalReason);
     }
 
     [Fact]
@@ -302,13 +358,80 @@ public sealed class JourneyIntegrityCycleHomologationTests
             clientA, docA, workOrderA, 500m, "cash", paidAt));
     }
 
+    [Fact]
+    public void CommercialRevisionResolver_UsesSnapshotAsImmutableSource()
+    {
+        var accountId = Guid.NewGuid();
+        var serializer = new DocumentSnapshotSerializer();
+        var snapshot = new DocumentSnapshot(
+            new IssuerSnapshot("Emitente congelado", "18160057000113", "old@example.com", "11999999999", "Rua A", "Belém", "PA", "/uploads/branding/logo-v1.png", "pix-old", null),
+            new CustomerSnapshot("Cliente aprovado", "Company", "12345678000190", "11988887777", "client@example.com", "Rua B", "Recife", null),
+            new QuoteSnapshot("ORC-REV-001", DateTime.UtcNow.Date, DateTime.UtcNow.Date.AddDays(15), "10 dias", "Pix", "À vista com garantia aprovada", "Observação aprovada", "premium", "#111111", "Garantia de 90 dias", false, 1000m, 100m, 900m, "en-US", "BRL"),
+            [new QuoteItemSnapshot("Serviço aprovado", "h", 2m, 500m, 100m, 1000m, 900m)]);
+        var serialized = serializer.Serialize(snapshot);
+        var revision = new DocumentRevision
+        {
+            AccountId = accountId,
+            DocumentId = Guid.NewGuid(),
+            VersionNumber = 3,
+            IsCurrent = true,
+            ProtectedSnapshot = serialized.Json,
+            SnapshotHash = serialized.Hash,
+            Total = 900m
+        };
+        var mutableDocument = new Document
+        {
+            AccountId = accountId,
+            Type = DocumentType.Budget,
+            ClientName = "Cliente alterado",
+            ConditionsText = "Condição mutável",
+            TemplateCode = "essential"
+        };
+        mutableDocument.IssueNumber("ORC-MUTABLE");
+        mutableDocument.Items.Add(new DocumentItem { Description = "Item mutável", Quantity = 1, UnitPrice = 1m });
+        mutableDocument.CalculateTotals();
+
+        var result = new CommercialRevisionResolver().Resolve(
+            mutableDocument,
+            revision,
+            new IssuerProfile { BusinessName = "Emitente atual" },
+            PlanType.Free);
+
+        Assert.True(result.Succeeded);
+        Assert.True(result.Value!.IsSnapshotSource);
+        Assert.Equal("ORC-REV-001", result.Value.Document.Number);
+        Assert.Equal("Cliente aprovado", result.Value.Document.ClientName);
+        Assert.Equal("À vista com garantia aprovada", result.Value.Document.ConditionsText);
+        Assert.Equal("Serviço aprovado", Assert.Single(result.Value.Document.Items).Description);
+        Assert.Equal("Emitente congelado", result.Value.Issuer.BusinessName);
+        Assert.Equal("en-US", result.Value.LanguageCode);
+        Assert.Equal("BRL", result.Value.CurrencyCode);
+        Assert.Equal(PlanType.Professional, result.Value.EffectivePlan);
+    }
+
+    [Fact]
+    public void CommercialRevisionResolver_RejectsInvalidProtectedSnapshot()
+    {
+        var accountId = Guid.NewGuid();
+        var result = new CommercialRevisionResolver().Resolve(
+            new Document { AccountId = accountId, Type = DocumentType.Budget },
+            new DocumentRevision { AccountId = accountId, VersionNumber = 1, ProtectedSnapshot = "{invalid-json" },
+            new IssuerProfile { BusinessName = "Emitente atual" },
+            PlanType.Professional);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("InvalidSnapshot", result.Code);
+    }
+
     private sealed class MockPlanAccessDataSource(Guid accountId) : IPlanAccessDataSource
     {
         public Subscription? Subscription { get; set; }
+        private readonly Guid _accountId = accountId;
         private readonly Plan _proPlan = new() { Code = "PROFESSIONAL", DisplayName = "Profissional" };
         private readonly PlanVersion _proVersion = new() { VersionNumber = 1, Status = PlanVersionStatus.Published };
 
-        public Task<AccountStatus?> GetAccountStatusAsync(Guid id, CancellationToken ct) => Task.FromResult<AccountStatus?>(AccountStatus.Active);
+        public Task<AccountStatus?> GetAccountStatusAsync(Guid id, CancellationToken ct) =>
+            Task.FromResult<AccountStatus?>(id == _accountId ? AccountStatus.Active : null);
         public Task<PlanOverride?> GetActiveOverrideAsync(Guid id, DateTime utcNow, CancellationToken ct) => Task.FromResult<PlanOverride?>(null);
         public Task<Subscription?> GetSubscriptionAsync(Guid id, CancellationToken ct) => Task.FromResult(Subscription);
         public Task<PlanVersion?> GetPlanVersionAsync(Guid versionId, CancellationToken ct) => Task.FromResult<PlanVersion?>(_proVersion);
@@ -319,7 +442,9 @@ public sealed class JourneyIntegrityCycleHomologationTests
             IReadOnlyDictionary<string, PlanFeatureSetting> dict = new Dictionary<string, PlanFeatureSetting>
             {
                 ["documents.create"] = new(true, null, true),
-                ["pdf.monthly_limit"] = new(true, null, true)
+                ["pdf.monthly_limit"] = new(true, null, true),
+                [PlanFeatureCodes.HistoryDaysVisible] = new(true, 365, false),
+                [PlanFeatureCodes.BasicReportsEnabled] = new(true, null, true)
             };
             return Task.FromResult(dict);
         }

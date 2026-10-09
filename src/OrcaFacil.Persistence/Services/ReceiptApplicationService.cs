@@ -22,7 +22,10 @@ public sealed class ReceiptApplicationService(
         var correlationId = Guid.NewGuid().ToString("N");
         if (currentAccount.AccountId is not Guid accountId || request.AccountId != accountId)
             return Failure(CreateReceiptCode.AccessDenied, "A conta ativa não permite esta operação.", correlationId);
-        if (request.Amount <= 0) return Failure(CreateReceiptCode.InvalidAmount, "Informe um valor maior que zero.", correlationId);
+        await currentAccount.EnsureAccountAccessAsync(ct);
+
+        var normalizedAmount = CommercialCalculator.Round(request.Amount);
+        if (normalizedAmount <= 0) return Failure(CreateReceiptCode.InvalidAmount, "Informe um valor maior que zero.", correlationId);
         if (!PaymentMethodCodes.TryParse(request.PaymentMethod, out var paymentMethod))
             return Failure(CreateReceiptCode.InvalidPaymentMethod, "Escolha uma forma de pagamento válida.", correlationId);
         var canonicalPaymentMethod = paymentMethod.ToCode();
@@ -31,7 +34,7 @@ public sealed class ReceiptApplicationService(
             return Failure(CreateReceiptCode.InvalidOrigin, "Descreva o serviço para emissão do recibo.", correlationId);
 
         var paidAtUtc = CommercialClock.NormalizeToUtc(request.PaidAt);
-        if (paidAtUtc > DateTime.UtcNow.AddDays(1))
+        if (paidAtUtc > DateTime.UtcNow.AddMinutes(5))
             return Failure(CreateReceiptCode.InvalidDate, "A data do recebimento não pode estar no futuro.", correlationId);
 
         // Validação estrita de combinações de origem
@@ -66,7 +69,7 @@ public sealed class ReceiptApplicationService(
         {
             var same = ManualPaymentIdempotency.Matches(
                 request.ClientId, request.DocumentId, request.WorkOrderId,
-                CommercialCalculator.Round(request.Amount), canonicalPaymentMethod, paidAtUtc,
+                normalizedAmount, canonicalPaymentMethod, paidAtUtc,
                 duplicate.ClientId, duplicate.DocumentId, duplicate.WorkOrderId,
                 duplicate.Amount, duplicate.PaymentMethod, duplicate.PaidAt);
 
@@ -100,83 +103,123 @@ public sealed class ReceiptApplicationService(
                 return Failure(CreateReceiptCode.InvalidOrigin, "O cliente informado não corresponde ao cliente da ordem de serviço.", correlationId);
 
             var registered = await payments.RegisterAsync(new ManualPaymentRequest(
-                workOrderId, request.Amount, canonicalPaymentMethod, request.PaidAt, request.Notes, request.IdempotencyKey), ct);
+                workOrderId, normalizedAmount, canonicalPaymentMethod, request.PaidAt, request.Notes, request.IdempotencyKey), ct);
             if (!registered.Succeeded || registered.EntityId is not Guid paymentId)
                 return Failure(registered.Code == "IdempotencyConflict" ? CreateReceiptCode.ConcurrencyConflict : CreateReceiptCode.InvalidAmount, registered.Message, correlationId);
 
             return await CreateForPaymentAsync(paymentId, request.ServiceDescription, request.City, request.Notes, ct);
         }
 
-        // Para orçamentos e recibos avulsos: verificação transacional com lock/serialização
-        var isolation = db.Database.IsRelational() ? IsolationLevel.Serializable : IsolationLevel.ReadCommitted;
-        await using var transaction = await db.Database.BeginTransactionAsync(isolation, ct);
-
-        if (request.OriginType == ReceiptOriginType.Budget)
+        // Para orçamentos e recibos avulsos: verificação transacional com lock/serialização e retry limitado
+        const int maxRetries = 3;
+        for (var attempt = 1; attempt <= maxRetries; attempt++)
         {
-            var documentId = request.DocumentId!.Value;
-            var budgetDoc = await db.Documents.SingleOrDefaultAsync(
-                x => x.Id == documentId && x.AccountId == accountId && !x.IsDeleted && x.Type == DocumentType.Budget, ct);
-            if (budgetDoc is null)
-                return Failure(CreateReceiptCode.DocumentNotFound, "Orçamento não encontrado nesta conta.", correlationId);
+            try
+            {
+                var duplicateInAttempt = await db.ManualPayments.AsNoTracking().FirstOrDefaultAsync(
+                    x => x.AccountId == accountId && x.IdempotencyKey == request.IdempotencyKey, ct);
+                if (duplicateInAttempt is not null)
+                {
+                    var existingReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(x => x.PaymentId == duplicateInAttempt.Id && !x.IsDeleted, ct);
+                    if (existingReceipt is null && duplicateInAttempt.Status == FinancialRecordStatus.Active)
+                        return await CreateForPaymentAsync(duplicateInAttempt.Id, request.ServiceDescription, request.City, request.Notes, ct);
 
-            if (budgetDoc.ClientId.HasValue && budgetDoc.ClientId != request.ClientId)
-                return Failure(CreateReceiptCode.InvalidOrigin, "O cliente informado não corresponde ao cliente do orçamento.", correlationId);
+                    return new(true, CreateReceiptCode.DuplicateRequest, "Este recebimento já havia sido registrado.", duplicateInAttempt.Id,
+                        existingReceipt?.Id, existingReceipt?.Number, RedirectPage, correlationId);
+                }
 
-            var alreadyPaid = await db.ManualPayments.Where(
-                x => x.AccountId == accountId && x.DocumentId == documentId && !x.IsDeleted && x.Status == FinancialRecordStatus.Active)
-                .SumAsync(x => (decimal?)x.Amount, ct) ?? 0m;
+                var isolation = db.Database.IsRelational() ? IsolationLevel.Serializable : IsolationLevel.ReadCommitted;
+                await using var transaction = await db.Database.BeginTransactionAsync(isolation, ct);
 
-            var balance = budgetDoc.Total - alreadyPaid;
-            if (balance < 0m) balance = 0m;
-            if (balance == 0m)
-                return Failure(CreateReceiptCode.InvalidAmount, "Este orçamento já está totalmente quitado.", correlationId);
-            if (request.Amount > balance)
-                return Failure(CreateReceiptCode.InvalidAmount, $"O valor informado supera o saldo restante de {balance:C} do orçamento.", correlationId);
+                if (request.OriginType == ReceiptOriginType.Budget)
+                {
+                    var documentId = request.DocumentId!.Value;
+                    var budgetDoc = await db.Documents.SingleOrDefaultAsync(
+                        x => x.Id == documentId && x.AccountId == accountId && !x.IsDeleted && x.Type == DocumentType.Budget, ct);
+                    if (budgetDoc is null)
+                        return Failure(CreateReceiptCode.DocumentNotFound, "Orçamento não encontrado nesta conta.", correlationId);
+
+                    if (budgetDoc.Status is "Cancelled" or "Rejected")
+                        return Failure(CreateReceiptCode.InvalidOrigin, "Não é permitido registrar recebimento para orçamento cancelado ou recusado.", correlationId);
+
+                    if (budgetDoc.ClientId.HasValue && budgetDoc.ClientId != request.ClientId)
+                        return Failure(CreateReceiptCode.InvalidOrigin, "O cliente informado não corresponde ao cliente do orçamento.", correlationId);
+
+                    var alreadyPaid = await db.ManualPayments.Where(
+                        x => x.AccountId == accountId && x.DocumentId == documentId && !x.IsDeleted && x.Status == FinancialRecordStatus.Active)
+                        .SumAsync(x => (decimal?)x.Amount, ct) ?? 0m;
+
+                    var balance = CommercialCalculator.Round(budgetDoc.Total - alreadyPaid);
+                    if (balance < 0m) balance = 0m;
+                    if (balance == 0m)
+                        return Failure(CreateReceiptCode.InvalidAmount, "Este orçamento já está totalmente quitado.", correlationId);
+                    if (normalizedAmount > balance)
+                        return Failure(CreateReceiptCode.InvalidAmount, $"O valor informado supera o saldo restante de {balance:C} do orçamento.", correlationId);
+                }
+
+                var payment = new ManualPayment
+                {
+                    AccountId = accountId,
+                    ClientId = client.Id,
+                    WorkOrderId = request.WorkOrderId,
+                    DocumentId = request.DocumentId,
+                    Amount = normalizedAmount,
+                    PaymentMethod = canonicalPaymentMethod,
+                    PaidAt = paidAtUtc,
+                    Notes = request.Notes?.Trim(),
+                    RegisteredByUserId = currentAccount.UserId,
+                    IdempotencyKey = request.IdempotencyKey
+                };
+                db.ManualPayments.Add(payment);
+
+                var number = await ReceiptNumberAllocator.NextAsync(db, accountId, ct);
+                var receipt = new Receipt
+                {
+                    AccountId = accountId,
+                    PaymentId = payment.Id,
+                    ClientId = client.Id,
+                    WorkOrderId = request.WorkOrderId,
+                    DocumentId = request.DocumentId,
+                    LegacyDocumentId = request.LegacyDocumentId,
+                    OriginType = request.OriginType,
+                    Number = number,
+                    Amount = normalizedAmount,
+                    AmountInWords = numberToWords.ToCurrencyWords(normalizedAmount),
+                    PaymentMethod = canonicalPaymentMethod,
+                    IssuedAt = DateTime.UtcNow,
+                    City = request.City?.Trim(),
+                    Notes = request.Notes?.Trim(),
+                    ServiceDescription = request.ServiceDescription.Trim(),
+                    ClientSnapshot = JsonSerializer.Serialize(new { client.Id, client.Name, client.DocumentNumber, client.Email, client.Phone, client.City }),
+                    ServiceSnapshot = JsonSerializer.Serialize(new { description = request.ServiceDescription.Trim() })
+                };
+                db.Receipts.Add(receipt);
+
+                await db.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+
+                return new(true, CreateReceiptCode.None, "Recibo emitido com sucesso.", payment.Id, receipt.Id,
+                    receipt.Number, RedirectPage, correlationId);
+            }
+            catch (Exception ex) when (IsPersistenceConflict(ex) && attempt < maxRetries)
+            {
+                await Task.Delay(50 * attempt, ct);
+            }
+            catch (Exception ex) when (IsPersistenceConflict(ex))
+            {
+                var duplicateRecover = await db.ManualPayments.AsNoTracking().FirstOrDefaultAsync(
+                    x => x.AccountId == accountId && x.IdempotencyKey == request.IdempotencyKey, ct);
+                if (duplicateRecover is not null)
+                {
+                    var existingReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(x => x.PaymentId == duplicateRecover.Id && !x.IsDeleted, ct);
+                    return new(true, CreateReceiptCode.DuplicateRequest, "Este recebimento já havia sido registrado.", duplicateRecover.Id,
+                        existingReceipt?.Id, existingReceipt?.Number, RedirectPage, correlationId);
+                }
+                return Failure(CreateReceiptCode.ConcurrencyConflict, "Conflito de concorrência ao processar recebimento. Tente novamente.", correlationId);
+            }
         }
 
-        var payment = new ManualPayment
-        {
-            AccountId = accountId,
-            ClientId = client.Id,
-            WorkOrderId = request.WorkOrderId,
-            DocumentId = request.DocumentId,
-            Amount = request.Amount,
-            PaymentMethod = canonicalPaymentMethod,
-            PaidAt = paidAtUtc,
-            Notes = request.Notes?.Trim(),
-            RegisteredByUserId = currentAccount.UserId,
-            IdempotencyKey = request.IdempotencyKey
-        };
-        db.ManualPayments.Add(payment);
-
-        var number = await ReceiptNumberAllocator.NextAsync(db, accountId, ct);
-        var receipt = new Receipt
-        {
-            AccountId = accountId,
-            PaymentId = payment.Id,
-            ClientId = client.Id,
-            WorkOrderId = request.WorkOrderId,
-            DocumentId = request.DocumentId,
-            LegacyDocumentId = request.LegacyDocumentId,
-            OriginType = request.OriginType,
-            Number = number,
-            Amount = request.Amount,
-            AmountInWords = numberToWords.ToCurrencyWords(request.Amount),
-            PaymentMethod = canonicalPaymentMethod,
-            IssuedAt = DateTime.UtcNow,
-            City = request.City?.Trim(),
-            Notes = request.Notes?.Trim(),
-            ServiceDescription = request.ServiceDescription.Trim(),
-            ClientSnapshot = JsonSerializer.Serialize(new { client.Id, client.Name, client.DocumentNumber, client.Email, client.Phone, client.City }),
-            ServiceSnapshot = JsonSerializer.Serialize(new { description = request.ServiceDescription.Trim() })
-        };
-        db.Receipts.Add(receipt);
-
-        await db.SaveChangesAsync(ct);
-        await transaction.CommitAsync(ct);
-
-        return new(true, CreateReceiptCode.None, "Recibo emitido com sucesso.", payment.Id, receipt.Id,
-            receipt.Number, RedirectPage, correlationId);
+        return Failure(CreateReceiptCode.ConcurrencyConflict, "Não foi possível concluir o recebimento devido a concorrência.", correlationId);
     }
 
     public async Task<CreateReceiptResult> CreateForPaymentAsync(Guid paymentId, string serviceDescription, string? city, string? notes, CancellationToken ct = default)
@@ -184,6 +227,7 @@ public sealed class ReceiptApplicationService(
         var correlationId = Guid.NewGuid().ToString("N");
         if (currentAccount.AccountId is not Guid accountId)
             return Failure(CreateReceiptCode.AccessDenied, "A conta ativa não permite esta operação.", correlationId);
+        await currentAccount.EnsureAccountAccessAsync(ct);
         if (string.IsNullOrWhiteSpace(serviceDescription))
             return Failure(CreateReceiptCode.InvalidOrigin, "Descreva o serviço recebido.", correlationId);
 
@@ -202,31 +246,60 @@ public sealed class ReceiptApplicationService(
             x => x.Id == payment.ClientId && x.AccountId == accountId && !x.IsDeleted, ct);
         if (client is null) return Failure(CreateReceiptCode.ClientNotFound, "Cliente não encontrado nesta conta.", correlationId);
 
-        await using var transaction = await db.Database.BeginTransactionAsync(ct);
-        var receipt = new Receipt
+        const int maxRetries = 3;
+        for (var attempt = 1; attempt <= maxRetries; attempt++)
         {
-            AccountId = accountId,
-            PaymentId = payment.Id,
-            ClientId = payment.ClientId,
-            WorkOrderId = payment.WorkOrderId,
-            DocumentId = payment.DocumentId,
-            OriginType = payment.WorkOrderId.HasValue ? ReceiptOriginType.WorkOrder : payment.DocumentId.HasValue ? ReceiptOriginType.Budget : ReceiptOriginType.Standalone,
-            Number = await ReceiptNumberAllocator.NextAsync(db, accountId, ct),
-            Amount = payment.Amount,
-            AmountInWords = numberToWords.ToCurrencyWords(payment.Amount),
-            PaymentMethod = payment.PaymentMethod,
-            IssuedAt = DateTime.UtcNow,
-            City = city?.Trim(),
-            Notes = notes?.Trim(),
-            ServiceDescription = serviceDescription.Trim(),
-            ClientSnapshot = JsonSerializer.Serialize(new { client.Id, client.Name, client.DocumentNumber, client.Email, client.Phone, client.City }),
-            ServiceSnapshot = JsonSerializer.Serialize(new { description = serviceDescription.Trim() })
-        };
-        db.Receipts.Add(receipt);
-        await db.SaveChangesAsync(ct);
-        await transaction.CommitAsync(ct);
-        return new(true, CreateReceiptCode.None, "Recibo emitido com sucesso.", payment.Id, receipt.Id,
-            receipt.Number, RedirectPage, correlationId);
+            try
+            {
+                var existingInLoop = await db.Receipts.AsNoTracking().SingleOrDefaultAsync(
+                    x => x.AccountId == accountId && x.PaymentId == paymentId && !x.IsDeleted, ct);
+                if (existingInLoop is not null)
+                    return new(true, CreateReceiptCode.DuplicateRequest, "Este pagamento já possui recibo.", payment.Id,
+                        existingInLoop.Id, existingInLoop.Number, RedirectPage, correlationId);
+
+                await using var transaction = await db.Database.BeginTransactionAsync(ct);
+                var receipt = new Receipt
+                {
+                    AccountId = accountId,
+                    PaymentId = payment.Id,
+                    ClientId = payment.ClientId,
+                    WorkOrderId = payment.WorkOrderId,
+                    DocumentId = payment.DocumentId,
+                    OriginType = payment.WorkOrderId.HasValue ? ReceiptOriginType.WorkOrder : payment.DocumentId.HasValue ? ReceiptOriginType.Budget : ReceiptOriginType.Standalone,
+                    Number = await ReceiptNumberAllocator.NextAsync(db, accountId, ct),
+                    Amount = payment.Amount,
+                    AmountInWords = numberToWords.ToCurrencyWords(payment.Amount),
+                    PaymentMethod = payment.PaymentMethod,
+                    IssuedAt = DateTime.UtcNow,
+                    City = city?.Trim(),
+                    Notes = notes?.Trim(),
+                    ServiceDescription = serviceDescription.Trim(),
+                    ClientSnapshot = JsonSerializer.Serialize(new { client.Id, client.Name, client.DocumentNumber, client.Email, client.Phone, client.City }),
+                    ServiceSnapshot = JsonSerializer.Serialize(new { description = serviceDescription.Trim() })
+                };
+                db.Receipts.Add(receipt);
+                await db.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+                return new(true, CreateReceiptCode.None, "Recibo emitido com sucesso.", payment.Id, receipt.Id,
+                    receipt.Number, RedirectPage, correlationId);
+            }
+            catch (Exception ex) when (IsPersistenceConflict(ex) && attempt < maxRetries)
+            {
+                await Task.Delay(50 * attempt, ct);
+            }
+            catch (Exception ex) when (IsPersistenceConflict(ex))
+            {
+                var existingFinal = await db.Receipts.AsNoTracking().SingleOrDefaultAsync(
+                    x => x.AccountId == accountId && x.PaymentId == paymentId && !x.IsDeleted, ct);
+                if (existingFinal is not null)
+                    return new(true, CreateReceiptCode.DuplicateRequest, "Este pagamento já possui recibo.", payment.Id,
+                        existingFinal.Id, existingFinal.Number, RedirectPage, correlationId);
+
+                return Failure(CreateReceiptCode.ConcurrencyConflict, "Conflito ao emitir recibo para o pagamento.", correlationId);
+            }
+        }
+
+        return Failure(CreateReceiptCode.ConcurrencyConflict, "Não foi possível concluir a emissão do recibo.", correlationId);
     }
 
     public async Task<bool> CancelAsync(Guid receiptId, string reason, CancellationToken ct = default)
@@ -299,4 +372,16 @@ public sealed class ReceiptApplicationService(
 
     private static CreateReceiptResult Failure(CreateReceiptCode code, string message, string correlationId) =>
         new(false, code, message, null, null, null, RedirectPage, correlationId);
+
+    private static bool IsPersistenceConflict(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            var name = current.GetType().Name;
+            if (name is "DbUpdateConcurrencyException") return true;
+            var state = current.GetType().GetProperty("SqlState")?.GetValue(current) as string;
+            if (state is "23505" or "40001") return true;
+        }
+        return false;
+    }
 }

@@ -4,20 +4,36 @@ using OrcaFacil.Domain.Plans;
 
 namespace OrcaFacil.Application.Plans;
 
-public sealed class PlanAccessService(IPlanAccessDataSource dataSource) : IPlanAccessService
+public sealed class PlanAccessService(IPlanAccessDataSource dataSource, TimeProvider? timeProvider = null) : IPlanAccessService
 {
+    private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
+
     public static bool IsTrialExpired(Subscription? subscription, DateTime utcNow)
     {
         if (subscription is null) return false;
+
+        // Se a assinatura está em liberação manual vigente, não é tratada como trial expirado
         if (subscription.ManualReleaseUntil.HasValue && subscription.ManualReleaseUntil.Value > utcNow)
             return false;
 
-        if (subscription.TrialStatus == TrialStatus.Expired || subscription.Status == SubscriptionStatus.Expired)
+        // Assinatura paga ativa não pode ser bloqueada pelo histórico de um teste
+        if (subscription.Status == SubscriptionStatus.Active)
+            return false;
+
+        // Pagamento com vigência futura (PaidThroughAt > utcNow) garante acesso pago
+        if (subscription.PaidThroughAt.HasValue && subscription.PaidThroughAt.Value > utcNow)
+            return false;
+
+        // Status explícito de expiração
+        if (subscription.Status == SubscriptionStatus.Expired)
             return true;
 
         var isTrial = subscription.Status is SubscriptionStatus.Trial or SubscriptionStatus.Trialing;
         if (isTrial)
         {
+            if (subscription.TrialStatus == TrialStatus.Expired)
+                return true;
+
             var end = subscription.TrialEndsAt ?? subscription.ExpiresAt;
             if (end.HasValue && end.Value <= utcNow)
                 return true;
@@ -89,7 +105,7 @@ public sealed class PlanAccessService(IPlanAccessDataSource dataSource) : IPlanA
 
     public async Task<PlanAccessDecision> CanUseAsync(Guid accountId, string featureCode, CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         var accountStatus = await dataSource.GetAccountStatusAsync(accountId, ct);
         if (accountStatus != AccountStatus.Active)
             return new(false, featureCode, "NONE", null, 0, null,
@@ -99,12 +115,18 @@ public sealed class PlanAccessService(IPlanAccessDataSource dataSource) : IPlanA
         var subscription = await dataSource.GetSubscriptionAsync(accountId, ct);
         if (subscription is not null && IsTrialExpired(subscription, now))
         {
-            if (featureCode is not (PlanFeatureCodes.HistoryDaysVisible or PlanFeatureCodes.BasicReportsEnabled))
+            // Política explícita de consulta histórica pós-expiração:
+            // Consulta de documentos existentes, histórico e relatórios básicos permanecem liberados
+            if (featureCode is PlanFeatureCodes.HistoryDaysVisible or PlanFeatureCodes.BasicReportsEnabled)
             {
-                return new PlanAccessDecision(false, featureCode, "TRIAL_EXPIRED", "PROFESSIONAL", 0, 0,
-                    "Seu período de teste de 15 dias encerrou. Seus dados e histórico permanecem seguros. Assine o plano para continuar emitindo propostas.",
-                    "TrialExpired");
+                return new PlanAccessDecision(true, featureCode, "EXPIRED_HISTORICAL_ACCESS", null, 0, null,
+                    string.Empty, "HistoricalAccessAllowed");
             }
+
+            // Operações comerciais (criação, envio, emissão) são bloqueadas
+            return new PlanAccessDecision(false, featureCode, "TRIAL_EXPIRED", "PROFESSIONAL", 0, 0,
+                "Seu período de teste de 15 dias encerrou. Seus dados e histórico permanecem seguros. Assine o plano para continuar emitindo propostas.",
+                "TrialExpired");
         }
 
         var plan = await GetEffectivePlanAsync(accountId, now, ct);

@@ -70,7 +70,9 @@ public class PublicQuotesController : ControllerBase
         var document = FromSnapshot(quote);
         var issuer = FromSnapshot(quote.Snapshot.Issuer);
         var plan = quote.Snapshot.Quote.ShowPlatformBrand ? PlanType.Free : PlanType.Professional;
-        var bytes = await _pdfService.GenerateDocumentPdfAsync(document, issuer, plan, ct);
+        var lang = string.IsNullOrWhiteSpace(quote.Snapshot.Quote.LanguageCode) ? "pt-BR" : quote.Snapshot.Quote.LanguageCode;
+        var curr = string.IsNullOrWhiteSpace(quote.Snapshot.Quote.CurrencyCode) ? "BRL" : quote.Snapshot.Quote.CurrencyCode;
+        var bytes = await _pdfService.GenerateDocumentPdfAsync(document, issuer, plan, lang, curr, ct);
         return File(bytes, "application/pdf", $"{SafeFileName(document.Number)}.pdf");
     }
 
@@ -130,15 +132,19 @@ public class PublicQuotesController : ControllerBase
             ClientCity = snapshot.Customer.City,
             IssueDate = snapshot.Quote.IssueDate,
             ValidUntil = snapshot.Quote.ValidUntil,
+            EstimatedDuration = snapshot.Quote.DeliveryTime,
+            PaymentMethod = snapshot.Quote.Payment,
+            ConditionsText = snapshot.Quote.Conditions,
+            WarrantyText = snapshot.Quote.Footer,
             Notes = snapshot.Quote.Notes,
             Discount = snapshot.Quote.Discount,
-            TemplateCode = snapshot.Quote.Template
+            TemplateCode = string.IsNullOrWhiteSpace(snapshot.Quote.Template) ? "essential" : snapshot.Quote.Template
         };
         document.IssueNumber(snapshot.Quote.Number);
         document.Items = snapshot.Items.Select((item, index) => new DocumentItem
         {
             Description = item.Description,
-            Unit = item.Unit ?? "serviço",
+            Unit = string.IsNullOrWhiteSpace(item.Unit) ? "un" : item.Unit,
             Quantity = item.Quantity,
             UnitPrice = item.UnitPrice,
             Discount = item.Discount,

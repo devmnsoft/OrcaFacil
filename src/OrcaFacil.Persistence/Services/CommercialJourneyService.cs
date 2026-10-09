@@ -230,14 +230,42 @@ public sealed class CommercialJourneyService(
         if (document.Items.Count == 0)
             return Revision(false, QuoteLifecycleCode.NoItems, "Inclua ao menos um serviço.", correlation, document.Id, status);
         document.CalculateTotals();
+
+        var account = await db.BusinessAccounts.AsNoTracking().SingleOrDefaultAsync(x => x.Id == AccountId && !x.IsDeleted, ct);
+        var settings = await db.AccountSettings.AsNoTracking().SingleOrDefaultAsync(x => x.AccountId == AccountId && !x.IsDeleted, ct);
         var issuer = await db.IssuerProfiles.AsNoTracking().SingleOrDefaultAsync(x => x.UserId == document.UserId, ct);
         var client = document.ClientId is Guid clientId
             ? await db.Clients.AsNoTracking().SingleOrDefaultAsync(x => x.Id == clientId && x.AccountId == AccountId, ct) : null;
+
+        var issuerName = account?.TradeName ?? account?.LegalName ?? account?.DisplayName ?? issuer?.BusinessName ?? string.Empty;
+        var issuerDoc = account?.DocumentNumber ?? issuer?.DocumentNumber;
+        var issuerEmail = !string.IsNullOrWhiteSpace(account?.Email) ? account.Email : issuer?.Email;
+        var issuerPhone = settings?.WhatsApp ?? account?.Phone ?? issuer?.Phone;
+        var issuerAddress = settings?.Address ?? issuer?.Address;
+        var issuerCity = settings?.City ?? account?.City ?? issuer?.City;
+        var issuerState = settings?.State ?? account?.State;
+        var issuerLogo = settings?.LogoPath ?? issuer?.LogoPath;
+        var issuerPix = settings?.PixKey ?? issuer?.PixKey;
+
+        var effectivePlan = await plans.GetEffectivePlanAsync(AccountId, DateTime.UtcNow, ct);
+        var showPlatformBrand = string.Equals(effectivePlan?.Code, "FREE", StringComparison.OrdinalIgnoreCase);
+
+        var languageCode = "pt-BR";
+        try
+        {
+            var localePref = await db.Database.SqlQueryRaw<string>("""SELECT language_code AS "Value" FROM orcafacil.account_locale_settings WHERE account_id = {0}""", AccountId).FirstOrDefaultAsync(ct);
+            if (!string.IsNullOrWhiteSpace(localePref)) languageCode = OrcaFacil.Application.Localization.SupportedLocales.Normalize(localePref);
+        }
+        catch { }
+
         var value = new DocumentSnapshot(
-            new(issuer?.BusinessName ?? string.Empty, issuer?.DocumentNumber, issuer?.Email, issuer?.Phone, issuer?.Address, issuer?.City, null, issuer?.LogoPath, issuer?.PixKey, null),
+            new(issuerName, issuerDoc, issuerEmail, issuerPhone, issuerAddress, issuerCity, issuerState, issuerLogo, issuerPix, null),
             new(document.ClientName, client?.PersonType.ToString(), document.ClientDocument, document.ClientPhone, document.ClientEmail, client?.Address, document.ClientCity, null),
-            new(document.Number, document.IssueDate, document.ValidUntil, null, null, null, document.Notes, templateCode, null, null, true, document.Subtotal, document.Discount, document.Total),
-            document.Items.Select(x => new QuoteItemSnapshot(x.Description, null, x.Quantity, x.UnitPrice, x.Discount, x.Quantity * x.UnitPrice, x.CalculateTotal())).ToArray());
+            new(document.Number, document.IssueDate, document.ValidUntil, document.EstimatedDuration, document.PaymentMethod, document.ConditionsText, document.Notes,
+                string.IsNullOrWhiteSpace(templateCode) ? (string.IsNullOrWhiteSpace(document.TemplateCode) ? "essential" : document.TemplateCode) : templateCode,
+                settings?.PrimaryColor, document.WarrantyText ?? settings?.DocumentFooter, showPlatformBrand,
+                document.Subtotal, document.Discount, document.Total, languageCode, "BRL"),
+            document.Items.Select(x => new QuoteItemSnapshot(x.Description, string.IsNullOrWhiteSpace(x.Unit) ? "un" : x.Unit, x.Quantity, x.UnitPrice, x.Discount, x.Quantity * x.UnitPrice, x.CalculateTotal())).ToArray());
         var serialized = snapshots.Serialize(value);
         var current = await db.DocumentRevisions.SingleOrDefaultAsync(x => x.AccountId == AccountId && x.DocumentId == document.Id && x.IsCurrent, ct);
         if (current?.SnapshotHash == serialized.Hash)
@@ -285,17 +313,21 @@ public sealed class CommercialJourneyService(
             return Work(false, "InvalidClient", "Vincule um cliente válido da conta antes de gerar a OS.", document.Id, document.Status, correlation);
         var revision = await db.DocumentRevisions.SingleOrDefaultAsync(x => x.AccountId == AccountId && x.DocumentId == documentId && x.IsCurrent, ct);
         if (revision is null) return Work(false, "RevisionRequired", "Gere a versão aprovada da proposta antes de criar a OS.", document.Id, document.Status, correlation);
+        if (string.IsNullOrWhiteSpace(revision.ProtectedSnapshot))
+            return Work(false, "InvalidSnapshot", "O snapshot da versão aprovada está ausente. Não é seguro converter para OS.", document.Id, document.Status, correlation);
+
         DocumentSnapshot? snapshot = null;
         try { snapshot = JsonSerializer.Deserialize<DocumentSnapshot>(revision.ProtectedSnapshot, new JsonSerializerOptions(JsonSerializerDefaults.Web)); }
         catch (JsonException) { snapshot = null; }
-        var itemsJson = snapshot is not null
-            ? JsonSerializer.Serialize(snapshot.Items.Select(x => new { x.Description, x.Quantity, x.UnitPrice, x.Discount }))
-            : JsonSerializer.Serialize(document.Items.Select(x => new { x.Description, x.Quantity, x.UnitPrice, x.Discount }));
+        if (snapshot is null)
+            return Work(false, "InvalidSnapshot", "O snapshot da versão aprovada está corrompido ou ilegível. Não é seguro converter para OS.", document.Id, document.Status, correlation);
+
+        var itemsJson = JsonSerializer.Serialize(snapshot.Items.Select(x => new { x.Description, unit = x.Unit, x.Quantity, x.UnitPrice, x.Discount, x.Total }));
         var order = new WorkOrder { AccountId = AccountId, SourceDocumentId = document.Id, SourceRevisionId = revision.Id,
             ClientId = clientId, Number = $"OS-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid():N}"[..20], Title = $"Serviço do orçamento {document.Number}",
-            ClientSnapshot = JsonSerializer.Serialize(snapshot?.Customer ?? new CustomerSnapshot(document.ClientName, null, document.ClientDocument, document.ClientPhone, document.ClientEmail, null, document.ClientCity, null)),
+            ClientSnapshot = JsonSerializer.Serialize(snapshot.Customer),
             ItemsSnapshot = itemsJson,
-            TotalSnapshot = snapshot?.Quote.Total ?? revision.Total, Notes = snapshot?.Quote.Notes ?? document.Notes, CreatedByUserId = currentUser.UserId };
+            TotalSnapshot = snapshot.Quote.Total, Notes = snapshot.Quote.Notes ?? document.Notes, CreatedByUserId = currentUser.UserId };
         db.WorkOrders.Add(order);
         var checklist = new[] { "Confirmar dados do cliente", "Preparar material", "Executar serviço", "Validar entrega", "Finalizar atendimento" };
         db.WorkOrderChecklistItems.AddRange(checklist.Select((description, position) => new WorkOrderChecklistItem

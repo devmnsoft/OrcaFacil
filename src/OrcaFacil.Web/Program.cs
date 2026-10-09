@@ -55,6 +55,7 @@ using Microsoft.AspNetCore.Localization;
 using System.Globalization;
 using OrcaFacil.Application.Localization;
 using OrcaFacil.Application.GoLive;
+using OrcaFacil.Domain.Entities;
 using OrcaFacil.Persistence.Services.GoLive;
 using OrcaFacil.Persistence.Services.Saas;
 
@@ -536,13 +537,59 @@ app.MapGet("/sitemap.xml", (HttpContext context, IConfiguration configuration) =
     return Results.Text($"<?xml version=\"1.0\" encoding=\"UTF-8\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">{urls}</urlset>", "application/xml; charset=utf-8");
 });
 app.MapRazorPages();
-app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (Guid id, OrcaFacil.Application.Abstractions.ICurrentUserService currentUser, OrcaFacil.Application.Abstractions.IPdfService pdf, OrcaFacil.Persistence.OrcaFacilDbContext db, CancellationToken ct) =>
+app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (
+    Guid id,
+    OrcaFacil.Application.Abstractions.ICurrentUserService currentUser,
+    OrcaFacil.Application.Abstractions.ICurrentAccountService currentAccount,
+    OrcaFacil.Application.Commercial.ICommercialRevisionResolver resolver,
+    OrcaFacil.Application.Abstractions.IPdfService pdf,
+    OrcaFacil.Persistence.OrcaFacilDbContext db,
+    CancellationToken ct) =>
 {
-    var document = await db.Documents.Include(d => d.Items).SingleOrDefaultAsync(d => d.Id == id && d.UserId == currentUser.UserId && !d.IsDeleted, ct);
+    var accountId = currentAccount.AccountId;
+    var document = await db.Documents.Include(d => d.Items).SingleOrDefaultAsync(
+        d => d.Id == id && !d.IsDeleted && (accountId.HasValue ? d.AccountId == accountId.Value : (d.UserId == currentUser.UserId && d.AccountId == null)), ct);
     if (document is null) return Results.NotFound();
-    var issuer = await db.IssuerProfiles.SingleOrDefaultAsync(x => x.UserId == currentUser.UserId, ct);
+
+    DocumentRevision? currentRevision = null;
+    var targetAccountId = document.AccountId ?? accountId;
+    if (targetAccountId.HasValue)
+    {
+        currentRevision = await db.DocumentRevisions.AsNoTracking().FirstOrDefaultAsync(
+            x => x.AccountId == targetAccountId.Value && x.DocumentId == document.Id && x.IsCurrent, ct);
+    }
+
+    IssuerProfile? defaultIssuer = null;
+    if (targetAccountId.HasValue)
+    {
+        var businessAccount = await db.BusinessAccounts.AsNoTracking().SingleOrDefaultAsync(x => x.Id == targetAccountId.Value && !x.IsDeleted, ct);
+        var accountSettings = await db.AccountSettings.AsNoTracking().SingleOrDefaultAsync(x => x.AccountId == targetAccountId.Value && !x.IsDeleted, ct);
+        if (businessAccount is not null)
+        {
+            defaultIssuer = new IssuerProfile
+            {
+                BusinessName = businessAccount.TradeName ?? businessAccount.DisplayName,
+                DocumentNumber = businessAccount.DocumentNumber,
+                Email = businessAccount.Email,
+                Phone = businessAccount.Phone ?? accountSettings?.WhatsApp,
+                Address = accountSettings?.Address,
+                City = accountSettings?.City,
+                PixKey = accountSettings?.PixKey,
+                LogoPath = accountSettings?.LogoPath ?? accountSettings?.CompactLogoPath
+            };
+        }
+    }
+    defaultIssuer ??= await db.IssuerProfiles.SingleOrDefaultAsync(x => x.UserId == document.UserId, ct);
+
     var plan = Enum.TryParse<OrcaFacil.Domain.Enums.PlanType>(currentUser.Plan, out var parsedPlan) ? parsedPlan : OrcaFacil.Domain.Enums.PlanType.Free;
-    var bytes = await pdf.GenerateDocumentPdfAsync(document, issuer, plan, ct);
+    var resolution = resolver.Resolve(document, currentRevision, defaultIssuer, plan);
+    if (!resolution.Succeeded)
+    {
+        return Results.UnprocessableEntity(new { code = resolution.Code, message = resolution.Message });
+    }
+
+    var resolved = resolution.Value!;
+    var bytes = await pdf.GenerateDocumentPdfAsync(resolved.Document, resolved.Issuer, resolved.EffectivePlan, resolved.LanguageCode, resolved.CurrencyCode, ct);
     return Results.File(bytes, "application/pdf", $"{document.Number}.pdf");
 }).RequireAuthorization();
 app.Run();

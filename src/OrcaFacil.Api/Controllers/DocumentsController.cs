@@ -31,12 +31,14 @@ public class DocumentsController : ControllerBase
     private readonly IRepository<UserAccount> _users;
     private readonly OrcaFacilDbContext _db;
     private readonly IAuditService _audit;
+    private readonly ICommercialRevisionResolver _revisionResolver;
     private readonly ILogger<DocumentsController> _logger;
 
     public DocumentsController(DocumentService documents, IDocumentQueries queries, ICurrentUserService currentUser,
         ICurrentAccountService currentAccount, IPlanAccessService planAccess,
         IPdfService pdfService, ICommercialJourneyService journey, IRepository<Document> documentRepository,
         IRepository<IssuerProfile> profiles, IRepository<UserAccount> users, OrcaFacilDbContext db, IAuditService audit,
+        ICommercialRevisionResolver revisionResolver,
         ILogger<DocumentsController> logger)
     {
         _documents = documents;
@@ -51,6 +53,7 @@ public class DocumentsController : ControllerBase
         _users = users;
         _db = db;
         _audit = audit;
+        _revisionResolver = revisionResolver;
         _logger = logger;
     }
 
@@ -201,10 +204,6 @@ public class DocumentsController : ControllerBase
                 return NotFound();
         }
 
-        // Se existir revisão atual com snapshot para proposta enviada ou aprovada, usar o snapshot imutável para garantir
-        // paridade perfeita entre o PDF autenticado e o PDF público.
-        Document targetDocument = document;
-        IssuerProfile? targetIssuer = null;
         var targetAccountId = document.AccountId ?? accountId;
         var effectivePlan = targetAccountId.HasValue
             ? await _planAccess.GetEffectivePlanAsync(targetAccountId.Value, DateTime.UtcNow, ct)
@@ -218,64 +217,48 @@ public class DocumentsController : ControllerBase
                 x => x.AccountId == targetAccountId.Value && x.DocumentId == document.Id && x.IsCurrent, ct);
         }
 
-        DocumentSnapshot? snapshot = null;
-        if (currentRevision is not null && !string.IsNullOrWhiteSpace(currentRevision.ProtectedSnapshot))
+        IssuerProfile? defaultIssuer = null;
+        if (targetAccountId.HasValue)
         {
-            try
-            {
-                snapshot = JsonSerializer.Deserialize<DocumentSnapshot>(
-                    currentRevision.ProtectedSnapshot, new JsonSerializerOptions(JsonSerializerDefaults.Web));
-                if (snapshot is not null)
-                {
-                    targetDocument = FromSnapshot(snapshot);
-                    targetDocument.AccountId = document.AccountId;
-                    targetIssuer = FromIssuerSnapshot(snapshot.Issuer);
-                    if (!snapshot.Quote.ShowPlatformBrand && planType == PlanType.Free)
-                        planType = PlanType.Professional;
-                }
-            }
-            catch (JsonException)
-            {
-                // Fallback para documento persistido
-            }
-        }
+            var businessAccount = await _db.BusinessAccounts.AsNoTracking().SingleOrDefaultAsync(
+                x => x.Id == targetAccountId.Value && !x.IsDeleted, ct);
+            var accountSettings = await _db.AccountSettings.AsNoTracking().SingleOrDefaultAsync(
+                x => x.AccountId == targetAccountId.Value && !x.IsDeleted, ct);
 
-        if (targetIssuer is null)
-        {
-            if (targetAccountId.HasValue)
+            if (businessAccount is not null)
             {
-                var businessAccount = await _db.BusinessAccounts.AsNoTracking().SingleOrDefaultAsync(
-                    x => x.Id == targetAccountId.Value && !x.IsDeleted, ct);
-                var accountSettings = await _db.AccountSettings.AsNoTracking().SingleOrDefaultAsync(
-                    x => x.AccountId == targetAccountId.Value && !x.IsDeleted, ct);
-
-                if (businessAccount is not null)
+                defaultIssuer = new IssuerProfile
                 {
-                    targetIssuer = new IssuerProfile
-                    {
-                        BusinessName = businessAccount.TradeName ?? businessAccount.DisplayName,
-                        DocumentNumber = businessAccount.DocumentNumber,
-                        Email = businessAccount.Email,
-                        Phone = businessAccount.Phone ?? accountSettings?.WhatsApp,
-                        Address = accountSettings?.Address,
-                        City = accountSettings?.City,
-                        PixKey = accountSettings?.PixKey,
-                        LogoPath = accountSettings?.LogoPath ?? accountSettings?.CompactLogoPath
-                    };
-                }
-                else
-                {
-                    targetIssuer = _profiles.Query().SingleOrDefault(profile => profile.UserId == document.UserId);
-                }
+                    BusinessName = businessAccount.TradeName ?? businessAccount.DisplayName,
+                    DocumentNumber = businessAccount.DocumentNumber,
+                    Email = businessAccount.Email,
+                    Phone = businessAccount.Phone ?? accountSettings?.WhatsApp,
+                    Address = accountSettings?.Address,
+                    City = accountSettings?.City,
+                    PixKey = accountSettings?.PixKey,
+                    LogoPath = accountSettings?.LogoPath ?? accountSettings?.CompactLogoPath
+                };
             }
             else
             {
-                targetIssuer = _profiles.Query().SingleOrDefault(profile => profile.UserId == _currentUser.UserId);
+                defaultIssuer = _profiles.Query().SingleOrDefault(profile => profile.UserId == document.UserId);
             }
         }
+        else
+        {
+            defaultIssuer = _profiles.Query().SingleOrDefault(profile => profile.UserId == _currentUser.UserId);
+        }
 
+        var resolution = _revisionResolver.Resolve(document, currentRevision, defaultIssuer, planType);
+        if (!resolution.Succeeded)
+        {
+            return StatusCode(StatusCodes.Status422UnprocessableEntity,
+                new { code = resolution.Code, message = resolution.Message, documentId = document.Id });
+        }
+
+        var resolved = resolution.Value!;
         var bytes = await _pdfService.GenerateDocumentPdfAsync(
-            targetDocument, targetIssuer, planType, snapshot?.Quote.LanguageCode, snapshot?.Quote.CurrencyCode ?? "BRL", ct);
+            resolved.Document, resolved.Issuer, resolved.EffectivePlan, resolved.LanguageCode, resolved.CurrencyCode, ct);
         await _audit.RegisterAsync(_currentUser.UserId, "PDF_GENERATED", nameof(Document), document.Id.ToString(), null, new { document.Number, RevisionId = currentRevision?.Id }, null, ct, document.AccountId);
         return File(bytes, "application/pdf", $"{document.Number}.pdf");
     }
