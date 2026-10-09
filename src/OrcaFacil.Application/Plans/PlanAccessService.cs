@@ -1,5 +1,6 @@
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
+using OrcaFacil.Domain.Plans;
 
 namespace OrcaFacil.Application.Plans;
 
@@ -29,13 +30,18 @@ public sealed class PlanAccessService(IPlanAccessDataSource dataSource) : IPlanA
         var subscription = await dataSource.GetSubscriptionAsync(accountId, ct);
         if (subscription is null) return await dataSource.GetPublishedFreeVersionAsync(utcNow, ct);
 
+        var isTrial = subscription.Status is SubscriptionStatus.Trial or SubscriptionStatus.Trialing;
+        var trialActive = isTrial && ((subscription.TrialEndsAt.HasValue && subscription.TrialEndsAt.Value > utcNow) || (subscription.ExpiresAt.HasValue && subscription.ExpiresAt.Value > utcNow));
+        var trialExpired = isTrial && !trialActive && (subscription.ManualReleaseUntil is null || subscription.ManualReleaseUntil <= utcNow);
+
         var dueAt = subscription.PaidThroughAt ?? subscription.ExpiresAt ?? subscription.NextDueAt;
         var selectedVersion = subscription.SelectedPlanVersionId is Guid selectedId
             ? await dataSource.GetPlanVersionAsync(selectedId, ct)
             : null;
         var graceEndsAt = dueAt?.AddDays(Math.Max(0, selectedVersion?.GracePeriodDays ?? 0));
-        var paidAccess = subscription.Status is not (SubscriptionStatus.Free or SubscriptionStatus.Cancelled or SubscriptionStatus.Suspended)
-                         && (subscription.ManualReleaseUntil > utcNow || dueAt is null || graceEndsAt >= utcNow);
+        var paidAccess = !trialExpired &&
+                         subscription.Status is not (SubscriptionStatus.Free or SubscriptionStatus.Cancelled or SubscriptionStatus.Suspended or SubscriptionStatus.Expired)
+                         && (subscription.ManualReleaseUntil > utcNow || (isTrial ? trialActive : (dueAt is null || graceEndsAt >= utcNow)));
         var versionId = paidAccess ? subscription.EffectivePlanVersionId ?? subscription.SelectedPlanVersionId : null;
         return versionId is Guid id
             ? await dataSource.GetPlanVersionAsync(id, ct)
@@ -64,6 +70,22 @@ public sealed class PlanAccessService(IPlanAccessDataSource dataSource) : IPlanA
             return new(false, featureCode, "NONE", null, 0, null,
                 accountStatus == AccountStatus.Blocked ? "Esta conta está bloqueada." : "Esta conta não está ativa.",
                 accountStatus == AccountStatus.Blocked ? "AccountBlocked" : "AccountInactive");
+
+        var subscription = await dataSource.GetSubscriptionAsync(accountId, ct);
+        if (subscription is not null)
+        {
+            var isTrial = subscription.Status is SubscriptionStatus.Trial or SubscriptionStatus.Trialing;
+            var trialEnd = subscription.TrialEndsAt ?? subscription.ExpiresAt;
+            var trialExpired = (subscription.Status == SubscriptionStatus.Expired) ||
+                               (isTrial && trialEnd.HasValue && trialEnd.Value <= now && (subscription.ManualReleaseUntil is null || subscription.ManualReleaseUntil <= now));
+
+            if (trialExpired && featureCode is not (PlanFeatureCodes.HistoryDaysVisible or PlanFeatureCodes.BasicReportsEnabled))
+            {
+                return new PlanAccessDecision(false, featureCode, "TRIAL_EXPIRED", "PROFESSIONAL", 0, 0,
+                    "Seu período de teste de 15 dias encerrou. Seus dados e histórico permanecem seguros. Assine o plano para continuar emitindo propostas.",
+                    "TrialExpired");
+            }
+        }
 
         var plan = await GetEffectivePlanAsync(accountId, now, ct);
         var features = await GetPlanFeaturesAsync(accountId, now, ct);

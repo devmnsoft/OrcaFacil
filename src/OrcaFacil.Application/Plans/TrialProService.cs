@@ -57,13 +57,24 @@ public sealed class TrialProService
         var expired = _subscriptions.Query().Where(x => x.TrialStatus == TrialStatus.Active && x.TrialEndsAt <= now && !x.IsDeleted).ToList();
         foreach (var subscription in expired)
         {
+            if (subscription.Status == SubscriptionStatus.Active)
+            {
+                subscription.TrialStatus = TrialStatus.Expired;
+                subscription.Touch();
+                continue;
+            }
+
             subscription.Status = SubscriptionStatus.Free;
             subscription.Plan = PlanType.Free;
             subscription.TrialStatus = TrialStatus.Expired;
             subscription.Touch();
             var user = await _users.GetAsync(subscription.UserId, ct);
-            if (user is not null) { user.Plan = PlanType.Free; user.Touch(); }
-            await _notifications.CreateForUserAsync(subscription.UserId, "Trial Pro encerrado", "Seu teste Pro terminou e sua conta voltou para o plano Free.", NotificationType.Warning, NotificationCategory.Plan, "/Subscription", "Conhecer Pro", ct);
+            if (user is not null && user.Plan != PlanType.Professional && user.Plan != PlanType.Enterprise)
+            {
+                user.Plan = PlanType.Free;
+                user.Touch();
+            }
+            await _notifications.CreateForUserAsync(subscription.UserId, "Período de teste de 15 dias encerrado", "Seu teste de 15 dias terminou. Escolha um plano para continuar gerando propostas.", NotificationType.Warning, NotificationCategory.Plan, "/Subscription", "Conhecer planos", ct);
         }
         await _uow.SaveChangesAsync(ct);
         return expired.Count;

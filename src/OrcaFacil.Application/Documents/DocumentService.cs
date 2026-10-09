@@ -32,12 +32,29 @@ public class DocumentService
     {
         try
         {
-            var document = new Document { UserId = command.UserId, Type = command.Type, ClientName = command.ClientName.Trim(), Discount = command.Discount, Notes = command.Notes };
-            document.IssueNumber(string.IsNullOrWhiteSpace(command.Number) ? await _numberService.NextAsync(command.UserId, command.Type, document.AccountId, ct) : command.Number);
-            document.Items = command.Items.Select(item => new DocumentItem { Description = item.Description, Quantity = item.Quantity, UnitPrice = item.UnitPrice, Discount = item.Discount }).ToList();
+            var document = new Document
+            {
+                UserId = command.UserId,
+                AccountId = command.AccountId,
+                Type = command.Type,
+                Status = "Draft",
+                ClientName = command.ClientName.Trim(),
+                Discount = command.Discount,
+                Notes = command.Notes
+            };
+            document.IssueNumber(string.IsNullOrWhiteSpace(command.Number)
+                ? await _numberService.NextAsync(command.UserId, command.Type, document.AccountId, ct)
+                : command.Number);
+            document.Items = command.Items.Select(item => new DocumentItem
+            {
+                Description = item.Description,
+                Quantity = item.Quantity,
+                UnitPrice = item.UnitPrice,
+                Discount = item.Discount
+            }).ToList();
             document.CalculateTotals();
             await _documents.AddAsync(document, ct);
-            await _audit.RegisterAsync(command.UserId, "DOCUMENT_CREATED", nameof(Document), document.Id.ToString(), null, document, null, ct);
+            await _audit.RegisterAsync(command.UserId, "DOCUMENT_CREATED", nameof(Document), document.Id.ToString(), null, document, null, ct, document.AccountId);
             await _uow.SaveChangesAsync(ct);
             var title = document.Type == DocumentType.Budget ? "Orçamento salvo" : "Recibo salvo";
             await _notifications.CreateForUserAsync(command.UserId, title, "Seu orçamento foi salvo. Agora você pode gerar o PDF.", NotificationType.Success, NotificationCategory.Document, $"/Documents/Details?id={document.Id}", "Ver documento", ct);
@@ -45,7 +62,7 @@ public class DocumentService
             {
                 await _notifications.CreateForUserAsync(command.UserId, "Primeiro orçamento criado", "Parabéns pelo primeiro documento no OrçaFácil. Gere o PDF e envie ao cliente.", NotificationType.Info, NotificationCategory.Document, $"/Documents/Details?id={document.Id}", "Abrir", ct);
             }
-            _logger.LogInformation("DOCUMENT_CREATED {DocumentId}", document.Id);
+            _logger.LogInformation("DOCUMENT_CREATED {DocumentId} {AccountId}", document.Id, document.AccountId);
             return Result<Guid>.Ok(document.Id);
         }
         catch (Exception ex)
@@ -68,14 +85,31 @@ public class DocumentService
         try
         {
             var document = await _documents.GetAsync(command.DocumentId, ct);
-            if (document is null || document.UserId != command.UserId || document.IsDeleted) return Result.Fail("Documento não encontrado.");
+            if (document is null || document.IsDeleted) return Result.Fail("Documento não encontrado.");
+            if (command.AccountId.HasValue && document.AccountId != command.AccountId)
+                return Result.Fail("Documento não pertence à conta informada.");
+            if (!command.AccountId.HasValue && document.UserId != command.UserId)
+                return Result.Fail("Documento não encontrado.");
+
+            // Não permitir edição silenciosa de documento já enviado, aprovado ou recusado
+            if (!string.Equals(document.Status, "Draft", StringComparison.OrdinalIgnoreCase))
+            {
+                return Result.Fail($"Documentos com situação '{document.Status}' não podem ser alterados diretamente. Crie uma nova revisão para registrar alterações.");
+            }
+
             document.ClientName = command.ClientName.Trim();
             document.Discount = command.Discount;
             document.Notes = command.Notes;
-            document.Items = command.Items.Select(item => new DocumentItem { Description = item.Description, Quantity = item.Quantity, UnitPrice = item.UnitPrice, Discount = item.Discount }).ToList();
+            document.Items = command.Items.Select(item => new DocumentItem
+            {
+                Description = item.Description,
+                Quantity = item.Quantity,
+                UnitPrice = item.UnitPrice,
+                Discount = item.Discount
+            }).ToList();
             document.CalculateTotals();
             document.Touch();
-            await _audit.RegisterAsync(command.UserId, "DOCUMENT_UPDATED", nameof(Document), document.Id.ToString(), null, document, null, ct);
+            await _audit.RegisterAsync(command.UserId, "DOCUMENT_UPDATED", nameof(Document), document.Id.ToString(), null, document, null, ct, document.AccountId);
             await _uow.SaveChangesAsync(ct);
             _logger.LogInformation("DOCUMENT_UPDATED {DocumentId}", document.Id);
             return Result.Ok();
@@ -90,13 +124,65 @@ public class DocumentService
     public async Task<Result<Guid>> DuplicateAsync(DuplicateDocumentCommand command, CancellationToken ct = default)
     {
         var original = await _documents.GetAsync(command.DocumentId, ct);
-        if (original is null || original.UserId != command.UserId || original.IsDeleted) return Result<Guid>.Fail("Documento não encontrado.");
-        var copy = new Document { UserId = original.UserId, Type = original.Type, Status = "Draft", ClientName = original.ClientName, ClientDocument = original.ClientDocument, ClientPhone = original.ClientPhone, ClientEmail = original.ClientEmail, ClientCity = original.ClientCity, IssueDate = DateTime.UtcNow, Notes = original.Notes, Discount = original.Discount };
-        copy.IssueNumber(await _numberService.NextAsync(command.UserId, original.Type, original.AccountId, ct));
-        copy.Items = original.Items.Select(item => new DocumentItem { Description = item.Description, Quantity = item.Quantity, UnitPrice = item.UnitPrice, Discount = item.Discount }).ToList();
+        if (original is null || original.IsDeleted) return Result<Guid>.Fail("Documento não encontrado.");
+        if (command.AccountId.HasValue && original.AccountId != command.AccountId)
+            return Result<Guid>.Fail("Documento não pertence à conta informada.");
+        if (!command.AccountId.HasValue && original.UserId != command.UserId)
+            return Result<Guid>.Fail("Documento não encontrado.");
+
+        var targetAccountId = original.AccountId ?? command.AccountId;
+        var copy = new Document
+        {
+            UserId = command.UserId,
+            AccountId = targetAccountId,
+            ClientId = original.ClientId,
+            Type = original.Type,
+            Status = "Draft",
+            CurrentWizardStep = 0,
+            ClientName = original.ClientName,
+            ClientDocument = original.ClientDocument,
+            ClientPhone = original.ClientPhone,
+            ClientEmail = original.ClientEmail,
+            ClientCity = original.ClientCity,
+            ClientSnapshot = original.ClientSnapshot,
+            IssueDate = DateTime.UtcNow,
+            ValidUntil = original.ValidUntil,
+            ExpectedStartAt = original.ExpectedStartAt,
+            EstimatedDuration = original.EstimatedDuration,
+            PaymentMethod = original.PaymentMethod,
+            InstallmentCount = original.InstallmentCount,
+            DepositAmount = original.DepositAmount,
+            PixInformation = original.PixInformation,
+            WarrantyText = original.WarrantyText,
+            ConditionsText = original.ConditionsText,
+            TemplateCode = original.TemplateCode,
+            TemplateSnapshot = original.TemplateSnapshot,
+            Notes = original.Notes,
+            Discount = original.Discount,
+            ClientDecision = ClientDecision.Pending,
+            ClientDecisionAt = null,
+            ClientDecisionNote = null,
+            PublicEnabled = false,
+            PublicToken = null
+        };
+        copy.IssueNumber(await _numberService.NextAsync(command.UserId, original.Type, targetAccountId, ct));
+        copy.Items = original.Items.Select(item => new DocumentItem
+        {
+            ServiceCatalogItemId = item.ServiceCatalogItemId,
+            Description = item.Description,
+            Unit = item.Unit,
+            Quantity = item.Quantity,
+            UnitPrice = item.UnitPrice,
+            Discount = item.Discount,
+            Notes = item.Notes,
+            SortOrder = item.SortOrder,
+            EstimatedCostSnapshot = item.EstimatedCostSnapshot,
+            DurationMinutesSnapshot = item.DurationMinutesSnapshot,
+            CategorySnapshot = item.CategorySnapshot
+        }).ToList();
         copy.CalculateTotals();
         await _documents.AddAsync(copy, ct);
-        await _audit.RegisterAsync(command.UserId, "DOCUMENT_DUPLICATED", nameof(Document), copy.Id.ToString(), null, copy, new { original.Id }, ct);
+        await _audit.RegisterAsync(command.UserId, "DOCUMENT_DUPLICATED", nameof(Document), copy.Id.ToString(), null, copy, new { OriginalId = original.Id }, ct, targetAccountId);
         await _uow.SaveChangesAsync(ct);
         return Result<Guid>.Ok(copy.Id);
     }
@@ -104,9 +190,14 @@ public class DocumentService
     public async Task<Result> DeleteAsync(DeleteDocumentCommand command, CancellationToken ct = default)
     {
         var document = await _documents.GetAsync(command.DocumentId, ct);
-        if (document is null || document.UserId != command.UserId || document.IsDeleted) return Result.Fail("Documento não encontrado.");
+        if (document is null || document.IsDeleted) return Result.Fail("Documento não encontrado.");
+        if (command.AccountId.HasValue && document.AccountId != command.AccountId)
+            return Result.Fail("Documento não pertence à conta informada.");
+        if (!command.AccountId.HasValue && document.UserId != command.UserId)
+            return Result.Fail("Documento não encontrado.");
+
         document.Delete(command.UserId);
-        await _audit.RegisterAsync(command.UserId, "DOCUMENT_DELETED", nameof(Document), document.Id.ToString(), null, new { document.DeletedAt }, null, ct);
+        await _audit.RegisterAsync(command.UserId, "DOCUMENT_DELETED", nameof(Document), document.Id.ToString(), null, new { document.DeletedAt }, null, ct, document.AccountId);
         await _uow.SaveChangesAsync(ct);
         return Result.Ok();
     }

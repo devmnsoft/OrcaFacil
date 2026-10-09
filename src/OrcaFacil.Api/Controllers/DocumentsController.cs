@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Commercial;
 using OrcaFacil.Application.Documents;
+using OrcaFacil.Application.Plans;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
 using OrcaFacil.Shared;
@@ -17,6 +18,8 @@ public class DocumentsController : ControllerBase
     private readonly DocumentService _documents;
     private readonly IDocumentQueries _queries;
     private readonly ICurrentUserService _currentUser;
+    private readonly ICurrentAccountService _currentAccount;
+    private readonly IPlanAccessService _planAccess;
     private readonly IPdfService _pdfService;
     private readonly ICommercialJourneyService _journey;
     private readonly IRepository<Document> _documentRepository;
@@ -26,6 +29,7 @@ public class DocumentsController : ControllerBase
     private readonly ILogger<DocumentsController> _logger;
 
     public DocumentsController(DocumentService documents, IDocumentQueries queries, ICurrentUserService currentUser,
+        ICurrentAccountService currentAccount, IPlanAccessService planAccess,
         IPdfService pdfService, ICommercialJourneyService journey, IRepository<Document> documentRepository,
         IRepository<IssuerProfile> profiles, IRepository<UserAccount> users, IAuditService audit,
         ILogger<DocumentsController> logger)
@@ -33,6 +37,8 @@ public class DocumentsController : ControllerBase
         _documents = documents;
         _queries = queries;
         _currentUser = currentUser;
+        _currentAccount = currentAccount;
+        _planAccess = planAccess;
         _pdfService = pdfService;
         _journey = journey;
         _documentRepository = documentRepository;
@@ -43,14 +49,22 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet]
-    public Task<IReadOnlyList<OrcaFacil.Application.DTOs.DocumentSummaryDto>> List(CancellationToken ct) => _queries.ListDocumentsAsync(_currentUser.UserId, ct);
+    public Task<IReadOnlyList<OrcaFacil.Application.DTOs.DocumentSummaryDto>> List(CancellationToken ct) =>
+        _queries.ListDocumentsAsync(_currentUser.UserId, ct);
 
     [HttpPost("budget")]
     public async Task<ActionResult<Result<Guid>>> Budget(CreateDocumentCommand command, CancellationToken ct)
     {
         try
         {
-            var result = await _documents.CreateBudgetAsync(command with { UserId = _currentUser.UserId, Type = DocumentType.Budget, Number = string.Empty }, ct);
+            var accountId = _currentAccount.AccountId;
+            var result = await _documents.CreateBudgetAsync(command with
+            {
+                UserId = _currentUser.UserId,
+                AccountId = accountId,
+                Type = DocumentType.Budget,
+                Number = string.Empty
+            }, ct);
             return result.Succeeded ? Ok(result) : BadRequest(result);
         }
         catch (Exception ex)
@@ -71,21 +85,26 @@ public class DocumentsController : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<Result>> Update(Guid id, UpdateDocumentCommand command, CancellationToken ct)
     {
-        var result = await _documents.UpdateAsync(command with { UserId = _currentUser.UserId, DocumentId = id }, ct);
+        var result = await _documents.UpdateAsync(command with
+        {
+            UserId = _currentUser.UserId,
+            DocumentId = id,
+            AccountId = _currentAccount.AccountId
+        }, ct);
         return result.Succeeded ? Ok(result) : BadRequest(result);
     }
 
     [HttpPost("{id:guid}/duplicate")]
     public async Task<ActionResult<Result<Guid>>> Duplicate(Guid id, CancellationToken ct)
     {
-        var result = await _documents.DuplicateAsync(new DuplicateDocumentCommand(_currentUser.UserId, id), ct);
+        var result = await _documents.DuplicateAsync(new DuplicateDocumentCommand(_currentUser.UserId, id, _currentAccount.AccountId), ct);
         return result.Succeeded ? Ok(result) : BadRequest(result);
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult<Result>> Delete(Guid id, CancellationToken ct)
     {
-        var result = await _documents.DeleteAsync(new DeleteDocumentCommand(_currentUser.UserId, id), ct);
+        var result = await _documents.DeleteAsync(new DeleteDocumentCommand(_currentUser.UserId, id, _currentAccount.AccountId), ct);
         return result.Succeeded ? Ok(result) : BadRequest(result);
     }
 
@@ -93,12 +112,25 @@ public class DocumentsController : ControllerBase
     public async Task<IActionResult> Pdf(Guid id, CancellationToken ct)
     {
         var document = await _documentRepository.GetAsync(id, ct);
-        if (document is null || document.UserId != _currentUser.UserId || document.IsDeleted) return NotFound();
+        if (document is null || document.IsDeleted) return NotFound();
+
+        var accountId = _currentAccount.AccountId;
+        if (accountId.HasValue && document.AccountId.HasValue && document.AccountId != accountId)
+            return Forbid();
+        if (!accountId.HasValue && document.UserId != _currentUser.UserId)
+            return NotFound();
+
         var issuer = _profiles.Query().SingleOrDefault(profile => profile.UserId == _currentUser.UserId);
-        var user = await _users.GetAsync(_currentUser.UserId, ct);
-        var plan = user?.Plan ?? PlanType.Free;
-        var bytes = await _pdfService.GenerateDocumentPdfAsync(document, issuer, plan, ct);
-        await _audit.RegisterAsync(_currentUser.UserId, "PDF_GENERATED", nameof(Document), document.Id.ToString(), null, new { document.Number }, null, ct);
+
+        // Resolve plano comercial efetivo da conta em vez de User.Plan isolado
+        var targetAccountId = document.AccountId ?? accountId;
+        var effectivePlan = targetAccountId.HasValue
+            ? await _planAccess.GetEffectivePlanAsync(targetAccountId.Value, DateTime.UtcNow, ct)
+            : null;
+        var planType = Enum.TryParse<PlanType>(effectivePlan?.Code, true, out var parsedPlan) ? parsedPlan : PlanType.Free;
+
+        var bytes = await _pdfService.GenerateDocumentPdfAsync(document, issuer, planType, ct);
+        await _audit.RegisterAsync(_currentUser.UserId, "PDF_GENERATED", nameof(Document), document.Id.ToString(), null, new { document.Number }, null, ct, document.AccountId);
         return File(bytes, "application/pdf", $"{document.Number}.pdf");
     }
 

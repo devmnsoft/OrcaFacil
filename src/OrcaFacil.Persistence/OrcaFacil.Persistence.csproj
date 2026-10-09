@@ -33,6 +33,7 @@
     <EmbeddedResource Include="..\..\database\hotfix_ai_quota_reservation_v68.sql" Link="Migrations\hotfix_ai_quota_reservation_v68.sql" />
     <EmbeddedResource Include="..\..\database\hotfix_ai_apply_governance_v69.sql" Link="Migrations\hotfix_ai_apply_governance_v69.sql" />
     <EmbeddedResource Include="..\..\database\hotfix_client_rowversion_v70.sql" Link="Migrations\hotfix_client_rowversion_v70.sql" />
+    <EmbeddedResource Include="..\..\database\hotfix_document_sequences_v71.sql" Link="Migrations\hotfix_document_sequences_v71.sql" />
   </ItemGroup>
 
 </Project>

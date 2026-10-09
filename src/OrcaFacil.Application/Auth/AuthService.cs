@@ -103,26 +103,36 @@ public class AuthService
 
             var now = DateTime.UtcNow;
             var requestedPlanCode = NormalizePublicPlanCode(command.SelectedPlanCode);
-            var freePlan = _plans.Query().SingleOrDefault(x => x.Code == "FREE" && x.IsActive && x.IsPublic && !x.IsDeleted);
+            var proPlan = _plans.Query().SingleOrDefault(x => x.Code == "PROFESSIONAL" && x.IsActive && !x.IsDeleted);
+            var proVersion = proPlan is null ? null : _planVersions.Query()
+                .Where(x => x.PlanId == proPlan.Id && x.Status == PlanVersionStatus.Published && !x.IsDeleted &&
+                            x.ValidFrom <= now && (x.ValidUntil == null || x.ValidUntil > now))
+                .OrderByDescending(x => x.VersionNumber).FirstOrDefault();
+
+            var freePlan = _plans.Query().SingleOrDefault(x => x.Code == "FREE" && x.IsActive && !x.IsDeleted);
             var freeVersion = freePlan is null ? null : _planVersions.Query()
                 .Where(x => x.PlanId == freePlan.Id && x.Status == PlanVersionStatus.Published && !x.IsDeleted &&
                             x.ValidFrom <= now && (x.ValidUntil == null || x.ValidUntil > now))
                 .OrderByDescending(x => x.VersionNumber).FirstOrDefault();
-            if (freeVersion is null)
-            {
-                _logger.LogCritical("ACCOUNT_REGISTRATION_BLOCKED_FREE_PLAN_CONFIGURATION_MISSING");
-                return Result<UserSummaryDto>.Fail("Não foi possível preparar seu plano grátis agora. Tente novamente em instantes.");
-            }
-            var selectedPlan = requestedPlanCode == "FREE" ? freePlan : _plans.Query()
-                .SingleOrDefault(x => x.Code == requestedPlanCode && x.IsActive && x.IsPublic && !x.IsDeleted);
+
+            var selectedPlan = _plans.Query()
+                .SingleOrDefault(x => x.Code == requestedPlanCode && x.IsActive && !x.IsDeleted) ?? proPlan ?? freePlan;
             var selectedVersion = selectedPlan is null ? null : _planVersions.Query()
                 .Where(x => x.PlanId == selectedPlan.Id && x.Status == PlanVersionStatus.Published && !x.IsDeleted &&
                             x.ValidFrom <= now && (x.ValidUntil == null || x.ValidUntil > now))
                 .OrderByDescending(x => x.VersionNumber).FirstOrDefault();
-            if (selectedVersion is null)
-                return Result<UserSummaryDto>.Fail("O plano escolhido não está disponível. Escolha outro plano para continuar.");
-            stage = "REGISTER_FREE_PLAN_RESOLVED";
+
+            var activeVersion = proVersion ?? selectedVersion ?? freeVersion;
+            if (activeVersion is null)
+            {
+                _logger.LogCritical("ACCOUNT_REGISTRATION_BLOCKED_PLAN_CONFIGURATION_MISSING");
+                return Result<UserSummaryDto>.Fail("Não foi possível preparar seu período de teste agora. Tente novamente em instantes.");
+            }
+            stage = "REGISTER_TRIAL_PLAN_RESOLVED";
             LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success");
+
+            const int trialDays = 15;
+            var trialEndsAt = now.AddDays(trialDays);
 
             var user = new UserAccount
             {
@@ -131,6 +141,7 @@ public class AuthService
                 PasswordHash = _hasher.Hash(command.Password),
                 AcceptedTermsAt = now,
                 AcceptedPrivacyAt = now,
+                Plan = PlanType.Professional
             };
 
             var accountName = command.AccountType == PersonType.Company
@@ -141,7 +152,7 @@ public class AuthService
                 DisplayName = accountName.Trim(), LegalName = command.LegalName?.Trim(),
                 TradeName = command.TradeName?.Trim(), PersonType = command.AccountType,
                 DocumentType = documentType, DocumentNumber = document, Email = email,
-                Phone = command.Phone.Trim(), CurrentPlanCode = "FREE"
+                Phone = command.Phone.Trim(), CurrentPlanCode = "PROFESSIONAL"
             };
             var member = new AccountMember { AccountId = account.Id, UserId = user.Id, RoleCode = "Owner" };
             member.Join();
@@ -157,14 +168,20 @@ public class AuthService
             };
             var subscription = new Subscription
             {
-                AccountId = account.Id, UserId = user.Id, Plan = PlanType.Free,
-                SelectedPlanVersionId = selectedVersion.Id, EffectivePlanVersionId = freeVersion.Id,
-                Status = requestedPlanCode == "FREE" ? SubscriptionStatus.Free : SubscriptionStatus.PendingPayment,
-                Provider = requestedPlanCode == "FREE" ? "None" : "MercadoPago", PriceAtActivation = 0m,
+                AccountId = account.Id, UserId = user.Id, Plan = PlanType.Professional,
+                SelectedPlanVersionId = selectedVersion?.Id ?? activeVersion.Id,
+                EffectivePlanVersionId = activeVersion.Id,
+                Status = SubscriptionStatus.Trial,
+                TrialStatus = TrialStatus.Active,
+                TrialStartedAt = now,
+                TrialEndsAt = trialEndsAt,
+                TrialUsed = true,
+                ExpiresAt = trialEndsAt,
+                Provider = "Trial", PriceAtActivation = 0m,
                 Amount = 0m, StartedAt = now
             };
             var issuer = new IssuerProfile { UserId = user.Id, BusinessName = account.DisplayName, DocumentNumber = document, Phone = command.Phone.Trim(), Email = email, City = command.City.Trim(), Address = BuildAddress(command) };
-            var notification = new Notification { AccountId = account.Id, UserId = user.Id, Title = "Conta criada", Message = requestedPlanCode == "FREE" ? "Conta criada com o plano Grátis. Vamos preparar seu espaço." : $"Conta criada. Sua escolha pelo plano {selectedPlan!.DisplayName} foi registrada e aguarda contratação.", Type = NotificationType.Success, Category = NotificationCategory.Account, ActionUrl = requestedPlanCode == "FREE" ? "/Onboarding" : "/Subscription", ActionText = "Continuar" };
+            var notification = new Notification { AccountId = account.Id, UserId = user.Id, Title = "Conta criada com 15 dias grátis", Message = "Sua conta foi criada com 15 dias grátis do plano Profissional para você testar todas as funcionalidades.", Type = NotificationType.Success, Category = NotificationCategory.Account, ActionUrl = "/Onboarding", ActionText = "Começar" };
 
             stage = "REGISTER_ENTITIES_PREPARED";
             LogRegistration(stage, correlationId, command.AccountType, documentType, timer, "Success", user.Id, account.Id);
@@ -194,13 +211,13 @@ public class AuthService
                     AccountId = account.Id, ModuleId = module.Id, BillingPeriod = SaasBillingPeriod.Monthly,
                     ContractedPrice = 0, StartsAt = now
                 };
-                moduleSubscription.Activate(user.Id);
+                moduleSubscription.StartTrial(user.Id, trialEndsAt);
                 await _moduleSubscriptions.AddAsync(moduleSubscription, ct);
                 await _moduleEntitlements.AddAsync(new AccountModuleEntitlement
                 {
                     AccountId = account.Id, ModuleId = module.Id, IsEnabled = true,
                     Source = SaasModuleGrantSource.Subscription, GrantedByUserId = user.Id,
-                    Reason = "Módulo inicial da conta"
+                    Reason = "Módulo inicial da conta com trial de 15 dias"
                 }, ct);
             }
             stage = "REGISTER_DEPENDENTS_SAVE_STARTED";
@@ -307,6 +324,6 @@ public class AuthService
     private static string NormalizePublicPlanCode(string? code)
     {
         var normalized = code?.Trim().ToUpperInvariant();
-        return normalized is "PROFESSIONAL" or "BUSINESS" ? normalized : "FREE";
+        return normalized is "BUSINESS" ? "BUSINESS" : "PROFESSIONAL";
     }
 }

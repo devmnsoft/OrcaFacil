@@ -22,14 +22,14 @@ public sealed class DetailsModel(ICommercialWorkspaceQueryService workspace, ICu
     public async Task<IActionResult> OnPostDeleteAsync(Guid id, CancellationToken ct)
     {
         if (await workspace.GetAsync(id, ct) is null) return NotFound();
-        await documents.DeleteAsync(new(account.UserId, id), ct);
+        await documents.DeleteAsync(new(account.UserId, id, account.AccountId), ct);
         return RedirectToPage("/Documents/Index");
     }
 
     public async Task<IActionResult> OnPostDuplicateAsync(Guid id, CancellationToken ct)
     {
         if (await workspace.GetAsync(id, ct) is null) return NotFound();
-        var result = await documents.DuplicateAsync(new(account.UserId, id), ct);
+        var result = await documents.DuplicateAsync(new(account.UserId, id, account.AccountId), ct);
         if (!result.Succeeded || result.Value == Guid.Empty)
         {
             TempData["Error"] = result.Error ?? "Não foi possível duplicar o orçamento.";

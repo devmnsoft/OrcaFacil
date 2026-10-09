@@ -10,9 +10,10 @@ public record CreateDocumentCommand(
     string ClientName,
     IReadOnlyList<DocumentItemDto> Items,
     decimal Discount,
-    string? Notes)
+    string? Notes,
+    Guid? AccountId = null)
 {
-    public CreateDocumentCommand() : this(Guid.Empty, DocumentType.Budget, string.Empty, string.Empty, Array.Empty<DocumentItemDto>(), 0, null)
+    public CreateDocumentCommand() : this(Guid.Empty, DocumentType.Budget, string.Empty, string.Empty, Array.Empty<DocumentItemDto>(), 0, null, null)
     {
     }
 }

@@ -9,9 +9,19 @@
 
 <header class="of-page-header of-budget-heading">
     <div>
-        <p class="of-eyebrow">Orçamento guiado</p>
+        <div class="of-header-badges">
+            <span class="of-eyebrow">Orçamento guiado</span>
+            @if (Model.Draft is not null)
+            {
+                <span class="of-badge of-badge-document" title="Número sequencial desta proposta">Doc #@(Model.Draft.Number ?? "Rascunho")</span>
+                @if (Model.Draft.LastAutosavedAt.HasValue)
+                {
+                    <span class="of-badge of-badge-time" title="Horário da última alteração">Salvo em @Model.Draft.LastAutosavedAt.Value.ToString("HH:mm")</span>
+                }
+            }
+        </div>
         <h1>Transforme o pedido em uma proposta clara</h1>
-        <p>Avance no seu ritmo. Nada será enviado ao cliente ao finalizar. <a asp-page="/Documents/BudgetAssistant">Pedir sugestões revisáveis</a></p>
+        <p>Avance no seu ritmo. Nada será enviado ao cliente ao finalizar. <a asp-page="/Documents/New">Ver outros rascunhos</a> · <a asp-page="/Documents/BudgetAssistant">Pedir sugestões revisáveis</a></p>
         <details><summary>Como usar</summary><p>Descreva o serviço, revise a sugestão e só então aplique os itens do seu catálogo. Salvar de novo com a mesma tentativa não duplica o rascunho. Se o preço do catálogo mudou, o orçamento mantém o preço já contratado até você confirmar.</p></details>
     </div>
     <div class="of-save-state" data-save-state role="status" aria-live="polite">

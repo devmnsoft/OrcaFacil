@@ -17,14 +17,14 @@
         <div asp-validation-summary="ModelOnly" class="of-form-summary" role="alert"></div>
 
         <fieldset class="of-form-section of-register-plans">
-          <legend class="of-step-label"><span>1</span> Escolha seu plano</legend>
-          <p class="of-text-secondary">O Grátis é ativado agora. Planos pagos ficam pendentes até a confirmação real do pagamento e, enquanto isso, sua conta usa os recursos gratuitos.</p>
+          <legend class="of-step-label"><span>1</span> Seu plano de avaliação (15 dias grátis)</legend>
+          <p class="of-text-secondary">Sua nova conta inicia com 15 dias de teste grátis com todos os recursos do plano Profissional liberados para sua equipe. Sem cartão de crédito para começar.</p>
           <div class="of-register-plan-grid">
-          @foreach (var plan in Model.Catalog.Plans.Where(plan => plan.Code is "FREE" or "PROFESSIONAL" or "BUSINESS"))
+          @foreach (var plan in Model.Catalog.Plans.Where(plan => plan.Code is "PROFESSIONAL" or "BUSINESS"))
           {
             <label class="of-register-plan" for="plan-@plan.Code.ToLowerInvariant()">
               <input asp-for="Input.SelectedPlanCode" id="plan-@plan.Code.ToLowerInvariant()" type="radio" value="@plan.Code" />
-              <span><strong>@plan.Name</strong><small>@(plan.MonthlyPrice == 0 ? "Grátis" : $"{plan.MonthlyPrice:C}/mês")</small></span>
+              <span><strong>@plan.Name</strong><small>15 dias grátis · depois @($"{plan.MonthlyPrice:C}/mês")</small></span>
               <em>@plan.Description</em>
             </label>
           }

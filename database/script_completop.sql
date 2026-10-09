@@ -1805,3 +1805,6 @@ CREATE INDEX IF NOT EXISTS ix_public_document_decisions_account_document ON orca
 
 -- V7.0: default de rowversion em clients, para o INSERT devolver xid.
 \ir hotfix_client_rowversion_v70.sql
+
+-- V7.1: sequências atômicas de documentos por conta, proteção de histórico e padronização.
+\ir hotfix_document_sequences_v71.sql

@@ -48,13 +48,47 @@ public sealed class ReceiptApplicationService(
             x => x.Id == request.ClientId && x.AccountId == accountId && !x.IsDeleted, ct);
         if (client is null) return Failure(CreateReceiptCode.ClientNotFound, "Cliente não encontrado nesta conta.", correlationId);
 
-        if (request.OriginType == ReceiptOriginType.WorkOrder && (request.WorkOrderId is not Guid workOrderId ||
-            !await db.WorkOrders.AnyAsync(x => x.Id == workOrderId && x.AccountId == accountId && !x.IsDeleted, ct)))
-            return Failure(CreateReceiptCode.WorkOrderNotFound, "Ordem de serviço não encontrada nesta conta.", correlationId);
-        if (request.OriginType == ReceiptOriginType.Budget && (request.DocumentId is not Guid documentId ||
-            !await db.Documents.AnyAsync(x => x.Id == documentId && x.AccountId == accountId && !x.IsDeleted && x.Type == DocumentType.Budget, ct)))
-            return Failure(CreateReceiptCode.DocumentNotFound, "Orçamento não encontrado nesta conta.", correlationId);
-        if (!Enum.IsDefined(request.OriginType)) return Failure(CreateReceiptCode.InvalidOrigin, "Selecione uma origem válida.", correlationId);
+        if (request.OriginType == ReceiptOriginType.WorkOrder)
+        {
+            if (request.WorkOrderId is not Guid workOrderId)
+                return Failure(CreateReceiptCode.WorkOrderNotFound, "Ordem de serviço não informada.", correlationId);
+
+            var order = await db.WorkOrders.AsNoTracking().SingleOrDefaultAsync(
+                x => x.Id == workOrderId && x.AccountId == accountId && !x.IsDeleted, ct);
+            if (order is null)
+                return Failure(CreateReceiptCode.WorkOrderNotFound, "Ordem de serviço não encontrada nesta conta.", correlationId);
+
+            if (order.ClientId != Guid.Empty && order.ClientId != request.ClientId)
+                return Failure(CreateReceiptCode.InvalidOrigin, "O cliente informado não corresponde ao cliente da ordem de serviço.", correlationId);
+        }
+        else if (request.OriginType == ReceiptOriginType.Budget)
+        {
+            if (request.DocumentId is not Guid documentId)
+                return Failure(CreateReceiptCode.DocumentNotFound, "Orçamento não informado.", correlationId);
+
+            var budgetDoc = await db.Documents.AsNoTracking().SingleOrDefaultAsync(
+                x => x.Id == documentId && x.AccountId == accountId && !x.IsDeleted && x.Type == DocumentType.Budget, ct);
+            if (budgetDoc is null)
+                return Failure(CreateReceiptCode.DocumentNotFound, "Orçamento não encontrado nesta conta.", correlationId);
+
+            if (budgetDoc.ClientId.HasValue && budgetDoc.ClientId != request.ClientId)
+                return Failure(CreateReceiptCode.InvalidOrigin, "O cliente informado não corresponde ao cliente do orçamento.", correlationId);
+
+            var alreadyPaid = await db.ManualPayments.Where(
+                x => x.AccountId == accountId && x.DocumentId == documentId && !x.IsDeleted && x.Status == FinancialRecordStatus.Active)
+                .SumAsync(x => (decimal?)x.Amount, ct) ?? 0m;
+
+            var balance = budgetDoc.Total - alreadyPaid;
+            if (balance < 0m) balance = 0m;
+            if (balance == 0m)
+                return Failure(CreateReceiptCode.InvalidAmount, "Este orçamento já está totalmente pago.", correlationId);
+            if (request.Amount > balance)
+                return Failure(CreateReceiptCode.InvalidAmount, $"O valor informado supera o saldo restante de {balance:C} do orçamento.", correlationId);
+        }
+        else if (!Enum.IsDefined(request.OriginType))
+        {
+            return Failure(CreateReceiptCode.InvalidOrigin, "Selecione uma origem válida.", correlationId);
+        }
         if (request.WorkOrderId is Guid linkedWorkOrderId)
         {
             var registered = await payments.RegisterAsync(new ManualPaymentRequest(

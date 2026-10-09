@@ -41,7 +41,7 @@ public sealed class RegisterModel(AuthService authService, IUserSignInService si
         [Range(typeof(bool), "true", "true", ErrorMessage = "Aceite os termos para continuar.")] public bool AcceptTerms { get; set; }
         [Range(typeof(bool), "true", "true", ErrorMessage = "Aceite a política de privacidade para continuar.")] public bool AcceptPrivacy { get; set; }
         public bool AcceptMarketing { get; set; }
-        [Required] public string SelectedPlanCode { get; set; } = "FREE";
+        [Required] public string SelectedPlanCode { get; set; } = "PROFESSIONAL";
     }
 
     public async Task OnGetAsync(string? plan, CancellationToken ct)
@@ -71,7 +71,7 @@ public sealed class RegisterModel(AuthService authService, IUserSignInService si
                 return InvalidPage();
             }
             await signIn.SignInAsync(HttpContext, result.Value, cancellationToken: ct);
-            TempData.Success("Conta criada. Vamos preparar seu espaço.");
+            TempData.Success("Conta criada com 15 dias grátis. Vamos preparar seu espaço.");
             return RedirectToPage("/Onboarding/Index");
         }
         catch (Exception ex)
@@ -110,5 +110,5 @@ public sealed class RegisterModel(AuthService authService, IUserSignInService si
     }
 
     private async Task LoadCatalogAsync(CancellationToken ct) => Catalog = await catalog.GetPublishedAsync(ct);
-    private static string PublicPlanCode(string? value) => value?.Trim().ToUpperInvariant() is "PROFESSIONAL" or "BUSINESS" ? value.Trim().ToUpperInvariant() : "FREE";
+    private static string PublicPlanCode(string? value) => value?.Trim().ToUpperInvariant() is "BUSINESS" ? "BUSINESS" : "PROFESSIONAL";
 }

@@ -13,7 +13,7 @@ public sealed record BudgetWizardItem(Guid? ServiceCatalogItemId, string Descrip
 public sealed record BudgetWizardViewModel(Guid DocumentId, Guid? ClientId, string ClientName, int CurrentStep, DateTime? ValidUntil,
     DateTime? ExpectedStartAt, string? EstimatedDuration, string? PaymentMethod, int? InstallmentCount, decimal? DepositAmount,
     string? PixInformation, string? WarrantyText, string? ConditionsText, string TemplateCode, decimal Discount,
-    IReadOnlyList<BudgetWizardItem> Items, string RowVersion, DateTime? LastAutosavedAt);
+    IReadOnlyList<BudgetWizardItem> Items, string RowVersion, DateTime? LastAutosavedAt, string? Number = null);
 public sealed record SaveBudgetDraftRequest(Guid DocumentId, Guid? ClientId, int CurrentStep, DateTime? ValidUntil,
     DateTime? ExpectedStartAt, string? EstimatedDuration, string? PaymentMethod, int? InstallmentCount, decimal? DepositAmount,
     string? PixInformation, string? WarrantyText, string? ConditionsText, string TemplateCode, decimal Discount,
@@ -133,7 +133,6 @@ public sealed class BudgetWizardService
         }
         if (!string.IsNullOrWhiteSpace(suggestionText))
             document.Notes = suggestionText.Length > 4000 ? suggestionText[..4000] : suggestionText;
-        document.IssueNumber(await _numbers.NextAsync(userId, DocumentType.Budget, accountId, ct));
         if (clientId.HasValue)
         {
             var client = FindClient(userId, accountId, clientId.Value);
@@ -144,6 +143,7 @@ public sealed class BudgetWizardService
         try
         {
             if (ownsTransaction) await _unitOfWork.BeginTransactionAsync(ct);
+            document.IssueNumber(await _numbers.NextAsync(userId, DocumentType.Budget, accountId, ct));
             await _documents.AddAsync(document, ct);
             foreach (var seed in resolved)
                 await _items.AddAsync(ToDocumentItem(document.Id, seed.Service, seed.Quantity), ct);
@@ -489,7 +489,7 @@ public sealed class BudgetWizardService
     private BudgetWizardViewModel Map(Document d) => new(d.Id, d.ClientId, d.ClientName, d.CurrentWizardStep, d.ValidUntil, d.ExpectedStartAt,
         d.EstimatedDuration, d.PaymentMethod, d.InstallmentCount, d.DepositAmount, d.PixInformation, d.WarrantyText, d.ConditionsText,
         d.TemplateCode, d.Discount, _items.Query().Where(x => x.DocumentId == d.Id && !x.IsDeleted).OrderBy(x => x.SortOrder).Select(x =>
-            new BudgetWizardItem(x.ServiceCatalogItemId, x.Description, x.Unit, x.Quantity, x.UnitPrice, x.Discount, x.Notes, x.SortOrder)).ToList(), Convert.ToBase64String(d.RowVersion), d.LastAutosavedAt);
+            new BudgetWizardItem(x.ServiceCatalogItemId, x.Description, x.Unit, x.Quantity, x.UnitPrice, x.Discount, x.Notes, x.SortOrder)).ToList(), Convert.ToBase64String(d.RowVersion), d.LastAutosavedAt, d.Number);
 }
 
 public sealed class BudgetDraftService(BudgetWizardService wizard)

@@ -5,37 +5,35 @@ using OrcaFacil.Domain.Enums;
 
 namespace OrcaFacil.Persistence.Services;
 
-/// <summary>Allocates commercial document numbers with a PostgreSQL row lock per account and document type.</summary>
+/// <summary>
+/// Aloca números de documentos comerciais de forma estritamente atômica no PostgreSQL
+/// por conta e tipo de documento, sem dependência de locks em memória de processo único.
+/// </summary>
 public sealed class AtomicDocumentNumberService(
     OrcaFacilDbContext db,
     ILogger<AtomicDocumentNumberService> logger) : IDocumentNumberService
 {
     public async Task<string> NextAsync(Guid userId, DocumentType type, Guid? accountId = null, CancellationToken ct = default)
     {
-        if (accountId is not Guid account)
+        if (accountId is not Guid account || account == Guid.Empty)
             return await LegacyUserScopedNextAsync(userId, type, ct);
 
         var typeCode = type.ToString();
         var prefix = Prefix(type);
-        await db.Database.ExecuteSqlInterpolatedAsync($"""
+        var id = Guid.NewGuid();
+
+        // Incremento atômico com RETURNING em uma única instrução SQL nativa no PostgreSQL.
+        // O bloqueio de linha e a serialização de transações concorrentes são gerenciados
+        // pelo próprio PostgreSQL via ON CONFLICT na restrição exclusiva (account_id, document_type).
+        var next = await db.Database.SqlQuery<long>($"""
             INSERT INTO orcafacil.document_sequences
                 (id, account_id, document_type, current_number, prefix, created_at, is_deleted)
-            VALUES ({Guid.NewGuid()}, {account}, {typeCode}, 0, {prefix}, now(), false)
-            ON CONFLICT (account_id, document_type) DO NOTHING
-            """, ct);
-
-        var current = await db.Database.SqlQuery<long>($"""
-            SELECT current_number AS "Value"
-              FROM orcafacil.document_sequences
-             WHERE account_id = {account} AND document_type = {typeCode}
-             FOR UPDATE
+            VALUES ({id}, {account}, {typeCode}, 1, {prefix}, now(), false)
+            ON CONFLICT (account_id, document_type)
+            DO UPDATE SET current_number = orcafacil.document_sequences.current_number + 1,
+                          updated_at = now()
+            RETURNING current_number AS "Value"
             """).SingleAsync(ct);
-        var next = current + 1;
-        await db.Database.ExecuteSqlInterpolatedAsync($"""
-            UPDATE orcafacil.document_sequences
-               SET current_number = {next}, updated_at = now()
-             WHERE account_id = {account} AND document_type = {typeCode}
-            """, ct);
 
         var number = $"{prefix}-{next:000000}";
         logger.LogInformation("DOCUMENT_NUMBER_GENERATED {AccountId} {UserId} {DocumentType} {Number}",
