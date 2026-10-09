@@ -90,7 +90,29 @@ else
                     <fieldset><legend>Prazo</legend><label class="of-field"><span>Validade da proposta</span><input type="date" data-field="validUntil" value="@Model.Draft.ValidUntil?.ToString("yyyy-MM-dd")" required /></label><label class="of-field"><span>Início previsto</span><input type="date" data-field="expectedStartAt" value="@Model.Draft.ExpectedStartAt?.ToString("yyyy-MM-dd")" /></label><label class="of-field"><span>Duração estimada</span><input data-field="estimatedDuration" value="@Model.Draft.EstimatedDuration" /></label></fieldset>
                     <fieldset><legend>Pagamento</legend><label class="of-field"><span>Método preferencial</span><select data-field="paymentMethod" data-initial-value="@Model.Draft.PaymentMethod"><option>Pix</option><option>Transferência</option><option>Dinheiro</option><option>Cartão</option></select></label><label class="of-field"><span>Parcelas</span><input type="number" min="1" max="24" data-field="installmentCount" value="@(Model.Draft.InstallmentCount ?? 1)" /></label><label class="of-field"><span>Sinal</span><input type="number" min="0" step="0.01" data-field="depositAmount" value="@Model.Draft.DepositAmount" /></label><label class="of-field"><span>Chave ou instrução Pix</span><input data-field="pixInformation" value="@Model.Draft.PixInformation" /></label></fieldset>
                 </div>
-                <details class="of-progressive-fields"><summary>Adicionar garantia e condições</summary><label class="of-field"><span>Garantia</span><textarea data-field="warrantyText" rows="3">@Model.Draft.WarrantyText</textarea></label><label class="of-field"><span>Condições adicionais</span><textarea data-field="conditionsText" rows="5">@Model.Draft.ConditionsText</textarea></label></details>
+                <details class="of-progressive-fields"><summary>Adicionar garantia, escopo e condições</summary>
+                    <label class="of-field"><span>Garantia</span><textarea data-field="warrantyText" rows="3">@Model.Draft.WarrantyText</textarea></label>
+                    <label class="of-field"><span>Condições adicionais</span><textarea data-field="conditionsText" rows="5">@Model.Draft.ConditionsText</textarea></label>
+                    <label class="of-field"><span>Observações / Escopo</span><textarea data-field="notes" rows="4"></textarea></label>
+                    <div style="margin-top:1rem; padding:1rem; background:var(--of-surface-alt, #f8fafc); border-radius:var(--of-radius, 8px); border:1px solid var(--of-border, #e2e8f0);">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong>Assistente IA: Revisar escopo e dados faltantes</strong>
+                            <button type="button" class="of-button-secondary" id="btn-ai-assist" style="font-size:0.85rem; padding:0.35rem 0.75rem;">Analisar com IA</button>
+                        </div>
+                        <p style="font-size:0.8rem; color:var(--of-muted); margin:0.25rem 0 0.5rem;">Organiza o escopo, sugere termos e aponta inconsistências sem alterar preços automaticamente.</p>
+                        <div id="ai-assist-preview" style="display:none; margin-top:0.75rem; border-top:1px dashed var(--of-border, #cbd5e1); padding-top:0.75rem;">
+                            <div id="ai-findings-container" style="margin-bottom:0.75rem;"></div>
+                            <label class="of-field">
+                                <span>Sugestão para o escopo (você pode editar aqui antes de aplicar):</span>
+                                <textarea id="ai-improved-notes" rows="4" style="width:100%; font-size:0.85rem;"></textarea>
+                            </label>
+                            <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                                <button type="button" class="of-button-primary" id="btn-ai-accept" style="font-size:0.85rem;">Aplicar no orçamento</button>
+                                <button type="button" class="of-button-secondary" id="btn-ai-discard" style="font-size:0.85rem;">Descartar</button>
+                            </div>
+                        </div>
+                    </div>
+                </details>
             </section>
 
             <section class="of-wizard-panel" data-step="3" aria-labelledby="wizard-template-title" hidden>
@@ -129,4 +151,62 @@ else
 
 @section Scripts {
     <script type="module" src="~/js/budget-wizard.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnAi = document.getElementById('btn-ai-assist');
+            if (btnAi) {
+                btnAi.addEventListener('click', async () => {
+                    btnAi.disabled = true;
+                    btnAi.textContent = 'Analisando…';
+                    try {
+                        const docId = '@Model.Draft?.DocumentId';
+                        const notesEl = document.querySelector('[data-field="notes"]');
+                        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                        const res = await fetch('?handler=AssistScope', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                            body: JSON.stringify({ documentId: docId, notes: notesEl ? notesEl.value : '' })
+                        });
+                        const data = await res.json();
+                        if (data.succeeded) {
+                            const preview = document.getElementById('ai-assist-preview');
+                            const findingsBox = document.getElementById('ai-findings-container');
+                            const improvedBox = document.getElementById('ai-improved-notes');
+                            if (findingsBox && data.findings && data.findings.length > 0) {
+                                findingsBox.innerHTML = '<strong style="font-size:0.85rem; color:var(--of-warning, #d97706);">Pontos de atenção / dados faltantes:</strong><ul style="font-size:0.8rem; margin:0.25rem 0 0.5rem 1.25rem;">' + 
+                                    data.findings.map(f => '<li><b>[' + f.category + ']</b> ' + f.message + (f.suggestion ? ' <i>(' + f.suggestion + ')</i>' : '') + '</li>').join('') + '</ul>';
+                            } else if (findingsBox) {
+                                findingsBox.innerHTML = '<span style="font-size:0.8rem; color:var(--of-success, #16a34a);">✓ Nenhum dado faltante crítico detectado.</span>';
+                            }
+                            if (improvedBox) improvedBox.value = data.improvedNotes || '';
+                            if (preview) preview.style.display = 'block';
+                        } else {
+                            alert(data.error || 'Não foi possível analisar no momento.');
+                        }
+                    } catch (e) {
+                        alert('Falha na comunicação com o assistente. Prossiga manualmente.');
+                    } finally {
+                        btnAi.disabled = false;
+                        btnAi.textContent = 'Analisar com IA';
+                    }
+                });
+
+                document.getElementById('btn-ai-accept')?.addEventListener('click', () => {
+                    const improved = document.getElementById('ai-improved-notes')?.value;
+                    const notesEl = document.querySelector('[data-field="notes"]');
+                    if (notesEl && improved) {
+                        notesEl.value = improved;
+                        notesEl.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    const preview = document.getElementById('ai-assist-preview');
+                    if (preview) preview.style.display = 'none';
+                });
+
+                document.getElementById('btn-ai-discard')?.addEventListener('click', () => {
+                    const preview = document.getElementById('ai-assist-preview');
+                    if (preview) preview.style.display = 'none';
+                });
+            }
+        });
+    </script>
 }

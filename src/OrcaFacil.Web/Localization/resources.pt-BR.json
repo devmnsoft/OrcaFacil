@@ -137,5 +137,25 @@
   "Onboarding.Step2": "Preferências regionais",
   "Onboarding.Step3": "Primeiro cliente",
   "Onboarding.Step4": "Primeiro orçamento",
-  "Onboarding.Complete": "Configuração concluída com sucesso!"
+  "Onboarding.Complete": "Configuração concluída com sucesso!",
+
+  "Templates.Title": "Modelos de orçamento",
+  "Templates.MyTemplates": "Modelos da minha conta",
+  "Templates.SystemTemplates": "Modelos sugeridos pelo OrçaFácil",
+  "Templates.UseTemplate": "Usar este modelo",
+  "Templates.Details": "Detalhes do modelo",
+  "Templates.Inactivate": "Inativar",
+  "Templates.Activate": "Ativar",
+  "Templates.SaveAsTemplate": "Salvar como modelo",
+  "Templates.TemplateSaved": "Modelo salvo com sucesso a partir deste orçamento!",
+  "AI.AssistTitle": "Assistente IA do Orçamento",
+  "AI.ImproveDescription": "Melhorar descrição e organizar escopo",
+  "AI.SuggestionPreview": "Prévia da sugestão",
+  "AI.Accept": "Aplicar ao orçamento",
+  "AI.Discard": "Descartar",
+  "AI.MissingPoints": "Pontos de atenção / dados faltantes",
+  "Quotes.FilterClient": "Cliente",
+  "Quotes.FilterAssignee": "Responsável",
+  "Quotes.PaidAmount": "Recebido: {0}",
+  "Quotes.RemainingBalance": "Saldo: {0}"
 }

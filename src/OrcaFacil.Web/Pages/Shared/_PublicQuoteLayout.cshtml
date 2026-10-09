@@ -18,6 +18,7 @@
     <header class="of-quote-brand of-container">
         <img src="~/img/brand/orcafacil-wordmark-dark.svg" width="180" alt="OrçaFácil — um produto MNSOFT" />
         <form method="post" action="/locale" class="of-locale-selector">
+            @Html.AntiForgeryToken()
             <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
             <label class="of-sr-only" for="public-quote-locale">Idioma</label>
             <select id="public-quote-locale" name="culture" aria-label="Idioma" onchange="this.form.submit()">

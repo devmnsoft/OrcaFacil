@@ -178,11 +178,15 @@ public sealed class CommercialRevisionResolver : ICommercialRevisionResolver
         if (string.IsNullOrWhiteSpace(snapshot.Quote.Template))
             return OperationResult.Failure("InvalidSnapshot", $"A revisão {revision.VersionNumber} possui template vazio.");
 
-        var normalizedLanguage = SupportedLocales.Normalize(snapshot.Quote.LanguageCode);
-        if (!string.Equals(normalizedLanguage, snapshot.Quote.LanguageCode, StringComparison.Ordinal))
-            return OperationResult.Failure("InvalidSnapshot", $"A revisão {revision.VersionNumber} possui idioma inválido.");
-        if (!string.Equals(snapshot.Quote.CurrencyCode?.Trim(), "BRL", StringComparison.OrdinalIgnoreCase))
-            return OperationResult.Failure("InvalidSnapshot", $"A revisão {revision.VersionNumber} possui moeda inválida para a operação atual.");
+        var isHistorical = SnapshotSerializer.IsHistoricalFormat(revision.ProtectedSnapshot);
+        if (!isHistorical)
+        {
+            var normalizedLanguage = SupportedLocales.Normalize(snapshot.Quote.LanguageCode);
+            if (!string.Equals(normalizedLanguage, snapshot.Quote.LanguageCode, StringComparison.Ordinal))
+                return OperationResult.Failure("InvalidSnapshot", $"A revisão {revision.VersionNumber} possui idioma inválido.");
+            if (!string.Equals(snapshot.Quote.CurrencyCode?.Trim(), "BRL", StringComparison.OrdinalIgnoreCase))
+                return OperationResult.Failure("InvalidSnapshot", $"A revisão {revision.VersionNumber} possui moeda inválida para a operação atual.");
+        }
 
         var subtotal = 0m;
         var itemsTotal = 0m;
@@ -198,7 +202,9 @@ public sealed class CommercialRevisionResolver : ICommercialRevisionResolver
                 return OperationResult.Failure("InvalidSnapshot", $"A revisão {revision.VersionNumber} possui valor negativo em item.");
 
             var expectedSubtotal = CommercialCalculator.Round(item.Quantity * item.UnitPrice);
-            var expectedItemTotal = CommercialCalculator.Round(expectedSubtotal - item.Discount);
+            var expectedDiscount = CommercialCalculator.Round(item.Discount);
+            var expectedItemTotal = CommercialCalculator.Round(expectedSubtotal - expectedDiscount);
+            if (expectedItemTotal < 0m) expectedItemTotal = 0m;
             if (expectedItemTotal < 0m)
                 return OperationResult.Failure("InvalidSnapshot", $"A revisão {revision.VersionNumber} possui desconto de item maior que o subtotal.");
             if (!SameMoney(item.Subtotal, expectedSubtotal) || !SameMoney(item.Total, expectedItemTotal))
@@ -223,8 +229,8 @@ public sealed class CommercialRevisionResolver : ICommercialRevisionResolver
 
         if (!string.IsNullOrWhiteSpace(revision.SnapshotHash))
         {
-            var canonical = SnapshotSerializer.Serialize(snapshot);
-            if (!string.Equals(canonical.Hash, revision.SnapshotHash, StringComparison.OrdinalIgnoreCase))
+            var hashMatches = SnapshotSerializer.VerifySnapshotHash(revision.ProtectedSnapshot, snapshot, revision.SnapshotHash);
+            if (!hashMatches)
                 return OperationResult.Failure("InvalidSnapshot", $"A revisão {revision.VersionNumber} não confere com o hash protegido.");
         }
 
@@ -232,5 +238,5 @@ public sealed class CommercialRevisionResolver : ICommercialRevisionResolver
     }
 
     private static bool SameMoney(decimal left, decimal right) =>
-        Math.Abs(CommercialCalculator.Round(left) - CommercialCalculator.Round(right)) <= Tolerance;
+        CommercialCalculator.Round(left) == CommercialCalculator.Round(right);
 }

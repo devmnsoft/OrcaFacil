@@ -11,20 +11,34 @@
 <main class="of-onboarding-panel">
 <partial name="_Progress" model="4"/>
 <header class="of-onboarding-step">
-<span class="of-onboarding-eyebrow">Etapa 5 de 5</span>
+<span class="of-onboarding-eyebrow">Etapa 5 de 5 · Obrigatória para emissão</span>
 <h1>Monte seu primeiro orçamento.</h1>
-<p>Vamos abrir o editor real com seu cliente selecionado e seu catálogo disponível. O total será recalculado no servidor.</p>
+<p>Vamos abrir o editor real já preenchido com seu cliente e seu catálogo. Você poderá revisar valores, quantidades e condições antes de emitir.</p>
 </header>
+
+<details class="of-inline-empty" style="margin-bottom:1rem; padding:0.75rem; background:var(--of-surface-alt, #f8fafc); border-radius:var(--of-radius, 8px);">
+    <summary style="cursor:pointer; font-weight:600; color:var(--of-primary);">Como usar</summary>
+    <p style="margin-top:0.5rem; font-size:0.875rem;">Ao clicar em "Montar orçamento", seu cliente e o serviço cadastrados são reunidos em uma proposta real. A criação é idempotente e pode ser retomada no celular ou computador a qualquer momento.</p>
+</details>
+
 <div class="of-onboarding-success">
 <strong>Seu rascunho está pronto para começar</strong>
-<p>Adicione o serviço, ajuste a quantidade e revise antes de finalizar. A prévia não consome geração de PDF.</p>
+<p>Cliente selecionado: <strong>@(Model.ClientName ?? "Cliente cadastrado")</strong></p>
+@if (!string.IsNullOrWhiteSpace(Model.ServiceName))
+{
+    <p>Serviço pré-selecionado: <strong>@Model.ServiceName</strong> (@Model.ServicePrice.ToString("C"))</p>
+}
+<small style="display:block; margin-top:0.5rem; color:var(--of-muted);">A prévia não consome geração de PDF e você poderá ajustar tudo no editor.</small>
 </div>
+
 <div class="of-onboarding-actions">
 <form method="post" data-onboarding-form>
-<button type="submit" class="of-onboarding-button of-onboarding-button--primary" data-submit-text="Abrindo editor…">Montar orçamento</button>
+    @Html.AntiForgeryToken()
+    <button type="submit" class="of-onboarding-button of-onboarding-button--primary" data-submit-text="Abrindo editor…">Montar orçamento</button>
 </form>
 <form method="post" asp-page-handler="Done">
-<button type="submit" class="of-onboarding-button of-onboarding-button--secondary">Concluir configuração</button>
+    @Html.AntiForgeryToken()
+    <button type="submit" class="of-onboarding-button of-onboarding-button--secondary">Concluir configuração</button>
 </form>
 </div>
 </main>
@@ -32,10 +46,11 @@
 <div class="of-onboarding-brand" aria-label="OrçaFácil, uma solução MNSOFT">OrçaFácil <small>por MNSOFT</small></div>
 <strong>Próximo resultado</strong>
 <div class="of-onboarding-document-preview">
-<small>ORÇAMENTO</small>
-<b>Cliente + serviço</b>
+<small>ORÇAMENTO COMERCIAL</small>
+<b>@(Model.ClientName ?? "Cliente")</b>
 <hr>
-<span>Total calculado com segurança</span>
+<span>@(Model.ServiceName ?? "Serviço")</span>
+<small style="display:block; margin-top:0.5rem; color:var(--of-primary); font-weight:bold;">Total calculado com segurança</small>
 </div>
 </aside>
 </div>

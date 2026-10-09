@@ -9,9 +9,22 @@ namespace OrcaFacil.Web.Pages.Documents;
 
 [Authorize]
 public sealed class DetailsModel(ICommercialWorkspaceQueryService workspace, ICurrentAccountService account,
-    DocumentService documents, ICommercialJourneyService journey) : PageModel
+    DocumentService documents, ICommercialJourneyService journey, BudgetWizardService wizard) : PageModel
 {
     public CommercialDocumentWorkspaceView Document { get; private set; } = null!;
+
+    public async Task<IActionResult> OnPostSaveAsTemplateAsync(Guid id, string templateTitle, CancellationToken ct)
+    {
+        if (await workspace.GetAsync(id, ct) is null) return NotFound();
+        var result = await wizard.SaveAsTemplateAsync(account.UserId, account.AccountId, id, templateTitle, ct);
+        if (!result.Succeeded)
+        {
+            TempData["Error"] = result.Message ?? "Não foi possível criar o modelo.";
+            return RedirectToPage(new { id });
+        }
+        TempData["Success"] = "Modelo salvo com sucesso a partir deste orçamento!";
+        return RedirectToPage("/Templates/Details", new { id = result.Value });
+    }
 
     public async Task<IActionResult> OnGetAsync(Guid id, CancellationToken ct)
     {

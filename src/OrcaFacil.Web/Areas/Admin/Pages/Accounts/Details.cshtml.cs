@@ -135,6 +135,7 @@ public sealed class DetailsModel(OrcaFacilDbContext db) : PageModel
                 : now;
             subscription.PaidThroughAt = baseDate.AddDays(days);
             subscription.NextDueAt = subscription.PaidThroughAt;
+            subscription.ManualReleaseUntil = subscription.NextDueAt;
             subscription.Touch();
         }
 

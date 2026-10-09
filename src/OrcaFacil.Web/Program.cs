@@ -541,12 +541,19 @@ app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (
     Guid id,
     OrcaFacil.Application.Abstractions.ICurrentUserService currentUser,
     OrcaFacil.Application.Abstractions.ICurrentAccountService currentAccount,
+    OrcaFacil.Application.Plans.IPlanAccessService plans,
     OrcaFacil.Application.Commercial.ICommercialRevisionResolver resolver,
     OrcaFacil.Application.Abstractions.IPdfService pdf,
     OrcaFacil.Persistence.OrcaFacilDbContext db,
     CancellationToken ct) =>
 {
     var accountId = currentAccount.AccountId;
+    if (accountId.HasValue)
+    {
+        try { await currentAccount.EnsureAccountAccessAsync(ct); }
+        catch (UnauthorizedAccessException) { return Results.Forbid(); }
+    }
+
     var document = await db.Documents.Include(d => d.Items).SingleOrDefaultAsync(
         d => d.Id == id && !d.IsDeleted && (accountId.HasValue ? d.AccountId == accountId.Value : (d.UserId == currentUser.UserId && d.AccountId == null)), ct);
     if (document is null) return Results.NotFound();
@@ -557,6 +564,27 @@ app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (
     {
         currentRevision = await db.DocumentRevisions.AsNoTracking().FirstOrDefaultAsync(
             x => x.AccountId == targetAccountId.Value && x.DocumentId == document.Id && x.IsCurrent, ct);
+    }
+
+    if (currentRevision is null)
+    {
+        // Prévia de rascunho mutável exige permissão ativa de criação/edição comercial
+        if (targetAccountId.HasValue)
+        {
+            var canDraft = await plans.CanUseAsync(targetAccountId.Value, "documents.create", ct);
+            if (!canDraft.IsAllowed)
+                return Results.Problem(statusCode: StatusCodes.Status403Forbidden, title: "Plano não autorizado", detail: canDraft.UserMessage);
+        }
+    }
+    else
+    {
+        // Download histórico de documento congelado é liberado conforme a política de retenção de histórico
+        if (targetAccountId.HasValue)
+        {
+            var canHistory = await plans.CanUseAsync(targetAccountId.Value, OrcaFacil.Domain.Plans.PlanFeatureCodes.HistoryDaysVisible, ct);
+            if (!canHistory.IsAllowed)
+                return Results.Problem(statusCode: StatusCodes.Status403Forbidden, title: "Histórico indisponível", detail: canHistory.UserMessage);
+        }
     }
 
     IssuerProfile? defaultIssuer = null;

@@ -137,5 +137,25 @@
   "Onboarding.Step2": "Preferencias regionales",
   "Onboarding.Step3": "Primer cliente",
   "Onboarding.Step4": "Primer presupuesto",
-  "Onboarding.Complete": "¡Configuración completada con éxito!"
+  "Onboarding.Complete": "¡Configuración completada con éxito!",
+
+  "Templates.Title": "Plantillas de presupuesto",
+  "Templates.MyTemplates": "Plantillas de mi cuenta",
+  "Templates.SystemTemplates": "Plantillas sugeridas por OrçaFácil",
+  "Templates.UseTemplate": "Usar esta plantilla",
+  "Templates.Details": "Detalles de la plantilla",
+  "Templates.Inactivate": "Desactivar",
+  "Templates.Activate": "Activar",
+  "Templates.SaveAsTemplate": "Guardar como plantilla",
+  "Templates.TemplateSaved": "¡Plantilla guardada con éxito a partir de este presupuesto!",
+  "AI.AssistTitle": "Asistente IA de Presupuesto",
+  "AI.ImproveDescription": "Mejorar descripción y organizar alcance",
+  "AI.SuggestionPreview": "Vista previa de la sugerencia",
+  "AI.Accept": "Aplicar al presupuesto",
+  "AI.Discard": "Descartar",
+  "AI.MissingPoints": "Puntos de atención / datos faltantes",
+  "Quotes.FilterClient": "Cliente",
+  "Quotes.FilterAssignee": "Responsable",
+  "Quotes.PaidAmount": "Cobrado: {0}",
+  "Quotes.RemainingBalance": "Saldo: {0}"
 }

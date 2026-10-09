@@ -80,16 +80,17 @@ public sealed class BudgetWizardService
         }
 
         List<BudgetTemplateItem> templateItems = [];
+        BudgetTemplate? template = null;
         if (templateId.HasValue)
         {
-            var template = FindTemplate(userId, accountId, templateId.Value);
+            template = FindTemplate(userId, accountId, templateId.Value);
             if (template is null) return new(false, "O modelo informado não está disponível nesta conta.", null);
             templateItems = _templateItems.Query().Where(x => x.BudgetTemplateId == template.Id && !x.IsDeleted).OrderBy(x => x.SortOrder).ToList();
             if (templateItems.Count > 100)
                 return new(false, "O modelo tem mais de 100 itens e não foi copiado.", null);
         }
 
-        return await CreateDraftCoreAsync(userId, accountId, clientId, resolved, templateId, templateItems,
+        return await CreateDraftCoreAsync(userId, accountId, clientId, resolved, template, templateItems,
             idempotencyKey, suggestionText: null, ct);
     }
 
@@ -119,7 +120,7 @@ public sealed class BudgetWizardService
     }
 
     private async Task<BudgetOpenResult> CreateDraftCoreAsync(Guid userId, Guid? accountId, Guid? clientId,
-        IReadOnlyList<DraftServiceSeed> resolved, Guid? templateId, IReadOnlyList<BudgetTemplateItem> templateItems,
+        IReadOnlyList<DraftServiceSeed> resolved, BudgetTemplate? template, IReadOnlyList<BudgetTemplateItem> templateItems,
         string? idempotencyKey, string? suggestionText, CancellationToken ct)
     {
         var ownsTransaction = !_unitOfWork.HasActiveTransaction;
@@ -131,6 +132,13 @@ public sealed class BudgetWizardService
             document.EstimatedDuration = defaults.DefaultDeliveryTerm;
             document.ConditionsText = defaults.DefaultCommercialTerms;
             document.PixInformation = defaults.ShowBankDetails ? defaults.PixKey : null;
+        }
+        if (template is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(template.ConditionsText)) document.ConditionsText = template.ConditionsText;
+            if (!string.IsNullOrWhiteSpace(template.WarrantyText)) document.WarrantyText = template.WarrantyText;
+            if (!string.IsNullOrWhiteSpace(template.PaymentMethod)) document.PaymentMethod = template.PaymentMethod;
+            if (template.Discount > 0) document.Discount = template.Discount;
         }
         if (!string.IsNullOrWhiteSpace(suggestionText))
             document.Notes = suggestionText.Length > 4000 ? suggestionText[..4000] : suggestionText;
@@ -149,9 +157,10 @@ public sealed class BudgetWizardService
             foreach (var seed in resolved)
                 await _items.AddAsync(ToDocumentItem(document.Id, seed.Service, seed.Quantity), ct);
             foreach (var item in templateItems)
-                await _items.AddAsync(new DocumentItem { DocumentId = document.Id, Description = item.Description, Unit = item.Unit, Quantity = item.Quantity, UnitPrice = item.UnitPrice, SortOrder = item.SortOrder }, ct);
-            if (templateId.HasValue)
-                document.TemplateSnapshot = JsonSerializer.Serialize(new { Id = templateId, CopiedAt = DateTime.UtcNow });
+                await _items.AddAsync(new DocumentItem { DocumentId = document.Id, Description = item.Description, Unit = item.Unit, Quantity = item.Quantity, UnitPrice = item.UnitPrice, Discount = item.Discount, SortOrder = item.SortOrder }, ct);
+            if (template is not null)
+                document.TemplateSnapshot = JsonSerializer.Serialize(new { Id = template.Id, CopiedAt = DateTime.UtcNow });
+            document.CalculateTotals();
             await _unitOfWork.SaveChangesAsync(ct);
             if (ownsTransaction) await _unitOfWork.CommitTransactionAsync(ct);
         }
@@ -479,6 +488,10 @@ public sealed class BudgetWizardService
             Profession = "Personalizado",
             Title = templateTitle.Trim(),
             Description = document.Notes ?? string.Empty,
+            ConditionsText = document.ConditionsText,
+            WarrantyText = document.WarrantyText,
+            PaymentMethod = document.PaymentMethod,
+            Discount = document.Discount,
             IsSystemTemplate = false,
             IsActive = true
         };
@@ -495,6 +508,7 @@ public sealed class BudgetWizardService
                 Unit = string.IsNullOrWhiteSpace(item.Unit) ? "un" : item.Unit,
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
+                Discount = item.Discount,
                 SortOrder = sortOrder++
             };
             await _templateItems.AddAsync(templateItem, ct);

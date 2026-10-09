@@ -8,6 +8,7 @@ public class BudgetTemplateItem : Entity
     public string Description { get; set; } = string.Empty;
     public decimal Quantity { get; set; } = 1;
     public decimal UnitPrice { get; set; }
+    public decimal Discount { get; set; }
     public string Unit { get; set; } = "un";
     public int SortOrder { get; set; }
 }

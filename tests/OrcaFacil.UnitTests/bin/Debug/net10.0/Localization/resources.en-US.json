@@ -137,5 +137,25 @@
   "Onboarding.Step2": "Regional settings",
   "Onboarding.Step3": "First client",
   "Onboarding.Step4": "First quote",
-  "Onboarding.Complete": "Setup completed successfully!"
+  "Onboarding.Complete": "Setup completed successfully!",
+
+  "Templates.Title": "Budget templates",
+  "Templates.MyTemplates": "My account templates",
+  "Templates.SystemTemplates": "Templates suggested by OrçaFácil",
+  "Templates.UseTemplate": "Use this template",
+  "Templates.Details": "Template details",
+  "Templates.Inactivate": "Deactivate",
+  "Templates.Activate": "Activate",
+  "Templates.SaveAsTemplate": "Save as template",
+  "Templates.TemplateSaved": "Template successfully saved from this quote!",
+  "AI.AssistTitle": "AI Quote Assistant",
+  "AI.ImproveDescription": "Improve description and organize scope",
+  "AI.SuggestionPreview": "Suggestion preview",
+  "AI.Accept": "Apply to quote",
+  "AI.Discard": "Discard",
+  "AI.MissingPoints": "Attention points / missing details",
+  "Quotes.FilterClient": "Client",
+  "Quotes.FilterAssignee": "Assignee",
+  "Quotes.PaidAmount": "Paid: {0}",
+  "Quotes.RemainingBalance": "Balance: {0}"
 }

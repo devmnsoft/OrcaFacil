@@ -74,11 +74,11 @@ public sealed class JsonTextLocalizer : ITextLocalizer
 
         if (!catalog.TryGetValue(key, out var template) || string.IsNullOrWhiteSpace(template))
         {
+            _missingTracker.TrackMissingKey(key, targetCulture);
             // Fallback para pt-BR
             var fallbackCatalog = GetOrLoadCatalog(SupportedLocales.Default);
             if (!fallbackCatalog.TryGetValue(key, out template) || string.IsNullOrWhiteSpace(template))
             {
-                _missingTracker.TrackMissingKey(key, targetCulture);
                 return key;
             }
         }

@@ -1,10 +1,127 @@
 @page
 @model OrcaFacil.Web.Pages.Templates.IndexModel
-@{ ViewData["Title"] = "Modelos"; }
-<header class="of-page-header"><div><p class="of-eyebrow">Modelos prontos</p><h1>Modelos por profissão</h1><p>Escolha sugestões de itens comuns, revise os valores e gere um orçamento profissional mais rápido.</p></div><a class="of-button of-button-primary" asp-page="/Documents/New">Orçamento em branco</a></header>
-<div class="of-cluster g-3">
-@foreach (var t in Model.Templates)
+@{ ViewData["Title"] = "Modelos de Orçamento"; }
+
+@if (TempData["Success"] is string success) { <div class="of-feedback of-feedback-success" role="status">@success</div> }
+@if (TempData["Error"] is string error) { <div class="of-feedback of-feedback-error" role="alert">@error</div> }
+
+<header class="of-page-header">
+    <div>
+        <p class="of-eyebrow">Agilidade e padronização</p>
+        <h1>Modelos de orçamento</h1>
+        <p>Crie propostas rapidamente a partir de modelos prontos ou modelos personalizados salvos da sua conta.</p>
+    </div>
+    <div style="display:flex; gap:0.5rem; align-items:center;">
+        <a class="of-button of-button-primary" asp-page="/Documents/New">Novo orçamento</a>
+    </div>
+</header>
+
+@if (Model.AccountTemplates.Count > 0)
 {
-    <div ><article class="of-card h-100"><p class="of-eyebrow">@t.Profession</p><h2 class="h5">@t.Title</h2><p>@t.Description</p><ul>@foreach (var item in t.Items.OrderBy(i=>i.SortOrder).Take(3)){<li>@item.Description</li>}</ul><div class="gap-2"><a class="of-button of-button-primary" asp-page="/Documents/New" asp-route-templateId="@t.Id">Usar este modelo</a><a class="of-button of-button-secondary" asp-page="/Templates/Details" asp-route-id="@t.Id">Ver detalhes</a></div></article></div>
+    <section class="of-workspace-section" style="margin-bottom:2rem;">
+        <div class="of-section-heading">
+            <div>
+                <p class="of-eyebrow">Personalizados</p>
+                <h2>Modelos da minha conta</h2>
+            </div>
+            <span>@Model.AccountTemplates.Count modelo(s)</span>
+        </div>
+        <div class="of-cluster g-3">
+            @foreach (var t in Model.AccountTemplates)
+            {
+                <div style="flex: 1 1 320px; max-width: 420px;">
+                    <article class="of-card h-100" style="display:flex; flex-direction:column; justify-content:space-between; @(!t.IsActive ? "opacity:0.65;" : "")">
+                        <div>
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                <p class="of-eyebrow">@t.Profession</p>
+                                @if (!t.IsActive)
+                                {
+                                    <span class="of-badge of-badge-warning">Inativo</span>
+                                }
+                                else
+                                {
+                                    <span class="of-badge of-badge-success">Ativo</span>
+                                }
+                            </div>
+                            <h2 class="h5" style="margin:0.25rem 0;">@t.Title</h2>
+                            <p style="font-size:0.875rem; color:var(--of-muted);">@(string.IsNullOrWhiteSpace(t.Description) ? "Sem descrição adicional" : t.Description)</p>
+                            
+                            <ul style="font-size:0.875rem; padding-left:1.25rem; margin:0.75rem 0;">
+                                @foreach (var item in t.Items.OrderBy(i => i.SortOrder).Take(3))
+                                {
+                                    <li>@item.Description (@item.Quantity @item.Unit - @item.UnitPrice.ToString("C"))</li>
+                                }
+                                @if (t.Items.Count > 3)
+                                {
+                                    <li style="color:var(--of-muted);">+ @(t.Items.Count - 3) item(ns)...</li>
+                                }
+                            </ul>
+                        </div>
+                        <div style="margin-top:1rem; display:flex; flex-direction:column; gap:0.5rem;">
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                <form method="post" action="@Url.Page("/Documents/CreateBudget", "Create")" style="flex:1;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="templateId" value="@t.Id" />
+                                    <input type="hidden" name="idempotencyKey" value="@Guid.NewGuid().ToString("N")" />
+                                    <button class="of-button of-button-primary" type="submit" style="width:100%;" disabled="@(!t.IsActive)">Usar modelo</button>
+                                </form>
+                                <a class="of-button of-button-secondary" asp-page="/Templates/Details" asp-route-id="@t.Id">Ver / Editar</a>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--of-border, #e2e8f0); padding-top:0.5rem;">
+                                <form method="post" asp-page-handler="ToggleActive" asp-route-id="@t.Id">
+                                    <button class="of-button-link" type="submit" style="font-size:0.75rem; color:var(--of-muted);">@(t.IsActive ? "Inativar" : "Ativar")</button>
+                                </form>
+                                <form method="post" asp-page-handler="Delete" asp-route-id="@t.Id" onsubmit="return confirm('Tem certeza que deseja excluir este modelo?');">
+                                    <button class="of-button-link" type="submit" style="font-size:0.75rem; color:var(--of-danger, #ef4444);">Excluir</button>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    </section>
 }
-</div>
+
+<section class="of-workspace-section">
+    <div class="of-section-heading">
+        <div>
+            <p class="of-eyebrow">Prontos para uso</p>
+            <h2>Modelos sugeridos pelo OrçaFácil</h2>
+        </div>
+        <span>@Model.SystemTemplates.Count modelo(s)</span>
+    </div>
+    <div class="of-cluster g-3">
+        @foreach (var t in Model.SystemTemplates)
+        {
+            <div style="flex: 1 1 320px; max-width: 420px;">
+                <article class="of-card h-100" style="display:flex; flex-direction:column; justify-content:space-between;">
+                    <div>
+                        <p class="of-eyebrow">@t.Profession</p>
+                        <h2 class="h5" style="margin:0.25rem 0;">@t.Title</h2>
+                        <p style="font-size:0.875rem; color:var(--of-muted);">@t.Description</p>
+                        <ul style="font-size:0.875rem; padding-left:1.25rem; margin:0.75rem 0;">
+                            @foreach (var item in t.Items.OrderBy(i => i.SortOrder).Take(3))
+                            {
+                                <li>@item.Description (@item.Quantity @item.Unit)</li>
+                            }
+                            @if (t.Items.Count > 3)
+                            {
+                                <li style="color:var(--of-muted);">+ @(t.Items.Count - 3) item(ns)...</li>
+                            }
+                        </ul>
+                    </div>
+                    <div style="margin-top:1rem; display:flex; gap:0.5rem;">
+                        <form method="post" action="@Url.Page("/Documents/CreateBudget", "Create")" style="flex:1;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="templateId" value="@t.Id" />
+                            <input type="hidden" name="idempotencyKey" value="@Guid.NewGuid().ToString("N")" />
+                            <button class="of-button of-button-primary" type="submit" style="width:100%;">Usar este modelo</button>
+                        </form>
+                        <a class="of-button of-button-secondary" asp-page="/Templates/Details" asp-route-id="@t.Id">Ver detalhes</a>
+                    </div>
+                </article>
+            </div>
+        }
+    </div>
+</section>

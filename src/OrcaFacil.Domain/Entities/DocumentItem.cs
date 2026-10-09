@@ -22,7 +22,9 @@ public class DocumentItem : Entity
 
     public decimal CalculateTotal()
     {
-        var raw = Quantity * UnitPrice - Discount;
+        var gross = decimal.Round(Quantity * UnitPrice, 2, MidpointRounding.AwayFromZero);
+        var disc = decimal.Round(Discount, 2, MidpointRounding.AwayFromZero);
+        var raw = gross - disc;
         if (raw < 0) raw = 0;
         Total = decimal.Round(raw, 2, MidpointRounding.AwayFromZero);
         return Total;

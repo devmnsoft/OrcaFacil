@@ -2,7 +2,7 @@
 @model OrcaFacil.Web.Pages.Documents.IndexModel
 @section Styles { <link rel="stylesheet" href="~/css/documents.css" asp-append-version="true" /> }
 @{ ViewData["Title"]="Orçamentos"; ViewData["Section"]="Comercial"; }
-<partial name="Partials/_PageIntro" model='new PageIntroViewModel("Propostas comerciais", "Orçamentos", "Crie, envie e acompanhe propostas profissionais sem perder o próximo passo.", "quote", "Novo orçamento", "/Documents/New", HelpCode: "quotes", WhatThisPageDoes: "Organiza propostas por cliente, validade e situação comercial.", NextStepText: "Crie uma proposta ou retome uma negociação pendente.")' />
+<partial name="Partials/_PageIntro" model='new PageIntroViewModel("Propostas comerciais", "Orçamentos", "Crie, envie e acompanhe propostas profissionais sem perder o próximo passo.", "quote", "Novo orçamento", "/Documents/New", HelpCode: "quotes", WhatThisPageDoes: "Organiza propostas por cliente, responsável, validade e situação comercial.", NextStepText: "Crie uma proposta ou retome uma negociação pendente.")' />
 <partial name="Partials/_ContextGuide" model='new ContextGuideViewModel("Conduza cada proposta até uma decisão", "Preparar e acompanhar valores e condições enviados ao cliente.", "Itens, versões, validade, compartilhamentos e atividades.", "Uma proposta aprovada pode originar uma ordem de serviço.", "Recibos e pagamentos ficam na Central Financeira.")' />
 
 <nav class="of-tabs" aria-label="Situações do orçamento">
@@ -16,7 +16,30 @@
     <form method="get" class="of-form-grid">
         <div asp-validation-summary="ModelOnly" class="of-validation-summary"></div>
         <input type="hidden" asp-for="Status" />
-        <div class="of-field"><label asp-for="Search">Cliente ou proposta</label><input asp-for="Search" class="of-field-control" type="search" /></div>
+        <div class="of-field"><label asp-for="Search">Proposta ou texto</label><input asp-for="Search" class="of-field-control" type="search" placeholder="Número ou termo..." /></div>
+        
+        <div class="of-field">
+            <label asp-for="ClientId">Cliente</label>
+            <select asp-for="ClientId" class="of-field-control">
+                <option value="">Todos os clientes</option>
+                @foreach (var c in Model.ClientsList)
+                {
+                    <option value="@c.Id">@c.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="of-field">
+            <label asp-for="AssignedToUserId">Responsável</label>
+            <select asp-for="AssignedToUserId" class="of-field-control">
+                <option value="">Todos os responsáveis</option>
+                @foreach (var u in Model.AssigneesList)
+                {
+                    <option value="@u.Id">@u.Name</option>
+                }
+            </select>
+        </div>
+
         <div class="of-field"><label asp-for="From">De</label><input asp-for="From" class="of-field-control" type="date" /></div>
         <div class="of-field"><label asp-for="To">Até</label><input asp-for="To" class="of-field-control" type="date" /></div>
         <div class="of-field"><label asp-for="Minimum">Valor mínimo</label><input asp-for="Minimum" class="of-field-control" inputmode="decimal" /><span asp-validation-for="Minimum"></span></div>
@@ -33,19 +56,46 @@ else
     <div class="of-data-list">
     @foreach (var quote in Model.Quotes.Items)
     {
-        <article class="of-data-card">
-            <div><strong>@quote.Number</strong><p>@quote.ClientName</p></div>
-            <partial name="Partials/_StatusBadge" model='new StatusBadgeViewModel { Text = quote.Status, CssClass = quote.Status.ToLowerInvariant() }' />
-            <div><strong>@quote.Total.ToString("C")</strong><p>Validade: @(quote.ValidUntil?.ToString("dd/MM/yyyy") ?? "não definida")</p></div>
-            <a class="of-btn of-btn-secondary" asp-page="@quote.NextAction.Page" asp-route-id="@quote.Id">@quote.NextAction.Title</a>
+        <article class="of-data-card" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:1rem; align-items:center;">
+            <div>
+                <strong>@quote.Number @(quote.RevisionNumber > 0 ? $"(Rev. {quote.RevisionNumber})" : "")</strong>
+                <p style="margin:0.25rem 0 0;">@quote.ClientName</p>
+                <small style="color:var(--of-muted);">Responsável: @(quote.AssigneeName ?? "Não atribuído")</small>
+            </div>
+            <div>
+                <partial name="Partials/_StatusBadge" model='new StatusBadgeViewModel { Text = quote.Status, CssClass = quote.Status.ToLowerInvariant() }' />
+                @if (quote.WorkOrderId.HasValue)
+                {
+                    <div style="margin-top:0.25rem;">
+                        <a asp-page="/WorkOrders/Details" asp-route-id="@quote.WorkOrderId" class="of-badge of-badge-success" style="text-decoration:none;">
+                            OS @quote.WorkOrderNumber
+                        </a>
+                    </div>
+                }
+            </div>
+            <div>
+                <strong>@quote.Total.ToString("C")</strong>
+                <div style="font-size:0.8rem; margin-top:0.25rem;">
+                    @if (quote.Paid > 0)
+                    {
+                        <span style="color:var(--of-success, #16a34a); display:block;">Recebido: @quote.Paid.ToString("C")</span>
+                    }
+                    <span style="color:var(--of-muted); display:block;">Saldo: @quote.Balance.ToString("C")</span>
+                </div>
+                <small style="display:block; margin-top:0.25rem; color:var(--of-muted);">Validade: @(quote.ValidUntil?.ToString("dd/MM/yyyy") ?? "não definida")</small>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                <a class="of-btn of-btn-primary" asp-page="@quote.NextAction.Page" asp-route-id="@quote.Id">@quote.NextAction.Title</a>
+                <a class="of-btn of-btn-secondary" asp-page="/Documents/Details" asp-route-id="@quote.Id">Detalhes</a>
+            </div>
         </article>
     }
     </div>
     @if (Model.Quotes.TotalPages > 1)
     {
         <nav class="of-pagination" aria-label="Paginação"><span>Página @Model.Quotes.Page de @Model.Quotes.TotalPages</span>
-        @if (Model.Quotes.Page > 1) { <a asp-route-currentPage="@(Model.Quotes.Page - 1)" asp-route-search="@Model.Search" asp-route-status="@Model.Status">Anterior</a> }
-        @if (Model.Quotes.Page < Model.Quotes.TotalPages) { <a asp-route-currentPage="@(Model.Quotes.Page + 1)" asp-route-search="@Model.Search" asp-route-status="@Model.Status">Próxima</a> }
+        @if (Model.Quotes.Page > 1) { <a asp-route-currentPage="@(Model.Quotes.Page - 1)" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-clientId="@Model.ClientId" asp-route-assignedToUserId="@Model.AssignedToUserId">Anterior</a> }
+        @if (Model.Quotes.Page < Model.Quotes.TotalPages) { <a asp-route-currentPage="@(Model.Quotes.Page + 1)" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-clientId="@Model.ClientId" asp-route-assignedToUserId="@Model.AssignedToUserId">Próxima</a> }
         </nav>
     }
 }

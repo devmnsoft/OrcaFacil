@@ -15,6 +15,10 @@ public class BudgetTemplateConfiguration : IEntityTypeConfiguration<BudgetTempla
         builder.Property(x => x.Profession).HasColumnName("profession").HasMaxLength(80).IsRequired();
         builder.Property(x => x.Title).HasColumnName("title").HasMaxLength(160).IsRequired();
         builder.Property(x => x.Description).HasColumnName("description").HasMaxLength(800).IsRequired();
+        builder.Property(x => x.ConditionsText).HasColumnName("conditions_text");
+        builder.Property(x => x.WarrantyText).HasColumnName("warranty_text").HasMaxLength(2000);
+        builder.Property(x => x.PaymentMethod).HasColumnName("payment_method").HasMaxLength(60);
+        builder.Property(x => x.Discount).HasColumnName("discount").HasPrecision(18, 2);
         builder.Property(x => x.IsSystemTemplate).HasColumnName("is_system_template").IsRequired();
         builder.Property(x => x.IsActive).HasColumnName("is_active").IsRequired();
         builder.HasMany(x => x.Items).WithOne().HasForeignKey(x => x.BudgetTemplateId).OnDelete(DeleteBehavior.Cascade);

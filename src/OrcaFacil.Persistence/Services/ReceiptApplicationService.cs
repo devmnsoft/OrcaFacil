@@ -81,12 +81,18 @@ public sealed class ReceiptApplicationService(
                     "Esta chave já foi usada para outro recebimento com dados diferentes. O lançamento original foi mantido.", correlationId);
             }
 
-            var existingReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(x => x.PaymentId == duplicate.Id && !x.IsDeleted, ct);
+            var existingReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(
+                x => x.PaymentId == duplicate.Id && !x.IsDeleted && x.CancelledAt == null, ct);
             if (existingReceipt is null && duplicate.Status == FinancialRecordStatus.Active)
                 return await CreateForPaymentAsync(duplicate.Id, request.ServiceDescription, request.City, request.Notes, ct);
 
-            return new(true, CreateReceiptCode.DuplicateRequest, "Este recebimento já havia sido registrado.", duplicate.Id,
-                existingReceipt?.Id, existingReceipt?.Number, RedirectPage, correlationId);
+            if (existingReceipt is not null)
+            {
+                return new(true, CreateReceiptCode.DuplicateRequest, "Este recebimento já havia sido registrado.", duplicate.Id,
+                    existingReceipt.Id, existingReceipt.Number, RedirectPage, correlationId);
+            }
+
+            return Failure(CreateReceiptCode.AccessDenied, "O pagamento associado a esta chave não está ativo.", correlationId);
         }
 
         var client = await db.Clients.AsNoTracking().SingleOrDefaultAsync(
@@ -112,10 +118,15 @@ public sealed class ReceiptApplicationService(
             return await CreateForPaymentAsync(paymentId, request.ServiceDescription, request.City, request.Notes, ct);
         }
 
-        // Para orçamentos e recibos avulsos: verificação transacional com lock/serialização e retry limitado
+        // Para orçamentos e recibos avulsos: verificação transacional com serialização e retry limitado
         const int maxRetries = 3;
         for (var attempt = 1; attempt <= maxRetries; attempt++)
         {
+            var isolation = db.Database.IsRelational() ? IsolationLevel.Serializable : IsolationLevel.ReadCommitted;
+            await using var transaction = await db.Database.BeginTransactionAsync(isolation, ct);
+            ManualPayment? payment = null;
+            Receipt? receipt = null;
+
             try
             {
                 var duplicateInAttempt = await db.ManualPayments.AsNoTracking().FirstOrDefaultAsync(
@@ -124,34 +135,52 @@ public sealed class ReceiptApplicationService(
                 {
                     if (!IsSameRequest(request, normalizedAmount, canonicalPaymentMethod, paidAtUtc, duplicateInAttempt))
                     {
+                        await transaction.RollbackAsync(ct);
                         return Failure(CreateReceiptCode.ConcurrencyConflict,
                             "Esta chave já foi usada para outro recebimento com dados diferentes. O lançamento original foi mantido.", correlationId);
                     }
 
-                    var existingReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(x => x.PaymentId == duplicateInAttempt.Id && !x.IsDeleted, ct);
+                    var existingReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(
+                        x => x.PaymentId == duplicateInAttempt.Id && !x.IsDeleted && x.CancelledAt == null, ct);
                     if (existingReceipt is null && duplicateInAttempt.Status == FinancialRecordStatus.Active)
+                    {
+                        await transaction.RollbackAsync(ct);
                         return await CreateForPaymentAsync(duplicateInAttempt.Id, request.ServiceDescription, request.City, request.Notes, ct);
+                    }
 
-                    return new(true, CreateReceiptCode.DuplicateRequest, "Este recebimento já havia sido registrado.", duplicateInAttempt.Id,
-                        existingReceipt?.Id, existingReceipt?.Number, RedirectPage, correlationId);
+                    if (existingReceipt is not null)
+                    {
+                        await transaction.CommitAsync(ct);
+                        return new(true, CreateReceiptCode.DuplicateRequest, "Este recebimento já havia sido registrado.", duplicateInAttempt.Id,
+                            existingReceipt.Id, existingReceipt.Number, RedirectPage, correlationId);
+                    }
+
+                    await transaction.RollbackAsync(ct);
+                    return Failure(CreateReceiptCode.AccessDenied, "O pagamento associado a esta chave não está ativo.", correlationId);
                 }
-
-                var isolation = db.Database.IsRelational() ? IsolationLevel.Serializable : IsolationLevel.ReadCommitted;
-                await using var transaction = await db.Database.BeginTransactionAsync(isolation, ct);
 
                 if (request.OriginType == ReceiptOriginType.Budget)
                 {
                     var documentId = request.DocumentId!.Value;
-                    var budgetDoc = await db.Documents.SingleOrDefaultAsync(
+                    var budgetDoc = await db.Documents.AsNoTracking().SingleOrDefaultAsync(
                         x => x.Id == documentId && x.AccountId == accountId && !x.IsDeleted && x.Type == DocumentType.Budget, ct);
                     if (budgetDoc is null)
+                    {
+                        await transaction.RollbackAsync(ct);
                         return Failure(CreateReceiptCode.DocumentNotFound, "Orçamento não encontrado nesta conta.", correlationId);
+                    }
 
                     if (budgetDoc.Status is "Cancelled" or "Rejected")
+                    {
+                        await transaction.RollbackAsync(ct);
                         return Failure(CreateReceiptCode.InvalidOrigin, "Não é permitido registrar recebimento para orçamento cancelado ou recusado.", correlationId);
+                    }
 
                     if (budgetDoc.ClientId.HasValue && budgetDoc.ClientId != request.ClientId)
+                    {
+                        await transaction.RollbackAsync(ct);
                         return Failure(CreateReceiptCode.InvalidOrigin, "O cliente informado não corresponde ao cliente do orçamento.", correlationId);
+                    }
 
                     var alreadyPaid = await db.ManualPayments.Where(
                         x => x.AccountId == accountId && x.DocumentId == documentId && !x.IsDeleted && x.Status == FinancialRecordStatus.Active)
@@ -160,12 +189,18 @@ public sealed class ReceiptApplicationService(
                     var balance = CommercialCalculator.Round(budgetDoc.Total - alreadyPaid);
                     if (balance < 0m) balance = 0m;
                     if (balance == 0m)
+                    {
+                        await transaction.RollbackAsync(ct);
                         return Failure(CreateReceiptCode.InvalidAmount, "Este orçamento já está totalmente quitado.", correlationId);
+                    }
                     if (normalizedAmount > balance)
+                    {
+                        await transaction.RollbackAsync(ct);
                         return Failure(CreateReceiptCode.InvalidAmount, $"O valor informado supera o saldo restante de {balance:C} do orçamento.", correlationId);
+                    }
                 }
 
-                var payment = new ManualPayment
+                payment = new ManualPayment
                 {
                     AccountId = accountId,
                     ClientId = client.Id,
@@ -181,7 +216,7 @@ public sealed class ReceiptApplicationService(
                 db.ManualPayments.Add(payment);
 
                 var number = await ReceiptNumberAllocator.NextAsync(db, accountId, ct);
-                var receipt = new Receipt
+                receipt = new Receipt
                 {
                     AccountId = accountId,
                     PaymentId = payment.Id,
@@ -211,12 +246,16 @@ public sealed class ReceiptApplicationService(
             }
             catch (Exception ex) when (ShouldRetryPersistenceConflict(ex) && attempt < maxRetries)
             {
-                DetachFinancialAttemptEntries();
+                await transaction.RollbackAsync(ct);
+                DetachAttemptEntry(payment);
+                DetachAttemptEntry(receipt);
                 await Task.Delay(50 * attempt, ct);
             }
             catch (Exception ex) when (ShouldHandlePersistenceConflict(ex))
             {
-                DetachFinancialAttemptEntries();
+                await transaction.RollbackAsync(ct);
+                DetachAttemptEntry(payment);
+                DetachAttemptEntry(receipt);
                 var duplicateRecover = await db.ManualPayments.AsNoTracking().FirstOrDefaultAsync(
                     x => x.AccountId == accountId && x.IdempotencyKey == request.IdempotencyKey, ct);
                 if (duplicateRecover is not null)
@@ -227,9 +266,18 @@ public sealed class ReceiptApplicationService(
                             "Esta chave já foi usada para outro recebimento com dados diferentes. O lançamento original foi mantido.", correlationId);
                     }
 
-                    var existingReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(x => x.PaymentId == duplicateRecover.Id && !x.IsDeleted, ct);
-                    return new(true, CreateReceiptCode.DuplicateRequest, "Este recebimento já havia sido registrado.", duplicateRecover.Id,
-                        existingReceipt?.Id, existingReceipt?.Number, RedirectPage, correlationId);
+                    var existingReceipt = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(
+                        x => x.PaymentId == duplicateRecover.Id && !x.IsDeleted && x.CancelledAt == null, ct);
+                    if (existingReceipt is null && duplicateRecover.Status == FinancialRecordStatus.Active)
+                        return await CreateForPaymentAsync(duplicateRecover.Id, request.ServiceDescription, request.City, request.Notes, ct);
+
+                    if (existingReceipt is not null)
+                    {
+                        return new(true, CreateReceiptCode.DuplicateRequest, "Este recebimento já havia sido registrado.", duplicateRecover.Id,
+                            existingReceipt.Id, existingReceipt.Number, RedirectPage, correlationId);
+                    }
+
+                    return Failure(CreateReceiptCode.AccessDenied, "O pagamento associado a esta chave não está ativo.", correlationId);
                 }
                 return Failure(CreateReceiptCode.ConcurrencyConflict, "Conflito de concorrência ao processar recebimento. Tente novamente.", correlationId);
             }
@@ -247,39 +295,41 @@ public sealed class ReceiptApplicationService(
         if (string.IsNullOrWhiteSpace(serviceDescription))
             return Failure(CreateReceiptCode.InvalidOrigin, "Descreva o serviço recebido.", correlationId);
 
-        var payment = await db.ManualPayments.AsNoTracking().SingleOrDefaultAsync(
-            x => x.Id == paymentId && x.AccountId == accountId && !x.IsDeleted, ct);
-        if (payment is null || payment.Status != FinancialRecordStatus.Active)
-            return Failure(CreateReceiptCode.AccessDenied, "Pagamento ativo não encontrado nesta conta.", correlationId);
-
-        var existing = await db.Receipts.AsNoTracking().SingleOrDefaultAsync(
-            x => x.AccountId == accountId && x.PaymentId == paymentId && !x.IsDeleted, ct);
-        if (existing is not null)
-            return new(true, CreateReceiptCode.DuplicateRequest, "Este pagamento já possui recibo.", payment.Id,
-                existing.Id, existing.Number, RedirectPage, correlationId);
-
-        var client = await db.Clients.AsNoTracking().SingleOrDefaultAsync(
-            x => x.Id == payment.ClientId && x.AccountId == accountId && !x.IsDeleted, ct);
-        if (client is null) return Failure(CreateReceiptCode.ClientNotFound, "Cliente não encontrado nesta conta.", correlationId);
-
         const int maxRetries = 3;
         for (var attempt = 1; attempt <= maxRetries; attempt++)
         {
+            var isolation = db.Database.IsRelational() ? IsolationLevel.Serializable : IsolationLevel.ReadCommitted;
+            await using var transaction = await db.Database.BeginTransactionAsync(isolation, ct);
+            Receipt? receipt = null;
+
             try
             {
-                var activePayment = await db.ManualPayments.AsNoTracking().SingleOrDefaultAsync(
+                var activePayment = await db.ManualPayments.SingleOrDefaultAsync(
                     x => x.Id == paymentId && x.AccountId == accountId && !x.IsDeleted, ct);
                 if (activePayment is null || activePayment.Status != FinancialRecordStatus.Active)
+                {
+                    await transaction.RollbackAsync(ct);
                     return Failure(CreateReceiptCode.AccessDenied, "Pagamento ativo não encontrado nesta conta.", correlationId);
+                }
 
-                var existingInLoop = await db.Receipts.AsNoTracking().SingleOrDefaultAsync(
-                    x => x.AccountId == accountId && x.PaymentId == paymentId && !x.IsDeleted, ct);
+                var existingInLoop = await db.Receipts.FirstOrDefaultAsync(
+                    x => x.AccountId == accountId && x.PaymentId == paymentId && !x.IsDeleted && x.CancelledAt == null, ct);
                 if (existingInLoop is not null)
+                {
+                    await transaction.CommitAsync(ct);
                     return new(true, CreateReceiptCode.DuplicateRequest, "Este pagamento já possui recibo.", activePayment.Id,
                         existingInLoop.Id, existingInLoop.Number, RedirectPage, correlationId);
+                }
 
-                await using var transaction = await db.Database.BeginTransactionAsync(ct);
-                var receipt = new Receipt
+                var client = await db.Clients.AsNoTracking().SingleOrDefaultAsync(
+                    x => x.Id == activePayment.ClientId && x.AccountId == accountId && !x.IsDeleted, ct);
+                if (client is null)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return Failure(CreateReceiptCode.ClientNotFound, "Cliente não encontrado nesta conta.", correlationId);
+                }
+
+                receipt = new Receipt
                 {
                     AccountId = accountId,
                     PaymentId = activePayment.Id,
@@ -306,16 +356,18 @@ public sealed class ReceiptApplicationService(
             }
             catch (Exception ex) when (ShouldRetryPersistenceConflict(ex) && attempt < maxRetries)
             {
-                DetachFinancialAttemptEntries();
+                await transaction.RollbackAsync(ct);
+                DetachAttemptEntry(receipt);
                 await Task.Delay(50 * attempt, ct);
             }
             catch (Exception ex) when (ShouldHandlePersistenceConflict(ex))
             {
-                DetachFinancialAttemptEntries();
-                var existingFinal = await db.Receipts.AsNoTracking().SingleOrDefaultAsync(
-                    x => x.AccountId == accountId && x.PaymentId == paymentId && !x.IsDeleted, ct);
+                await transaction.RollbackAsync(ct);
+                DetachAttemptEntry(receipt);
+                var existingFinal = await db.Receipts.AsNoTracking().FirstOrDefaultAsync(
+                    x => x.AccountId == accountId && x.PaymentId == paymentId && !x.IsDeleted && x.CancelledAt == null, ct);
                 if (existingFinal is not null)
-                    return new(true, CreateReceiptCode.DuplicateRequest, "Este pagamento já possui recibo.", payment.Id,
+                    return new(true, CreateReceiptCode.DuplicateRequest, "Este pagamento já possui recibo.", paymentId,
                         existingFinal.Id, existingFinal.Number, RedirectPage, correlationId);
 
                 return Failure(CreateReceiptCode.ConcurrencyConflict, "Conflito ao emitir recibo para o pagamento.", correlationId);
@@ -354,9 +406,14 @@ public sealed class ReceiptApplicationService(
     {
         if (currentAccount.AccountId is not Guid accountId || string.IsNullOrWhiteSpace(reason)) return false;
         await currentAccount.EnsureAccountAccessAsync(ct);
-        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        var isolation = db.Database.IsRelational() ? IsolationLevel.Serializable : IsolationLevel.ReadCommitted;
+        await using var transaction = await db.Database.BeginTransactionAsync(isolation, ct);
         var payment = await db.ManualPayments.SingleOrDefaultAsync(x => x.Id == paymentId && x.AccountId == accountId && !x.IsDeleted, ct);
-        if (payment is null || payment.Status == FinancialRecordStatus.Reversed) return false;
+        if (payment is null || payment.Status == FinancialRecordStatus.Reversed)
+        {
+            await transaction.RollbackAsync(ct);
+            return false;
+        }
         payment.Status = FinancialRecordStatus.Reversed;
         payment.ReversedAt = DateTime.UtcNow;
         payment.ReversedByUserId = currentAccount.UserId;
@@ -403,15 +460,13 @@ public sealed class ReceiptApplicationService(
             existing.ClientId, existing.DocumentId, existing.WorkOrderId,
             existing.Amount, existing.PaymentMethod, existing.PaidAt);
 
-    private void DetachFinancialAttemptEntries()
+    private void DetachAttemptEntry(object? entity)
     {
-        foreach (var entry in db.ChangeTracker.Entries().Where(IsFinancialAttemptEntry).ToArray())
+        if (entity is null) return;
+        var entry = db.Entry(entity);
+        if (entry.State != EntityState.Detached)
             entry.State = EntityState.Detached;
     }
-
-    private static bool IsFinancialAttemptEntry(EntityEntry entry) =>
-        entry.Entity is ManualPayment or Receipt or ReceiptSequence &&
-        entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted;
 
     private static bool ShouldRetryPersistenceConflict(Exception exception)
     {
@@ -423,8 +478,14 @@ public sealed class ReceiptApplicationService(
     private static bool ShouldHandlePersistenceConflict(Exception exception)
     {
         if (ShouldRetryPersistenceConflict(exception)) return true;
-        return FindSqlState(exception) == PostgresErrorCodes.UniqueViolation &&
-               FindConstraintName(exception) is "ux_manual_payments_idempotency" or "ux_receipts_payment" or "ux_receipts_number";
+        if (FindSqlState(exception) != PostgresErrorCodes.UniqueViolation) return false;
+        var constraint = FindConstraintName(exception);
+        if (string.IsNullOrWhiteSpace(constraint)) return true;
+        return constraint.Contains("idempotency", StringComparison.OrdinalIgnoreCase) ||
+               constraint.Contains("receipt", StringComparison.OrdinalIgnoreCase) ||
+               constraint.Contains("payment", StringComparison.OrdinalIgnoreCase) ||
+               constraint.Contains("number", StringComparison.OrdinalIgnoreCase) ||
+               constraint.Contains("year", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? FindSqlState(Exception exception)
