@@ -131,7 +131,7 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
                 row.IssueDate,
                 row.ValidUntil,
                 row.CreatedAt,
-                NextAction(row.Id, row.Status, wo != null),
+                NextAction(row.Id, row.Status, wo?.Id),
                 revisionNumber,
                 assigneeName,
                 paid,
@@ -143,16 +143,28 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
         return OperationResult<PagedResult<QuoteWorkspaceItem>>.Success(new(items, total, page, pageSize));
     }
 
-    private static NextActionDescriptor NextAction(Guid id, string status, bool hasWorkOrder) => status.ToUpperInvariant() switch
+    private static NextActionDescriptor NextAction(Guid documentId, string status, Guid? workOrderId) => status.ToUpperInvariant() switch
     {
-        "DRAFT" => Action("continue", "Continuar orçamento", "Complete os dados antes de compartilhar.", id, page: "/Documents/CreateBudget"),
-        "ISSUED" or "READY" => Action("share", "Criar acesso", "Envie uma versão segura ao cliente.", id, "sharing"),
-        "SENT" or "VIEWED" => Action("follow-up", "Programar retorno", "Mantenha a negociação avançando.", id, "negotiation"),
-        "APPROVED" when !hasWorkOrder => Action("work-order", "Criar ordem", "Transforme a aprovação em execução.", id, "summary"),
-        "APPROVED" => Action("payment", "Registrar recebimento", "Receba pagamento ou consulte o saldo.", id, page: "/Payments/Register"),
-        _ => Action("review", "Revisar proposta", "Consulte o histórico e defina o próximo passo.", id)
+        "DRAFT" => Action("continue", "Continuar orçamento", "Complete os dados antes de compartilhar.",
+            "/Documents/CreateBudget", documentId),
+        "ISSUED" or "READY" => DetailsAction("share", "Criar acesso", "Envie uma versão segura ao cliente.", documentId, "sharing"),
+        "SENT" or "VIEWED" => DetailsAction("follow-up", "Programar retorno", "Mantenha a negociação avançando.", documentId, "negotiation"),
+        "APPROVED" when !workOrderId.HasValue => DetailsAction("work-order", "Criar ordem", "Transforme a aprovação em execução.", documentId, "summary"),
+        "APPROVED" => Action("payment", "Registrar recebimento", "Receba pagamento ou consulte o saldo.",
+            "/Payments/Register", workOrderId.Value),
+        _ => DetailsAction("review", "Revisar proposta", "Consulte o histórico e defina o próximo passo.", documentId)
     };
 
-    private static NextActionDescriptor Action(string code, string title, string description, Guid id, string tab = "summary", string page = "/Documents/Details") =>
-        new(code, title, description, page, page == "/Documents/Details" ? new Dictionary<string, string> { ["id"] = id.ToString(), ["tab"] = tab } : new Dictionary<string, string> { ["documentId"] = id.ToString() });
+    private static NextActionDescriptor DetailsAction(string code, string title, string description, Guid documentId, string tab = "summary") =>
+        new(code, title, description, "/Documents/Details", new Dictionary<string, string>
+        {
+            ["id"] = documentId.ToString(),
+            ["tab"] = tab
+        });
+
+    private static NextActionDescriptor Action(string code, string title, string description, string page, Guid targetId) =>
+        new(code, title, description, page, new Dictionary<string, string>
+        {
+            ["id"] = targetId.ToString()
+        });
 }

@@ -24,4 +24,4 @@ public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Total, int Page,
 }
 
 public sealed record NextActionDescriptor(string Code, string Title, string Description, string Page,
-    IReadOnlyDictionary<string, string>? RouteValues = null, string Icon = "arrow-right", string Tone = "primary");
+    IDictionary<string, string>? RouteValues = null, string Icon = "arrow-right", string Tone = "primary");

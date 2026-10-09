@@ -104,7 +104,7 @@ else
                 <small style="display:block; margin-top:0.25rem; color:var(--of-muted);">Validade: @(quote.ValidUntil?.ToString("dd/MM/yyyy") ?? "não definida")</small>
             </div>
             <div style="display:flex; flex-direction:column; gap:0.5rem;">
-                <a class="of-btn of-btn-primary" asp-page="@quote.NextAction.Page" asp-route-id="@quote.Id">@quote.NextAction.Title</a>
+                <a class="of-btn of-btn-primary" asp-page="@quote.NextAction.Page" asp-all-route-data="@quote.NextAction.RouteValues">@quote.NextAction.Title</a>
                 <a class="of-btn of-btn-secondary" asp-page="/Documents/Details" asp-route-id="@quote.Id">Detalhes</a>
             </div>
         </article>
