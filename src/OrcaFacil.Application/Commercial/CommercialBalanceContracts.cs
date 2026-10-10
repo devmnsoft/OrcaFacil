@@ -19,6 +19,8 @@ public interface ICommercialBalanceService
 {
     Task<CommercialBalance?> GetForWorkOrderAsync(Guid accountId, Guid workOrderId, CancellationToken ct = default);
     Task<CommercialBalance?> GetForDocumentAsync(Guid accountId, Guid documentId, Guid? preferredWorkOrderId = null, CancellationToken ct = default);
+    Task<IReadOnlyDictionary<Guid, CommercialBalance>> GetForDocumentsAsync(Guid accountId, IReadOnlyCollection<Guid> documentIds,
+        IReadOnlyDictionary<Guid, Guid>? preferredWorkOrderIds = null, CancellationToken ct = default);
 }
 
 public sealed record CommercialPaymentAmount(decimal Amount, bool IsReversed);

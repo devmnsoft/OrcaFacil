@@ -142,6 +142,46 @@ public sealed class JourneyPostgresTests
         Assert.Equal(0m, await fx.ActivePaidAsync(order));
     }
 
+    [JourneyPostgresFact]
+    public async Task Document_balance_selects_current_revision_order_and_does_not_duplicate_direct_payments()
+    {
+        await using var fx = await JourneyFixture.CreateAsync();
+        var seeded = await fx.SeedQuoteWithTwoOrdersAndPaymentsAsync();
+        await using var db = fx.Context();
+        var balances = new CommercialBalanceService(db);
+
+        var balance = await balances.GetForDocumentAsync(fx.AccountId, seeded.DocumentId);
+
+        Assert.NotNull(balance);
+        Assert.Equal(seeded.CurrentOrderId, balance.WorkOrderId);
+        Assert.Equal("WorkOrder", balance.ContractSource);
+        Assert.Equal(1200m, balance.ContractedAmount);
+        Assert.Equal(600m, balance.ReceivedAmount);
+        Assert.Equal(50m, balance.ReversedAmount);
+        Assert.Equal(600m, balance.BalanceAmount);
+        Assert.Contains(balance.Warnings, x => x.Contains("mais de uma ordem", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(balance.Warnings, x => x.Contains("Recebimentos diretos", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(balance.Warnings, x => x.Contains("outra ordem", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [JourneyPostgresFact]
+    public async Task Work_order_balance_excludes_direct_document_payments_when_order_is_not_contract_origin()
+    {
+        await using var fx = await JourneyFixture.CreateAsync();
+        var seeded = await fx.SeedQuoteWithTwoOrdersAndPaymentsAsync();
+        await using var db = fx.Context();
+        var balances = new CommercialBalanceService(db);
+
+        var balance = await balances.GetForWorkOrderAsync(fx.AccountId, seeded.OldOrderId);
+
+        Assert.NotNull(balance);
+        Assert.Equal(seeded.OldOrderId, balance.WorkOrderId);
+        Assert.Equal(1000m, balance.ContractedAmount);
+        Assert.Equal(300m, balance.ReceivedAmount);
+        Assert.Equal(700m, balance.BalanceAmount);
+        Assert.Contains(balance.Warnings, x => x.Contains("não é a origem contratual", StringComparison.OrdinalIgnoreCase));
+    }
+
     private sealed class JourneyFixture : IAsyncDisposable
     {
         private readonly string connection;
@@ -206,6 +246,29 @@ public sealed class JourneyPostgresTests
             db.AddRange(document, revision);
             await db.SaveChangesAsync();
             return document.Id;
+        }
+
+        public async Task<QuoteWithOrders> SeedQuoteWithTwoOrdersAndPaymentsAsync()
+        {
+            var document = NewDocument("Approved");
+            var oldRevision = Revision(document, 1, false, 1000m);
+            var currentRevision = Revision(document, 2, true, 1200m);
+            var oldOrder = OrderFrom(document, oldRevision, 1000m, "OS-ANT");
+            var currentOrder = OrderFrom(document, currentRevision, 1200m, "OS-ATU");
+            var directPayment = Payment(document.Id, null, 200m, "direto");
+            var oldOrderPayment = Payment(document.Id, oldOrder.Id, 300m, "ordem-antiga");
+            var currentOrderPayment = Payment(document.Id, currentOrder.Id, 400m, "ordem-atual");
+            var reversed = Payment(document.Id, currentOrder.Id, 50m, "estornado");
+            reversed.Status = FinancialRecordStatus.Reversed;
+            reversed.ReversedAt = DateTime.UtcNow;
+            reversed.ReversedByUserId = UserId;
+            reversed.ReversalReason = "Teste de estorno";
+
+            await using var db = Context();
+            db.AddRange(document, oldRevision, currentRevision, oldOrder, currentOrder,
+                directPayment, oldOrderPayment, currentOrderPayment, reversed);
+            await db.SaveChangesAsync();
+            return new(document.Id, oldOrder.Id, currentOrder.Id);
         }
 
         public async Task<(string Token, Guid RevisionId)> SeedPublicQuoteAsync()
@@ -299,8 +362,39 @@ public sealed class JourneyPostgresTests
             };
         }
 
+        private WorkOrder OrderFrom(Document document, DocumentRevision revision, decimal total, string prefix) =>
+            new()
+            {
+                AccountId = AccountId,
+                ClientId = clientId,
+                SourceDocumentId = document.Id,
+                SourceRevisionId = revision.Id,
+                Number = prefix + "-" + Guid.NewGuid().ToString("N")[..8],
+                Title = "Serviço vinculado à proposta",
+                ClientSnapshot = """{"name":"Cliente da conta A"}""",
+                ItemsSnapshot = "[]",
+                TotalSnapshot = total,
+                CreatedByUserId = UserId
+            };
+
+        private ManualPayment Payment(Guid documentId, Guid? orderId, decimal amount, string suffix) =>
+            new()
+            {
+                AccountId = AccountId,
+                DocumentId = documentId,
+                WorkOrderId = orderId,
+                ClientId = clientId,
+                Amount = amount,
+                PaymentMethod = "pix",
+                PaidAt = DateTime.UtcNow.AddMinutes(-1),
+                RegisteredByUserId = UserId,
+                IdempotencyKey = suffix + "-" + Guid.NewGuid().ToString("N")
+            };
+
         private static DbContextOptions<OrcaFacilDbContext> Options(string connection) =>
             new DbContextOptionsBuilder<OrcaFacilDbContext>().UseNpgsql(connection).EnableSensitiveDataLogging(false).Options;
+
+        public sealed record QuoteWithOrders(Guid DocumentId, Guid OldOrderId, Guid CurrentOrderId);
     }
 
     private sealed class FixedAccount(Guid userId, Guid accountId) : ICurrentAccountService

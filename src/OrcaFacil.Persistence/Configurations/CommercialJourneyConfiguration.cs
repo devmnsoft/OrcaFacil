@@ -65,6 +65,7 @@ public sealed class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
         b.Property(x => x.TotalSnapshot).HasPrecision(18, 2); b.Property(x => x.PaymentMethod).HasMaxLength(80); b.Property(x => x.Version).IsRowVersion();
         b.HasIndex(x => new { x.AccountId, x.Number }).IsUnique();
         b.HasIndex(x => new { x.AccountId, x.SourceRevisionId }).HasFilter("source_revision_id IS NOT NULL").IsUnique();
+        b.HasIndex(x => new { x.AccountId, x.SourceDocumentId, x.CreatedAt }).HasFilter("source_document_id IS NOT NULL");
         b.HasIndex(x => new { x.AccountId, x.ContractId, x.ServiceCompetence }).HasFilter("contract_id IS NOT NULL").IsUnique();
         b.HasIndex(x => new { x.AccountId, x.Status, x.ScheduledStart }); b.HasIndex(x => new { x.AccountId, x.AssignedUserId, x.ScheduledStart });
     }
@@ -95,6 +96,7 @@ public sealed class ManualPaymentConfiguration : IEntityTypeConfiguration<Manual
         b.Property(x => x.Status).HasConversion<string>().HasMaxLength(24); b.Property(x => x.ReversalReason).HasMaxLength(500);
         b.HasIndex(x => new { x.AccountId, x.IdempotencyKey }).IsUnique();
         b.HasIndex(x => new { x.AccountId, x.WorkOrderId, x.PaidAt });
+        b.HasIndex(x => new { x.AccountId, x.DocumentId, x.PaidAt }).HasFilter("document_id IS NOT NULL");
     }
 }
 

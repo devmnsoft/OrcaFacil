@@ -41,10 +41,19 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
         if (request.From is { } from) query = query.Where(document => document.IssueDate >= from);
         if (request.To is { } to) query = query.Where(document => document.IssueDate < to.Date.AddDays(1));
 
-        var rows = await query
-            .Select(document => new { document.Id, document.Number, document.Status, document.ClientName,
-                document.Total, document.IssueDate, document.ValidUntil, document.CreatedAt, document.AssignedToUserId })
-            .ToListAsync(cancellationToken);
+        var needsFinancialMaterialization = request.Minimum.HasValue
+            || request.Maximum.HasValue
+            || string.Equals(request.Sort, "value-desc", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(request.Sort, "value-asc", StringComparison.OrdinalIgnoreCase);
+
+        var rows = needsFinancialMaterialization
+            ? await SelectRows(query).ToListAsync(cancellationToken)
+            : await SelectRows(ApplyDocumentSort(query, request.Sort))
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+
+        var totalBeforeFinancialFilters = needsFinancialMaterialization ? 0 : await query.CountAsync(cancellationToken);
 
         var docIds = rows.Select(r => r.Id).ToArray();
         var assigneeIds = rows.Where(r => r.AssignedToUserId.HasValue).Select(r => r.AssignedToUserId!.Value).Distinct().ToArray();
@@ -54,19 +63,26 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
 
         var revisions = await db.DocumentRevisions.AsNoTracking()
             .Where(r => r.AccountId == accountId && docIds.Contains(r.DocumentId) && r.IsCurrent)
-            .Select(r => new { r.DocumentId, r.VersionNumber, r.Total })
+            .Select(r => new { r.Id, r.DocumentId, r.VersionNumber, r.Total })
             .ToDictionaryAsync(r => r.DocumentId, r => r, cancellationToken);
 
         var workOrders = await db.WorkOrders.AsNoTracking()
             .Where(w => w.AccountId == accountId && w.SourceDocumentId != null && docIds.Contains(w.SourceDocumentId.Value) && !w.IsDeleted)
             .OrderByDescending(w => w.CreatedAt)
-            .Select(w => new { w.Id, SourceDocumentId = w.SourceDocumentId!.Value, w.Number, w.TotalSnapshot })
+            .Select(w => new { w.Id, SourceDocumentId = w.SourceDocumentId!.Value, w.SourceRevisionId, w.Number, w.TotalSnapshot, w.CreatedAt })
             .ToListAsync(cancellationToken);
 
-        // Agrupamento para não quebrar com colisão de chave se houver mais de uma ordem histórica
         var woMap = workOrders
             .GroupBy(w => w.SourceDocumentId)
-            .ToDictionary(g => g.Key, g => g.First());
+            .ToDictionary(g => g.Key, g =>
+            {
+                revisions.TryGetValue(g.Key, out var revision);
+                return g.FirstOrDefault(x => revision is not null && x.SourceRevisionId == revision.Id)
+                    ?? g.OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).First();
+            });
+
+        var preferredWorkOrders = woMap.ToDictionary(x => x.Key, x => x.Value.Id);
+        var balanceMap = await balances.GetForDocumentsAsync(accountId, docIds, preferredWorkOrders, cancellationToken);
 
         var allItems = new List<QuoteWorkspaceItem>(rows.Count);
         foreach (var row in rows)
@@ -76,7 +92,7 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
             var revisionNumber = currentRev?.VersionNumber ?? 0;
             woMap.TryGetValue(row.Id, out var wo);
 
-            var balance = await balances.GetForDocumentAsync(accountId, row.Id, wo?.Id, cancellationToken);
+            balanceMap.TryGetValue(row.Id, out var balance);
             var baseTotal = balance?.ContractedAmount ?? currentRev?.Total ?? row.Total;
 
             allItems.Add(new QuoteWorkspaceItem(
@@ -115,11 +131,25 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
         };
 
         var materialized = filteredItems.ToArray();
-        var total = materialized.Length;
-        var items = materialized.Skip((page - 1) * pageSize).Take(pageSize).ToArray();
+        var total = needsFinancialMaterialization ? materialized.Length : totalBeforeFinancialFilters;
+        var items = needsFinancialMaterialization
+            ? materialized.Skip((page - 1) * pageSize).Take(pageSize).ToArray()
+            : materialized;
 
         return OperationResult<PagedResult<QuoteWorkspaceItem>>.Success(new(items, total, page, pageSize));
     }
+
+    private static IQueryable<DocumentListRow> SelectRows(IQueryable<OrcaFacil.Domain.Entities.Document> query) =>
+        query.Select(document => new DocumentListRow(document.Id, document.Number, document.Status, document.ClientName,
+            document.Total, document.IssueDate, document.ValidUntil, document.CreatedAt, document.AssignedToUserId));
+
+    private static IQueryable<OrcaFacil.Domain.Entities.Document> ApplyDocumentSort(
+        IQueryable<OrcaFacil.Domain.Entities.Document> query, string sort) => sort switch
+    {
+        "oldest" => query.OrderBy(document => document.CreatedAt).ThenBy(document => document.Id),
+        "validity" => query.OrderBy(document => document.ValidUntil ?? DateTime.MaxValue).ThenByDescending(document => document.CreatedAt).ThenBy(document => document.Id),
+        _ => query.OrderByDescending(document => document.CreatedAt).ThenBy(document => document.Id)
+    };
 
     private static NextActionDescriptor NextAction(Guid documentId, string status, Guid? workOrderId) => status.ToUpperInvariant() switch
     {
@@ -145,4 +175,7 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
         {
             ["id"] = targetId.ToString()
         });
+
+    private sealed record DocumentListRow(Guid Id, string Number, string Status, string ClientName, decimal Total,
+        DateTime IssueDate, DateTime? ValidUntil, DateTime CreatedAt, Guid? AssignedToUserId);
 }
