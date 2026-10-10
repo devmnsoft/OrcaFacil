@@ -9,10 +9,12 @@ public sealed record CommercialBalance(
     decimal ReversedAmount,
     decimal BalanceAmount,
     decimal OverpaidAmount,
-    IReadOnlyList<string> Warnings)
+    IReadOnlyList<string> Warnings,
+    IReadOnlyList<string>? BlockingWarnings = null)
 {
     public bool IsSettled => BalanceAmount == 0m && OverpaidAmount == 0m;
     public bool HasOverpayment => OverpaidAmount > 0m;
+    public bool HasBlockingDivergence => BlockingWarnings is { Count: > 0 };
 }
 
 public interface ICommercialBalanceService
@@ -28,7 +30,8 @@ public sealed record CommercialPaymentAmount(decimal Amount, bool IsReversed);
 public static class CommercialBalanceCalculator
 {
     public static CommercialBalance Calculate(Guid? documentId, Guid? workOrderId, string source, decimal contractedAmount,
-        IEnumerable<CommercialPaymentAmount> payments, IReadOnlyList<string>? warnings = null)
+        IEnumerable<CommercialPaymentAmount> payments, IReadOnlyList<string>? warnings = null,
+        IReadOnlyList<string>? blockingWarnings = null)
     {
         var paymentList = payments.ToArray();
         var active = paymentList.Where(x => !x.IsReversed).Sum(x => x.Amount);
@@ -45,6 +48,7 @@ public static class CommercialBalanceCalculator
             CommercialCalculator.Round(reversed),
             balance > 0m ? balance : 0m,
             CommercialCalculator.Round(overpaid),
-            warnings ?? []);
+            warnings ?? [],
+            blockingWarnings ?? []);
     }
 }

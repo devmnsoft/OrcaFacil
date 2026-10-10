@@ -72,17 +72,8 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
             .Select(w => new { w.Id, SourceDocumentId = w.SourceDocumentId!.Value, w.SourceRevisionId, w.Number, w.TotalSnapshot, w.CreatedAt })
             .ToListAsync(cancellationToken);
 
-        var woMap = workOrders
-            .GroupBy(w => w.SourceDocumentId)
-            .ToDictionary(g => g.Key, g =>
-            {
-                revisions.TryGetValue(g.Key, out var revision);
-                return g.FirstOrDefault(x => revision is not null && x.SourceRevisionId == revision.Id)
-                    ?? g.OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).First();
-            });
-
-        var preferredWorkOrders = woMap.ToDictionary(x => x.Key, x => x.Value.Id);
-        var balanceMap = await balances.GetForDocumentsAsync(accountId, docIds, preferredWorkOrders, cancellationToken);
+        var workOrdersById = workOrders.ToDictionary(x => x.Id);
+        var balanceMap = await balances.GetForDocumentsAsync(accountId, docIds, null, cancellationToken);
 
         var allItems = new List<QuoteWorkspaceItem>(rows.Count);
         foreach (var row in rows)
@@ -90,9 +81,10 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
             var assigneeName = row.AssignedToUserId.HasValue && assignees.TryGetValue(row.AssignedToUserId.Value, out var name) ? name : null;
             revisions.TryGetValue(row.Id, out var currentRev);
             var revisionNumber = currentRev?.VersionNumber ?? 0;
-            woMap.TryGetValue(row.Id, out var wo);
-
             balanceMap.TryGetValue(row.Id, out var balance);
+            var wo = balance?.WorkOrderId is { } workOrderId && workOrdersById.TryGetValue(workOrderId, out var selectedWorkOrder)
+                ? selectedWorkOrder
+                : null;
             var baseTotal = balance?.ContractedAmount ?? currentRev?.Total ?? row.Total;
 
             allItems.Add(new QuoteWorkspaceItem(
@@ -104,7 +96,7 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
                 row.IssueDate,
                 row.ValidUntil,
                 row.CreatedAt,
-                NextAction(row.Id, row.Status, wo?.Id),
+                NextAction(row.Id, row.Status, balance),
                 revisionNumber,
                 assigneeName,
                 balance?.ReceivedAmount ?? 0m,
@@ -114,7 +106,7 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
                 balance?.ReversedAmount ?? 0m,
                 balance?.OverpaidAmount ?? 0m,
                 balance?.ContractSource ?? "Document",
-                balance?.Warnings ?? []));
+                balance is null ? [] : balance.Warnings.Concat(balance.BlockingWarnings ?? []).ToArray()));
         }
 
         IEnumerable<QuoteWorkspaceItem> filteredItems = allItems;
@@ -151,15 +143,18 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
         _ => query.OrderByDescending(document => document.CreatedAt).ThenBy(document => document.Id)
     };
 
-    private static NextActionDescriptor NextAction(Guid documentId, string status, Guid? workOrderId) => status.ToUpperInvariant() switch
+    private static NextActionDescriptor NextAction(Guid documentId, string status, CommercialBalance? balance) => status.ToUpperInvariant() switch
     {
         "DRAFT" => Action("continue", "Continuar orçamento", "Complete os dados antes de compartilhar.",
             "/Documents/CreateBudget", documentId),
         "ISSUED" or "READY" => DetailsAction("share", "Criar acesso", "Envie uma versão segura ao cliente.", documentId, "sharing"),
         "SENT" or "VIEWED" => DetailsAction("follow-up", "Programar retorno", "Mantenha a negociação avançando.", documentId, "negotiation"),
-        "APPROVED" when !workOrderId.HasValue => DetailsAction("work-order", "Criar ordem", "Transforme a aprovação em execução.", documentId, "summary"),
+        "APPROVED" when balance?.WorkOrderId is null => DetailsAction("work-order", "Criar ordem", "Transforme a aprovação em execução.", documentId, "summary"),
+        "APPROVED" when balance is { HasBlockingDivergence: true } => DetailsAction("financial-review", "Revisar vínculos", "Há divergência financeira impeditiva neste contrato.", documentId, "finance"),
+        "APPROVED" when balance is { HasOverpayment: true } => DetailsAction("overpaid", "Revisar excedente", "Há recebimento acima do contratado.", documentId, "finance"),
+        "APPROVED" when balance is { IsSettled: true } => DetailsAction("receipts", "Consultar recebimentos", "Contrato quitado; acompanhe recibos e histórico.", documentId, "finance"),
         "APPROVED" => Action("payment", "Registrar recebimento", "Receba pagamento ou consulte o saldo.",
-            "/Payments/Register", workOrderId.Value),
+            "/Payments/Register", balance!.WorkOrderId!.Value),
         _ => DetailsAction("review", "Revisar proposta", "Consulte o histórico e defina o próximo passo.", documentId)
     };
 

@@ -1,4 +1,5 @@
 using OrcaFacil.Application.Common;
+using OrcaFacil.Application.Commercial;
 using OrcaFacil.Application.Documents;
 using OrcaFacil.Persistence.Services;
 using Xunit;
@@ -22,7 +23,7 @@ public sealed class QuoteWorkspaceNextActionTests
         Assert.Equal(documentId.ToString(), draft.RouteValues?["id"]);
         Assert.DoesNotContain("documentId", draft.RouteValues?.Keys ?? []);
 
-        var payment = Invoke(method!, documentId, "Approved", workOrderId);
+        var payment = Invoke(method!, documentId, "Approved", Balance(documentId, workOrderId, 1000m, []));
         Assert.Equal("/Payments/Register", payment.Page);
         Assert.Equal(workOrderId.ToString(), payment.RouteValues?["id"]);
         Assert.DoesNotContain("documentId", payment.RouteValues?.Keys ?? []);
@@ -43,6 +44,41 @@ public sealed class QuoteWorkspaceNextActionTests
         Assert.DoesNotContain("asp-route-id=\"@quote.Id\">@quote.NextAction.Title", page);
     }
 
-    private static NextActionDescriptor Invoke(System.Reflection.MethodInfo method, Guid documentId, string status, Guid? workOrderId) =>
-        Assert.IsType<NextActionDescriptor>(method.Invoke(null, [documentId, status, workOrderId]));
+    [Fact]
+    public void Approved_quote_with_financial_blockage_routes_to_review_instead_of_payment()
+    {
+        var documentId = Guid.NewGuid();
+        var workOrderId = Guid.NewGuid();
+        var method = typeof(QuoteWorkspaceService).GetMethod("NextAction", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+        var action = Invoke(method!, documentId, "Approved", Balance(documentId, workOrderId, 1000m,
+            ["Há recebimento com vínculo incompatível entre orçamento e ordem."]));
+
+        Assert.Equal("financial-review", action.Code);
+        Assert.Equal("/Documents/Details", action.Page);
+        Assert.Equal("finance", action.RouteValues?["tab"]);
+    }
+
+    [Fact]
+    public void Approved_quote_that_is_paid_does_not_offer_a_new_payment()
+    {
+        var documentId = Guid.NewGuid();
+        var workOrderId = Guid.NewGuid();
+        var method = typeof(QuoteWorkspaceService).GetMethod("NextAction", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+        var action = Invoke(method!, documentId, "Approved", Balance(documentId, workOrderId, 1000m, [], received: 1000m));
+
+        Assert.Equal("receipts", action.Code);
+        Assert.Equal("/Documents/Details", action.Page);
+        Assert.Equal("finance", action.RouteValues?["tab"]);
+    }
+
+    private static NextActionDescriptor Invoke(System.Reflection.MethodInfo method, Guid documentId, string status, CommercialBalance? balance) =>
+        Assert.IsType<NextActionDescriptor>(method.Invoke(null, [documentId, status, balance]));
+
+    private static CommercialBalance Balance(Guid documentId, Guid workOrderId, decimal contracted,
+        IReadOnlyList<string> blockingWarnings, decimal received = 0m) =>
+        CommercialBalanceCalculator.Calculate(documentId, workOrderId, "WorkOrder", contracted,
+            received == 0m ? [] : [new CommercialPaymentAmount(received, IsReversed: false)],
+            blockingWarnings: blockingWarnings);
 }

@@ -411,6 +411,8 @@ public sealed class CommercialJourneyService(
         }
         var currentBalance = await balances.GetForWorkOrderAsync(AccountId, order.Id, ct);
         if (currentBalance is null) return Pay(false, "NotFound", "Ordem não encontrada.", null, null, correlation);
+        if (currentBalance.HasBlockingDivergence)
+            return Pay(false, "FinancialLinkDivergence", "Há vínculo incompatível entre orçamento, ordem e recebimento. Revise o histórico financeiro antes de lançar novo recebimento.", null, "Review", correlation);
         if (currentBalance.OverpaidAmount > 0m)
             return Pay(false, "Overpaid", $"Esta ordem possui excedente de {currentBalance.OverpaidAmount:C} e deve ser revisada antes de novo recebimento.", null, "Overpaid", correlation);
         if (currentBalance.BalanceAmount == 0m) return Pay(false, "AlreadyPaid", "Esta ordem já está totalmente paga.", null, "Paid", correlation);

@@ -46,4 +46,15 @@ public sealed class CommercialBalanceCalculatorTests
         Assert.True(result.HasOverpayment);
         Assert.False(result.IsSettled);
     }
+
+    [Fact]
+    public void Blocking_warnings_mark_the_balance_as_not_safe_for_new_operations()
+    {
+        var result = CommercialBalanceCalculator.Calculate(Guid.NewGuid(), Guid.NewGuid(), "WorkOrder", 1000m,
+            [new CommercialPaymentAmount(250m, IsReversed: false)],
+            blockingWarnings: ["Vínculo financeiro incompatível."]);
+
+        Assert.True(result.HasBlockingDivergence);
+        Assert.Equal(750m, result.BalanceAmount);
+    }
 }
