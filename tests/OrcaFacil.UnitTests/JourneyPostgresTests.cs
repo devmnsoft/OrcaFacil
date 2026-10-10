@@ -261,11 +261,16 @@ public sealed class JourneyPostgresTests
             await db.SaveChangesAsync();
         }
 
-        private CommercialJourneyService Build(Guid accountId) => new(
-            Context(), new FixedAccount(UserId, accountId), new FixedUser(UserId), new AllowAllPlans(),
-            new DocumentSnapshotSerializer(), new PublicDocumentTokenService(), new DocumentStatusTransitionService(),
-            new WorkOrderStatusTransitionService(), new NumberToWordsPtBrService(),
-            new TechnicalFingerprintService("orcafacil-jornada-teste-pepper-32"));
+        private CommercialJourneyService Build(Guid accountId)
+        {
+            var context = Context();
+            return new(
+                context, new FixedAccount(UserId, accountId), new FixedUser(UserId), new AllowAllPlans(),
+                new DocumentSnapshotSerializer(), new PublicDocumentTokenService(), new DocumentStatusTransitionService(),
+                new WorkOrderStatusTransitionService(), new NumberToWordsPtBrService(),
+                new TechnicalFingerprintService("orcafacil-jornada-teste-pepper-32"),
+                new CommercialBalanceService(context));
+        }
 
         private Document NewDocument(string status)
         {

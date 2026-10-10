@@ -95,12 +95,25 @@ else
             <div>
                 <strong>@quote.Total.ToString("C", brlCulture)</strong>
                 <div style="font-size:0.8rem; margin-top:0.25rem;">
+                    <span style="color:var(--of-muted); display:block;">Base: @(quote.ContractSource == "WorkOrder" ? "ordem de serviço" : quote.ContractSource == "CurrentRevision" ? "revisão vigente" : "orçamento")</span>
                     @if (quote.Paid > 0)
                     {
                         <span style="color:var(--of-success, #16a34a); display:block;">Recebido: @quote.Paid.ToString("C", brlCulture)</span>
                     }
+                    @if (quote.Reversed > 0)
+                    {
+                        <span style="color:var(--of-warning, #b45309); display:block;">Estornado: @quote.Reversed.ToString("C", brlCulture)</span>
+                    }
                     <span style="color:var(--of-muted); display:block;">Saldo: @quote.Balance.ToString("C", brlCulture)</span>
+                    @if (quote.Overpaid > 0)
+                    {
+                        <span style="color:var(--of-danger, #dc2626); display:block;">Excedente: @quote.Overpaid.ToString("C", brlCulture)</span>
+                    }
                 </div>
+                @if (quote.FinancialWarnings is { Count: > 0 })
+                {
+                    <small style="display:block; margin-top:0.25rem; color:var(--of-warning, #b45309);">@quote.FinancialWarnings[0]</small>
+                }
                 <small style="display:block; margin-top:0.25rem; color:var(--of-muted);">Validade: @(quote.ValidUntil?.ToString("dd/MM/yyyy") ?? "não definida")</small>
             </div>
             <div style="display:flex; flex-direction:column; gap:0.5rem;">

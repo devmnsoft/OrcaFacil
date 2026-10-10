@@ -19,7 +19,7 @@ public sealed class CommercialJourneyService(
     OrcaFacilDbContext db, ICurrentAccountService currentAccount, ICurrentUserService currentUser,
     IPlanAccessService plans, IDocumentSnapshotSerializer snapshots, IPublicDocumentTokenService tokens,
     IDocumentStatusTransitionService documentTransitions, IWorkOrderStatusTransitionService workOrderTransitions,
-    INumberToWordsService numberToWords, ITechnicalFingerprintService fingerprints) : ICommercialJourneyService, IManualPaymentRegistrationService, IPublicDocumentAccessService
+    INumberToWordsService numberToWords, ITechnicalFingerprintService fingerprints, ICommercialBalanceService balances) : ICommercialJourneyService, IManualPaymentRegistrationService, IPublicDocumentAccessService
 {
     private string CorrelationId => Guid.NewGuid().ToString("N");
     private Guid AccountId => currentAccount.AccountId ?? throw new InvalidOperationException("Conta ativa não selecionada.");
@@ -409,16 +409,16 @@ public sealed class CommercialJourneyService(
                 return Pay(true, "IdempotentReplay", "Pagamento já registrado.", existing.Id, existing.Status.ToString(), correlation);
             return Pay(false, "IdempotencyConflict", "Esta chave já foi usada para outro recebimento. O lançamento original foi mantido.", existing.Id, existing.Status.ToString(), correlation);
         }
-        var paid = await db.ManualPayments.Where(x => x.AccountId == AccountId && x.WorkOrderId == order.Id && !x.IsDeleted && x.Status == FinancialRecordStatus.Active)
-            .SumAsync(x => (decimal?)x.Amount, ct) ?? 0m;
-        var balance = order.TotalSnapshot - paid;
-        if (balance < 0m) balance = 0m;
-        if (balance == 0m) return Pay(false, "AlreadyPaid", "Esta ordem já está totalmente paga.", null, "Paid", correlation);
-        if (amount > balance) return Pay(false, "AmountExceedsBalance", $"O valor informado supera o saldo de {balance:C}.", null, "Partial", correlation);
+        var currentBalance = await balances.GetForWorkOrderAsync(AccountId, order.Id, ct);
+        if (currentBalance is null) return Pay(false, "NotFound", "Ordem não encontrada.", null, null, correlation);
+        if (currentBalance.OverpaidAmount > 0m)
+            return Pay(false, "Overpaid", $"Esta ordem possui excedente de {currentBalance.OverpaidAmount:C} e deve ser revisada antes de novo recebimento.", null, "Overpaid", correlation);
+        if (currentBalance.BalanceAmount == 0m) return Pay(false, "AlreadyPaid", "Esta ordem já está totalmente paga.", null, "Paid", correlation);
+        if (amount > currentBalance.BalanceAmount) return Pay(false, "AmountExceedsBalance", $"O valor informado supera o saldo de {currentBalance.BalanceAmount:C}.", null, "Partial", correlation);
         var payment = new ManualPayment { AccountId = AccountId, WorkOrderId = order.Id, DocumentId = order.SourceDocumentId, ClientId = order.ClientId,
             Amount = amount, PaymentMethod = methodCode, PaidAt = paidAt, Notes = Clean(request.Notes, 1000), RegisteredByUserId = currentUser.UserId, IdempotencyKey = request.IdempotencyKey };
         db.ManualPayments.Add(payment);
-        var remaining = balance - amount;
+        var remaining = currentBalance.BalanceAmount - amount;
         order.PaymentReceived = remaining == 0m; order.PaymentMethod = payment.PaymentMethod;
         AddEvent("PaymentRegistered", order.Id, remaining == 0m ? "Pagamento total registrado manualmente." : "Pagamento parcial registrado manualmente.");
         try

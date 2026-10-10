@@ -192,7 +192,12 @@ public sealed class BudgetAiAssistant(
         CancellationToken ct = default,
         BudgetCommercialContext? commercial = null)
     {
-        if (context.AccountId == Guid.Empty || context.AccountId != policy.AccountId || !policy.AllowSuggestions || !CanSuggest(context))
+        if (context.AccountId == Guid.Empty
+            || context.AccountId != policy.AccountId
+            || !policy.AccountActive
+            || !policy.FeatureEnabled
+            || !policy.AllowSuggestions
+            || !CanSuggest(context))
             return new(false, string.Empty, string.Empty, [], 0, true, "Esta conta não autorizou sugestões de orçamento.", false);
 
         if (string.IsNullOrWhiteSpace(serviceDescription))

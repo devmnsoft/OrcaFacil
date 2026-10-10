@@ -174,6 +174,25 @@ public sealed class AiProviderIntegrationV67Tests
         Assert.Equal(0, client.Calls);
     }
 
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public async Task Orchestrator_does_not_call_a_provider_when_account_or_feature_is_blocked(bool accountActive, bool featureEnabled)
+    {
+        var client = new FakeModelClient("Groq", fail: false);
+        var orchestrator = new AiOrchestrator([client], Options.Create(new AiOptions()), new AiCircuitBreaker(), NullLogger<AiOrchestrator>.Instance);
+        var account = Guid.NewGuid();
+
+        var result = await orchestrator.ExecuteAsync(
+            new AiRequestContext(account, Guid.NewGuid(), new HashSet<string> { "Ai.Suggest" }),
+            new AiGovernancePolicy(account, AccountActive: accountActive, FeatureEnabled: featureEnabled),
+            "budget_assistant",
+            new AiClientRequest("Descreva a troca"));
+
+        Assert.True(result.IsFallbackToRules);
+        Assert.Equal(0, client.Calls);
+    }
+
     [Fact]
     public async Task Budget_assistant_refuses_when_suggestions_are_disabled()
     {
@@ -184,6 +203,27 @@ public sealed class AiProviderIntegrationV67Tests
         var result = await assistant.SuggestBudgetAsync(
             new AiRequestContext(account, Guid.NewGuid(), new HashSet<string> { "Ai.Suggest" }),
             new AiGovernancePolicy(account, AllowSuggestions: false),
+            "Troca de disjuntor",
+            []);
+
+        Assert.False(result.Succeeded);
+        Assert.False(result.RequiresReview);
+        Assert.Empty(result.Items);
+        Assert.Equal(0, orchestrator.Calls);
+    }
+
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public async Task Budget_assistant_refuses_when_account_or_feature_is_blocked(bool accountActive, bool featureEnabled)
+    {
+        var orchestrator = new CountingOrchestrator();
+        var assistant = new BudgetAiAssistant(orchestrator, new PromptSanitizer(new AiRedactionService()));
+        var account = Guid.NewGuid();
+
+        var result = await assistant.SuggestBudgetAsync(
+            new AiRequestContext(account, Guid.NewGuid(), new HashSet<string> { "Ai.Suggest" }),
+            new AiGovernancePolicy(account, AccountActive: accountActive, FeatureEnabled: featureEnabled),
             "Troca de disjuntor",
             []);
 

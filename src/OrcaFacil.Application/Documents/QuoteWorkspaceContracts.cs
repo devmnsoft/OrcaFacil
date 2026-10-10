@@ -9,7 +9,8 @@ public sealed record QuoteWorkspaceQuery(string? Search = null, string? Status =
 public sealed record QuoteWorkspaceItem(Guid Id, string Number, string Status, string ClientName, decimal Total,
     DateTime IssueDate, DateTime? ValidUntil, DateTime CreatedAt, NextActionDescriptor NextAction,
     int RevisionNumber = 0, string? AssigneeName = null, decimal Paid = 0, decimal Balance = 0,
-    Guid? WorkOrderId = null, string? WorkOrderNumber = null);
+    Guid? WorkOrderId = null, string? WorkOrderNumber = null, decimal Reversed = 0,
+    decimal Overpaid = 0, string ContractSource = "Document", IReadOnlyList<string>? FinancialWarnings = null);
 
 public interface IQuoteWorkspaceService
 {

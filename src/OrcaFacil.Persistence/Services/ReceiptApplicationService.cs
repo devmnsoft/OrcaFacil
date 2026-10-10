@@ -15,7 +15,8 @@ public sealed class ReceiptApplicationService(
     OrcaFacilDbContext db,
     ICurrentAccountService currentAccount,
     INumberToWordsService numberToWords,
-    IManualPaymentRegistrationService payments) : IReceiptApplicationService
+    IManualPaymentRegistrationService payments,
+    ICommercialBalanceService balances) : IReceiptApplicationService
 {
     private const string RedirectPage = "/Receipts/Details";
 
@@ -198,21 +199,26 @@ public sealed class ReceiptApplicationService(
                         return Failure(CreateReceiptCode.InvalidOrigin, "O cliente informado não corresponde ao cliente do orçamento.", correlationId);
                     }
 
-                    var alreadyPaid = await db.ManualPayments.Where(
-                        x => x.AccountId == accountId && x.DocumentId == documentId && !x.IsDeleted && x.Status == FinancialRecordStatus.Active)
-                        .SumAsync(x => (decimal?)x.Amount, ct) ?? 0m;
-
-                    var balance = CommercialCalculator.Round(budgetDoc.Total - alreadyPaid);
-                    if (balance < 0m) balance = 0m;
-                    if (balance == 0m)
+                    var balance = await balances.GetForDocumentAsync(accountId, documentId, null, ct);
+                    if (balance is null)
+                    {
+                        await transaction.RollbackAsync(ct);
+                        return Failure(CreateReceiptCode.DocumentNotFound, "Orçamento não encontrado nesta conta.", correlationId);
+                    }
+                    if (balance.OverpaidAmount > 0m)
+                    {
+                        await transaction.RollbackAsync(ct);
+                        return Failure(CreateReceiptCode.InvalidAmount, $"Este orçamento possui excedente de {balance.OverpaidAmount:C} e deve ser revisado antes de novo recebimento.", correlationId);
+                    }
+                    if (balance.BalanceAmount == 0m)
                     {
                         await transaction.RollbackAsync(ct);
                         return Failure(CreateReceiptCode.InvalidAmount, "Este orçamento já está totalmente quitado.", correlationId);
                     }
-                    if (normalizedAmount > balance)
+                    if (normalizedAmount > balance.BalanceAmount)
                     {
                         await transaction.RollbackAsync(ct);
-                        return Failure(CreateReceiptCode.InvalidAmount, $"O valor informado supera o saldo restante de {balance:C} do orçamento.", correlationId);
+                        return Failure(CreateReceiptCode.InvalidAmount, $"O valor informado supera o saldo restante de {balance.BalanceAmount:C} do orçamento.", correlationId);
                     }
                 }
 

@@ -5,8 +5,11 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Commercial;
+using OrcaFacil.Application.Plans;
+using OrcaFacil.Application.Security;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
+using OrcaFacil.Domain.Plans;
 using OrcaFacil.Persistence;
 
 namespace OrcaFacil.Web.Pages.Payments;
@@ -14,16 +17,22 @@ namespace OrcaFacil.Web.Pages.Payments;
 [Authorize]
 public sealed class RegisterModel(
     IManualPaymentRegistrationService payments,
+    ICommercialBalanceService balances,
+    IPlanAccessService plans,
     OrcaFacilDbContext db,
     ICurrentAccountService account) : PageModel
 {
     [BindProperty] public InputModel Input { get; set; } = new();
     public WorkOrder? WorkOrder { get; private set; }
-    public decimal PaidAmount { get; private set; }
-    public decimal Balance => Math.Max(0m, (WorkOrder?.TotalSnapshot ?? 0m) - PaidAmount);
+    public CommercialBalance? BalanceView { get; private set; }
+    public decimal PaidAmount => BalanceView?.ReceivedAmount ?? 0m;
+    public decimal Balance => BalanceView?.BalanceAmount ?? 0m;
+    public decimal ReversedAmount => BalanceView?.ReversedAmount ?? 0m;
+    public decimal OverpaidAmount => BalanceView?.OverpaidAmount ?? 0m;
 
     public async Task<IActionResult> OnGetAsync(Guid id, CancellationToken ct)
     {
+        if (!await CanAccessAsync(ct)) return Forbid();
         if (!await LoadAsync(id, ct)) return NotFound();
         Input.PaidAt = DateTime.Now;
         Input.Amount = Balance;
@@ -32,6 +41,7 @@ public sealed class RegisterModel(
 
     public async Task<IActionResult> OnPostAsync(Guid id, CancellationToken ct)
     {
+        if (!await CanAccessAsync(ct)) return Forbid();
         if (!await LoadAsync(id, ct)) return NotFound();
         if (Input.Amount > Balance)
             ModelState.AddModelError("Input.Amount", $"Informe no máximo o saldo de {Balance:C}.");
@@ -52,10 +62,18 @@ public sealed class RegisterModel(
         WorkOrder = await db.WorkOrders.AsNoTracking().SingleOrDefaultAsync(
             x => x.Id == id && x.AccountId == account.AccountId && !x.IsDeleted, ct);
         if (WorkOrder is null) return false;
-        PaidAmount = await db.ManualPayments.AsNoTracking()
-            .Where(x => x.AccountId == account.AccountId && x.WorkOrderId == id && !x.IsDeleted && x.Status == FinancialRecordStatus.Active)
-            .SumAsync(x => (decimal?)x.Amount, ct) ?? 0m;
+        BalanceView = await balances.GetForWorkOrderAsync(WorkOrder.AccountId, id, ct);
+        if (BalanceView is null) return false;
         return true;
+    }
+
+    private async Task<bool> CanAccessAsync(CancellationToken ct)
+    {
+        if (account.AccountId is not Guid accountId) return false;
+        await account.EnsureAccountAccessAsync(ct);
+        if (!await account.HasPermissionAsync(PermissionCodes.PaymentsManage, ct)) return false;
+        var allowed = await plans.CanUseAsync(accountId, PlanFeatureCodes.ManualPaymentsEnabled, ct);
+        return allowed.IsAllowed;
     }
 
     public sealed class InputModel

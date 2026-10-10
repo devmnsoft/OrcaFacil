@@ -77,7 +77,11 @@ public sealed record AiGovernancePolicy(Guid AccountId, bool AllowCustomerData =
 public sealed class AiGovernanceService
 {
     public bool CanUse(AiRequestContext context, AiGovernancePolicy policy, string permission) =>
-        context.AccountId != Guid.Empty && context.AccountId == policy.AccountId && context.Permissions.Contains(permission);
+        context.AccountId != Guid.Empty
+        && context.AccountId == policy.AccountId
+        && policy.AccountActive
+        && policy.FeatureEnabled
+        && context.Permissions.Contains(permission);
 
     public bool CanUseFinancialData(AiRequestContext context, AiGovernancePolicy policy) =>
         CanUse(context, policy, "Ai.View") && policy.AllowFinancialData && context.Permissions.Contains("Finance.View");
@@ -214,7 +218,11 @@ public sealed class AiDraftService(IAiRedactionService redaction)
 {
     public AiDraft Create(AiRequestContext context, AiGovernancePolicy policy, string type, string content)
     {
-        if (context.AccountId != policy.AccountId || !context.Permissions.Contains("Ai.GenerateDrafts") || !policy.AllowCommercialDrafts)
+        if (context.AccountId != policy.AccountId
+            || !policy.AccountActive
+            || !policy.FeatureEnabled
+            || !context.Permissions.Contains("Ai.GenerateDrafts")
+            || !policy.AllowCommercialDrafts)
             throw new UnauthorizedAccessException();
         return new(context.AccountId, context.UserId, type, redaction.Sanitize(content));
     }

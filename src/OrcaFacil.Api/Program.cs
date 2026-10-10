@@ -55,6 +55,7 @@ builder.Services.AddScoped<IWorkOrderStatusTransitionService, WorkOrderStatusTra
 builder.Services.AddSingleton<ITechnicalFingerprintService>(_ =>
     new TechnicalFingerprintService(ResolveTechnicalFingerprintPepper(builder.Configuration, builder.Environment.EnvironmentName)));
 builder.Services.AddScoped<CommercialJourneyService>();
+builder.Services.AddScoped<ICommercialBalanceService, CommercialBalanceService>();
 builder.Services.AddScoped<ICommercialJourneyService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IPublicDocumentAccessService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IManualPaymentRegistrationService>(sp => sp.GetRequiredService<CommercialJourneyService>());

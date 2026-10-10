@@ -61,4 +61,45 @@ public sealed class AiGovernanceTests
 
     [Fact] public void Quota_blocks_new_usage() => Assert.Equal(AiQuotaService.LimitMessage,
         Assert.Throws<InvalidOperationException>(() => new AiQuotaService().EnsureAvailable(new(10, 3, 10, 1))).Message);
+
+    [Fact] public void Can_use_requires_active_account_enabled_feature_and_permission()
+    {
+        var account = Guid.NewGuid();
+        var context = Context(account, "Ai.UseCopilot");
+        var governance = new AiGovernanceService();
+
+        Assert.True(governance.CanUse(context, new(account), "Ai.UseCopilot"));
+        Assert.False(governance.CanUse(context, new(account, AccountActive: false), "Ai.UseCopilot"));
+        Assert.False(governance.CanUse(context, new(account, FeatureEnabled: false), "Ai.UseCopilot"));
+        Assert.False(governance.CanUse(Context(account), new(account), "Ai.UseCopilot"));
+        Assert.False(governance.CanUse(context, new(Guid.NewGuid()), "Ai.UseCopilot"));
+    }
+
+    [Fact] public void Financial_data_respects_policy_status_feature_and_permissions()
+    {
+        var account = Guid.NewGuid();
+        var context = Context(account, "Ai.View", "Finance.View");
+        var governance = new AiGovernanceService();
+
+        Assert.True(governance.CanUseFinancialData(context, new(account, AllowFinancialData: true)));
+        Assert.False(governance.CanUseFinancialData(context, new(account, AllowFinancialData: false)));
+        Assert.False(governance.CanUseFinancialData(context, new(account, AllowFinancialData: true, AccountActive: false)));
+        Assert.False(governance.CanUseFinancialData(context, new(account, AllowFinancialData: true, FeatureEnabled: false)));
+        Assert.False(governance.CanUseFinancialData(Context(account, "Ai.View"), new(account, AllowFinancialData: true)));
+    }
+
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public void Draft_creation_requires_active_account_and_enabled_feature(bool accountActive, bool featureEnabled)
+    {
+        var account = Guid.NewGuid();
+        var service = new AiDraftService(new AiRedactionService());
+
+        Assert.Throws<UnauthorizedAccessException>(() => service.Create(
+            Context(account, "Ai.GenerateDrafts"),
+            new(account, AccountActive: accountActive, FeatureEnabled: featureEnabled),
+            "email",
+            "Olá"));
+    }
 }

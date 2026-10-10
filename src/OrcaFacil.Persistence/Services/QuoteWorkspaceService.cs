@@ -1,12 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Commercial;
 using OrcaFacil.Application.Common;
 using OrcaFacil.Application.Documents;
 using OrcaFacil.Domain.Enums;
 
 namespace OrcaFacil.Persistence.Services;
 
-public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccountService currentAccount)
+public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccountService currentAccount, ICommercialBalanceService balances)
     : IQuoteWorkspaceService
 {
     public async Task<OperationResult<PagedResult<QuoteWorkspaceItem>>> ListAsync(QuoteWorkspaceQuery request,
@@ -39,20 +40,8 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
         if (request.AssignedToUserId is { } assignedId) query = query.Where(document => document.AssignedToUserId == assignedId);
         if (request.From is { } from) query = query.Where(document => document.IssueDate >= from);
         if (request.To is { } to) query = query.Where(document => document.IssueDate < to.Date.AddDays(1));
-        if (request.Minimum is { } minimum) query = query.Where(document => document.Total >= minimum);
-        if (request.Maximum is { } maximum) query = query.Where(document => document.Total <= maximum);
 
-        query = request.Sort switch
-        {
-            "oldest" => query.OrderBy(document => document.CreatedAt),
-            "value-desc" => query.OrderByDescending(document => document.Total),
-            "value-asc" => query.OrderBy(document => document.Total),
-            "validity" => query.OrderBy(document => document.ValidUntil),
-            _ => query.OrderByDescending(document => document.CreatedAt)
-        };
-
-        var total = await query.CountAsync(cancellationToken);
-        var rows = await query.Skip((page - 1) * pageSize).Take(pageSize)
+        var rows = await query
             .Select(document => new { document.Id, document.Number, document.Status, document.ClientName,
                 document.Total, document.IssueDate, document.ValidUntil, document.CreatedAt, document.AssignedToUserId })
             .ToListAsync(cancellationToken);
@@ -79,50 +68,18 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
             .GroupBy(w => w.SourceDocumentId)
             .ToDictionary(g => g.Key, g => g.First());
 
-        var woIds = workOrders.Select(w => w.Id).ToArray();
-        var woToDoc = workOrders.ToDictionary(w => w.Id, w => w.SourceDocumentId);
-
-        // Busca pagamentos ativos ligados diretamente ao orçamento OU ligados a ordens do orçamento
-        var paymentsQuery = db.ManualPayments.AsNoTracking()
-            .Where(p => p.AccountId == accountId && !p.IsDeleted && p.Status == FinancialRecordStatus.Active);
-
-        var candidatePayments = await paymentsQuery
-            .Where(p => (p.DocumentId != null && docIds.Contains(p.DocumentId.Value)) ||
-                        (p.WorkOrderId != null && woIds.Contains(p.WorkOrderId.Value)))
-            .Select(p => new { p.Id, p.DocumentId, p.WorkOrderId, p.Amount })
-            .ToListAsync(cancellationToken);
-
-        // Agrupa por documento sem duplicar o mesmo pagamento
-        var paidByDoc = new Dictionary<Guid, decimal>();
-        foreach (var p in candidatePayments)
+        var allItems = new List<QuoteWorkspaceItem>(rows.Count);
+        foreach (var row in rows)
         {
-            Guid? targetDocId = null;
-            if (p.DocumentId.HasValue && docIds.Contains(p.DocumentId.Value))
-                targetDocId = p.DocumentId.Value;
-            else if (p.WorkOrderId.HasValue && woToDoc.TryGetValue(p.WorkOrderId.Value, out var mappedDocId))
-                targetDocId = mappedDocId;
-
-            if (targetDocId.HasValue)
-            {
-                paidByDoc[targetDocId.Value] = paidByDoc.GetValueOrDefault(targetDocId.Value) + p.Amount;
-            }
-        }
-
-        var items = rows.Select(row => {
             var assigneeName = row.AssignedToUserId.HasValue && assignees.TryGetValue(row.AssignedToUserId.Value, out var name) ? name : null;
             revisions.TryGetValue(row.Id, out var currentRev);
             var revisionNumber = currentRev?.VersionNumber ?? 0;
             woMap.TryGetValue(row.Id, out var wo);
 
-            var paid = paidByDoc.GetValueOrDefault(row.Id, 0m);
+            var balance = await balances.GetForDocumentAsync(accountId, row.Id, wo?.Id, cancellationToken);
+            var baseTotal = balance?.ContractedAmount ?? currentRev?.Total ?? row.Total;
 
-            // A base do saldo é o valor contratado na ordem, ou a revisão comercial emitida, ou o total do documento
-            var baseTotal = wo is not null && wo.TotalSnapshot > 0 ? wo.TotalSnapshot
-                : (currentRev is not null && currentRev.Total > 0 ? currentRev.Total : row.Total);
-
-            var balance = Math.Max(0, baseTotal - paid);
-
-            return new QuoteWorkspaceItem(
+            allItems.Add(new QuoteWorkspaceItem(
                 row.Id,
                 row.Number,
                 row.Status,
@@ -134,11 +91,32 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
                 NextAction(row.Id, row.Status, wo?.Id),
                 revisionNumber,
                 assigneeName,
-                paid,
-                balance,
+                balance?.ReceivedAmount ?? 0m,
+                balance?.BalanceAmount ?? 0m,
                 wo?.Id,
-                wo?.Number);
-        }).ToArray();
+                wo?.Number,
+                balance?.ReversedAmount ?? 0m,
+                balance?.OverpaidAmount ?? 0m,
+                balance?.ContractSource ?? "Document",
+                balance?.Warnings ?? []));
+        }
+
+        IEnumerable<QuoteWorkspaceItem> filteredItems = allItems;
+        if (request.Minimum is { } minimum) filteredItems = filteredItems.Where(item => item.Total >= minimum);
+        if (request.Maximum is { } maximum) filteredItems = filteredItems.Where(item => item.Total <= maximum);
+
+        filteredItems = request.Sort switch
+        {
+            "oldest" => filteredItems.OrderBy(item => item.CreatedAt).ThenBy(item => item.Id),
+            "value-desc" => filteredItems.OrderByDescending(item => item.Total).ThenByDescending(item => item.CreatedAt).ThenBy(item => item.Id),
+            "value-asc" => filteredItems.OrderBy(item => item.Total).ThenByDescending(item => item.CreatedAt).ThenBy(item => item.Id),
+            "validity" => filteredItems.OrderBy(item => item.ValidUntil ?? DateTime.MaxValue).ThenByDescending(item => item.CreatedAt).ThenBy(item => item.Id),
+            _ => filteredItems.OrderByDescending(item => item.CreatedAt).ThenBy(item => item.Id)
+        };
+
+        var materialized = filteredItems.ToArray();
+        var total = materialized.Length;
+        var items = materialized.Skip((page - 1) * pageSize).Take(pageSize).ToArray();
 
         return OperationResult<PagedResult<QuoteWorkspaceItem>>.Success(new(items, total, page, pageSize));
     }
