@@ -57,4 +57,16 @@ public sealed class CommercialBalanceCalculatorTests
         Assert.True(result.HasBlockingDivergence);
         Assert.Equal(750m, result.BalanceAmount);
     }
+
+    [Fact]
+    public void Blocking_divergence_prevents_settled_status_even_when_operational_balance_is_zero()
+    {
+        var result = CommercialBalanceCalculator.Calculate(Guid.NewGuid(), Guid.NewGuid(), "WorkOrder", 1000m,
+            [new CommercialPaymentAmount(1000m, IsReversed: false)],
+            blockingWarnings: ["Vínculo financeiro incompatível."]);
+
+        Assert.Equal(0m, result.BalanceAmount);
+        Assert.True(result.HasBlockingDivergence);
+        Assert.False(result.IsSettled);
+    }
 }

@@ -45,4 +45,22 @@ public sealed class CommercialContractOriginSelectorTests
         Assert.Equal(olderOrderId, origin.WorkOrderId);
         Assert.Equal(800m, origin.ContractedAmount);
     }
+
+    [Fact]
+    public void Newer_cancelled_work_order_is_not_selected_as_default_contract_origin()
+    {
+        var documentId = Guid.NewGuid();
+        var olderOrderId = Guid.NewGuid();
+        var cancelledOrderId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+
+        var origin = CommercialContractOriginSelector.Select(documentId, 1000m, [],
+        [
+            new CommercialWorkOrderCandidate(olderOrderId, documentId, null, "OS-001", 800m, now.AddDays(-2)),
+            new CommercialWorkOrderCandidate(cancelledOrderId, documentId, null, "OS-002", 1200m, now, IsCancelled: true)
+        ]);
+
+        Assert.Equal(olderOrderId, origin.WorkOrderId);
+        Assert.Equal(800m, origin.ContractedAmount);
+    }
 }

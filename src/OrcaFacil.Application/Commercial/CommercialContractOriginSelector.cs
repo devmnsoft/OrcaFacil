@@ -3,7 +3,7 @@ namespace OrcaFacil.Application.Commercial;
 public sealed record CommercialRevisionCandidate(Guid Id, Guid DocumentId, int VersionNumber, decimal Total, bool IsCurrent);
 
 public sealed record CommercialWorkOrderCandidate(Guid Id, Guid SourceDocumentId, Guid? SourceRevisionId, string Number,
-    decimal TotalSnapshot, DateTime CreatedAt);
+    decimal TotalSnapshot, DateTime CreatedAt, bool IsCancelled = false);
 
 public sealed record CommercialContractOrigin(Guid DocumentId, Guid? WorkOrderId, Guid? RevisionId, string Source,
     decimal ContractedAmount, string? WorkOrderNumber)
@@ -32,7 +32,7 @@ public static class CommercialContractOriginSelector
             ? orderList.FirstOrDefault(x => x.Id == preferredWorkOrderId.Value)
             : null;
 
-        selectedOrder ??= orderList.FirstOrDefault();
+        selectedOrder ??= orderList.FirstOrDefault(x => !x.IsCancelled);
         if (selectedOrder is not null)
             return new CommercialContractOrigin(documentId, selectedOrder.Id, selectedOrder.SourceRevisionId,
                 "WorkOrder", selectedOrder.TotalSnapshot, selectedOrder.Number);

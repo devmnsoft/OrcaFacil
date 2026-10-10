@@ -77,7 +77,7 @@ public sealed class CommercialBalanceService(OrcaFacilDbContext db) : ICommercia
 
         var orders = await db.WorkOrders.AsNoTracking()
             .Where(x => x.AccountId == accountId && x.SourceDocumentId != null && existingDocumentIds.Contains(x.SourceDocumentId.Value) && !x.IsDeleted)
-            .Select(x => new CommercialWorkOrderCandidate(x.Id, x.SourceDocumentId!.Value, x.SourceRevisionId, x.Number, x.TotalSnapshot, x.CreatedAt))
+            .Select(x => new CommercialWorkOrderCandidate(x.Id, x.SourceDocumentId!.Value, x.SourceRevisionId, x.Number, x.TotalSnapshot, x.CreatedAt, x.Status == WorkOrderStatus.Cancelled))
             .ToListAsync(ct);
 
         var ordersByDocument = orders.GroupBy(x => x.SourceDocumentId).ToDictionary(g => g.Key, g => g.ToArray());

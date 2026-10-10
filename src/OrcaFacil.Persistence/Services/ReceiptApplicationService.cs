@@ -205,6 +205,11 @@ public sealed class ReceiptApplicationService(
                         await transaction.RollbackAsync(ct);
                         return Failure(CreateReceiptCode.DocumentNotFound, "Orçamento não encontrado nesta conta.", correlationId);
                     }
+                    if (balance.HasBlockingDivergence)
+                    {
+                        await transaction.RollbackAsync(ct);
+                        return Failure(CreateReceiptCode.InvalidOrigin, "Há vínculo incompatível entre orçamento, ordem e recebimento. Revise o histórico financeiro antes de lançar novo recebimento.", correlationId);
+                    }
                     if (balance.OverpaidAmount > 0m)
                     {
                         await transaction.RollbackAsync(ct);

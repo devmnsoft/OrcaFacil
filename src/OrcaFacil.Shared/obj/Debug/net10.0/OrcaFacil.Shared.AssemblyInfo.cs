@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OrcaFacil.Shared")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7b6c9b03f3b1fbb1ba4d0362b78e65306fad29f8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+48ccfafb0dfb8bed19748fa53b7f0e36211c4dad")]
 [assembly: System.Reflection.AssemblyProductAttribute("OrcaFacil.Shared")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OrcaFacil.Shared")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

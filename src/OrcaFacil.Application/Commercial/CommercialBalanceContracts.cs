@@ -12,7 +12,7 @@ public sealed record CommercialBalance(
     IReadOnlyList<string> Warnings,
     IReadOnlyList<string>? BlockingWarnings = null)
 {
-    public bool IsSettled => BalanceAmount == 0m && OverpaidAmount == 0m;
+    public bool IsSettled => BalanceAmount == 0m && OverpaidAmount == 0m && !HasBlockingDivergence;
     public bool HasOverpayment => OverpaidAmount > 0m;
     public bool HasBlockingDivergence => BlockingWarnings is { Count: > 0 };
 }

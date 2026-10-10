@@ -65,4 +65,19 @@ public sealed class CommercialJourneyRuleTests
         Assert.Contains("ManualPaymentIdempotency.Matches", source);
         Assert.Contains("FinancialRecordStatus.Active", source);
     }
+
+    [Fact]
+    public void Direct_budget_receipt_respects_blocking_financial_divergence()
+    {
+        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
+        var source = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Persistence", "Services", "ReceiptApplicationService.cs"));
+        var balanceLookup = source.IndexOf("balances.GetForDocumentAsync", StringComparison.Ordinal);
+        var blockGuard = source.IndexOf("balance.HasBlockingDivergence", StringComparison.Ordinal);
+        var paymentCreation = source.IndexOf("db.ManualPayments.Add(payment)", StringComparison.Ordinal);
+
+        Assert.True(balanceLookup > 0);
+        Assert.True(blockGuard > balanceLookup);
+        Assert.True(paymentCreation > blockGuard);
+        Assert.Contains("vínculo incompatível entre orçamento, ordem e recebimento", source);
+    }
 }
