@@ -1,14 +1,15 @@
-const copyButton = document.querySelector('[data-copy]');
-copyButton?.addEventListener('click', async () => {
-  copyButton.disabled = true;
-  try {
-    await navigator.clipboard.writeText(copyButton.dataset.copy);
-    copyButton.textContent = 'Link copiado';
-  } catch {
-    copyButton.textContent = 'Não foi possível copiar';
-  } finally {
-    window.setTimeout(() => { copyButton.disabled = false; }, 1200);
-  }
+document.querySelectorAll('[data-copy]').forEach((copyButton) => {
+  copyButton.addEventListener('click', async () => {
+    copyButton.disabled = true;
+    try {
+      await navigator.clipboard.writeText(copyButton.dataset.copy);
+      copyButton.textContent = 'Link copiado';
+    } catch {
+      copyButton.textContent = 'Não foi possível copiar';
+    } finally {
+      window.setTimeout(() => { copyButton.disabled = false; }, 1200);
+    }
+  });
 });
 
 document.querySelectorAll('.of-command-rail form').forEach((form) => {
@@ -28,6 +29,22 @@ document.querySelectorAll('[data-follow-up-days]').forEach((button) => button.ad
   input.value = local.toISOString().slice(0, 16);
   input.focus();
 }));
+
+const commandRail = document.querySelector('.of-command-rail');
+const commandToggle = document.querySelector('[data-command-toggle]');
+const setCommandRailExpanded = (expanded) => {
+  if (!commandRail || !commandToggle) return;
+  commandRail.classList.toggle('is-expanded', expanded);
+  commandToggle.setAttribute('aria-expanded', String(expanded));
+  commandToggle.textContent = expanded ? 'Fechar ações' : 'Mais ações';
+};
+if (commandRail && commandToggle) {
+  commandRail.classList.add('is-collapsible');
+  setCommandRailExpanded(false);
+}
+commandToggle?.addEventListener('click', () => {
+  setCommandRailExpanded(!commandRail?.classList.contains('is-expanded'));
+});
 
 const shareCenter = document.querySelector('[data-share-center]');
 if (shareCenter) {
@@ -53,7 +70,19 @@ if (tabList) {
   const params = new URLSearchParams(window.location.search);
   const normalize = (value) => aliases[value?.toLowerCase()] || value?.toLowerCase();
   const firstTab = tabs[0]?.dataset.tabTarget;
-  const requestedTab = normalize(params.get('tab'));
+  const requestedRawTab = params.get('tab')?.toLowerCase();
+  const requestedTab = normalize(requestedRawTab);
+
+  const focusCommandSection = (name) => {
+    const section = document.querySelector(`[data-command-section="${name}"]`);
+    if (!section) return;
+    setCommandRailExpanded(true);
+    window.requestAnimationFrame(() => {
+      section.setAttribute('tabindex', '-1');
+      section.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' });
+      section.focus({ preventScroll: true });
+    });
+  };
 
   const activate = (name, options = {}) => {
     const targetName = panels.has(name) ? name : firstTab;
@@ -101,4 +130,5 @@ if (tabList) {
   });
 
   activate(requestedTab || firstTab, { focusPanel: Boolean(requestedTab), scroll: Boolean(requestedTab) });
+  if (requestedRawTab === 'sharing') focusCommandSection('sharing');
 }
