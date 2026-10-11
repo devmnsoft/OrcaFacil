@@ -116,9 +116,10 @@
                         <article class="of-finance-payment @(payment.IsExcluded ? "is-excluded" : "")" role="row">
                             <span data-label="Data">@payment.PaidAt.ToLocalTime().ToString("g")</span>
                             <strong data-label="Valor">@payment.Amount.ToString("C")</strong>
-                            <span data-label="Status">@(payment.IsExcluded ? "Excluído do saldo" : payment.Status)</span>
+                            <span data-label="Status">@payment.ClassificationLabel</span>
                             <span data-label="Vínculo">@(payment.WorkOrderId is null ? "Documento" : "Ordem")</span>
-                            <span data-label="Comprovante">@if (payment.ReceiptId is Guid receiptId) { <a asp-page="/Receipts/Details" asp-route-id="@receiptId">@payment.ReceiptNumber</a> } else { <text>Não emitido</text> }</span>
+                            <span data-label="Comprovante">@if (payment.ReceiptId is Guid receiptId) { <a asp-page="/Receipts/Details" asp-route-id="@receiptId">@payment.ReceiptNumber</a>@if(payment.ReceiptCancelled){<em> cancelado</em>} } else { <text>Sem comprovante vigente</text> }</span>
+                            <small>@payment.ParticipationReason</small>
                             @if (!string.IsNullOrWhiteSpace(payment.ExclusionReason)) { <small>@payment.ExclusionReason</small> }
                         </article>
                     }

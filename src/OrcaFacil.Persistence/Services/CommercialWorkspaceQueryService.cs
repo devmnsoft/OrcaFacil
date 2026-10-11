@@ -55,10 +55,20 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
             access.RevokedAt is not null || access.Status == PublicAccessStatus.Revoked ? "Revogado" : access.ExpiresAt <= now ? "Expirado" : "Ativo",
             access.CreatedAt, access.ExpiresAt, access.ViewCount, access.LastViewedAt, decision?.Decision.ToString(), decision?.CreatedAt,
             decision?.CustomerName, decision?.Comment ?? decision?.ReasonCode, decidedRevision);
-        var paid = payments.Where(x => x.Status == FinancialRecordStatus.Active && BelongsToSelectedContract(x, documentId, balance?.WorkOrderId)).Sum(x => x.Amount);
         var financial = BuildFinancialReview(documentId, balance, payments, receipts, order);
+        var paid = financial.ReceivedAmount;
+        var latestValidPaymentId = financial.Payments
+            .Where(x => x.ClassificationCode == "included" && !x.IsReversed)
+            .OrderByDescending(x => x.PaidAt)
+            .Select(x => (Guid?)x.Id)
+            .FirstOrDefault();
+        var latestValidReceiptId = financial.Payments
+            .Where(x => x.ClassificationCode == "included" && !x.IsReversed && x.ReceiptId.HasValue && !x.ReceiptCancelled)
+            .OrderByDescending(x => x.PaidAt)
+            .Select(x => x.ReceiptId)
+            .FirstOrDefault();
         var orderView = order is null ? null : new CommercialWorkOrderView(order.Id, order.Number, order.Status.ToString(),
-            order.ScheduledStart, order.ScheduledEnd, paid, Math.Max(0, order.TotalSnapshot - paid), payments.FirstOrDefault()?.Id, receipts.FirstOrDefault()?.Id);
+            order.ScheduledStart, order.ScheduledEnd, paid, Math.Max(0, order.TotalSnapshot - paid), latestValidPaymentId, latestValidReceiptId);
         var hasChange = decisions.Any(x => x.Decision == PublicDocumentDecisionType.ChangeRequested);
         var next = ResolveNext(document, engagement, orderView, hasChange);
         return new(document.Id, document.Type.ToString(), document.Number, document.Status, document.ClientName, document.CreatedAt,
@@ -191,22 +201,21 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
     private static CommercialFinancialReviewView BuildFinancialReview(Guid documentId, CommercialBalance? balance,
         IReadOnlyCollection<ManualPayment> payments, IReadOnlyCollection<Receipt> receipts, WorkOrder? order)
     {
-        var receiptByPayment = receipts
-            .Where(x => x.CancelledAt is null)
+        var latestReceiptByPayment = receipts
             .GroupBy(x => x.PaymentId)
             .ToDictionary(x => x.Key, x => x.OrderByDescending(r => r.IssuedAt).First());
         var rows = payments.Select(payment =>
         {
-            var excluded = HasIncompatibleDocumentLink(payment, documentId, balance?.WorkOrderId);
-            var reason = excluded
-                ? "Vínculo incompatível: o pagamento aponta para a ordem selecionada, mas pertence a outro orçamento."
-                : null;
-            receiptByPayment.TryGetValue(payment.Id, out var receipt);
+            var classification = CommercialPaymentClassifier.Classify(payment.DocumentId, payment.WorkOrderId,
+                payment.Status == FinancialRecordStatus.Reversed, documentId, balance?.WorkOrderId);
+            latestReceiptByPayment.TryGetValue(payment.Id, out var receipt);
             return new CommercialFinancialPaymentView(payment.Id, payment.DocumentId, payment.WorkOrderId, payment.Amount,
                 payment.PaymentMethod, payment.PaidAt, payment.Status.ToString(), payment.Status == FinancialRecordStatus.Reversed,
-                excluded, reason, receipt?.Id, receipt?.Number);
+                classification.IsExcluded, classification.IsExcluded ? classification.Reason : null,
+                receipt?.Id, receipt?.Number, receipt?.CancelledAt is not null,
+                classification.Code, classification.Label, classification.Reason);
         }).ToArray();
-        var excludedAmount = rows.Where(x => x.IsExcluded && !x.IsReversed).Sum(x => x.Amount);
+        var excludedAmount = rows.Where(x => x.ClassificationCode == "excluded-inconsistent").Sum(x => x.Amount);
         var warnings = balance?.Warnings ?? [];
         var blocking = balance?.BlockingWarnings ?? [];
 
@@ -227,16 +236,4 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
             rows);
     }
 
-    private static bool BelongsToSelectedContract(ManualPayment payment, Guid documentId, Guid? selectedWorkOrderId)
-    {
-        if (HasIncompatibleDocumentLink(payment, documentId, selectedWorkOrderId)) return false;
-        if (selectedWorkOrderId.HasValue && payment.WorkOrderId == selectedWorkOrderId.Value) return true;
-        return payment.DocumentId == documentId && payment.WorkOrderId is null;
-    }
-
-    private static bool HasIncompatibleDocumentLink(ManualPayment payment, Guid documentId, Guid? selectedWorkOrderId) =>
-        selectedWorkOrderId.HasValue &&
-        payment.WorkOrderId == selectedWorkOrderId.Value &&
-        payment.DocumentId is { } paymentDocumentId &&
-        paymentDocumentId != documentId;
 }

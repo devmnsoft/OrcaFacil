@@ -6,6 +6,25 @@ namespace OrcaFacil.UnitTests;
 public sealed class CommercialBalanceCalculatorTests
 {
     [Fact]
+    public void Payment_classifier_explains_selected_contract_participation()
+    {
+        var documentId = Guid.NewGuid();
+        var selectedOrderId = Guid.NewGuid();
+
+        var included = CommercialPaymentClassifier.Classify(documentId, selectedOrderId, false, documentId, selectedOrderId);
+        var otherOrder = CommercialPaymentClassifier.Classify(documentId, Guid.NewGuid(), false, documentId, selectedOrderId);
+        var directDocument = CommercialPaymentClassifier.Classify(documentId, null, false, documentId, selectedOrderId);
+        var inconsistent = CommercialPaymentClassifier.Classify(Guid.NewGuid(), selectedOrderId, false, documentId, selectedOrderId);
+        var reversed = CommercialPaymentClassifier.Classify(documentId, selectedOrderId, true, documentId, selectedOrderId);
+
+        Assert.True(included.ParticipatesInBalance);
+        Assert.Equal(CommercialPaymentClassification.OtherOrigin, otherOrder.Classification);
+        Assert.Equal(CommercialPaymentClassification.OtherOrigin, directDocument.Classification);
+        Assert.Equal(CommercialPaymentClassification.ExcludedInconsistent, inconsistent.Classification);
+        Assert.Equal(CommercialPaymentClassification.Reversed, reversed.Classification);
+    }
+
+    [Fact]
     public void Zero_contract_is_a_valid_settled_balance()
     {
         var result = CommercialBalanceCalculator.Calculate(Guid.NewGuid(), null, "CurrentRevision", 0m, []);

@@ -15,7 +15,8 @@ public sealed record CommercialNextAction(string Code, string Title, string Desc
     string? Handler, string? Page, Guid? RouteId, string Icon);
 public sealed record CommercialFinancialPaymentView(Guid Id, Guid? DocumentId, Guid? WorkOrderId, decimal Amount,
     string PaymentMethod, DateTime PaidAt, string Status, bool IsReversed, bool IsExcluded,
-    string? ExclusionReason, Guid? ReceiptId, string? ReceiptNumber);
+    string? ExclusionReason, Guid? ReceiptId, string? ReceiptNumber, bool ReceiptCancelled,
+    string ClassificationCode, string ClassificationLabel, string ParticipationReason);
 public sealed record CommercialFinancialReviewView(string ContractSource, Guid? WorkOrderId, string? WorkOrderNumber,
     decimal ContractedAmount, decimal ReceivedAmount, decimal ReversedAmount, decimal BalanceAmount,
     decimal OverpaidAmount, decimal ExcludedAmount, bool HasBlockingDivergence, bool IsSettled,

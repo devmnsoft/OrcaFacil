@@ -36,8 +36,8 @@ public sealed class CommercialBalanceService(OrcaFacilDbContext db) : ICommercia
                 warnings.Add("Há recebimentos diretos no orçamento vinculados somente à origem contratual selecionada.");
         }
 
-        var scopedPayments = payments.Where(x => !HasIncompatibleDocumentLink(x, order.SourceDocumentId, order.Id)).ToArray();
-        if (scopedPayments.Length != payments.Count)
+        var scopedPayments = payments.Where(x => BelongsToSelectedContract(x, order.SourceDocumentId, order.Id)).ToArray();
+        if (payments.Any(x => HasIncompatibleDocumentLink(x, order.SourceDocumentId, order.Id)))
             blockingWarnings.Add("Há recebimento com vínculo incompatível entre orçamento e ordem; ele foi excluído do saldo e precisa ser revisado antes de novos recebimentos.");
 
         return Build(order.SourceDocumentId, order.Id, "WorkOrder", order.TotalSnapshot, scopedPayments, warnings, blockingWarnings);
@@ -117,18 +117,14 @@ public sealed class CommercialBalanceService(OrcaFacilDbContext db) : ICommercia
     }
 
     private static bool BelongsToSelectedContract(ManualPayment payment, Guid documentId, Guid? selectedWorkOrderId)
-    {
-        if (HasIncompatibleDocumentLink(payment, documentId, selectedWorkOrderId)) return false;
-        if (selectedWorkOrderId.HasValue && payment.WorkOrderId == selectedWorkOrderId.Value) return true;
-        return payment.DocumentId == documentId && payment.WorkOrderId is null;
-    }
+        => CommercialPaymentClassifier.IsSelectedOrigin(payment.DocumentId, payment.WorkOrderId, documentId, selectedWorkOrderId);
+
+    private static bool BelongsToSelectedContract(ManualPayment payment, Guid? documentId, Guid? selectedWorkOrderId)
+        => documentId.HasValue && CommercialPaymentClassifier.IsSelectedOrigin(payment.DocumentId, payment.WorkOrderId,
+            documentId.Value, selectedWorkOrderId);
 
     private static bool HasIncompatibleDocumentLink(ManualPayment payment, Guid? documentId, Guid? selectedWorkOrderId) =>
-        documentId.HasValue &&
-        selectedWorkOrderId.HasValue &&
-        payment.WorkOrderId == selectedWorkOrderId.Value &&
-        payment.DocumentId is { } paymentDocumentId &&
-        paymentDocumentId != documentId.Value;
+        CommercialPaymentClassifier.HasIncompatibleDocumentLink(payment.DocumentId, payment.WorkOrderId, documentId, selectedWorkOrderId);
 
     private static IReadOnlyList<string> BuildWarnings(Guid documentId, Guid? selectedWorkOrderId,
         IReadOnlyCollection<CommercialWorkOrderCandidate> documentOrders, IReadOnlyCollection<ManualPayment> payments)
@@ -138,7 +134,7 @@ public sealed class CommercialBalanceService(OrcaFacilDbContext db) : ICommercia
             warnings.Add("Há mais de uma ordem vinculada a este orçamento; a origem contratual foi selecionada de forma determinística.");
 
         if (selectedWorkOrderId.HasValue && payments.Any(x => x.DocumentId == documentId && x.WorkOrderId is null))
-            warnings.Add("Recebimentos diretos do orçamento foram considerados na origem contratual selecionada.");
+            warnings.Add("Há recebimentos diretos do orçamento; eles permanecem nessa origem histórica e não são transferidos para a ordem selecionada.");
 
         if (selectedWorkOrderId.HasValue && payments.Any(x => x.DocumentId == documentId && x.WorkOrderId != null && x.WorkOrderId != selectedWorkOrderId))
             warnings.Add("Há recebimentos de outra ordem do mesmo orçamento; eles não compõem este saldo.");

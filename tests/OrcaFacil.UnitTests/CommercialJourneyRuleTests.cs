@@ -92,7 +92,7 @@ public sealed class CommercialJourneyRuleTests
         Assert.Contains("CommercialFinancialReviewView", contracts);
         Assert.Contains("ExcludedAmount", contracts);
         Assert.Contains("BuildFinancialReview", service);
-        Assert.Contains("HasIncompatibleDocumentLink", service);
+        Assert.Contains("CommercialPaymentClassifier", service);
         Assert.Contains("Excluído por inconsistência", page);
         Assert.Contains("Consulta de histórico, comprovantes válidos existentes e estorno continuam disponíveis", page);
     }
