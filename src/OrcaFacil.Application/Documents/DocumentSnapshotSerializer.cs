@@ -133,7 +133,10 @@ public sealed class DocumentSnapshotSerializer : IDocumentSnapshotSerializer
                 return !quoteProp.TryGetProperty("languageCode", out _) && !quoteProp.TryGetProperty("currencyCode", out _);
             }
         }
-        catch (JsonException) { }
+        catch (JsonException)
+        {
+            // Invalid JSON is not a historical snapshot format.
+        }
         return false;
     }
 

@@ -44,19 +44,61 @@ if (shareCenter) {
   });
 }
 
-const tabTargets = {
-  finance: '#finance',
-  sharing: '.of-command-rail',
-  negotiation: '#client-engagement',
-  summary: '.of-document-hero'
-};
-const requestedTab = new URLSearchParams(window.location.search).get('tab');
-const targetSelector = requestedTab ? tabTargets[requestedTab.toLowerCase()] : null;
-const target = targetSelector ? document.querySelector(targetSelector) : null;
-if (target) {
-  window.requestAnimationFrame(() => {
-    target.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-    target.setAttribute('tabindex', '-1');
-    target.focus({ preventScroll: true });
+const tabList = document.querySelector('[data-workspace-tabs]');
+if (tabList) {
+  const tabs = Array.from(tabList.querySelectorAll('[role="tab"][data-tab-target]'));
+  const panels = new Map(Array.from(document.querySelectorAll('[data-tab-panel]')).map((panel) => [panel.dataset.tabPanel, panel]));
+  const aliases = { sharing: 'negotiation', receipt: 'finance', receipts: 'finance', timeline: 'history' };
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const params = new URLSearchParams(window.location.search);
+  const normalize = (value) => aliases[value?.toLowerCase()] || value?.toLowerCase();
+  const firstTab = tabs[0]?.dataset.tabTarget;
+  const requestedTab = normalize(params.get('tab'));
+
+  const activate = (name, options = {}) => {
+    const targetName = panels.has(name) ? name : firstTab;
+    if (!targetName) return;
+    tabs.forEach((tab) => {
+      const selected = tab.dataset.tabTarget === targetName;
+      tab.setAttribute('aria-selected', String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+    });
+    panels.forEach((panel, panelName) => {
+      panel.hidden = panelName !== targetName;
+    });
+    if (options.updateUrl) {
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.set('tab', targetName);
+      window.history.replaceState(null, '', nextUrl);
+    }
+    if (options.focusPanel) {
+      const panel = panels.get(targetName);
+      panel?.setAttribute('tabindex', '-1');
+      panel?.focus({ preventScroll: true });
+    }
+    if (options.scroll) {
+      tabList.scrollIntoView({ block: 'start', behavior: reducedMotion ? 'auto' : 'smooth' });
+    }
+  };
+
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => activate(tab.dataset.tabTarget, { updateUrl: true, focusPanel: true }));
+    tab.addEventListener('keydown', (event) => {
+      const lastIndex = tabs.length - 1;
+      const direction = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+      if (direction !== 0) {
+        event.preventDefault();
+        const next = tabs[(index + direction + tabs.length) % tabs.length];
+        next.focus();
+        activate(next.dataset.tabTarget, { updateUrl: true });
+      } else if (event.key === 'Home' || event.key === 'End') {
+        event.preventDefault();
+        const next = event.key === 'Home' ? tabs[0] : tabs[lastIndex];
+        next.focus();
+        activate(next.dataset.tabTarget, { updateUrl: true });
+      }
+    });
   });
+
+  activate(requestedTab || firstTab, { focusPanel: Boolean(requestedTab), scroll: Boolean(requestedTab) });
 }

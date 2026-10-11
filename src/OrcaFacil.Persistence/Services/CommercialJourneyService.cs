@@ -155,7 +155,11 @@ public sealed class CommercialJourneyService(
         {
             if (IsRetryableConflict(ex))
             {
-                try { await transaction.RollbackAsync(ct); } catch (Exception) { }
+                try { await transaction.RollbackAsync(ct); }
+                catch (Exception)
+                {
+                    // The retry path reloads persisted state; rollback failure should not mask the original conflict.
+                }
             }
             db.ChangeTracker.Clear();
             var raced = await db.PublicDocumentDecisions.AsNoTracking().SingleOrDefaultAsync(
@@ -256,7 +260,10 @@ public sealed class CommercialJourneyService(
             var localePref = await db.Database.SqlQueryRaw<string>("""SELECT language_code AS "Value" FROM orcafacil.account_locale_settings WHERE account_id = {0}""", AccountId).FirstOrDefaultAsync(ct);
             if (!string.IsNullOrWhiteSpace(localePref)) languageCode = OrcaFacil.Application.Localization.SupportedLocales.Normalize(localePref);
         }
-        catch { }
+        catch
+        {
+            // Locale table may be absent in older schemas; the public snapshot keeps the default language.
+        }
 
         var value = new DocumentSnapshot(
             new(issuerName, issuerDoc, issuerEmail, issuerPhone, issuerAddress, issuerCity, issuerState, issuerLogo, issuerPix, null),

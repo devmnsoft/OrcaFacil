@@ -47,16 +47,41 @@
 
     <div class="of-document-layout">
         <div class="of-document-content">
-            <section class="of-next-best-action" aria-labelledby="next-action-title">
-                <span class="of-next-best-action-icon"><partial name="Partials/_Icon" model='new IconViewModel(d.NextAction.Icon, Decorative: true)' /></span>
-                <div><p class="of-eyebrow">Próxima melhor ação</p><h2 id="next-action-title">@d.NextAction.Title</h2><p>@d.NextAction.Description</p></div>
-                @if (d.NextAction.Handler is not null) { <form method="post" asp-page-handler="@d.NextAction.Handler" asp-route-id="@d.Id"><button class="of-button-primary" type="submit">@d.NextAction.Label</button></form> }
-                else if (d.NextAction.Page is not null) { <a class="of-button-primary" asp-page="@d.NextAction.Page" asp-route-id="@d.NextAction.RouteId">@d.NextAction.Label</a> }
+            <nav class="of-document-tabs" role="tablist" aria-label="Áreas do documento" data-workspace-tabs>
+                <button type="button" id="tab-summary" role="tab" aria-controls="panel-summary" aria-selected="true" data-tab-target="summary">Resumo</button>
+                <button type="button" id="tab-proposal" role="tab" aria-controls="panel-proposal" aria-selected="false" data-tab-target="proposal">Proposta</button>
+                <button type="button" id="tab-negotiation" role="tab" aria-controls="panel-negotiation" aria-selected="false" data-tab-target="negotiation">Negociação</button>
+                <button type="button" id="tab-execution" role="tab" aria-controls="panel-execution" aria-selected="false" data-tab-target="execution">Execução</button>
+                <button type="button" id="tab-finance" role="tab" aria-controls="panel-finance" aria-selected="false" data-tab-target="finance">Financeiro</button>
+                <button type="button" id="tab-history" role="tab" aria-controls="panel-history" aria-selected="false" data-tab-target="history">Histórico</button>
+            </nav>
+
+            <section class="of-document-panel" id="panel-summary" role="tabpanel" aria-labelledby="tab-summary" data-tab-panel="summary">
+                <section class="of-next-best-action" aria-labelledby="next-action-title">
+                    <span class="of-next-best-action-icon"><partial name="Partials/_Icon" model='new IconViewModel(d.NextAction.Icon, Decorative: true)' /></span>
+                    <div><p class="of-eyebrow">Próxima melhor ação</p><h2 id="next-action-title">@d.NextAction.Title</h2><p>@d.NextAction.Description</p></div>
+                    @if (d.NextAction.Handler is not null) { <form method="post" asp-page-handler="@d.NextAction.Handler" asp-route-id="@d.Id"><button class="of-button-primary" type="submit">@d.NextAction.Label</button></form> }
+                    else if (d.NextAction.Page is not null) { <a class="of-button-primary" asp-page="@d.NextAction.Page" asp-route-id="@d.NextAction.RouteId">@d.NextAction.Label</a> }
+                </section>
+
+                @if (d.HasChangeRequest && d.Engagement?.Comment is { Length: > 0 } changeComment)
+                { <aside class="of-change-request"><strong>Retorno do cliente</strong><p>@changeComment</p></aside> }
+
+                <section class="of-workspace-section of-follow-up" aria-labelledby="follow-up-title">
+                    <div class="of-section-heading"><div><p class="of-eyebrow">Próximo contato</p><h2 id="follow-up-title">Acompanhamento comercial</h2></div><span class="of-badge">@d.FollowUpStatus</span></div>
+                    @if (d.NextFollowUpAt is { } nextFollowUp) { <p><strong>Próximo retorno:</strong> <time datetime="@nextFollowUp.ToString("O")">@nextFollowUp.ToLocalTime().ToString("g")</time></p> }
+                    else { <div class="of-inline-empty"><strong>Nenhum retorno agendado</strong><p>Agende uma data para que este orçamento apareça entre as prioridades da conta.</p></div> }
+                    @if (!string.IsNullOrWhiteSpace(d.FollowUpNote)) { <p>@d.FollowUpNote</p> }
+                    <form class="of-follow-up-form" method="post" asp-page-handler="ScheduleFollowUp" asp-route-id="@d.Id" data-follow-up-form>
+                        <label><span>Data e hora do retorno</span><input name="nextFollowUpAt" type="datetime-local" required /></label>
+                        <label><span>Observação</span><textarea name="followUpNote" maxlength="1000" rows="3" placeholder="Contexto para a próxima conversa"></textarea></label>
+                        <div class="of-follow-up-shortcuts" aria-label="Atalhos de data"><button type="button" data-follow-up-days="1">Amanhã</button><button type="button" data-follow-up-days="3">Em 3 dias</button><button type="button" data-follow-up-days="7">Próxima semana</button></div>
+                        <div class="of-home-actions"><button class="of-button-primary" type="submit" data-loading-text="Agendando…">Agendar retorno</button>@if(d.NextFollowUpAt is not null){<button class="of-button-secondary" type="submit" formaction="?handler=SnoozeFollowUp&amp;id=@d.Id">Adiar retorno</button><button class="of-button-secondary" type="submit" formnovalidate formaction="?handler=CompleteFollowUp&amp;id=@d.Id">Concluir acompanhamento</button>}</div>
+                    </form>
+                </section>
             </section>
 
-            @if (d.HasChangeRequest && d.Engagement?.Comment is { Length: > 0 } changeComment)
-            { <aside class="of-change-request"><strong>Retorno do cliente</strong><p>@changeComment</p></aside> }
-
+            <section class="of-document-panel" id="panel-proposal" role="tabpanel" aria-labelledby="tab-proposal" data-tab-panel="proposal">
             <section class="of-workspace-section of-document-items" aria-labelledby="items-title">
                 <div class="of-section-heading"><div><p class="of-eyebrow">Escopo comercial</p><h2 id="items-title">Itens do orçamento</h2></div><span>@d.Items.Count item(ns)</span></div>
                 <div class="of-document-items-table" role="table" aria-label="Itens do documento">
@@ -68,7 +93,9 @@
 
             @if (!string.IsNullOrWhiteSpace(d.Notes) || !string.IsNullOrWhiteSpace(d.Conditions))
             { <section class="of-document-notes"><div><h2>Observações</h2><p>@(d.Notes ?? "Sem observações.")</p></div><div><h2>Condições comerciais</h2><p>@(d.Conditions ?? "Sem condições adicionais.")</p></div></section> }
+            </section>
 
+            <section class="of-document-panel" id="panel-finance" role="tabpanel" aria-labelledby="tab-finance" data-tab-panel="finance">
             <section class="of-workspace-section of-financial-review" id="finance" aria-labelledby="finance-title">
                 <div class="of-section-heading">
                     <div><p class="of-eyebrow">Financeiro</p><h2 id="finance-title">Revisão de recebimentos</h2></div>
@@ -86,17 +113,23 @@
                     }
                 </div>
                 <dl class="of-finance-summary">
-                    <div><dt>Origem contratual</dt><dd>@d.Financial.ContractSource @if (!string.IsNullOrWhiteSpace(d.Financial.WorkOrderNumber)) { <span>· OS @d.Financial.WorkOrderNumber</span> }</dd></div>
-                    <div><dt>Contratado</dt><dd>@d.Financial.ContractedAmount.ToString("C")</dd></div>
-                    <div><dt>Recebido válido</dt><dd>@d.Financial.ReceivedAmount.ToString("C")</dd></div>
-                    <div><dt>Saldo operacional</dt><dd>@d.Financial.BalanceAmount.ToString("C")</dd></div>
-                    <div><dt>Estornado</dt><dd>@d.Financial.ReversedAmount.ToString("C")</dd></div>
-                    <div><dt>Excedente</dt><dd>@d.Financial.OverpaidAmount.ToString("C")</dd></div>
-                    <div><dt>Adiantamentos apropriados</dt><dd>@d.Financial.AppropriatedAdvanceAmount.ToString("C")</dd></div>
-                    <div><dt>Outras origens</dt><dd>@d.Financial.OtherOriginAmount.ToString("C")</dd></div>
-                    <div class="of-finance-excluded"><dt>Excluído por inconsistência</dt><dd>@d.Financial.ExcludedAmount.ToString("C")</dd></div>
-                    <div class="of-finance-excluded"><dt>Histórico inconsistente</dt><dd>@d.Financial.InconsistentAmount.ToString("C")</dd></div>
+                    <div class="of-finance-source"><dt>Origem contratual</dt><dd>@d.Financial.ContractSource @if (!string.IsNullOrWhiteSpace(d.Financial.WorkOrderNumber)) { <span>· OS @d.Financial.WorkOrderNumber</span> }</dd></div>
+                    <div class="of-finance-metric-primary"><dt>Contratado</dt><dd>@d.Financial.ContractedAmount.ToString("C")</dd></div>
+                    <div class="of-finance-metric-primary"><dt>Recebido válido</dt><dd>@d.Financial.ReceivedAmount.ToString("C")</dd></div>
+                    <div class="of-finance-metric-primary @(d.Financial.BalanceAmount > 0 ? "is-open" : "is-settled")"><dt>Saldo operacional</dt><dd>@d.Financial.BalanceAmount.ToString("C")</dd></div>
                 </dl>
+                <details class="of-finance-breakdown" open="@(d.Financial.OverpaidAmount > 0 || d.Financial.ExcludedAmount > 0 || d.Financial.InconsistentAmount > 0 ? "open" : null)">
+                    <summary>Ver composição do saldo e auditoria de vínculos</summary>
+                    <dl>
+                        <div><dt>Estornado</dt><dd>@d.Financial.ReversedAmount.ToString("C")</dd></div>
+                        <div><dt>Excedente</dt><dd>@d.Financial.OverpaidAmount.ToString("C")</dd></div>
+                        <div><dt>Adiantamentos apropriados</dt><dd>@d.Financial.AppropriatedAdvanceAmount.ToString("C")</dd></div>
+                        <div><dt>Outras origens</dt><dd>@d.Financial.OtherOriginAmount.ToString("C")</dd></div>
+                        <div class="of-finance-excluded"><dt>Excluído por inconsistência</dt><dd>@d.Financial.ExcludedAmount.ToString("C")</dd></div>
+                        <div class="of-finance-excluded"><dt>Histórico inconsistente</dt><dd>@d.Financial.InconsistentAmount.ToString("C")</dd></div>
+                    </dl>
+                    <p>Recebimento é entrada de caixa. Apropriação usa um recebimento existente na obrigação vigente, sem criar novo dinheiro. Estorno reduz o recebido válido; devolução efetiva exige operação própria e auditável.</p>
+                </details>
                 @if (d.Financial.BlockingWarnings.Count > 0)
                 {
                     <div class="of-finance-block" role="alert">
@@ -132,29 +165,41 @@
                     }
                 </div>
             </section>
+            </section>
 
+            <section class="of-document-panel" id="panel-negotiation" role="tabpanel" aria-labelledby="tab-negotiation" data-tab-panel="negotiation">
             <section class="of-workspace-section of-client-engagement" id="client-engagement" aria-labelledby="engagement-title">
                 <div class="of-section-heading"><div><p class="of-eyebrow">Jornada pública</p><h2 id="engagement-title">Interação com o cliente</h2></div>@if(d.Engagement is not null){<span class="of-badge">@d.Engagement.Status</span>}</div>
                 @if (d.Engagement is null) { <div class="of-inline-empty"><strong>Nenhum link compartilhado</strong><p>Quando um link seguro for criado, visualizações e decisões aparecerão aqui.</p></div> }
                 else { <dl class="of-engagement-grid"><div><dt>Criado em</dt><dd>@d.Engagement.CreatedAt.ToLocalTime().ToString("g")</dd></div><div><dt>Expira em</dt><dd>@d.Engagement.ExpiresAt.ToLocalTime().ToString("g")</dd></div><div><dt>Visualizações</dt><dd>@d.Engagement.ViewCount</dd></div><div><dt>Última visualização</dt><dd>@(d.Engagement.LastViewedAt?.ToLocalTime().ToString("g") ?? "Ainda não visualizado")</dd></div><div><dt>Decisão</dt><dd>@(d.Engagement.Decision ?? "Aguardando")</dd></div><div><dt>Informado por</dt><dd>@(d.Engagement.CustomerName ?? "—")</dd></div></dl>@if(!string.IsNullOrWhiteSpace(d.Engagement.Comment)){<blockquote>@d.Engagement.Comment</blockquote>} }
             </section>
-
-            <section class="of-workspace-section of-follow-up" aria-labelledby="follow-up-title">
-                <div class="of-section-heading"><div><p class="of-eyebrow">Próximo contato</p><h2 id="follow-up-title">Acompanhamento comercial</h2></div><span class="of-badge">@d.FollowUpStatus</span></div>
-                @if (d.NextFollowUpAt is { } nextFollowUp) { <p><strong>Próximo retorno:</strong> <time datetime="@nextFollowUp.ToString("O")">@nextFollowUp.ToLocalTime().ToString("g")</time></p> }
-                else { <div class="of-inline-empty"><strong>Nenhum retorno agendado</strong><p>Agende uma data para que este orçamento apareça entre as prioridades da conta.</p></div> }
-                @if (!string.IsNullOrWhiteSpace(d.FollowUpNote)) { <p>@d.FollowUpNote</p> }
-                <form class="of-follow-up-form" method="post" asp-page-handler="ScheduleFollowUp" asp-route-id="@d.Id" data-follow-up-form>
-                    <label><span>Data e hora do retorno</span><input name="nextFollowUpAt" type="datetime-local" required /></label>
-                    <label><span>Observação</span><textarea name="followUpNote" maxlength="1000" rows="3" placeholder="Contexto para a próxima conversa"></textarea></label>
-                    <div class="of-follow-up-shortcuts" aria-label="Atalhos de data"><button type="button" data-follow-up-days="1">Amanhã</button><button type="button" data-follow-up-days="3">Em 3 dias</button><button type="button" data-follow-up-days="7">Próxima semana</button></div>
-                    <div class="of-home-actions"><button class="of-button-primary" type="submit" data-loading-text="Agendando…">Agendar retorno</button>@if(d.NextFollowUpAt is not null){<button class="of-button-secondary" type="submit" formaction="?handler=SnoozeFollowUp&amp;id=@d.Id">Adiar retorno</button><button class="of-button-secondary" type="submit" formnovalidate formaction="?handler=CompleteFollowUp&amp;id=@d.Id">Concluir acompanhamento</button>}</div>
-                </form>
             </section>
 
+            <section class="of-document-panel" id="panel-execution" role="tabpanel" aria-labelledby="tab-execution" data-tab-panel="execution">
+            <section class="of-workspace-section of-execution-review" aria-labelledby="execution-title">
+                <div class="of-section-heading"><div><p class="of-eyebrow">Execução</p><h2 id="execution-title">Ordem de serviço e operação</h2></div><span class="of-badge">@CommercialPresentation.WorkOrderStatus(d.WorkOrder?.Status)</span></div>
+                @if (d.WorkOrder is { } executionOrder)
+                {
+                    <dl class="of-engagement-grid">
+                        <div><dt>OS</dt><dd>@executionOrder.Number</dd></div>
+                        <div><dt>Status operacional</dt><dd>@CommercialPresentation.WorkOrderStatus(executionOrder.Status)</dd></div>
+                        <div><dt>Recebido na OS</dt><dd>@executionOrder.Paid.ToString("C")</dd></div>
+                        <div><dt>Saldo da OS</dt><dd>@executionOrder.Balance.ToString("C")</dd></div>
+                    </dl>
+                    <a class="of-button-secondary" asp-page="/WorkOrders/Details" asp-route-id="@executionOrder.Id">Abrir ordem de serviço</a>
+                }
+                else
+                {
+                    <div class="of-inline-empty"><strong>Nenhuma OS vinculada</strong><p>A ordem de serviço deve nascer de uma aprovação válida da revisão correta.</p></div>
+                }
+            </section>
+            </section>
+
+            <section class="of-document-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history" data-tab-panel="history">
             <section class="of-workspace-section" aria-labelledby="timeline-title"><div class="of-section-heading"><div><p class="of-eyebrow">Histórico verificável</p><h2 id="timeline-title">Timeline comercial</h2></div></div>
                 @if (d.Timeline.Count == 0) { <div class="of-inline-empty"><strong>Nenhuma interação registrada</strong><p>Eventos reais da jornada serão exibidos aqui.</p></div> }
                 else { <ol class="of-commercial-timeline">@foreach(var item in d.Timeline){<li data-tone="@item.Tone"><span class="of-timeline-icon"><partial name="Partials/_Icon" model='new IconViewModel(item.Icon, Decorative: true)' /></span><div><small>@item.Origin · <time datetime="@item.OccurredAt.ToString("O")">@item.OccurredAt.ToLocalTime().ToString("g")</time></small><h3>@item.Title</h3>@if(item.Description is not null){<p>@item.Description</p>}</div></li>}</ol> }
+            </section>
             </section>
         </div>
 
@@ -163,12 +208,12 @@
             <section><p>Ação principal</p>@if(d.NextAction.Handler is not null){<form method="post" asp-page-handler="@d.NextAction.Handler" asp-route-id="@d.Id"><button class="of-button-primary" type="submit">@d.NextAction.Label</button></form>}else if(d.NextAction.Page is not null){<a class="of-button-primary" asp-page="@d.NextAction.Page" asp-route-id="@d.NextAction.RouteId">@d.NextAction.Label</a>}</section>
             <section><p>Compartilhar proposta</p><form method="post" asp-page-handler="PublicLink" asp-route-id="@d.Id" data-confirm-form data-confirm-title="Gerar novo link?" data-confirm-message="Se houver um link anterior ativo, ele deverá ser revogado antes. O token seguro não fica disponível depois."><button class="of-command-link" type="submit" data-loading-text="Gerando…"><partial name="Partials/_Icon" model='new IconViewModel("link", "sm", Decorative: true)' /> Gerar link seguro</button></form><a class="of-command-link" href="/Documents/Pdf/@d.Id"><partial name="Partials/_Icon" model='new IconViewModel("document", "sm", Decorative: true)' /> Gerar PDF</a>@if(TempData["PublicLink"] is string publicLink){var message=$"Olá, {d.ClientName}. Preparei a proposta {d.Number} para você. Você pode visualizar e responder por este link: {publicLink}";<div class="of-share-center" data-share-center data-link="@publicLink"><label><span>Mensagem</span><textarea data-share-message rows="5">@message</textarea></label><div><button class="of-button-secondary" type="button" data-copy="@publicLink">Copiar link</button><button class="of-button-secondary" type="button" data-copy-message>Copiar mensagem</button><a class="of-button-secondary" data-share-whatsapp target="_blank" rel="noopener noreferrer">WhatsApp</a><a class="of-button-secondary" data-share-email>E-mail</a></div><small>O link só é exibido agora e não será recuperado depois.</small></div>}</section>
             <section><p>Gerenciar</p>@if(d.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase)){<a class="of-command-link" asp-page="/Contracts/Create" asp-route-sourceDocumentId="@d.Id">Gerar contrato recorrente</a>}<a class="of-command-link" asp-page="/Documents/Edit" asp-route-id="@d.Id">Editar orçamento</a><form method="post" asp-page-handler="Duplicate" asp-route-id="@d.Id"><button class="of-command-link" type="submit">Duplicar proposta</button></form>@if(d.HasChangeRequest){<form method="post" asp-page-handler="Revision" asp-route-id="@d.Id"><button class="of-command-link" type="submit">Criar nova versão</button></form>}
-            <details class="of-save-template-details" style="margin-top:0.5rem; font-size:0.875rem;">
-                <summary style="cursor:pointer; color:var(--of-primary); font-weight:500;">Salvar como modelo</summary>
-                <form method="post" asp-page-handler="SaveAsTemplate" asp-route-id="@d.Id" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.5rem;">
+            <details class="of-save-template-details">
+                <summary>Salvar como modelo</summary>
+                <form method="post" asp-page-handler="SaveAsTemplate" asp-route-id="@d.Id">
                     @Html.AntiForgeryToken()
-                    <input type="text" name="templateTitle" placeholder="Nome do modelo (ex: Pintura Residencial)" required style="padding:0.4rem 0.6rem; border-radius:var(--of-radius, 6px); border:1px solid var(--of-border, #cbd5e1); font-size:0.85rem;" />
-                    <button class="of-button-secondary" type="submit" style="font-size:0.85rem; padding:0.35rem 0.75rem;">Salvar modelo</button>
+                    <input type="text" name="templateTitle" placeholder="Nome do modelo (ex: Pintura Residencial)" required />
+                    <button class="of-button-secondary" type="submit">Salvar modelo</button>
                 </form>
             </details>
             </section>

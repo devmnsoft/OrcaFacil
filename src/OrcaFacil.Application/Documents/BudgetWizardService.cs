@@ -454,7 +454,10 @@ public sealed class BudgetWizardService
     private async Task SafeRollbackAsync()
     {
         try { await _unitOfWork.RollbackTransactionAsync(); }
-        catch (InvalidOperationException) { }
+        catch (InvalidOperationException)
+        {
+            // No transaction is active anymore; the original conflict result is returned by the caller.
+        }
     }
     private static bool IsPersistenceConflict(Exception exception)
     {

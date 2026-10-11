@@ -27,8 +27,14 @@ public static class CommercialClock
         foreach (var id in new[] { "America/Sao_Paulo", "E. South America Standard Time" })
         {
             try { return TimeZoneInfo.FindSystemTimeZoneById(id); }
-            catch (TimeZoneNotFoundException) { }
-            catch (InvalidTimeZoneException) { }
+            catch (TimeZoneNotFoundException)
+            {
+                // Try the next platform-specific identifier.
+            }
+            catch (InvalidTimeZoneException)
+            {
+                // Try the next platform-specific identifier.
+            }
         }
 
         return TimeZoneInfo.Utc;
