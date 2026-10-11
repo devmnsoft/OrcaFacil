@@ -16,10 +16,12 @@ public sealed record CommercialNextAction(string Code, string Title, string Desc
 public sealed record CommercialFinancialPaymentView(Guid Id, Guid? DocumentId, Guid? WorkOrderId, decimal Amount,
     string PaymentMethod, DateTime PaidAt, string Status, bool IsReversed, bool IsExcluded,
     string? ExclusionReason, Guid? ReceiptId, string? ReceiptNumber, bool ReceiptCancelled,
-    string ClassificationCode, string ClassificationLabel, string ParticipationReason);
+    string ClassificationCode, string ClassificationLabel, string ParticipationReason,
+    bool ParticipatesInBalance, bool IsAppropriatedAdvance, bool HasIncompatibleLink);
 public sealed record CommercialFinancialReviewView(string ContractSource, Guid? WorkOrderId, string? WorkOrderNumber,
     decimal ContractedAmount, decimal ReceivedAmount, decimal ReversedAmount, decimal BalanceAmount,
-    decimal OverpaidAmount, decimal ExcludedAmount, bool HasBlockingDivergence, bool IsSettled,
+    decimal OverpaidAmount, decimal ExcludedAmount, decimal OtherOriginAmount,
+    decimal AppropriatedAdvanceAmount, decimal InconsistentAmount, bool HasBlockingDivergence, bool IsSettled,
     IReadOnlyList<string> Warnings, IReadOnlyList<string> BlockingWarnings,
     IReadOnlyList<CommercialFinancialPaymentView> Payments);
 

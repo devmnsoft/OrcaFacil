@@ -182,6 +182,64 @@ public sealed class JourneyPostgresTests
         Assert.Contains(balance.Warnings, x => x.Contains("não é a origem contratual", StringComparison.OrdinalIgnoreCase));
     }
 
+    [JourneyPostgresFact]
+    public async Task Independent_work_order_balance_counts_own_payments_without_document_source()
+    {
+        await using var fx = await JourneyFixture.CreateAsync();
+        var order = await fx.SeedWorkOrderAsync(1000m);
+        var first = await fx.Service().RegisterAsync(fx.Payment(order, 300m, "independente-parcial"));
+        Assert.True(first.Succeeded, first.Message);
+
+        await using (var partialDb = fx.Context())
+        {
+            var balance = await new CommercialBalanceService(partialDb).GetForWorkOrderAsync(fx.AccountId, order);
+            Assert.NotNull(balance);
+            Assert.Null(balance.DocumentId);
+            Assert.Equal(order, balance.WorkOrderId);
+            Assert.Equal(300m, balance.ReceivedAmount);
+            Assert.Equal(700m, balance.BalanceAmount);
+        }
+
+        var second = await fx.Service().RegisterAsync(fx.Payment(order, 700m, "independente-quitacao"));
+        Assert.True(second.Succeeded, second.Message);
+        var repeated = await fx.Service().RegisterAsync(fx.Payment(order, 1m, "independente-excedente"));
+        Assert.False(repeated.Succeeded);
+        Assert.Equal("AlreadyPaid", repeated.Code);
+
+        await fx.ReversePaymentAsync(first.EntityId!.Value);
+        await fx.AddHistoricalPaymentAsync(order, 900m, "excedente-historico");
+        await fx.AddForeignAccountPaymentAsync(order, 500m);
+
+        await using var db = fx.Context();
+        var finalBalance = await new CommercialBalanceService(db).GetForWorkOrderAsync(fx.AccountId, order);
+
+        Assert.NotNull(finalBalance);
+        Assert.Equal(1600m, finalBalance.ReceivedAmount);
+        Assert.Equal(300m, finalBalance.ReversedAmount);
+        Assert.Equal(0m, finalBalance.BalanceAmount);
+        Assert.Equal(600m, finalBalance.OverpaidAmount);
+    }
+
+    [JourneyPostgresFact]
+    public async Task Direct_payment_before_work_order_reduces_same_obligation_balance()
+    {
+        await using var fx = await JourneyFixture.CreateAsync();
+        var seeded = await fx.SeedQuoteWithOrderAndDirectPaymentAsync(1000m, 300m);
+
+        await using var db = fx.Context();
+        var balances = new CommercialBalanceService(db);
+        var documentBalance = await balances.GetForDocumentAsync(fx.AccountId, seeded.DocumentId);
+        var orderBalance = await balances.GetForWorkOrderAsync(fx.AccountId, seeded.OrderId);
+
+        Assert.NotNull(documentBalance);
+        Assert.NotNull(orderBalance);
+        Assert.Equal(seeded.OrderId, documentBalance.WorkOrderId);
+        Assert.Equal(300m, documentBalance.ReceivedAmount);
+        Assert.Equal(700m, documentBalance.BalanceAmount);
+        Assert.Equal(300m, orderBalance.ReceivedAmount);
+        Assert.Equal(700m, orderBalance.BalanceAmount);
+    }
+
     private sealed class JourneyFixture : IAsyncDisposable
     {
         private readonly string connection;
@@ -271,6 +329,19 @@ public sealed class JourneyPostgresTests
             return new(document.Id, oldOrder.Id, currentOrder.Id);
         }
 
+        public async Task<QuoteWithOrder> SeedQuoteWithOrderAndDirectPaymentAsync(decimal total, decimal directAmount)
+        {
+            var document = NewDocument("ConvertedToWorkOrder");
+            var revision = Revision(document, 1, true, total);
+            var order = OrderFrom(document, revision, total, "OS-ADI");
+            var directPayment = Payment(document.Id, null, directAmount, "adiantamento");
+
+            await using var db = Context();
+            db.AddRange(document, revision, order, directPayment);
+            await db.SaveChangesAsync();
+            return new(document.Id, order.Id);
+        }
+
         public async Task<(string Token, Guid RevisionId)> SeedPublicQuoteAsync()
         {
             var document = NewDocument("Sent");
@@ -311,6 +382,55 @@ public sealed class JourneyPostgresTests
             await using var db = Context();
             return await db.ManualPayments.Where(x => x.AccountId == AccountId && x.WorkOrderId == orderId && !x.IsDeleted && x.Status == FinancialRecordStatus.Active)
                 .SumAsync(x => (decimal?)x.Amount) ?? 0m;
+        }
+
+        public async Task ReversePaymentAsync(Guid paymentId)
+        {
+            await using var db = Context();
+            var payment = await db.ManualPayments.SingleAsync(x => x.AccountId == AccountId && x.Id == paymentId);
+            payment.Status = FinancialRecordStatus.Reversed;
+            payment.ReversedAt = DateTime.UtcNow;
+            payment.ReversedByUserId = UserId;
+            payment.ReversalReason = "Estorno de teste";
+            await db.SaveChangesAsync();
+        }
+
+        public async Task AddHistoricalPaymentAsync(Guid orderId, decimal amount, string suffix)
+        {
+            await using var db = Context();
+            var order = await db.WorkOrders.AsNoTracking().SingleAsync(x => x.AccountId == AccountId && x.Id == orderId);
+            db.ManualPayments.Add(new ManualPayment
+            {
+                AccountId = AccountId,
+                WorkOrderId = orderId,
+                DocumentId = order.SourceDocumentId,
+                ClientId = order.ClientId,
+                Amount = amount,
+                PaymentMethod = "pix",
+                PaidAt = DateTime.UtcNow.AddMinutes(-1),
+                RegisteredByUserId = UserId,
+                IdempotencyKey = suffix + "-" + Guid.NewGuid().ToString("N")
+            });
+            await db.SaveChangesAsync();
+        }
+
+        public async Task AddForeignAccountPaymentAsync(Guid orderId, decimal amount)
+        {
+            await using var db = Context();
+            var order = await db.WorkOrders.AsNoTracking().SingleAsync(x => x.AccountId == AccountId && x.Id == orderId);
+            db.ManualPayments.Add(new ManualPayment
+            {
+                AccountId = OtherAccountId,
+                WorkOrderId = orderId,
+                DocumentId = order.SourceDocumentId,
+                ClientId = order.ClientId,
+                Amount = amount,
+                PaymentMethod = "pix",
+                PaidAt = DateTime.UtcNow.AddMinutes(-1),
+                RegisteredByUserId = UserId,
+                IdempotencyKey = "conta-externa-" + Guid.NewGuid().ToString("N")
+            });
+            await db.SaveChangesAsync();
         }
 
         public async ValueTask DisposeAsync()
@@ -395,6 +515,7 @@ public sealed class JourneyPostgresTests
             new DbContextOptionsBuilder<OrcaFacilDbContext>().UseNpgsql(connection).EnableSensitiveDataLogging(false).Options;
 
         public sealed record QuoteWithOrders(Guid DocumentId, Guid OldOrderId, Guid CurrentOrderId);
+        public sealed record QuoteWithOrder(Guid DocumentId, Guid OrderId);
     }
 
     private sealed class FixedAccount(Guid userId, Guid accountId) : ICurrentAccountService

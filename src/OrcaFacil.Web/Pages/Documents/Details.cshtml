@@ -92,7 +92,10 @@
                     <div><dt>Saldo operacional</dt><dd>@d.Financial.BalanceAmount.ToString("C")</dd></div>
                     <div><dt>Estornado</dt><dd>@d.Financial.ReversedAmount.ToString("C")</dd></div>
                     <div><dt>Excedente</dt><dd>@d.Financial.OverpaidAmount.ToString("C")</dd></div>
+                    <div><dt>Adiantamentos apropriados</dt><dd>@d.Financial.AppropriatedAdvanceAmount.ToString("C")</dd></div>
+                    <div><dt>Outras origens</dt><dd>@d.Financial.OtherOriginAmount.ToString("C")</dd></div>
                     <div class="of-finance-excluded"><dt>Excluído por inconsistência</dt><dd>@d.Financial.ExcludedAmount.ToString("C")</dd></div>
+                    <div class="of-finance-excluded"><dt>Histórico inconsistente</dt><dd>@d.Financial.InconsistentAmount.ToString("C")</dd></div>
                 </dl>
                 @if (d.Financial.BlockingWarnings.Count > 0)
                 {
@@ -120,7 +123,7 @@
                             <span data-label="Vínculo">@(payment.WorkOrderId is null ? "Documento" : "Ordem")</span>
                             <span data-label="Comprovante">@if (payment.ReceiptId is Guid receiptId) { <a asp-page="/Receipts/Details" asp-route-id="@receiptId">@payment.ReceiptNumber</a>@if(payment.ReceiptCancelled){<em> cancelado</em>} } else { <text>Sem comprovante vigente</text> }</span>
                             <small>@payment.ParticipationReason</small>
-                            @if (!string.IsNullOrWhiteSpace(payment.ExclusionReason)) { <small>@payment.ExclusionReason</small> }
+                            @if (!string.IsNullOrWhiteSpace(payment.ExclusionReason) && !string.Equals(payment.ExclusionReason, payment.ParticipationReason, StringComparison.Ordinal)) { <small>@payment.ExclusionReason</small> }
                         </article>
                     }
                     @if (d.Financial.Payments.Count == 0)

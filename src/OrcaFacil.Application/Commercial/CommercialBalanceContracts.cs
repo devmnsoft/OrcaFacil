@@ -36,26 +36,36 @@ public enum CommercialPaymentClassification
 }
 
 public sealed record CommercialPaymentClassificationResult(CommercialPaymentClassification Classification,
-    string Code, string Label, string Reason)
+    string Code, string Label, string Reason, bool HasIncompatibleLink = false)
 {
     public bool ParticipatesInBalance => Classification == CommercialPaymentClassification.IncludedInSelectedContract;
     public bool IsExcluded => Classification == CommercialPaymentClassification.ExcludedInconsistent;
     public bool IsReversed => Classification == CommercialPaymentClassification.Reversed;
+    public bool IsAppropriatedAdvance => Code == "appropriated-advance";
 }
 
 public static class CommercialPaymentClassifier
 {
     public static CommercialPaymentClassificationResult Classify(Guid? paymentDocumentId, Guid? paymentWorkOrderId,
         bool isReversed, Guid documentId, Guid? selectedWorkOrderId)
+        => Classify(paymentDocumentId, paymentWorkOrderId, isReversed, (Guid?)documentId, selectedWorkOrderId);
+
+    public static CommercialPaymentClassificationResult Classify(Guid? paymentDocumentId, Guid? paymentWorkOrderId,
+        bool isReversed, Guid? documentId, Guid? selectedWorkOrderId)
     {
+        var incompatible = HasIncompatibleDocumentLink(paymentDocumentId, paymentWorkOrderId, documentId, selectedWorkOrderId);
         if (isReversed)
             return new(CommercialPaymentClassification.Reversed, "reversed", "Estornado",
-                "Pagamento preservado no histórico, mas estornado; não reduz o saldo vigente.");
+                incompatible
+                    ? "Pagamento estornado e com vínculo histórico inconsistente; não reduz o saldo vigente."
+                    : "Pagamento preservado no histórico, mas estornado; não reduz o saldo vigente.",
+                incompatible);
 
-        if (HasIncompatibleDocumentLink(paymentDocumentId, paymentWorkOrderId, documentId, selectedWorkOrderId))
+        if (incompatible)
             return new(CommercialPaymentClassification.ExcludedInconsistent, "excluded-inconsistent",
                 "Excluído por inconsistência",
-                "Vínculo incompatível: o pagamento aponta para a ordem selecionada, mas pertence a outro orçamento.");
+                "Vínculo incompatível: o pagamento aponta para a ordem selecionada, mas pertence a outro orçamento.",
+                HasIncompatibleLink: true);
 
         if (selectedWorkOrderId.HasValue)
         {
@@ -64,13 +74,18 @@ public static class CommercialPaymentClassifier
                     "Incluído no contrato selecionado",
                     "Recebimento vinculado à ordem de serviço selecionada como origem contratual.");
 
+            if (documentId.HasValue && paymentDocumentId == documentId.Value && paymentWorkOrderId is null)
+                return new(CommercialPaymentClassification.IncludedInSelectedContract, "appropriated-advance",
+                    "Adiantamento apropriado",
+                    "Recebimento direto do orçamento considerado na mesma obrigação financeira da ordem; o vínculo histórico permanece no orçamento.");
+
             return new(CommercialPaymentClassification.OtherOrigin, "other-origin", "Pertencente a outra origem",
                 paymentWorkOrderId.HasValue
                     ? "Recebimento vinculado a outra ordem de serviço; não compõe este saldo."
-                    : "Recebimento direto do orçamento; a consulta da ordem selecionada não transfere valores entre origens.");
+                    : "Recebimento direto sem ordem selecionável; não compõe este saldo.");
         }
 
-        if (paymentDocumentId == documentId && paymentWorkOrderId is null)
+        if (documentId.HasValue && paymentDocumentId == documentId.Value && paymentWorkOrderId is null)
             return new(CommercialPaymentClassification.IncludedInSelectedContract, "included",
                 "Incluído no contrato selecionado",
                 "Recebimento direto vinculado ao orçamento selecionado.");
@@ -88,11 +103,12 @@ public static class CommercialPaymentClassifier
         linkedDocumentId != documentId.Value;
 
     public static bool IsSelectedOrigin(Guid? paymentDocumentId, Guid? paymentWorkOrderId,
-        Guid documentId, Guid? selectedWorkOrderId) =>
+        Guid? documentId, Guid? selectedWorkOrderId) =>
         !HasIncompatibleDocumentLink(paymentDocumentId, paymentWorkOrderId, documentId, selectedWorkOrderId) &&
         (selectedWorkOrderId.HasValue
-            ? paymentWorkOrderId == selectedWorkOrderId.Value
-            : paymentDocumentId == documentId && paymentWorkOrderId is null);
+            ? paymentWorkOrderId == selectedWorkOrderId.Value ||
+              (documentId.HasValue && paymentDocumentId == documentId.Value && paymentWorkOrderId is null)
+            : documentId.HasValue && paymentDocumentId == documentId.Value && paymentWorkOrderId is null);
 }
 
 public static class CommercialBalanceCalculator

@@ -16,12 +16,30 @@ public sealed class CommercialBalanceCalculatorTests
         var directDocument = CommercialPaymentClassifier.Classify(documentId, null, false, documentId, selectedOrderId);
         var inconsistent = CommercialPaymentClassifier.Classify(Guid.NewGuid(), selectedOrderId, false, documentId, selectedOrderId);
         var reversed = CommercialPaymentClassifier.Classify(documentId, selectedOrderId, true, documentId, selectedOrderId);
+        var independentOrder = CommercialPaymentClassifier.Classify(null, selectedOrderId, false, null, selectedOrderId);
 
         Assert.True(included.ParticipatesInBalance);
+        Assert.True(directDocument.ParticipatesInBalance);
+        Assert.True(directDocument.IsAppropriatedAdvance);
+        Assert.True(independentOrder.ParticipatesInBalance);
         Assert.Equal(CommercialPaymentClassification.OtherOrigin, otherOrder.Classification);
-        Assert.Equal(CommercialPaymentClassification.OtherOrigin, directDocument.Classification);
         Assert.Equal(CommercialPaymentClassification.ExcludedInconsistent, inconsistent.Classification);
         Assert.Equal(CommercialPaymentClassification.Reversed, reversed.Classification);
+    }
+
+    [Fact]
+    public void Reversed_inconsistent_payment_keeps_financial_status_and_link_integrity_separate()
+    {
+        var documentId = Guid.NewGuid();
+        var selectedOrderId = Guid.NewGuid();
+        var otherDocumentId = Guid.NewGuid();
+
+        var result = CommercialPaymentClassifier.Classify(otherDocumentId, selectedOrderId, true, documentId, selectedOrderId);
+
+        Assert.Equal(CommercialPaymentClassification.Reversed, result.Classification);
+        Assert.True(result.IsReversed);
+        Assert.True(result.HasIncompatibleLink);
+        Assert.False(result.ParticipatesInBalance);
     }
 
     [Fact]

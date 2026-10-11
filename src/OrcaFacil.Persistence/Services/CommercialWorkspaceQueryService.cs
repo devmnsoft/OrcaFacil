@@ -58,12 +58,12 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         var financial = BuildFinancialReview(documentId, balance, payments, receipts, order);
         var paid = financial.ReceivedAmount;
         var latestValidPaymentId = financial.Payments
-            .Where(x => x.ClassificationCode == "included" && !x.IsReversed)
+            .Where(x => x.ParticipatesInBalance && !x.IsReversed)
             .OrderByDescending(x => x.PaidAt)
             .Select(x => (Guid?)x.Id)
             .FirstOrDefault();
         var latestValidReceiptId = financial.Payments
-            .Where(x => x.ClassificationCode == "included" && !x.IsReversed && x.ReceiptId.HasValue && !x.ReceiptCancelled)
+            .Where(x => x.ParticipatesInBalance && !x.IsReversed && x.ReceiptId.HasValue && !x.ReceiptCancelled)
             .OrderByDescending(x => x.PaidAt)
             .Select(x => x.ReceiptId)
             .FirstOrDefault();
@@ -201,21 +201,31 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
     private static CommercialFinancialReviewView BuildFinancialReview(Guid documentId, CommercialBalance? balance,
         IReadOnlyCollection<ManualPayment> payments, IReadOnlyCollection<Receipt> receipts, WorkOrder? order)
     {
-        var latestReceiptByPayment = receipts
+        var latestHistoricalReceiptByPayment = receipts
+            .GroupBy(x => x.PaymentId)
+            .ToDictionary(x => x.Key, x => x.OrderByDescending(r => r.IssuedAt).First());
+        var currentReceiptByPayment = receipts
+            .Where(x => x.CancelledAt is null)
             .GroupBy(x => x.PaymentId)
             .ToDictionary(x => x.Key, x => x.OrderByDescending(r => r.IssuedAt).First());
         var rows = payments.Select(payment =>
         {
             var classification = CommercialPaymentClassifier.Classify(payment.DocumentId, payment.WorkOrderId,
                 payment.Status == FinancialRecordStatus.Reversed, documentId, balance?.WorkOrderId);
-            latestReceiptByPayment.TryGetValue(payment.Id, out var receipt);
+            currentReceiptByPayment.TryGetValue(payment.Id, out var receipt);
+            latestHistoricalReceiptByPayment.TryGetValue(payment.Id, out var historicalReceipt);
+            var visibleReceipt = receipt ?? historicalReceipt;
             return new CommercialFinancialPaymentView(payment.Id, payment.DocumentId, payment.WorkOrderId, payment.Amount,
                 payment.PaymentMethod, payment.PaidAt, payment.Status.ToString(), payment.Status == FinancialRecordStatus.Reversed,
                 classification.IsExcluded, classification.IsExcluded ? classification.Reason : null,
-                receipt?.Id, receipt?.Number, receipt?.CancelledAt is not null,
-                classification.Code, classification.Label, classification.Reason);
+                visibleReceipt?.Id, visibleReceipt?.Number, visibleReceipt?.CancelledAt is not null,
+                classification.Code, classification.Label, classification.Reason,
+                classification.ParticipatesInBalance, classification.IsAppropriatedAdvance, classification.HasIncompatibleLink);
         }).ToArray();
-        var excludedAmount = rows.Where(x => x.ClassificationCode == "excluded-inconsistent").Sum(x => x.Amount);
+        var excludedAmount = rows.Where(x => x.IsExcluded && !x.IsReversed).Sum(x => x.Amount);
+        var otherOriginAmount = rows.Where(x => !x.ParticipatesInBalance && !x.IsExcluded && !x.IsReversed).Sum(x => x.Amount);
+        var appropriatedAdvanceAmount = rows.Where(x => x.IsAppropriatedAdvance && !x.IsReversed).Sum(x => x.Amount);
+        var inconsistentAmount = rows.Where(x => x.HasIncompatibleLink).Sum(x => x.Amount);
         var warnings = balance?.Warnings ?? [];
         var blocking = balance?.BlockingWarnings ?? [];
 
@@ -229,6 +239,9 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
             balance?.BalanceAmount ?? 0m,
             balance?.OverpaidAmount ?? 0m,
             excludedAmount,
+            otherOriginAmount,
+            appropriatedAdvanceAmount,
+            inconsistentAmount,
             balance?.HasBlockingDivergence ?? false,
             balance?.IsSettled ?? false,
             warnings,

@@ -36,9 +36,12 @@ public sealed class CommercialBalanceService(OrcaFacilDbContext db) : ICommercia
                 warnings.Add("Há recebimentos diretos no orçamento vinculados somente à origem contratual selecionada.");
         }
 
-        var scopedPayments = payments.Where(x => BelongsToSelectedContract(x, order.SourceDocumentId, order.Id)).ToArray();
-        if (payments.Any(x => HasIncompatibleDocumentLink(x, order.SourceDocumentId, order.Id)))
+        var selectedDocumentId = order.SourceDocumentId;
+        var scopedPayments = payments.Where(x => BelongsToSelectedContract(x, selectedDocumentId, order.Id)).ToArray();
+        if (payments.Any(x => x.Status == FinancialRecordStatus.Active && HasIncompatibleDocumentLink(x, selectedDocumentId, order.Id)))
             blockingWarnings.Add("Há recebimento com vínculo incompatível entre orçamento e ordem; ele foi excluído do saldo e precisa ser revisado antes de novos recebimentos.");
+        if (payments.Any(x => x.Status == FinancialRecordStatus.Reversed && HasIncompatibleDocumentLink(x, selectedDocumentId, order.Id)))
+            warnings.Add("Há recebimento estornado com vínculo histórico inconsistente; ele não altera o saldo, mas permanece destacado para auditoria.");
 
         return Build(order.SourceDocumentId, order.Id, "WorkOrder", order.TotalSnapshot, scopedPayments, warnings, blockingWarnings);
     }
@@ -146,7 +149,7 @@ public sealed class CommercialBalanceService(OrcaFacilDbContext db) : ICommercia
         IReadOnlyCollection<ManualPayment> payments)
     {
         if (!selectedWorkOrderId.HasValue) return [];
-        return payments.Any(x => HasIncompatibleDocumentLink(x, documentId, selectedWorkOrderId))
+        return payments.Any(x => x.Status == FinancialRecordStatus.Active && HasIncompatibleDocumentLink(x, documentId, selectedWorkOrderId))
             ? ["Há recebimento com vínculo incompatível entre orçamento e ordem; ele foi excluído do saldo e precisa ser revisado antes de novos recebimentos."]
             : [];
     }
