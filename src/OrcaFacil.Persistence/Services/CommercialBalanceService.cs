@@ -123,8 +123,7 @@ public sealed class CommercialBalanceService(OrcaFacilDbContext db) : ICommercia
         => CommercialPaymentClassifier.IsSelectedOrigin(payment.DocumentId, payment.WorkOrderId, documentId, selectedWorkOrderId);
 
     private static bool BelongsToSelectedContract(ManualPayment payment, Guid? documentId, Guid? selectedWorkOrderId)
-        => documentId.HasValue && CommercialPaymentClassifier.IsSelectedOrigin(payment.DocumentId, payment.WorkOrderId,
-            documentId.Value, selectedWorkOrderId);
+        => CommercialPaymentClassifier.IsSelectedOrigin(payment.DocumentId, payment.WorkOrderId, documentId, selectedWorkOrderId);
 
     private static bool HasIncompatibleDocumentLink(ManualPayment payment, Guid? documentId, Guid? selectedWorkOrderId) =>
         CommercialPaymentClassifier.HasIncompatibleDocumentLink(payment.DocumentId, payment.WorkOrderId, documentId, selectedWorkOrderId);

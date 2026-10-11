@@ -45,6 +45,11 @@ if (commandRail && commandToggle) {
 commandToggle?.addEventListener('click', () => {
   setCommandRailExpanded(!commandRail?.classList.contains('is-expanded'));
 });
+commandRail?.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape' || !commandRail.classList.contains('is-expanded')) return;
+  setCommandRailExpanded(false);
+  commandToggle?.focus({ preventScroll: true });
+});
 
 const shareCenter = document.querySelector('[data-share-center]');
 if (shareCenter) {

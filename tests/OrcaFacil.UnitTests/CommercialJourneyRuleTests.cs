@@ -82,6 +82,35 @@ public sealed class CommercialJourneyRuleTests
     }
 
     [Fact]
+    public void Work_order_balance_delegates_nullable_origin_to_the_canonical_classifier()
+    {
+        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
+        var source = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Persistence", "Services", "CommercialBalanceService.cs"));
+
+        Assert.Contains("CommercialPaymentClassifier.IsSelectedOrigin(payment.DocumentId, payment.WorkOrderId, documentId, selectedWorkOrderId)", source);
+        Assert.DoesNotContain("documentId.HasValue && CommercialPaymentClassifier.IsSelectedOrigin", source);
+        Assert.True(CommercialPaymentClassifier.IsSelectedOrigin(null, Guid.NewGuid(), null, Guid.NewGuid()) is false);
+
+        var selectedOrderId = Guid.NewGuid();
+        Assert.True(CommercialPaymentClassifier.IsSelectedOrigin(null, selectedOrderId, null, selectedOrderId));
+    }
+
+    [Fact]
+    public void Sharing_link_success_returns_to_the_accessible_mobile_actions_panel()
+    {
+        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
+        var model = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Web", "Pages", "Documents", "Details.cshtml.cs"));
+        var page = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Web", "Pages", "Documents", "Details.cshtml"));
+        var script = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Web", "wwwroot", "js", "commercial-workspace.js"));
+
+        Assert.Contains("return RedirectToPage(new { id, tab = \"sharing\" })", model);
+        Assert.Contains("aria-controls=\"document-command-sharing document-command-manage document-command-danger\"", page);
+        Assert.Contains("if (event.key !== 'Escape'", script);
+        Assert.Contains("commandToggle?.focus({ preventScroll: true })", script);
+        Assert.Contains("if (requestedRawTab === 'sharing') focusCommandSection('sharing')", script);
+    }
+
+    [Fact]
     public void Document_details_exposes_financial_review_without_hiding_excluded_amounts()
     {
         var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));

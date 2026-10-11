@@ -127,7 +127,10 @@ public sealed class DetailsModel(ICommercialWorkspaceQueryService workspace, ICu
         var result = await journey.CreatePublicAccessAsync(id, TimeSpan.FromDays(30), ct);
         TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
         if (result.Succeeded && !string.IsNullOrWhiteSpace(result.PublicToken))
+        {
             TempData["PublicLink"] = Url.PageLink("/PublicQuotes/View", values: new { token = result.PublicToken });
+            return RedirectToPage(new { id, tab = "sharing" });
+        }
         return RedirectToPage(new { id });
     }
 
