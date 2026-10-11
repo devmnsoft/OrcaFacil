@@ -111,6 +111,22 @@ public sealed class CommercialJourneyRuleTests
     }
 
     [Fact]
+    public void Quote_list_and_detail_share_the_canonical_next_action_resolver()
+    {
+        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
+        var listService = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Persistence", "Services", "QuoteWorkspaceService.cs"));
+        var detailService = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Persistence", "Services", "CommercialWorkspaceQueryService.cs"));
+        var resolver = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Application", "Commercial", "CommercialNextActionResolver.cs"));
+
+        Assert.Contains("CommercialNextActionResolver.ResolveQuoteAction", listService);
+        Assert.Contains("CommercialNextActionResolver.ResolveDocumentAction", detailService);
+        Assert.Contains("visualizacao nao e aprovacao", resolver);
+        Assert.Contains("WorkOrderPaid > 0m && context.LatestPaymentId is not null", resolver);
+        Assert.DoesNotContain("private static NextActionDescriptor NextAction", listService);
+        Assert.DoesNotContain("private static CommercialNextAction ResolveNext", detailService);
+    }
+
+    [Fact]
     public void Document_details_exposes_financial_review_without_hiding_excluded_amounts()
     {
         var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));

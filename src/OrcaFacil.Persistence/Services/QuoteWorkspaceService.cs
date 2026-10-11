@@ -69,7 +69,7 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
         var workOrders = await db.WorkOrders.AsNoTracking()
             .Where(w => w.AccountId == accountId && w.SourceDocumentId != null && docIds.Contains(w.SourceDocumentId.Value) && !w.IsDeleted)
             .OrderByDescending(w => w.CreatedAt)
-            .Select(w => new { w.Id, SourceDocumentId = w.SourceDocumentId!.Value, w.SourceRevisionId, w.Number, w.TotalSnapshot, w.CreatedAt })
+            .Select(w => new { w.Id, SourceDocumentId = w.SourceDocumentId!.Value, w.SourceRevisionId, w.Number, w.TotalSnapshot, w.CreatedAt, w.Status })
             .ToListAsync(cancellationToken);
 
         var workOrdersById = workOrders.ToDictionary(x => x.Id);
@@ -96,7 +96,14 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
                 row.IssueDate,
                 row.ValidUntil,
                 row.CreatedAt,
-                NextAction(row.Id, row.Status, balance),
+                CommercialNextActionResolver.ResolveQuoteAction(new CommercialNextActionContext(
+                    row.Id,
+                    row.Status,
+                    Balance: balance,
+                    WorkOrderId: wo?.Id,
+                    WorkOrderStatus: wo?.Status.ToString(),
+                    WorkOrderPaid: balance?.ReceivedAmount ?? 0m,
+                    WorkOrderBalance: balance?.BalanceAmount ?? 0m)),
                 revisionNumber,
                 assigneeName,
                 balance?.ReceivedAmount ?? 0m,
@@ -142,34 +149,6 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
         "validity" => query.OrderBy(document => document.ValidUntil ?? DateTime.MaxValue).ThenByDescending(document => document.CreatedAt).ThenBy(document => document.Id),
         _ => query.OrderByDescending(document => document.CreatedAt).ThenBy(document => document.Id)
     };
-
-    private static NextActionDescriptor NextAction(Guid documentId, string status, CommercialBalance? balance) => status.ToUpperInvariant() switch
-    {
-        "DRAFT" => Action("continue", "Continuar orçamento", "Complete os dados antes de compartilhar.",
-            "/Documents/CreateBudget", documentId),
-        "ISSUED" or "READY" => DetailsAction("share", "Criar acesso", "Envie uma versão segura ao cliente.", documentId, "sharing"),
-        "SENT" or "VIEWED" => DetailsAction("follow-up", "Programar retorno", "Mantenha a negociação avançando.", documentId, "negotiation"),
-        "APPROVED" when balance?.WorkOrderId is null => DetailsAction("work-order", "Criar ordem", "Transforme a aprovação em execução.", documentId, "summary"),
-        "APPROVED" when balance is { HasBlockingDivergence: true } => DetailsAction("financial-review", "Revisar vínculos", "Há divergência financeira impeditiva neste contrato.", documentId, "finance"),
-        "APPROVED" when balance is { HasOverpayment: true } => DetailsAction("overpaid", "Revisar excedente", "Há recebimento acima do contratado.", documentId, "finance"),
-        "APPROVED" when balance is { IsSettled: true } => DetailsAction("receipts", "Consultar recebimentos", "Contrato quitado; acompanhe recibos e histórico.", documentId, "finance"),
-        "APPROVED" => Action("payment", "Registrar recebimento", "Receba pagamento ou consulte o saldo.",
-            "/Payments/Register", balance!.WorkOrderId!.Value),
-        _ => DetailsAction("review", "Revisar proposta", "Consulte o histórico e defina o próximo passo.", documentId)
-    };
-
-    private static NextActionDescriptor DetailsAction(string code, string title, string description, Guid documentId, string tab = "summary") =>
-        new(code, title, description, "/Documents/Details", new Dictionary<string, string>
-        {
-            ["id"] = documentId.ToString(),
-            ["tab"] = tab
-        });
-
-    private static NextActionDescriptor Action(string code, string title, string description, string page, Guid targetId) =>
-        new(code, title, description, page, new Dictionary<string, string>
-        {
-            ["id"] = targetId.ToString()
-        });
 
     private sealed record DocumentListRow(Guid Id, string Number, string Status, string ClientName, decimal Total,
         DateTime IssueDate, DateTime? ValidUntil, DateTime CreatedAt, Guid? AssignedToUserId);

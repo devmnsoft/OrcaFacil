@@ -70,7 +70,17 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         var orderView = order is null ? null : new CommercialWorkOrderView(order.Id, order.Number, order.Status.ToString(),
             order.ScheduledStart, order.ScheduledEnd, paid, Math.Max(0, order.TotalSnapshot - paid), latestValidPaymentId, latestValidReceiptId);
         var hasChange = decisions.Any(x => x.Decision == PublicDocumentDecisionType.ChangeRequested);
-        var next = ResolveNext(document, engagement, orderView, hasChange);
+        var next = CommercialNextActionResolver.ResolveDocumentAction(new CommercialNextActionContext(
+            document.Id,
+            document.Status,
+            hasChange,
+            balance,
+            orderView?.Id,
+            orderView?.Status,
+            orderView?.Paid ?? 0m,
+            orderView?.Balance ?? 0m,
+            orderView?.LatestPaymentId,
+            orderView?.LatestReceiptId));
         return new(document.Id, document.Type.ToString(), document.Number, document.Status, document.ClientName, document.CreatedAt,
             document.IssueDate, document.ValidUntil, document.Subtotal, document.Discount, document.Total, document.Notes,
             document.ConditionsText, document.OriginBudgetNumber is null ? "Criação direta" : $"Documento {document.OriginBudgetNumber}",
@@ -157,23 +167,6 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
             docs.Count(x => x.Status.Equals("Sent", StringComparison.OrdinalIgnoreCase)), docs.Count(x => x.Status.Equals("Viewed", StringComparison.OrdinalIgnoreCase)),
             approved.Length, approved.Sum(x => x.Total), responded == 0 ? null : decimal.Round(approved.Length * 100m / responded, 1),
             approved.Length == 0 ? null : approved.Average(x => x.Total), pending);
-    }
-
-    private static CommercialNextAction ResolveNext(Document d, ClientEngagementView? engagement, CommercialWorkOrderView? order, bool change)
-    {
-        if (change) return new("revision", "Transforme o retorno em uma nova versão", "Preserve a resposta do cliente e prepare os ajustes solicitados.", "Criar nova versão", "Revision", null, null, "version");
-        if (order is not null) return order.Status switch {
-            "Planned" => new("schedule", "Agende a execução", "Defina data e responsável para tirar o serviço do planejamento.", "Abrir ordem de serviço", null, "/WorkOrders/Details", order.Id, "calendar"),
-            "Scheduled" => new("start", "Prepare o início do serviço", "A ordem está agendada e pronta para execução.", "Abrir ordem de serviço", null, "/WorkOrders/Details", order.Id, "start"),
-            "InProgress" => new("complete", "Conclua a execução", "Registre a conclusão na ordem de serviço.", "Abrir ordem de serviço", null, "/WorkOrders/Details", order.Id, "success"),
-            "Completed" when order.Balance > 0 => new("payment", order.Paid > 0 ? "Registre o saldo restante" : "Registre o recebimento", $"Saldo atual de {order.Balance:C}. O serviço pode estar concluído e ainda ter saldo.", "Registrar recebimento", null, "/Payments/Register", order.Id, "payment"),
-            _ when order.LatestReceiptId is not null => new("receipt", "Recibo disponível", "O pagamento e o recibo estão registrados.", "Visualizar recibo", null, "/Receipts/Details", order.LatestReceiptId, "receipt"),
-            _ => new("receipt", "Emita o recibo", "O pagamento foi concluído e pode ser formalizado.", "Abrir ordem de serviço", null, "/WorkOrders/Details", order.Id, "receipt") };
-        if (d.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase)) return new("work-order", "Converta a aprovação em operação", "Crie uma ordem rastreável a partir da versão aprovada.", "Criar ordem de serviço", "WorkOrder", null, null, "work-order");
-        if (d.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase)) return new("duplicate", "Reorganize a proposta", "Preserve o histórico e use o conteúdo em uma nova negociação.", "Duplicar proposta", "Duplicate", null, null, "copy-link");
-        if (d.Status.Equals("Sent", StringComparison.OrdinalIgnoreCase) || d.Status.Equals("Viewed", StringComparison.OrdinalIgnoreCase))
-            return new("follow-up", d.Status.Equals("Viewed", StringComparison.OrdinalIgnoreCase) ? "Acompanhe a resposta do cliente" : "Acompanhe o envio", engagement?.LastViewedAt is null ? "O link está disponível para o cliente." : "O cliente já abriu a proposta.", "Ver interação", null, null, null, "share");
-        return new("prepare", "Edite e prepare para envio", "Confira itens, condições e validade antes de compartilhar.", "Editar orçamento", null, "/Documents/Edit", d.Id, "document");
     }
 
     private static CommercialTimelineEvent MapEvent(ActivityEvent e) => e.Action switch {
