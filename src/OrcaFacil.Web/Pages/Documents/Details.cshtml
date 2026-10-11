@@ -69,6 +69,66 @@
             @if (!string.IsNullOrWhiteSpace(d.Notes) || !string.IsNullOrWhiteSpace(d.Conditions))
             { <section class="of-document-notes"><div><h2>Observações</h2><p>@(d.Notes ?? "Sem observações.")</p></div><div><h2>Condições comerciais</h2><p>@(d.Conditions ?? "Sem condições adicionais.")</p></div></section> }
 
+            <section class="of-workspace-section of-financial-review" id="finance" aria-labelledby="finance-title">
+                <div class="of-section-heading">
+                    <div><p class="of-eyebrow">Financeiro</p><h2 id="finance-title">Revisão de recebimentos</h2></div>
+                    @if (d.Financial.HasBlockingDivergence)
+                    {
+                        <span class="of-badge of-badge-danger">Bloqueio financeiro</span>
+                    }
+                    else if (d.Financial.IsSettled)
+                    {
+                        <span class="of-badge of-badge-success">Quitado</span>
+                    }
+                    else
+                    {
+                        <span class="of-badge">Saldo em aberto</span>
+                    }
+                </div>
+                <dl class="of-finance-summary">
+                    <div><dt>Origem contratual</dt><dd>@d.Financial.ContractSource @if (!string.IsNullOrWhiteSpace(d.Financial.WorkOrderNumber)) { <span>· OS @d.Financial.WorkOrderNumber</span> }</dd></div>
+                    <div><dt>Contratado</dt><dd>@d.Financial.ContractedAmount.ToString("C")</dd></div>
+                    <div><dt>Recebido válido</dt><dd>@d.Financial.ReceivedAmount.ToString("C")</dd></div>
+                    <div><dt>Saldo operacional</dt><dd>@d.Financial.BalanceAmount.ToString("C")</dd></div>
+                    <div><dt>Estornado</dt><dd>@d.Financial.ReversedAmount.ToString("C")</dd></div>
+                    <div><dt>Excedente</dt><dd>@d.Financial.OverpaidAmount.ToString("C")</dd></div>
+                    <div class="of-finance-excluded"><dt>Excluído por inconsistência</dt><dd>@d.Financial.ExcludedAmount.ToString("C")</dd></div>
+                </dl>
+                @if (d.Financial.BlockingWarnings.Count > 0)
+                {
+                    <div class="of-finance-block" role="alert">
+                        <strong>Novos recebimentos estão bloqueados.</strong>
+                        @foreach (var warning in d.Financial.BlockingWarnings) { <p>@warning</p> }
+                        <small>Consulta de histórico, comprovantes válidos existentes e estorno continuam disponíveis conforme permissão. A correção de vínculo deve ser revisada com auditoria antes/depois.</small>
+                    </div>
+                }
+                @if (d.Financial.Warnings.Count > 0)
+                {
+                    <details class="of-finance-warnings" open="@d.Financial.HasBlockingDivergence">
+                        <summary>Avisos financeiros</summary>
+                        <ul>@foreach (var warning in d.Financial.Warnings) { <li>@warning</li> }</ul>
+                    </details>
+                }
+                <div class="of-finance-payments" role="table" aria-label="Recebimentos vinculados">
+                    <div class="of-finance-payment-head" role="row"><span>Data</span><span>Valor</span><span>Status</span><span>Vínculo</span><span>Comprovante</span></div>
+                    @foreach (var payment in d.Financial.Payments)
+                    {
+                        <article class="of-finance-payment @(payment.IsExcluded ? "is-excluded" : "")" role="row">
+                            <span data-label="Data">@payment.PaidAt.ToLocalTime().ToString("g")</span>
+                            <strong data-label="Valor">@payment.Amount.ToString("C")</strong>
+                            <span data-label="Status">@(payment.IsExcluded ? "Excluído do saldo" : payment.Status)</span>
+                            <span data-label="Vínculo">@(payment.WorkOrderId is null ? "Documento" : "Ordem")</span>
+                            <span data-label="Comprovante">@if (payment.ReceiptId is Guid receiptId) { <a asp-page="/Receipts/Details" asp-route-id="@receiptId">@payment.ReceiptNumber</a> } else { <text>Não emitido</text> }</span>
+                            @if (!string.IsNullOrWhiteSpace(payment.ExclusionReason)) { <small>@payment.ExclusionReason</small> }
+                        </article>
+                    }
+                    @if (d.Financial.Payments.Count == 0)
+                    {
+                        <div class="of-inline-empty"><strong>Nenhum recebimento registrado</strong><p>Os recebimentos aparecerão aqui depois de vinculados a este contrato.</p></div>
+                    }
+                </div>
+            </section>
+
             <section class="of-workspace-section of-client-engagement" id="client-engagement" aria-labelledby="engagement-title">
                 <div class="of-section-heading"><div><p class="of-eyebrow">Jornada pública</p><h2 id="engagement-title">Interação com o cliente</h2></div>@if(d.Engagement is not null){<span class="of-badge">@d.Engagement.Status</span>}</div>
                 @if (d.Engagement is null) { <div class="of-inline-empty"><strong>Nenhum link compartilhado</strong><p>Quando um link seguro for criado, visualizações e decisões aparecerão aqui.</p></div> }

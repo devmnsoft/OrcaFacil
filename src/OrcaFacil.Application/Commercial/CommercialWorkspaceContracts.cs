@@ -13,6 +13,14 @@ public sealed record CommercialWorkOrderView(Guid Id, string Number, string Stat
     DateTime? ScheduledEnd, decimal Paid, decimal Balance, Guid? LatestPaymentId, Guid? LatestReceiptId);
 public sealed record CommercialNextAction(string Code, string Title, string Description, string Label,
     string? Handler, string? Page, Guid? RouteId, string Icon);
+public sealed record CommercialFinancialPaymentView(Guid Id, Guid? DocumentId, Guid? WorkOrderId, decimal Amount,
+    string PaymentMethod, DateTime PaidAt, string Status, bool IsReversed, bool IsExcluded,
+    string? ExclusionReason, Guid? ReceiptId, string? ReceiptNumber);
+public sealed record CommercialFinancialReviewView(string ContractSource, Guid? WorkOrderId, string? WorkOrderNumber,
+    decimal ContractedAmount, decimal ReceivedAmount, decimal ReversedAmount, decimal BalanceAmount,
+    decimal OverpaidAmount, decimal ExcludedAmount, bool HasBlockingDivergence, bool IsSettled,
+    IReadOnlyList<string> Warnings, IReadOnlyList<string> BlockingWarnings,
+    IReadOnlyList<CommercialFinancialPaymentView> Payments);
 
 public sealed record CommercialDocumentWorkspaceView(Guid Id, string Type, string Number, string Status,
     string ClientName, DateTime CreatedAt, DateTime IssueDate, DateTime? ValidUntil, decimal Subtotal,
@@ -20,7 +28,8 @@ public sealed record CommercialDocumentWorkspaceView(Guid Id, string Type, strin
     bool IsExpired, bool HasChangeRequest, IReadOnlyList<CommercialWorkspaceItem> Items,
     IReadOnlyList<CommercialRevisionView> Revisions, ClientEngagementView? Engagement,
     IReadOnlyList<CommercialTimelineEvent> Timeline, CommercialWorkOrderView? WorkOrder,
-    CommercialNextAction NextAction, DateTime? NextFollowUpAt, DateTime? LastFollowUpAt,
+    CommercialNextAction NextAction, CommercialFinancialReviewView Financial,
+    DateTime? NextFollowUpAt, DateTime? LastFollowUpAt,
     FollowUpStatus FollowUpStatus, string? FollowUpNote);
 
 public sealed record CommercialPipelineCard(Guid DocumentId, string Number, string ClientName, decimal Total,

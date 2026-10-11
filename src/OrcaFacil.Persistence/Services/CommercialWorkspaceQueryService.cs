@@ -6,7 +6,8 @@ using OrcaFacil.Domain.Enums;
 
 namespace OrcaFacil.Persistence.Services;
 
-public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurrentAccountService currentAccount)
+public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurrentAccountService currentAccount,
+    ICommercialBalanceService balances)
     : ICommercialWorkspaceQueryService
 {
     private Guid AccountId => currentAccount.AccountId ?? throw new InvalidOperationException("Conta ativa não selecionada.");
@@ -24,10 +25,23 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
             .OrderByDescending(x => x.CreatedAt).ToListAsync(ct);
         var decisions = await db.PublicDocumentDecisions.AsNoTracking().Where(x => x.AccountId == AccountId && x.DocumentId == documentId)
             .OrderByDescending(x => x.CreatedAt).ToListAsync(ct);
-        var order = await db.WorkOrders.AsNoTracking().SingleOrDefaultAsync(x => x.AccountId == AccountId && x.SourceDocumentId == documentId && !x.IsDeleted, ct);
-        List<ManualPayment> payments = order is null ? [] : await db.ManualPayments.AsNoTracking().Where(x => x.AccountId == AccountId && x.WorkOrderId == order.Id && !x.IsDeleted)
+        var relatedOrders = await db.WorkOrders.AsNoTracking()
+            .Where(x => x.AccountId == AccountId && x.SourceDocumentId == documentId && !x.IsDeleted)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(ct);
+        var balance = await balances.GetForDocumentAsync(AccountId, documentId, null, ct);
+        var order = balance?.WorkOrderId is Guid selectedOrderId
+            ? relatedOrders.FirstOrDefault(x => x.Id == selectedOrderId)
+            : relatedOrders.FirstOrDefault(x => x.Status != WorkOrderStatus.Cancelled);
+        var relatedOrderIds = relatedOrders.Select(x => x.Id).ToArray();
+        List<ManualPayment> payments = await db.ManualPayments.AsNoTracking()
+            .Where(x => x.AccountId == AccountId && !x.IsDeleted &&
+                ((x.DocumentId != null && x.DocumentId == documentId) ||
+                 (x.WorkOrderId != null && relatedOrderIds.Contains(x.WorkOrderId.Value))))
             .OrderByDescending(x => x.PaidAt).ToListAsync(ct);
-        List<Receipt> receipts = order is null ? [] : await db.Receipts.AsNoTracking().Where(x => x.AccountId == AccountId && x.WorkOrderId == order.Id && !x.IsDeleted)
+        var paymentIds = payments.Select(x => x.Id).ToArray();
+        List<Receipt> receipts = paymentIds.Length == 0 ? [] : await db.Receipts.AsNoTracking()
+            .Where(x => x.AccountId == AccountId && paymentIds.Contains(x.PaymentId) && !x.IsDeleted)
             .OrderByDescending(x => x.IssuedAt).ToListAsync(ct);
         var entityIds = new List<Guid> { documentId };
         if (order is not null) entityIds.Add(order.Id);
@@ -41,7 +55,8 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
             access.RevokedAt is not null || access.Status == PublicAccessStatus.Revoked ? "Revogado" : access.ExpiresAt <= now ? "Expirado" : "Ativo",
             access.CreatedAt, access.ExpiresAt, access.ViewCount, access.LastViewedAt, decision?.Decision.ToString(), decision?.CreatedAt,
             decision?.CustomerName, decision?.Comment ?? decision?.ReasonCode, decidedRevision);
-        var paid = payments.Where(x => x.Status == FinancialRecordStatus.Active).Sum(x => x.Amount);
+        var paid = payments.Where(x => x.Status == FinancialRecordStatus.Active && BelongsToSelectedContract(x, documentId, balance?.WorkOrderId)).Sum(x => x.Amount);
+        var financial = BuildFinancialReview(documentId, balance, payments, receipts, order);
         var orderView = order is null ? null : new CommercialWorkOrderView(order.Id, order.Number, order.Status.ToString(),
             order.ScheduledStart, order.ScheduledEnd, paid, Math.Max(0, order.TotalSnapshot - paid), payments.FirstOrDefault()?.Id, receipts.FirstOrDefault()?.Id);
         var hasChange = decisions.Any(x => x.Decision == PublicDocumentDecisionType.ChangeRequested);
@@ -53,7 +68,7 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
             document.Items.Select(x => new CommercialWorkspaceItem(x.Id, x.Description, x.Quantity, x.UnitPrice, x.Discount,
                 x.Quantity * x.UnitPrice, x.CalculateTotal())).ToArray(),
             revisions.Select(x => new CommercialRevisionView(x.Id, x.VersionNumber, x.Status.ToString(), x.CreatedAt, x.IsCurrent)).ToArray(),
-            engagement, events.Select(MapEvent).ToArray(), orderView, next, document.NextFollowUpAt,
+            engagement, events.Select(MapEvent).ToArray(), orderView, next, financial, document.NextFollowUpAt,
             document.LastFollowUpAt, document.FollowUpStatus, document.FollowUpNote);
     }
 
@@ -172,4 +187,56 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         if (code == "viewed") return age.TotalHours < 24 ? $"Visto há {Math.Max(1, (int)age.TotalHours)}h" : $"Visto há {(int)age.TotalDays} dias";
         return age.TotalDays < 1 ? "Atualizado hoje" : $"Aguardando há {(int)age.TotalDays} dias";
     }
+
+    private static CommercialFinancialReviewView BuildFinancialReview(Guid documentId, CommercialBalance? balance,
+        IReadOnlyCollection<ManualPayment> payments, IReadOnlyCollection<Receipt> receipts, WorkOrder? order)
+    {
+        var receiptByPayment = receipts
+            .Where(x => x.CancelledAt is null)
+            .GroupBy(x => x.PaymentId)
+            .ToDictionary(x => x.Key, x => x.OrderByDescending(r => r.IssuedAt).First());
+        var rows = payments.Select(payment =>
+        {
+            var excluded = HasIncompatibleDocumentLink(payment, documentId, balance?.WorkOrderId);
+            var reason = excluded
+                ? "Vínculo incompatível: o pagamento aponta para a ordem selecionada, mas pertence a outro orçamento."
+                : null;
+            receiptByPayment.TryGetValue(payment.Id, out var receipt);
+            return new CommercialFinancialPaymentView(payment.Id, payment.DocumentId, payment.WorkOrderId, payment.Amount,
+                payment.PaymentMethod, payment.PaidAt, payment.Status.ToString(), payment.Status == FinancialRecordStatus.Reversed,
+                excluded, reason, receipt?.Id, receipt?.Number);
+        }).ToArray();
+        var excludedAmount = rows.Where(x => x.IsExcluded && !x.IsReversed).Sum(x => x.Amount);
+        var warnings = balance?.Warnings ?? [];
+        var blocking = balance?.BlockingWarnings ?? [];
+
+        return new CommercialFinancialReviewView(
+            balance?.ContractSource ?? (order is null ? "Document" : "WorkOrder"),
+            balance?.WorkOrderId ?? order?.Id,
+            order?.Number,
+            balance?.ContractedAmount ?? order?.TotalSnapshot ?? 0m,
+            balance?.ReceivedAmount ?? 0m,
+            balance?.ReversedAmount ?? 0m,
+            balance?.BalanceAmount ?? 0m,
+            balance?.OverpaidAmount ?? 0m,
+            excludedAmount,
+            balance?.HasBlockingDivergence ?? false,
+            balance?.IsSettled ?? false,
+            warnings,
+            blocking,
+            rows);
+    }
+
+    private static bool BelongsToSelectedContract(ManualPayment payment, Guid documentId, Guid? selectedWorkOrderId)
+    {
+        if (HasIncompatibleDocumentLink(payment, documentId, selectedWorkOrderId)) return false;
+        if (selectedWorkOrderId.HasValue && payment.WorkOrderId == selectedWorkOrderId.Value) return true;
+        return payment.DocumentId == documentId && payment.WorkOrderId is null;
+    }
+
+    private static bool HasIncompatibleDocumentLink(ManualPayment payment, Guid documentId, Guid? selectedWorkOrderId) =>
+        selectedWorkOrderId.HasValue &&
+        payment.WorkOrderId == selectedWorkOrderId.Value &&
+        payment.DocumentId is { } paymentDocumentId &&
+        paymentDocumentId != documentId;
 }

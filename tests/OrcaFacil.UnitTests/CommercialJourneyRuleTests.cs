@@ -80,4 +80,20 @@ public sealed class CommercialJourneyRuleTests
         Assert.True(paymentCreation > blockGuard);
         Assert.Contains("vínculo incompatível entre orçamento, ordem e recebimento", source);
     }
+
+    [Fact]
+    public void Document_details_exposes_financial_review_without_hiding_excluded_amounts()
+    {
+        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
+        var contracts = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Application", "Commercial", "CommercialWorkspaceContracts.cs"));
+        var service = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Persistence", "Services", "CommercialWorkspaceQueryService.cs"));
+        var page = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Web", "Pages", "Documents", "Details.cshtml"));
+
+        Assert.Contains("CommercialFinancialReviewView", contracts);
+        Assert.Contains("ExcludedAmount", contracts);
+        Assert.Contains("BuildFinancialReview", service);
+        Assert.Contains("HasIncompatibleDocumentLink", service);
+        Assert.Contains("Excluído por inconsistência", page);
+        Assert.Contains("Consulta de histórico, comprovantes válidos existentes e estorno continuam disponíveis", page);
+    }
 }

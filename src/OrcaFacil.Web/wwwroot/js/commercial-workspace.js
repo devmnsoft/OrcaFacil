@@ -43,3 +43,20 @@ if (shareCenter) {
     event.currentTarget.textContent = 'Mensagem copiada';
   });
 }
+
+const tabTargets = {
+  finance: '#finance',
+  sharing: '.of-command-rail',
+  negotiation: '#client-engagement',
+  summary: '.of-document-hero'
+};
+const requestedTab = new URLSearchParams(window.location.search).get('tab');
+const targetSelector = requestedTab ? tabTargets[requestedTab.toLowerCase()] : null;
+const target = targetSelector ? document.querySelector(targetSelector) : null;
+if (target) {
+  window.requestAnimationFrame(() => {
+    target.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    target.setAttribute('tabindex', '-1');
+    target.focus({ preventScroll: true });
+  });
+}
