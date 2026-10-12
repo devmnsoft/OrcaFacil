@@ -5,6 +5,7 @@ if (wizard) {
   const panels = [...wizard.querySelectorAll('[data-step]')];
   const steps = [...wizard.querySelectorAll('[data-step-target]')];
   const itemHost = wizard.querySelector('[data-budget-items]');
+  const clientChoices = wizard.querySelector('[data-client-choices]');
   const previous = wizard.querySelector('[data-step-previous]');
   const next = wizard.querySelector('[data-step-next]');
   const finish = wizard.querySelector('[data-finish]');
@@ -101,13 +102,68 @@ if (wizard) {
     if (currentStep === 1 && !rows().some(x => x.querySelector('[data-item-description]').value.trim())) { rows()[0].querySelector('[data-item-description]').setCustomValidity('Adicione ao menos um serviço.'); rows()[0].querySelector('[data-item-description]').reportValidity(); return false; }
     return true;
   };
-  const addItem = (description = '', service = null) => { const row = rows()[0].cloneNode(true); row.querySelectorAll('input').forEach(x => x.value = x.matches('[data-item-quantity]') ? '1' : ''); row.querySelector('[data-item-description]').value = description; if (service) { row.dataset.serviceId = service.id; row.querySelector('[data-item-price]').value = service.price; row.querySelector('[data-item-unit]').value = service.unit; } itemHost.append(row); rename(); update(); scheduleSave(); };
+  const addItem = (description = '', service = null) => { const row = rows()[0].cloneNode(true); row.querySelectorAll('input').forEach(x => x.value = x.matches('[data-item-quantity]') ? '1' : ''); delete row.dataset.serviceId; row.querySelector('[data-item-description]').value = description; if (service) { row.dataset.serviceId = service.id; row.querySelector('[data-item-price]').value = service.price; row.querySelector('[data-item-unit]').value = service.unit; } itemHost.append(row); rename(); update(); scheduleSave(); };
+  const selectClient = button => {
+    wizard.querySelector('[data-client-id]').value = button.dataset.clientId;
+    wizard.querySelector('[data-client-name]').value = button.dataset.clientName;
+    wizard.querySelectorAll('[data-client-option]').forEach(x => x.classList.toggle('is-selected', x === button));
+    update(); scheduleSave();
+  };
+  const addClientChoice = client => {
+    const button = document.createElement('button');
+    const detail = client.detail || `${client.city || 'Cidade não informada'} · ${client.phone || client.email || 'Contato não informado'}`;
+    button.type = 'button'; button.dataset.clientOption = 'true'; button.dataset.clientId = client.id; button.dataset.clientName = client.name;
+    button.dataset.clientDetail = detail; button.dataset.search = `${client.name || ''} ${client.document || ''} ${client.city || ''}`.toLocaleLowerCase('pt-BR');
+    button.innerHTML = `<span><strong></strong><small></small></span><span>Selecionar</span>`;
+    button.querySelector('strong').textContent = client.name;
+    button.querySelector('small').textContent = detail;
+    button.addEventListener('click', () => selectClient(button));
+    clientChoices?.prepend(button);
+    selectClient(button);
+  };
   next.addEventListener('click', () => { if (valid()) go(currentStep + 1); }); previous.addEventListener('click', () => go(currentStep - 1));
   steps.forEach(x => x.addEventListener('click', () => { const target = Number(x.dataset.stepTarget); if (target <= currentStep || valid()) go(target); }));
   wizard.querySelector('[data-item-add]').addEventListener('click', () => addItem()); wizard.querySelectorAll('[data-service-example]').forEach(x => x.addEventListener('click', () => addItem(x.dataset.serviceExample)));
   itemHost.addEventListener('click', event => { const row = event.target.closest('[data-budget-item]'); if (!row) return; if (event.target.closest('[data-item-remove]')) { if (rows().length === 1) row.querySelectorAll('input').forEach(x => x.value = x.matches('[data-item-quantity]') ? '1' : ''); else row.remove(); } if (event.target.closest('[data-item-duplicate]')) row.after(row.cloneNode(true)); rename(); update(); scheduleSave(); });
-  wizard.querySelectorAll('[data-client-option]').forEach(option => option.addEventListener('click', () => { wizard.querySelector('[data-client-id]').value = option.dataset.clientId; wizard.querySelector('[data-client-name]').value = option.dataset.clientName; wizard.querySelectorAll('[data-client-option]').forEach(x => x.classList.toggle('is-selected', x === option)); update(); scheduleSave(); }));
+  wizard.querySelectorAll('[data-client-option]').forEach(option => option.addEventListener('click', () => selectClient(option)));
   wizard.querySelector('[data-client-search]').addEventListener('input', event => { event.target.setCustomValidity(''); const term = event.target.value.trim().toLocaleLowerCase('pt-BR'); wizard.querySelectorAll('[data-client-option]').forEach(x => x.hidden = !x.dataset.search.includes(term)); });
+  wizard.querySelector('[data-quick-client-submit]')?.addEventListener('click', async event => {
+    const feedback = wizard.querySelector('[data-quick-client-feedback]');
+    const root = wizard.querySelector('[data-quick-client]');
+    const name = wizard.querySelector('[data-quick-client-name]');
+    if (!name.value.trim()) { name.setCustomValidity('Informe o nome do cliente.'); name.reportValidity(); return; }
+    event.currentTarget.disabled = true; feedback.textContent = 'Cadastrando cliente...';
+    try {
+      const response = await fetch('?handler=QuickClient', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+        body: JSON.stringify({
+          name: name.value, phone: wizard.querySelector('[data-quick-client-phone]')?.value || null,
+          email: wizard.querySelector('[data-quick-client-email]')?.value || null,
+          city: wizard.querySelector('[data-quick-client-city]')?.value || null,
+          documentNumber: wizard.querySelector('[data-quick-client-document]')?.value || null,
+          allowPossibleDuplicate: root?.dataset.allowDuplicate === 'true'
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        const candidates = Array.isArray(data.candidates) && data.candidates.length
+          ? ` ${data.candidates.map(x => `${x.name} (${x.reason})`).join(', ')}`
+          : '';
+        if (response.status === 422) {
+          root.dataset.allowDuplicate = 'true';
+          feedback.textContent = `${data.error || 'Cliente parecido encontrado.'}${candidates} Clique novamente para cadastrar mesmo assim.`;
+          return;
+        }
+        throw new Error(`${data.error || 'Não foi possível cadastrar.'}${candidates}`);
+      }
+      root.dataset.allowDuplicate = 'false';
+      feedback.textContent = 'Cliente cadastrado e selecionado.';
+      addClientChoice(data.client);
+      root.open = false;
+    } catch (error) { feedback.textContent = error.message || 'Falha ao cadastrar cliente.'; }
+    finally { event.currentTarget.disabled = false; }
+  });
   wizard.addEventListener('input', event => { event.target.setCustomValidity?.(''); update(); scheduleSave(); }); wizard.addEventListener('change', scheduleSave);
   wizard.querySelector('[data-summary-toggle]').addEventListener('click', event => { const content = wizard.querySelector('[data-summary-content]'); content.hidden = !content.hidden; event.currentTarget.setAttribute('aria-expanded', String(!content.hidden)); });
   wizard.querySelector('[data-preview-link]').addEventListener('click', async event => { event.preventDefault(); if (await save()) window.location.assign(event.currentTarget.href); });
@@ -124,11 +180,13 @@ if (wizard) {
       const query = serviceSearch.value.trim();
       if (query.length < 2) { serviceResults.replaceChildren(); return; }
       serviceResults.setAttribute('aria-busy', 'true');
-      const response = await fetch(`/Internal/Services/Search?q=${encodeURIComponent(query)}&limit=8`);
+      const response = await fetch(`?handler=BudgetCatalog&q=${encodeURIComponent(query)}&limit=8`);
       const data = response.ok ? await response.json() : { results: [] };
       serviceResults.replaceChildren(...data.results.map(service => {
         const button = document.createElement('button'); button.type = 'button'; button.className = 'of-service-result';
-        button.textContent = `${service.name} · ${money.format(service.price)}`;
+        const marker = service.favorite ? 'Favorito · ' : '';
+        button.textContent = `${marker}${service.name} · ${money.format(service.price)}`;
+        button.title = service.deliveryTerm || service.defaultNotes || 'Adicionar ao orçamento';
         button.addEventListener('click', () => addItem(service.description || service.name, service)); return button;
       }));
       serviceResults.setAttribute('aria-busy', 'false');

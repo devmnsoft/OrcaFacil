@@ -35,7 +35,7 @@
 }
 else
 {
-<form method="post" class="of-budget-wizard" data-budget-wizard data-document-id="@Model.Draft.DocumentId" data-row-version="@Model.Draft.RowVersion" data-current-step="@Model.Draft.CurrentStep" novalidate>
+<form method="post" class="of-budget-wizard" data-budget-wizard data-document-id="@Model.Draft!.DocumentId" data-row-version="@Model.Draft.RowVersion" data-current-step="@Model.Draft.CurrentStep" novalidate>
     @Html.AntiForgeryToken()
     <div asp-validation-summary="ModelOnly" class="of-form-error" role="alert"></div>
 
@@ -53,9 +53,21 @@ else
             <section class="of-wizard-panel is-active" data-step="0" aria-labelledby="wizard-client-title">
                 <div class="of-wizard-intro"><span class="of-wizard-number">01</span><div><p class="of-eyebrow">Cliente</p><h2 id="wizard-client-title">Quem receberá esta proposta?</h2><p>Localize um cadastro ou informe o nome. Os dados atuais serão copiados para esta versão do orçamento.</p></div></div>
                 <label class="of-field"><span>Buscar cliente cadastrado</span><input type="search" data-client-search autocomplete="off" /><small>A seleção vincula o cadastro e congela os dados atuais nesta proposta.</small></label>
-                <div class="of-client-choices" data-client-choices>@foreach (var client in Model.Clients) { <button type="button" data-client-option data-client-id="@client.Id" data-client-name="@client.Name" data-search="@($"{client.Name} {client.Document} {client.City}".ToLowerInvariant())" class="@(client.Id == Model.Draft.ClientId ? "is-selected" : null)"><span><strong>@client.Name</strong><small>@(client.City ?? "Cidade não informada") · @(client.Phone ?? client.Email ?? "Contato não informado")</small></span><span>Selecionar</span></button> }</div>
-                <input type="hidden" data-client-id value="@Model.Draft.ClientId" /><input type="hidden" data-client-name value="@Model.Draft.ClientName" />
-                <div class="of-inline-callout"><partial name="Partials/_Icon" model='new IconViewModel("client", "sm", Decorative: true)' /><div><strong>Cliente novo?</strong><span>Abra o cadastro completo sem perder este fluxo.</span></div><a asp-page="/Clients/Create" asp-route-returnUrl="/Documents/CreateBudget">Cadastrar cliente</a></div>
+                <div class="of-client-choices" data-client-choices>@foreach (var client in Model.Clients) { <button type="button" data-client-option data-client-id="@client.Id" data-client-name="@client.Name" data-client-detail="@($"{(client.City ?? "Cidade não informada")} · {(client.Phone ?? client.Email ?? "Contato não informado")}")" data-search="@($"{client.Name} {client.Document} {client.City}".ToLowerInvariant())" class="@(client.Id == Model.Draft!.ClientId ? "is-selected" : null)"><span><strong>@client.Name</strong><small>@(client.City ?? "Cidade não informada") · @(client.Phone ?? client.Email ?? "Contato não informado")</small></span><span>Selecionar</span></button> }</div>
+                <input type="hidden" data-client-id value="@Model.Draft!.ClientId" /><input type="hidden" data-client-name value="@Model.Draft.ClientName" />
+                <details class="of-inline-callout of-quick-client" data-quick-client>
+                    <summary><partial name="Partials/_Icon" model='new IconViewModel("client", "sm", Decorative: true)' /><span><strong>Cliente novo?</strong><small>Cadastre o essencial sem sair deste orçamento.</small></span></summary>
+                    <div>
+                        <label class="of-field"><span>Nome</span><input autocomplete="name" data-quick-client-name /></label>
+                        <label class="of-field"><span>Telefone</span><input autocomplete="tel" data-quick-client-phone /></label>
+                        <label class="of-field"><span>E-mail</span><input type="email" autocomplete="email" data-quick-client-email /></label>
+                        <label class="of-field"><span>Cidade</span><input autocomplete="address-level2" data-quick-client-city /></label>
+                        <label class="of-field"><span>CPF/CNPJ</span><input inputmode="numeric" data-quick-client-document /></label>
+                        <div class="of-quick-client-feedback" data-quick-client-feedback role="status" aria-live="polite"></div>
+                        <button type="button" class="of-button-secondary" data-quick-client-submit>Cadastrar e usar neste orçamento</button>
+                    </div>
+                    <a asp-page="/Clients/Create" asp-route-returnUrl="@($"/Documents/CreateBudget?id={Model.Draft!.DocumentId}")">Abrir cadastro completo</a>
+                </details>
             </section>
 
             <section class="of-wizard-panel" data-step="1" aria-labelledby="wizard-items-title" hidden>

@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Ai;
+using OrcaFacil.Application.Clients;
 using OrcaFacil.Application.Documents;
 using OrcaFacil.Application.Security;
 using OrcaFacil.Domain.Entities;
+using OrcaFacil.Domain.Enums;
 using OrcaFacil.Persistence;
 
 namespace OrcaFacil.Web.Pages.Documents;
@@ -19,8 +21,9 @@ public sealed class CreateBudgetModel : PageModel
     private readonly BudgetWizardService _wizard;
     private readonly OrcaFacilDbContext _db;
     private readonly ICommercialAiReviewer _aiReviewer;
-    public CreateBudgetModel(ICurrentUserService current, ICurrentAccountService account, BudgetWizardService wizard, OrcaFacilDbContext db, ICommercialAiReviewer aiReviewer)
-    { _current = current; _account = account; _wizard = wizard; _db = db; _aiReviewer = aiReviewer; }
+    private readonly IClientWorkspaceService _clients;
+    public CreateBudgetModel(ICurrentUserService current, ICurrentAccountService account, BudgetWizardService wizard, OrcaFacilDbContext db, ICommercialAiReviewer aiReviewer, IClientWorkspaceService clients)
+    { _current = current; _account = account; _wizard = wizard; _db = db; _aiReviewer = aiReviewer; _clients = clients; }
 
     public BudgetWizardViewModel Draft { get; private set; } = default!;
     public IReadOnlyList<ClientChoice> Clients { get; private set; } = [];
@@ -88,6 +91,80 @@ public sealed class CreateBudgetModel : PageModel
         var result = await _wizard.FinalizeAsync(_current.UserId, _account.AccountId, input, ct);
         return result.Succeeded ? new JsonResult(new { redirectUrl = Url.Page("/Documents/Details", new { id = input.DocumentId }) })
             : StatusCode(result.Conflict ? 409 : 400, new { error = result.Error, draft = result.Draft });
+    }
+
+    public async Task<IActionResult> OnGetBudgetCatalogAsync(string? q, int? limit, CancellationToken ct)
+    {
+        if (_account.AccountId is not Guid accountId) return Forbid();
+        try { await _account.EnsureAccountAccessAsync(ct); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+
+        var canEdit = await HasPermissionAsync(PermissionCodes.DocumentsEdit, ct) || await HasPermissionAsync("documents.edit", ct);
+        if (!canEdit) return StatusCode(403, new { error = "Você não possui permissão para editar documentos." });
+
+        var query = _db.ServiceCatalogItems.AsNoTracking()
+            .Where(x => x.AccountId == accountId && x.IsActive && !x.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var term = $"%{q.Trim()}%";
+            query = query.Where(x => EF.Functions.ILike(x.Name, term)
+                || (x.Code != null && EF.Functions.ILike(x.Code, term))
+                || (x.Description != null && EF.Functions.ILike(x.Description, term))
+                || (x.Tags != null && EF.Functions.ILike(x.Tags, term)));
+        }
+
+        var take = Math.Clamp(limit ?? 8, 1, 20);
+        var items = await query
+            .OrderByDescending(x => x.IsFavorite)
+            .ThenByDescending(x => x.LastUsedAt)
+            .ThenByDescending(x => x.UseCount)
+            .ThenBy(x => x.Name)
+            .Take(take)
+            .ToListAsync(ct);
+        var results = items.Select(ToBudgetCatalogChoice).ToList();
+
+        return new JsonResult(new { results });
+    }
+
+    public sealed record QuickClientRequest(string Name, string? Phone, string? Email, string? City, string? DocumentNumber, bool AllowPossibleDuplicate);
+
+    public async Task<IActionResult> OnPostQuickClientAsync([FromBody] QuickClientRequest input, CancellationToken ct)
+    {
+        if (_account.AccountId is null) return Forbid();
+        try { await _account.EnsureAccountAccessAsync(ct); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+
+        var canEdit = await HasPermissionAsync(PermissionCodes.DocumentsEdit, ct) || await HasPermissionAsync("documents.edit", ct);
+        if (!canEdit) return StatusCode(403, new { error = "Você não possui permissão para editar documentos." });
+
+        if (string.IsNullOrWhiteSpace(input.Name))
+            return BadRequest(new { error = "Informe o nome do cliente." });
+
+        var client = new Client
+        {
+            PersonType = InferPersonType(input.DocumentNumber),
+            DocumentType = InferDocumentType(input.DocumentNumber),
+            DocumentNumber = input.DocumentNumber,
+            Name = input.Name,
+            Phone = input.Phone,
+            Email = input.Email,
+            City = input.City,
+            IsActive = true
+        };
+
+        var result = await _clients.CreateAsync(client, input.AllowPossibleDuplicate, ct);
+        if (result.Code == ClientResultCode.Success && result.ClientId.HasValue)
+            return new JsonResult(new { client = ToClientChoice(client) });
+
+        if ((result.Code == ClientResultCode.PossibleDuplicate || result.Code == ClientResultCode.DuplicateDocument) && result.Candidates is { Count: > 0 })
+        {
+            var candidates = result.Candidates.Select(x => new { id = x.Id, name = x.Name, reason = x.MatchReason }).ToList();
+            return StatusCode(result.Code == ClientResultCode.DuplicateDocument ? 409 : 422,
+                new { error = result.Message ?? "Encontramos clientes parecidos.", code = result.Code.ToString(), candidates });
+        }
+
+        return BadRequest(new { error = result.Message ?? "Não foi possível cadastrar o cliente." });
     }
 
     public sealed record AssistScopeRequest(Guid DocumentId, string? Description, string? Notes, string? Conditions);
@@ -194,6 +271,24 @@ public sealed class CreateBudgetModel : PageModel
     private async Task LoadClients(CancellationToken ct) => Clients = await _db.Clients.AsNoTracking()
         .Where(x => x.AccountId == _account.AccountId && !x.IsDeleted).OrderBy(x => x.Name).Take(40)
         .Select(x => new ClientChoice(x.Id, x.Name, x.DocumentNumber, x.Phone, x.Email, x.City)).ToListAsync(ct);
+
+    public static BudgetCatalogChoice ToBudgetCatalogChoice(ServiceCatalogItem item) => new(item.Id, item.Name,
+        item.Description, item.UnitCode, item.StandardPrice, item.SuggestedDurationMinutes, item.DefaultDeliveryTerm,
+        item.DefaultNotes, item.IsFavorite, item.IsRecurring);
+
+    private static ClientChoice ToClientChoice(Client client) => new(client.Id, client.Name, client.DocumentNumber, client.Phone, client.Email, client.City);
+
+    private static BrazilianDocumentType? InferDocumentType(string? documentNumber)
+    {
+        var digits = new string((documentNumber ?? string.Empty).Where(char.IsDigit).ToArray());
+        return digits.Length switch { 11 => BrazilianDocumentType.CPF, 14 => BrazilianDocumentType.CNPJ, _ => null };
+    }
+
+    private static PersonType InferPersonType(string? documentNumber) => InferDocumentType(documentNumber) == BrazilianDocumentType.CNPJ
+        ? PersonType.Company
+        : PersonType.Individual;
 }
 
 public sealed record ClientChoice(Guid Id, string Name, string? Document, string? Phone, string? Email, string? City);
+public sealed record BudgetCatalogChoice(Guid Id, string Name, string? Description, string Unit, decimal Price,
+    int? DurationMinutes, string? DeliveryTerm, string? DefaultNotes, bool Favorite, bool Recurring);

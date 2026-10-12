@@ -1,0 +1,63 @@
+using System.Reflection;
+using OrcaFacil.Domain.Entities;
+using OrcaFacil.Web.Pages.Documents;
+using Xunit;
+
+namespace OrcaFacil.UnitTests;
+
+public sealed class CreateBudgetJourneyContractTests
+{
+    [Fact]
+    public void Budget_catalog_choice_exposes_only_client_safe_fields()
+    {
+        var item = new ServiceCatalogItem
+        {
+            Name = "Instalação",
+            Description = "Instalação completa",
+            UnitCode = "serviço",
+            StandardPrice = 350,
+            EstimatedCost = 120,
+            InternalNotes = "Fornecedor interno",
+            DefaultDeliveryTerm = "5 dias",
+            DefaultNotes = "Inclui configuração",
+            IsFavorite = true,
+            IsRecurring = false
+        };
+
+        var choice = CreateBudgetModel.ToBudgetCatalogChoice(item);
+        var exposedNames = typeof(BudgetCatalogChoice).GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            .Select(x => x.Name)
+            .ToHashSet(StringComparer.Ordinal);
+
+        Assert.Equal(item.Id, choice.Id);
+        Assert.Equal("Instalação", choice.Name);
+        Assert.Equal(350, choice.Price);
+        Assert.Equal("5 dias", choice.DeliveryTerm);
+        Assert.Equal("Inclui configuração", choice.DefaultNotes);
+        Assert.DoesNotContain(nameof(ServiceCatalogItem.EstimatedCost), exposedNames);
+        Assert.DoesNotContain(nameof(ServiceCatalogItem.InternalNotes), exposedNames);
+        Assert.DoesNotContain("Margin", exposedNames);
+    }
+
+    [Fact]
+    public void Budget_wizard_uses_page_scoped_catalog_and_quick_client_handlers()
+    {
+        var root = GetRepositoryRoot();
+        var page = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Web", "Pages", "Documents", "CreateBudget.cshtml"));
+        var script = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Web", "wwwroot", "js", "budget-wizard.js"));
+
+        Assert.Contains("data-quick-client", page, StringComparison.Ordinal);
+        Assert.Contains("handler=QuickClient", script, StringComparison.Ordinal);
+        Assert.Contains("handler=BudgetCatalog", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("/Internal/Services/Search", script, StringComparison.Ordinal);
+    }
+
+    private static string GetRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "OrcaFacil.sln")))
+            directory = directory.Parent;
+
+        return directory?.FullName ?? throw new DirectoryNotFoundException("Repository root not found.");
+    }
+}
