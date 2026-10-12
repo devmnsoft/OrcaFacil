@@ -217,10 +217,11 @@ foreach (var providerName in new[] { "Groq", "Gemini", "DeepSeek", "MercadoPago"
 }
 builder.Services.Configure<AiOptions>(builder.Configuration.GetSection("Ai"));
 builder.Services.AddSingleton<AiCircuitBreaker>();
+builder.Services.AddSingleton<AiAccountRateLimiter>();
 builder.Services.AddSingleton<IAiModelClient, GroqAiClient>();
 builder.Services.AddSingleton<IAiModelClient, GeminiAiClient>();
 builder.Services.AddSingleton<IAiModelClient, DeepSeekAiClient>();
-builder.Services.AddSingleton<IAiOrchestrator, AiOrchestrator>();
+builder.Services.AddScoped<IAiOrchestrator, AiOrchestrator>();
 builder.Services.AddScoped<IAiConsumptionService, AiConsumptionService>();
 builder.Services.AddScoped<IAiSuggestionReviewService, AiSuggestionReviewService>();
 builder.Services.AddScoped<BudgetSuggestionApplyService>();

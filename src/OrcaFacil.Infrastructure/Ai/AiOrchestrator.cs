@@ -11,18 +11,19 @@ public sealed class AiOrchestrator : IAiOrchestrator
     private readonly IEnumerable<IAiModelClient> _clients;
     private readonly AiOptions _options;
     private readonly AiCircuitBreaker _circuitBreaker;
+    private readonly AiAccountRateLimiter _rateLimiter;
     private readonly ILogger<AiOrchestrator> _logger;
     private readonly IAiRedactionService _redaction;
     private readonly AiPromptInjectionGuard _injection;
     private readonly IAiConsumptionService? _consumption;
     private readonly IServiceScopeFactory? _scopes;
-    private readonly ConcurrentDictionary<Guid, AccountRateLimiter> _rateLimits = new();
 
     public AiOrchestrator(
         IEnumerable<IAiModelClient> clients,
         IOptions<AiOptions> options,
         AiCircuitBreaker circuitBreaker,
         ILogger<AiOrchestrator> logger,
+        AiAccountRateLimiter? rateLimiter = null,
         IAiRedactionService? redaction = null,
         AiPromptInjectionGuard? injectionGuard = null,
         IAiConsumptionService? consumption = null,
@@ -31,6 +32,7 @@ public sealed class AiOrchestrator : IAiOrchestrator
         _clients = clients;
         _options = options.Value;
         _circuitBreaker = circuitBreaker;
+        _rateLimiter = rateLimiter ?? new AiAccountRateLimiter();
         _logger = logger;
         _redaction = redaction ?? new AiRedactionService();
         _injection = injectionGuard ?? new AiPromptInjectionGuard();
@@ -83,8 +85,7 @@ public sealed class AiOrchestrator : IAiOrchestrator
         var maxTokens = Math.Clamp(request.MaxTokens ?? _options.MaxOutputTokens, 1, Math.Max(1, _options.MaxOutputTokens));
         var safeRequest = request with { Prompt = prompt, SystemPrompt = systemPrompt, MaxTokens = maxTokens };
 
-        var limiter = _rateLimits.GetOrAdd(context.AccountId, _ => new AccountRateLimiter());
-        if (!limiter.Allow(_options.RateLimitPerMinute))
+        if (!_rateLimiter.Allow(context.AccountId, _options.RateLimitPerMinute))
         {
             _logger.LogWarning("AI_RATE_LIMIT_EXCEEDED AccountId {AccountId}", context.AccountId);
             return FallbackToRules("Limite de requisições por minuto excedido para esta conta. Tente novamente em instantes.");
@@ -242,6 +243,17 @@ public sealed class AiOrchestrator : IAiOrchestrator
 
     private static AiExecutionResult FallbackToRules(string message) =>
         new(false, string.Empty, AiOperatingMode.RulesOnly, "Rules", string.Empty, 0, 0, 0, true, message);
+}
+
+public sealed class AiAccountRateLimiter
+{
+    private readonly ConcurrentDictionary<Guid, AccountRateLimiter> _rateLimits = new();
+
+    public bool Allow(Guid accountId, int limitPerMinute)
+    {
+        var limiter = _rateLimits.GetOrAdd(accountId, _ => new AccountRateLimiter());
+        return limiter.Allow(limitPerMinute);
+    }
 
     private sealed class AccountRateLimiter
     {
