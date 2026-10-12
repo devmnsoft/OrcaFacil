@@ -32,8 +32,11 @@ public sealed class ModuleAccessMiddleware(RequestDelegate next, ILogger<ModuleA
         {
             logger.LogWarning("MODULE_ACCESS_DENIED ModuleCode {ModuleCode} UserId {UserId} AccountId {AccountId} Path {Path}", definition.Code, context.User.FindFirstValue("user_id"), current.AccountId, path);
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            context.Response.ContentType = "text/plain; charset=utf-8";
-            await context.Response.WriteAsync(decision.Reason ?? "Acesso não permitido.");
+            if (!AcceptsHtml(context))
+            {
+                context.Response.ContentType = "text/plain; charset=utf-8";
+                await context.Response.WriteAsync(decision.Reason ?? "Acesso não permitido.");
+            }
             return;
         }
 
@@ -44,5 +47,13 @@ public sealed class ModuleAccessMiddleware(RequestDelegate next, ILogger<ModuleA
             await usage.TrackAsync(accountId, userId, definition.Code, "route.accessed", null, path,
                 context.TraceIdentifier, CancellationToken.None);
         }
+    }
+
+    private static bool AcceptsHtml(HttpContext context)
+    {
+        var accept = context.Request.Headers.Accept.ToString();
+        return string.IsNullOrWhiteSpace(accept)
+            || accept.Contains("text/html", StringComparison.OrdinalIgnoreCase)
+            || accept.Contains("*/*", StringComparison.OrdinalIgnoreCase);
     }
 }

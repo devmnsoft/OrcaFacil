@@ -68,13 +68,13 @@ public sealed class CookieUserSignInService(
         try
         {
             var userPref = await db.Database.SqlQueryRaw<string>(
-                "SELECT language_code FROM orcafacil.user_locale_preferences WHERE user_id = {0}", user.Id)
+                """SELECT language_code AS "Value" FROM orcafacil.user_locale_preferences WHERE user_id = {0}""", user.Id)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (string.IsNullOrWhiteSpace(userPref) && selectedAccount is not null)
             {
                 userPref = await db.Database.SqlQueryRaw<string>(
-                    "SELECT language_code FROM orcafacil.account_locale_settings WHERE account_id = {0}", selectedAccount.AccountId)
+                    """SELECT language_code AS "Value" FROM orcafacil.account_locale_settings WHERE account_id = {0}""", selectedAccount.AccountId)
                     .FirstOrDefaultAsync(cancellationToken);
             }
 
