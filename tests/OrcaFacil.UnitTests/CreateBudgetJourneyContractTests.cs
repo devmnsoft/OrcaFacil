@@ -52,6 +52,33 @@ public sealed class CreateBudgetJourneyContractTests
         Assert.DoesNotContain("/Internal/Services/Search", script, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Client_search_preserves_selected_client_and_distinguishes_failures()
+    {
+        var root = GetRepositoryRoot();
+        var script = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Web", "wwwroot", "js", "budget-wizard.js"));
+
+        Assert.Contains("Cliente selecionado:", script, StringComparison.Ordinal);
+        Assert.Contains("x.classList.toggle('is-selected', x.dataset.clientId === selectedId)", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("wizard.querySelector('[data-client-id]').value = ''", script, StringComparison.Ordinal);
+        Assert.Contains("renderClientSearchFailure", script, StringComparison.Ordinal);
+        Assert.Contains("response.status === 401 || response.status === 403", script, StringComparison.Ordinal);
+        Assert.Contains("!Array.isArray(data.results)", script, StringComparison.Ordinal);
+        Assert.Contains("term !== clientSearch.value.trim()", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Quick_client_duplicate_confirmation_is_bound_to_reviewed_fields()
+    {
+        var root = GetRepositoryRoot();
+        var script = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Web", "wwwroot", "js", "budget-wizard.js"));
+
+        Assert.Contains("quickClientDuplicateSignature", script, StringComparison.Ordinal);
+        Assert.Contains("const duplicateSignature = quickClientSignature()", script, StringComparison.Ordinal);
+        Assert.Contains("quickClientDuplicateSignature !== duplicateSignature", script, StringComparison.Ordinal);
+        Assert.Contains("input:not([data-quick-client-allow-duplicate])", script, StringComparison.Ordinal);
+    }
+
     private static string GetRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

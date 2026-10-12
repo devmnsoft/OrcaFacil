@@ -88,7 +88,7 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
             .Where(x => x.AccountId == accountId && !x.IsDeleted && x.Status == FinancialRecordStatus.Active &&
                 ((x.DocumentId != null && docIds.Contains(x.DocumentId.Value)) ||
                  (x.WorkOrderId != null && workOrderIds.Contains(x.WorkOrderId.Value))))
-            .Select(x => new { x.Id, x.DocumentId, x.WorkOrderId, x.PaidAt })
+            .Select(x => new { x.Id, x.DocumentId, x.WorkOrderId, x.PaidAt, x.Status })
             .ToListAsync(cancellationToken);
         var paymentIds = payments.Select(x => x.Id).ToArray();
         var activeReceiptPaymentIds = paymentIds.Length == 0 ? [] : await db.Receipts.AsNoTracking()
@@ -113,11 +113,17 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
                 .Where(x => x.DocumentId == row.Id || (wo is not null && x.WorkOrderId == wo.Id))
                 .OrderByDescending(x => x.PaidAt)
                 .ToArray();
+            var eligiblePayments = relevantPayments
+                .Where(x => CommercialPaymentClassifier.Classify(x.DocumentId, x.WorkOrderId,
+                    x.Status == FinancialRecordStatus.Reversed, row.Id, balance?.WorkOrderId).ParticipatesInBalance)
+                .ToArray();
             var latestReceiptlessPaymentId = relevantPayments
+                .Where(x => eligiblePayments.Any(p => p.Id == x.Id))
                 .Where(x => !receiptByPayment.ContainsKey(x.Id))
                 .Select(x => (Guid?)x.Id)
                 .FirstOrDefault();
             var latestReceiptId = relevantPayments
+                .Where(x => eligiblePayments.Any(p => p.Id == x.Id))
                 .Where(x => receiptByPayment.ContainsKey(x.Id))
                 .Select(x => (Guid?)receiptByPayment[x.Id].Id)
                 .FirstOrDefault();

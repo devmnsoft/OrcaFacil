@@ -28,9 +28,9 @@ UPDATE orcafacil.documents d
       FROM orcafacil.account_members m
       INNER JOIN orcafacil.business_accounts a ON a.id = m.account_id
      WHERE m.is_deleted = false
-       AND m.status = 1
+       AND m.status::text IN ('1', 'Active')
        AND a.is_deleted = false
-       AND a.status = 1
+       AND a.status::text IN ('1', 'Active')
      GROUP BY m.user_id
     HAVING count(DISTINCT m.account_id) = 1
   ) eligible

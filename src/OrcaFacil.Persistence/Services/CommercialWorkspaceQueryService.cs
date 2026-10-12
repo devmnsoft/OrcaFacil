@@ -24,7 +24,7 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         var accesses = await db.PublicDocumentAccesses.AsNoTracking().Where(x => x.AccountId == AccountId && x.DocumentId == documentId)
             .OrderByDescending(x => x.CreatedAt).ToListAsync(ct);
         var decisions = await db.PublicDocumentDecisions.AsNoTracking().Where(x => x.AccountId == AccountId && x.DocumentId == documentId)
-            .OrderByDescending(x => x.CreatedAt).ToListAsync(ct);
+            .OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).ToListAsync(ct);
         var relatedOrders = await db.WorkOrders.AsNoTracking()
             .Where(x => x.AccountId == AccountId && x.SourceDocumentId == documentId && !x.IsDeleted)
             .OrderByDescending(x => x.CreatedAt)
@@ -103,7 +103,20 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
             .OrderByDescending(x => x.CreatedAt).ToListAsync(ct);
         var ids = docs.Select(x => x.Id).ToArray();
         var access = await db.PublicDocumentAccesses.AsNoTracking().Where(x => x.AccountId == AccountId && ids.Contains(x.DocumentId)).ToListAsync(ct);
-        var decisions = await db.PublicDocumentDecisions.AsNoTracking().Where(x => x.AccountId == AccountId && ids.Contains(x.DocumentId)).ToListAsync(ct);
+        var currentRevisions = await db.DocumentRevisions.AsNoTracking()
+            .Where(x => x.AccountId == AccountId && ids.Contains(x.DocumentId) && x.IsCurrent)
+            .Select(x => new { x.DocumentId, x.Id })
+            .ToListAsync(ct);
+        var currentRevisionIds = currentRevisions.Select(x => x.Id).ToArray();
+        var currentRevisionByDocument = currentRevisions.ToDictionary(x => x.DocumentId, x => x.Id);
+        var decisions = currentRevisionIds.Length == 0 ? [] : await db.PublicDocumentDecisions.AsNoTracking()
+            .Where(x => x.AccountId == AccountId && currentRevisionIds.Contains(x.DocumentRevisionId))
+            .OrderByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id)
+            .ToListAsync(ct);
+        var decisionByCurrentRevision = decisions
+            .GroupBy(x => x.DocumentRevisionId)
+            .ToDictionary(x => x.Key, x => x.First());
         var orderDocIds = await db.WorkOrders.AsNoTracking().Where(x => x.AccountId == AccountId && x.SourceDocumentId != null && ids.Contains(x.SourceDocumentId.Value)).Select(x => x.SourceDocumentId!.Value).ToListAsync(ct);
         var paidDocumentIds = await (from payment in db.ManualPayments.AsNoTracking()
             join order in db.WorkOrders.AsNoTracking() on payment.WorkOrderId equals (Guid?)order.Id
@@ -136,7 +149,10 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         }).ToArray();
         var attention = new List<CommercialAttentionItem>(); var now = DateTime.UtcNow;
         foreach (var d in docs) {
-            var decision = decisions.Where(x => x.DocumentId == d.Id).OrderByDescending(x => x.CreatedAt).FirstOrDefault();
+            var decision = currentRevisionByDocument.TryGetValue(d.Id, out var revisionId) &&
+                decisionByCurrentRevision.TryGetValue(revisionId, out var currentDecision)
+                    ? currentDecision
+                    : null;
             if (d.NextFollowUpAt is { } followUp && followUp < now)
                 attention.Add(new(d.Id, "critical", "Retorno atrasado", $"Orçamento {d.Number} · {d.ClientName}", followUp));
             else if (d.NextFollowUpAt is { } today && today.Date == now.Date)

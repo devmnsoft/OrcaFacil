@@ -20,6 +20,7 @@ if (wizard) {
   let clientSearchSeq = 0;
   let serviceSearchController;
   let serviceSearchSeq = 0;
+  let quickClientDuplicateSignature = null;
 
   const num = input => Math.max(0, Number.parseFloat(input?.value?.replace(',', '.')) || 0);
   const rows = () => [...itemHost.querySelectorAll('[data-budget-item]')];
@@ -110,6 +111,7 @@ if (wizard) {
   const selectClient = button => {
     wizard.querySelector('[data-client-id]').value = button.dataset.clientId;
     wizard.querySelector('[data-client-name]').value = button.dataset.clientName;
+    clientSearch.value = button.dataset.clientName || '';
     wizard.querySelectorAll('[data-client-option]').forEach(x => x.classList.toggle('is-selected', x === button));
     update(); scheduleSave();
   };
@@ -126,16 +128,37 @@ if (wizard) {
     if (shouldSelect) selectClient(button);
   };
   const renderClientChoices = clients => {
+    const selectedId = wizard.querySelector('[data-client-id]').value;
+    const selectedName = wizard.querySelector('[data-client-name]').value;
     clientChoices?.replaceChildren();
+    if (selectedId && selectedName) {
+      const selected = document.createElement('p');
+      selected.className = 'of-inline-empty';
+      selected.textContent = `Cliente selecionado: ${selectedName}`;
+      clientChoices?.append(selected);
+    }
     if (!clients.length) {
       const empty = document.createElement('p'); empty.className = 'of-inline-empty'; empty.textContent = 'Nenhum cliente encontrado nesta conta.';
       clientChoices?.append(empty); return;
     }
     clients.slice().reverse().forEach(client => addClientChoice(client, false));
-    wizard.querySelector('[data-client-id]').value = '';
-    wizard.querySelector('[data-client-name]').value = '';
-    wizard.querySelectorAll('[data-client-option]').forEach(x => x.classList.remove('is-selected'));
+    wizard.querySelectorAll('[data-client-option]').forEach(x => x.classList.toggle('is-selected', x.dataset.clientId === selectedId));
     update();
+  };
+  const renderClientSearchFailure = message => {
+    const selectedId = wizard.querySelector('[data-client-id]').value;
+    const selectedName = wizard.querySelector('[data-client-name]').value;
+    clientChoices?.replaceChildren();
+    if (selectedId && selectedName) {
+      const selected = document.createElement('p');
+      selected.className = 'of-inline-empty';
+      selected.textContent = `Cliente selecionado: ${selectedName}`;
+      clientChoices?.append(selected);
+    }
+    const failure = document.createElement('p'); failure.className = 'of-form-error'; failure.textContent = message;
+    const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'of-button-secondary'; retry.textContent = 'Tentar novamente';
+    retry.addEventListener('click', () => searchClients(clientSearch.value.trim()));
+    clientChoices?.append(failure, retry);
   };
   next.addEventListener('click', () => { if (valid()) go(currentStep + 1); }); previous.addEventListener('click', () => go(currentStep - 1));
   steps.forEach(x => x.addEventListener('click', () => { const target = Number(x.dataset.stepTarget); if (target <= currentStep || valid()) go(target); }));
@@ -154,29 +177,42 @@ if (wizard) {
   wizard.querySelectorAll('[data-client-option]').forEach(option => option.addEventListener('click', () => selectClient(option)));
   const clientSearch = wizard.querySelector('[data-client-search]');
   let clientTimer;
-  clientSearch.addEventListener('input', event => {
-    event.target.setCustomValidity('');
+  const searchClients = term => {
     clearTimeout(clientTimer);
-    const term = event.target.value.trim();
     const seq = ++clientSearchSeq;
+    clientSearchController?.abort();
+    clientChoices?.setAttribute('aria-busy', 'true');
     clientTimer = setTimeout(async () => {
-      clientSearchController?.abort();
       clientSearchController = new AbortController();
-      clientChoices?.setAttribute('aria-busy', 'true');
       try {
         const response = await fetch(`?handler=ClientSearch&q=${encodeURIComponent(term)}&pageSize=12`, { signal: clientSearchController.signal });
-        const data = response.ok ? await response.json() : { results: [] };
-        if (seq === clientSearchSeq) renderClientChoices(data.results || []);
+        if (seq !== clientSearchSeq || term !== clientSearch.value.trim()) return;
+        if (response.status === 401 || response.status === 403) {
+          renderClientSearchFailure(response.status === 401 ? 'Sessão expirada. Entre novamente para consultar clientes.' : 'Você não possui permissão para consultar clientes.');
+          return;
+        }
+        if (!response.ok) {
+          renderClientSearchFailure('Não foi possível buscar clientes agora.');
+          return;
+        }
+        const data = await response.json();
+        if (!Array.isArray(data.results)) {
+          renderClientSearchFailure('A busca de clientes retornou uma resposta inválida.');
+          return;
+        }
+        if (seq === clientSearchSeq) renderClientChoices(data.results);
       } catch (error) {
         if (error.name !== 'AbortError' && seq === clientSearchSeq) {
-          clientChoices?.replaceChildren();
-          const failure = document.createElement('p'); failure.className = 'of-form-error'; failure.textContent = 'Não foi possível buscar clientes agora.';
-          clientChoices?.append(failure);
+          renderClientSearchFailure('Não foi possível buscar clientes agora.');
         }
       } finally {
         if (seq === clientSearchSeq) clientChoices?.setAttribute('aria-busy', 'false');
       }
     }, 250);
+  };
+  clientSearch.addEventListener('input', event => {
+    event.target.setCustomValidity('');
+    searchClients(event.target.value.trim());
   });
   wizard.querySelector('[data-quick-client-submit]')?.addEventListener('click', async event => {
     const feedback = wizard.querySelector('[data-quick-client-feedback]');
@@ -184,6 +220,13 @@ if (wizard) {
     const name = wizard.querySelector('[data-quick-client-name]');
     const allowDuplicate = wizard.querySelector('[data-quick-client-allow-duplicate]');
     if (!name.value.trim()) { name.setCustomValidity('Informe o nome do cliente.'); name.reportValidity(); return; }
+    const duplicateSignature = quickClientSignature();
+    if (allowDuplicate?.checked && quickClientDuplicateSignature !== duplicateSignature) {
+      allowDuplicate.checked = false;
+      allowDuplicate.closest('label').hidden = true;
+      feedback.textContent = 'Revise novamente os clientes parecidos antes de confirmar a duplicidade.';
+      return;
+    }
     event.currentTarget.disabled = true; feedback.textContent = 'Cadastrando cliente...';
     try {
       const response = await fetch('?handler=QuickClient', {
@@ -212,6 +255,7 @@ if (wizard) {
         }
         if (response.status === 422) {
           allowDuplicate.closest('label').hidden = false;
+          quickClientDuplicateSignature = duplicateSignature;
           if (!allowDuplicate.checked) feedback.append(document.createTextNode(' Marque a confirmação se realmente deseja criar outro cadastro.'));
           return;
         }
@@ -224,9 +268,17 @@ if (wizard) {
     } catch (error) { feedback.textContent = error.message || 'Falha ao cadastrar cliente.'; }
     finally { event.currentTarget.disabled = false; }
   });
-  wizard.querySelectorAll('[data-quick-client] input').forEach(input => input.addEventListener('input', () => {
+  const quickClientSignature = () => [
+    wizard.querySelector('[data-quick-client-name]')?.value.trim().toLocaleLowerCase('pt-BR') || '',
+    wizard.querySelector('[data-quick-client-phone]')?.value.trim() || '',
+    wizard.querySelector('[data-quick-client-email]')?.value.trim().toLocaleLowerCase('pt-BR') || '',
+    wizard.querySelector('[data-quick-client-city]')?.value.trim().toLocaleLowerCase('pt-BR') || '',
+    wizard.querySelector('[data-quick-client-document]')?.value.replace(/\D/g, '') || ''
+  ].join('|');
+  wizard.querySelectorAll('[data-quick-client] input:not([data-quick-client-allow-duplicate])').forEach(input => input.addEventListener('input', () => {
     const allow = wizard.querySelector('[data-quick-client-allow-duplicate]');
     if (allow) { allow.checked = false; allow.closest('label').hidden = true; }
+    quickClientDuplicateSignature = null;
     wizard.querySelector('[data-quick-client-feedback]').textContent = '';
   }));
   wizard.addEventListener('input', event => { event.target.setCustomValidity?.(''); update(); scheduleSave(); }); wizard.addEventListener('change', scheduleSave);
@@ -241,17 +293,23 @@ if (wizard) {
   let serviceTimer;
   const searchServices = () => {
     clearTimeout(serviceTimer);
+    const seq = ++serviceSearchSeq;
+    const intendedQuery = serviceSearch.value.trim();
+    serviceSearchController?.abort();
+    serviceResults.setAttribute('aria-busy', 'true');
     serviceTimer = setTimeout(async () => {
-      const query = serviceSearch.value.trim();
-      const seq = ++serviceSearchSeq;
-      serviceSearchController?.abort();
       serviceSearchController = new AbortController();
-      serviceResults.setAttribute('aria-busy', 'true');
       try {
-        const response = await fetch(`?handler=BudgetCatalog&q=${encodeURIComponent(query)}&limit=8`, { signal: serviceSearchController.signal });
-        const data = response.ok ? await response.json() : { results: [] };
-        if (seq !== serviceSearchSeq) return;
-        const results = data.results || [];
+        const response = await fetch(`?handler=BudgetCatalog&q=${encodeURIComponent(intendedQuery)}&limit=8`, { signal: serviceSearchController.signal });
+        if (seq !== serviceSearchSeq || intendedQuery !== serviceSearch.value.trim()) return;
+        if (response.status === 401 || response.status === 403) {
+          serviceResults.replaceChildren(Object.assign(document.createElement('p'), { className: 'of-form-error', textContent: response.status === 401 ? 'Sessão expirada. Entre novamente para consultar o catálogo.' : 'Você não possui permissão para consultar o catálogo.' }));
+          return;
+        }
+        if (!response.ok) { serviceResults.replaceChildren(Object.assign(document.createElement('p'), { className: 'of-form-error', textContent: 'Não foi possível buscar o catálogo agora.' })); return; }
+        const data = await response.json();
+        if (!Array.isArray(data.results)) { serviceResults.replaceChildren(Object.assign(document.createElement('p'), { className: 'of-form-error', textContent: 'A busca do catálogo retornou uma resposta inválida.' })); return; }
+        const results = data.results;
         if (!results.length) { serviceResults.replaceChildren(Object.assign(document.createElement('p'), { className: 'of-inline-empty', textContent: 'Nenhum serviço encontrado.' })); return; }
         serviceResults.replaceChildren(...results.map((service, index) => {
           const button = document.createElement('button'); button.type = 'button'; button.className = 'of-service-result';
