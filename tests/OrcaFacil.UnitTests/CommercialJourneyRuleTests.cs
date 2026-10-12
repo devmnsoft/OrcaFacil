@@ -127,6 +127,51 @@ public sealed class CommercialJourneyRuleTests
     }
 
     [Fact]
+    public void Current_revision_decision_is_selected_deterministically_without_any_change_request_shortcut()
+    {
+        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
+        var listService = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Persistence", "Services", "QuoteWorkspaceService.cs"));
+        var detailService = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Persistence", "Services", "CommercialWorkspaceQueryService.cs"));
+
+        Assert.Contains("GroupBy(r => r.DocumentId)", listService);
+        Assert.Contains("OrderByDescending(r => r.VersionNumber).ThenByDescending(r => r.CreatedAt).ThenByDescending(r => r.Id).First()", listService);
+        Assert.DoesNotContain(".ToDictionaryAsync(r => r.DocumentId, r => r", listService);
+        Assert.Contains("decisionByCurrentRevision.TryGetValue(currentRev.Id", listService);
+        Assert.DoesNotContain("changeRequestSet", listService);
+
+        Assert.Contains("decision.Decision == PublicDocumentDecisionType.ChangeRequested", detailService);
+        Assert.DoesNotContain("decisions.Any(x => x.DocumentRevisionId == currentRevision.Id && x.Decision == PublicDocumentDecisionType.ChangeRequested)", detailService);
+    }
+
+    [Fact]
+    public void Multiple_current_revisions_block_contract_commands_explicitly()
+    {
+        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
+        var service = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Persistence", "Services", "CommercialJourneyService.cs"));
+
+        Assert.Contains("currentCandidates.Count > 1", service);
+        Assert.Contains("revisionCandidates.Count > 1", service);
+        Assert.Contains("mais de uma versão vigente", service);
+        Assert.DoesNotContain("SingleOrDefaultAsync(x => x.AccountId == AccountId && x.DocumentId == document.Id && x.IsCurrent", service);
+        Assert.DoesNotContain("SingleOrDefaultAsync(x => x.AccountId == AccountId && x.DocumentId == documentId && x.IsCurrent", service);
+    }
+
+    [Fact]
+    public void Document_sequence_status_compatibility_is_incremental_and_idempotent()
+    {
+        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
+        var consolidated = File.ReadAllText(Path.Combine(root, "database", "script_completop.sql"));
+        var hotfix = File.ReadAllText(Path.Combine(root, "database", "hotfix_document_sequences_status_compat_v73.sql"));
+
+        Assert.Contains(@"\ir hotfix_document_sequences_status_compat_v73.sql", consolidated);
+        Assert.Contains("lower(m.status::text) IN ('1', 'active')", hotfix);
+        Assert.Contains("lower(a.status::text) IN ('1', 'active')", hotfix);
+        Assert.Contains("HAVING count(DISTINCT m.account_id) = 1", hotfix);
+        Assert.Contains("CREATE UNIQUE INDEX IF NOT EXISTS ux_document_sequences_account_type", hotfix);
+        Assert.Contains("CREATE UNIQUE INDEX IF NOT EXISTS ux_documents_account_type_number", hotfix);
+    }
+
+    [Fact]
     public void Document_next_action_preserves_route_tab_for_navigation_actions()
     {
         var share = CommercialNextActionResolver.ResolveDocumentAction(new(

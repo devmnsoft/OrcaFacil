@@ -274,7 +274,17 @@ public sealed class CommercialJourneyService(
                 document.Subtotal, document.Discount, document.Total, languageCode, "BRL"),
             document.Items.Select(x => new QuoteItemSnapshot(x.Description, string.IsNullOrWhiteSpace(x.Unit) ? "un" : x.Unit, x.Quantity, x.UnitPrice, x.Discount, x.Quantity * x.UnitPrice, x.CalculateTotal())).ToArray());
         var serialized = snapshots.Serialize(value);
-        var current = await db.DocumentRevisions.SingleOrDefaultAsync(x => x.AccountId == AccountId && x.DocumentId == document.Id && x.IsCurrent, ct);
+        var currentCandidates = await db.DocumentRevisions
+            .Where(x => x.AccountId == AccountId && x.DocumentId == document.Id && x.IsCurrent)
+            .OrderByDescending(x => x.VersionNumber)
+            .ThenByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id)
+            .ToListAsync(ct);
+        if (currentCandidates.Count > 1)
+            return Revision(false, QuoteLifecycleCode.InvalidStatus,
+                "Há mais de uma versão vigente marcada para este orçamento. Corrija o histórico antes de gerar uma nova versão.",
+                correlation, document.Id, status);
+        var current = currentCandidates.FirstOrDefault();
         if (current?.SnapshotHash == serialized.Hash)
             return Revision(true, QuoteLifecycleCode.None, $"Versão {current.VersionNumber} reutilizada.", correlation,
                 document.Id, status, current.Id, current.VersionNumber, current.SnapshotHash, true);
@@ -318,7 +328,15 @@ public sealed class CommercialJourneyService(
             return Work(false, "NotApproved", "Apenas orçamento aprovado pode virar ordem.", document.Id, document.Status, correlation);
         if (document.ClientId is not { } clientId || !await db.Clients.AnyAsync(x => x.AccountId == AccountId && x.Id == clientId && !x.IsDeleted, ct))
             return Work(false, "InvalidClient", "Vincule um cliente válido da conta antes de gerar a OS.", document.Id, document.Status, correlation);
-        var revision = await db.DocumentRevisions.SingleOrDefaultAsync(x => x.AccountId == AccountId && x.DocumentId == documentId && x.IsCurrent, ct);
+        var revisionCandidates = await db.DocumentRevisions.AsNoTracking()
+            .Where(x => x.AccountId == AccountId && x.DocumentId == documentId && x.IsCurrent)
+            .OrderByDescending(x => x.VersionNumber)
+            .ThenByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id)
+            .ToListAsync(ct);
+        if (revisionCandidates.Count > 1)
+            return Work(false, "RevisionConflict", "Há mais de uma versão vigente marcada para este orçamento. Corrija o histórico antes de criar a OS.", document.Id, document.Status, correlation);
+        var revision = revisionCandidates.FirstOrDefault();
         if (revision is null) return Work(false, "RevisionRequired", "Gere a versão aprovada da proposta antes de criar a OS.", document.Id, document.Status, correlation);
         if (string.IsNullOrWhiteSpace(revision.ProtectedSnapshot))
             return Work(false, "InvalidSnapshot", "O snapshot da versão aprovada está ausente. Não é seguro converter para OS.", document.Id, document.Status, correlation);

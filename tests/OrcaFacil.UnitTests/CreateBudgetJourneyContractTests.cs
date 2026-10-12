@@ -68,6 +68,23 @@ public sealed class CreateBudgetJourneyContractTests
     }
 
     [Fact]
+    public void Async_searches_revalidate_intent_after_json_body_is_read()
+    {
+        var root = GetRepositoryRoot();
+        var script = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Web", "wwwroot", "js", "budget-wizard.js"));
+
+        var clientJson = script.IndexOf("const data = await response.json();", script.IndexOf("handler=ClientSearch", StringComparison.Ordinal), StringComparison.Ordinal);
+        var clientRecheck = script.IndexOf("if (seq !== clientSearchSeq || term !== clientSearch.value.trim()) return;", clientJson, StringComparison.Ordinal);
+        var clientRender = script.IndexOf("renderClientChoices(data.results)", clientJson, StringComparison.Ordinal);
+        Assert.True(clientJson > 0 && clientRecheck > clientJson && clientRender > clientRecheck);
+
+        var serviceJson = script.IndexOf("const data = await response.json();", script.IndexOf("handler=BudgetCatalog", StringComparison.Ordinal), StringComparison.Ordinal);
+        var serviceRecheck = script.IndexOf("if (seq !== serviceSearchSeq || intendedQuery !== serviceSearch.value.trim()) return;", serviceJson, StringComparison.Ordinal);
+        var serviceRender = script.IndexOf("serviceResults.replaceChildren(...results.map", serviceJson, StringComparison.Ordinal);
+        Assert.True(serviceJson > 0 && serviceRecheck > serviceJson && serviceRender > serviceRecheck);
+    }
+
+    [Fact]
     public void Quick_client_duplicate_confirmation_is_bound_to_reviewed_fields()
     {
         var root = GetRepositoryRoot();

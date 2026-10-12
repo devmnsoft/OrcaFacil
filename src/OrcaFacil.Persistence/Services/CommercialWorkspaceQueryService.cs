@@ -72,8 +72,8 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
             .FirstOrDefault();
         var orderView = order is null ? null : new CommercialWorkOrderView(order.Id, order.Number, order.Status.ToString(),
             order.ScheduledStart, order.ScheduledEnd, paid, Math.Max(0, order.TotalSnapshot - paid), latestReceiptlessPaymentId, latestValidReceiptId);
-        var hasChange = currentRevision is not null &&
-            decisions.Any(x => x.DocumentRevisionId == currentRevision.Id && x.Decision == PublicDocumentDecisionType.ChangeRequested);
+        var hasChange = currentRevision is not null && decision?.DocumentRevisionId == currentRevision.Id &&
+            decision.Decision == PublicDocumentDecisionType.ChangeRequested;
         var next = CommercialNextActionResolver.ResolveDocumentAction(new CommercialNextActionContext(
             document.Id,
             document.Status,
@@ -105,10 +105,12 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         var access = await db.PublicDocumentAccesses.AsNoTracking().Where(x => x.AccountId == AccountId && ids.Contains(x.DocumentId)).ToListAsync(ct);
         var currentRevisions = await db.DocumentRevisions.AsNoTracking()
             .Where(x => x.AccountId == AccountId && ids.Contains(x.DocumentId) && x.IsCurrent)
-            .Select(x => new { x.DocumentId, x.Id })
+            .Select(x => new { x.DocumentId, x.Id, x.VersionNumber, x.CreatedAt })
             .ToListAsync(ct);
-        var currentRevisionIds = currentRevisions.Select(x => x.Id).ToArray();
-        var currentRevisionByDocument = currentRevisions.ToDictionary(x => x.DocumentId, x => x.Id);
+        var currentRevisionByDocument = currentRevisions
+            .GroupBy(x => x.DocumentId)
+            .ToDictionary(x => x.Key, x => x.OrderByDescending(r => r.VersionNumber).ThenByDescending(r => r.CreatedAt).ThenByDescending(r => r.Id).First());
+        var currentRevisionIds = currentRevisionByDocument.Values.Select(x => x.Id).ToArray();
         var decisions = currentRevisionIds.Length == 0 ? [] : await db.PublicDocumentDecisions.AsNoTracking()
             .Where(x => x.AccountId == AccountId && currentRevisionIds.Contains(x.DocumentRevisionId))
             .OrderByDescending(x => x.CreatedAt)
@@ -149,8 +151,8 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         }).ToArray();
         var attention = new List<CommercialAttentionItem>(); var now = DateTime.UtcNow;
         foreach (var d in docs) {
-            var decision = currentRevisionByDocument.TryGetValue(d.Id, out var revisionId) &&
-                decisionByCurrentRevision.TryGetValue(revisionId, out var currentDecision)
+            var decision = currentRevisionByDocument.TryGetValue(d.Id, out var revision) &&
+                decisionByCurrentRevision.TryGetValue(revision.Id, out var currentDecision)
                     ? currentDecision
                     : null;
             if (d.NextFollowUpAt is { } followUp && followUp < now)

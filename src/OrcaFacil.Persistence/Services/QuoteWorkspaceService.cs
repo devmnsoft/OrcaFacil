@@ -63,17 +63,21 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
 
         var revisions = await db.DocumentRevisions.AsNoTracking()
             .Where(r => r.AccountId == accountId && docIds.Contains(r.DocumentId) && r.IsCurrent)
-            .Select(r => new { r.Id, r.DocumentId, r.VersionNumber, r.Total })
-            .ToDictionaryAsync(r => r.DocumentId, r => r, cancellationToken);
-
-        var currentRevisionIds = revisions.Values.Select(r => r.Id).ToArray();
-        var changeRequestRevisionIds = currentRevisionIds.Length == 0 ? [] : await db.PublicDocumentDecisions.AsNoTracking()
-            .Where(d => d.AccountId == accountId && currentRevisionIds.Contains(d.DocumentRevisionId) &&
-                d.Decision == PublicDocumentDecisionType.ChangeRequested)
-            .Select(d => d.DocumentRevisionId)
-            .Distinct()
+            .Select(r => new { r.Id, r.DocumentId, r.VersionNumber, r.Total, r.CreatedAt })
             .ToListAsync(cancellationToken);
-        var changeRequestSet = changeRequestRevisionIds.ToHashSet();
+        var currentRevisionByDocument = revisions
+            .GroupBy(r => r.DocumentId)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(r => r.VersionNumber).ThenByDescending(r => r.CreatedAt).ThenByDescending(r => r.Id).First());
+
+        var currentRevisionIds = currentRevisionByDocument.Values.Select(r => r.Id).ToArray();
+        var latestDecisions = currentRevisionIds.Length == 0 ? [] : await db.PublicDocumentDecisions.AsNoTracking()
+            .Where(d => d.AccountId == accountId && currentRevisionIds.Contains(d.DocumentRevisionId))
+            .OrderByDescending(d => d.CreatedAt)
+            .ThenByDescending(d => d.Id)
+            .ToListAsync(cancellationToken);
+        var decisionByCurrentRevision = latestDecisions
+            .GroupBy(d => d.DocumentRevisionId)
+            .ToDictionary(g => g.Key, g => g.First());
 
         var workOrders = await db.WorkOrders.AsNoTracking()
             .Where(w => w.AccountId == accountId && w.SourceDocumentId != null && docIds.Contains(w.SourceDocumentId.Value) && !w.IsDeleted)
@@ -103,7 +107,7 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
         foreach (var row in rows)
         {
             var assigneeName = row.AssignedToUserId.HasValue && assignees.TryGetValue(row.AssignedToUserId.Value, out var name) ? name : null;
-            revisions.TryGetValue(row.Id, out var currentRev);
+            currentRevisionByDocument.TryGetValue(row.Id, out var currentRev);
             var revisionNumber = currentRev?.VersionNumber ?? 0;
             balanceMap.TryGetValue(row.Id, out var balance);
             var wo = balance?.WorkOrderId is { } workOrderId && workOrdersById.TryGetValue(workOrderId, out var selectedWorkOrder)
@@ -141,7 +145,9 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
                 CommercialNextActionResolver.ResolveQuoteAction(new CommercialNextActionContext(
                     row.Id,
                     row.Status,
-                    currentRev is not null && changeRequestSet.Contains(currentRev.Id),
+                    currentRev is not null &&
+                        decisionByCurrentRevision.TryGetValue(currentRev.Id, out var currentDecision) &&
+                        currentDecision.Decision == PublicDocumentDecisionType.ChangeRequested,
                     Balance: balance,
                     WorkOrderId: wo?.Id,
                     WorkOrderStatus: wo?.Status.ToString(),

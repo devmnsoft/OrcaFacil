@@ -1816,3 +1816,6 @@ ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS warranty_text va
 ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS payment_method varchar(60);
 ALTER TABLE orcafacil.budget_templates ADD COLUMN IF NOT EXISTS discount numeric(18,2) NOT NULL DEFAULT 0;
 ALTER TABLE orcafacil.budget_template_items ADD COLUMN IF NOT EXISTS discount numeric(18,2) NOT NULL DEFAULT 0;
+
+-- V7.3: compatibilidade incremental para status textual/numerico em bases atualizadas.
+\ir hotfix_document_sequences_status_compat_v73.sql

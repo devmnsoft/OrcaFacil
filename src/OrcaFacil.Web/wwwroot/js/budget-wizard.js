@@ -196,6 +196,7 @@ if (wizard) {
           return;
         }
         const data = await response.json();
+        if (seq !== clientSearchSeq || term !== clientSearch.value.trim()) return;
         if (!Array.isArray(data.results)) {
           renderClientSearchFailure('A busca de clientes retornou uma resposta inválida.');
           return;
@@ -308,6 +309,7 @@ if (wizard) {
         }
         if (!response.ok) { serviceResults.replaceChildren(Object.assign(document.createElement('p'), { className: 'of-form-error', textContent: 'Não foi possível buscar o catálogo agora.' })); return; }
         const data = await response.json();
+        if (seq !== serviceSearchSeq || intendedQuery !== serviceSearch.value.trim()) return;
         if (!Array.isArray(data.results)) { serviceResults.replaceChildren(Object.assign(document.createElement('p'), { className: 'of-form-error', textContent: 'A busca do catálogo retornou uma resposta inválida.' })); return; }
         const results = data.results;
         if (!results.length) { serviceResults.replaceChildren(Object.assign(document.createElement('p'), { className: 'of-inline-empty', textContent: 'Nenhum serviço encontrado.' })); return; }
