@@ -49,7 +49,10 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         var events = await db.ActivityEvents.AsNoTracking().Where(x => x.AccountId == AccountId && x.EntityId != null && entityIds.Contains(x.EntityId.Value))
             .OrderByDescending(x => x.CreatedAt).ToListAsync(ct);
 
-        var access = accesses.FirstOrDefault(); var decision = decisions.FirstOrDefault(); var now = DateTime.UtcNow;
+        var currentRevision = revisions.FirstOrDefault(x => x.IsCurrent);
+        var access = accesses.FirstOrDefault();
+        var decision = decisions.FirstOrDefault(x => currentRevision is null || x.DocumentRevisionId == currentRevision.Id);
+        var now = DateTime.UtcNow;
         var decidedRevision = decision is null ? null : revisions.FirstOrDefault(x => x.Id == decision.DocumentRevisionId)?.VersionNumber;
         var engagement = access is null ? null : new ClientEngagementView(
             access.RevokedAt is not null || access.Status == PublicAccessStatus.Revoked ? "Revogado" : access.ExpiresAt <= now ? "Expirado" : "Ativo",
@@ -57,8 +60,8 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
             decision?.CustomerName, decision?.Comment ?? decision?.ReasonCode, decidedRevision);
         var financial = BuildFinancialReview(documentId, balance, payments, receipts, order);
         var paid = financial.ReceivedAmount;
-        var latestValidPaymentId = financial.Payments
-            .Where(x => x.ParticipatesInBalance && !x.IsReversed)
+        var latestReceiptlessPaymentId = financial.Payments
+            .Where(x => x.ParticipatesInBalance && !x.IsReversed && (!x.ReceiptId.HasValue || x.ReceiptCancelled))
             .OrderByDescending(x => x.PaidAt)
             .Select(x => (Guid?)x.Id)
             .FirstOrDefault();
@@ -68,8 +71,9 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
             .Select(x => x.ReceiptId)
             .FirstOrDefault();
         var orderView = order is null ? null : new CommercialWorkOrderView(order.Id, order.Number, order.Status.ToString(),
-            order.ScheduledStart, order.ScheduledEnd, paid, Math.Max(0, order.TotalSnapshot - paid), latestValidPaymentId, latestValidReceiptId);
-        var hasChange = decisions.Any(x => x.Decision == PublicDocumentDecisionType.ChangeRequested);
+            order.ScheduledStart, order.ScheduledEnd, paid, Math.Max(0, order.TotalSnapshot - paid), latestReceiptlessPaymentId, latestValidReceiptId);
+        var hasChange = currentRevision is not null &&
+            decisions.Any(x => x.DocumentRevisionId == currentRevision.Id && x.Decision == PublicDocumentDecisionType.ChangeRequested);
         var next = CommercialNextActionResolver.ResolveDocumentAction(new CommercialNextActionContext(
             document.Id,
             document.Status,
@@ -84,7 +88,7 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         return new(document.Id, document.Type.ToString(), document.Number, document.Status, document.ClientName, document.CreatedAt,
             document.IssueDate, document.ValidUntil, document.Subtotal, document.Discount, document.Total, document.Notes,
             document.ConditionsText, document.OriginBudgetNumber is null ? "Criação direta" : $"Documento {document.OriginBudgetNumber}",
-            revisions.FirstOrDefault(x => x.IsCurrent)?.VersionNumber ?? 0, document.ValidUntil < now, hasChange,
+            currentRevision?.VersionNumber ?? 0, document.ValidUntil < now, hasChange,
             document.Items.Select(x => new CommercialWorkspaceItem(x.Id, x.Description, x.Quantity, x.UnitPrice, x.Discount,
                 x.Quantity * x.UnitPrice, x.CalculateTotal())).ToArray(),
             revisions.Select(x => new CommercialRevisionView(x.Id, x.VersionNumber, x.Status.ToString(), x.CreatedAt, x.IsCurrent)).ToArray(),

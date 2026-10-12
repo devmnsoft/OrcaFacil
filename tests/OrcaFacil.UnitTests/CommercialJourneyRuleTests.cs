@@ -127,6 +127,62 @@ public sealed class CommercialJourneyRuleTests
     }
 
     [Fact]
+    public void Document_next_action_preserves_route_tab_for_navigation_actions()
+    {
+        var share = CommercialNextActionResolver.ResolveDocumentAction(new(
+            Guid.NewGuid(),
+            "Ready"));
+        Assert.Null(share.Handler);
+        Assert.Equal("/Documents/Details", share.Page);
+        Assert.NotNull(share.RouteValues);
+        Assert.Equal("sharing", share.RouteValues!["tab"]);
+
+        var finance = CommercialNextActionResolver.ResolveDocumentAction(new(
+            Guid.NewGuid(),
+            "ConvertedToWorkOrder",
+            Balance: new CommercialBalance(Guid.NewGuid(), Guid.NewGuid(), "WorkOrder", 1000, 1000, 0, 0, 0, [], []),
+            WorkOrderId: Guid.NewGuid(),
+            WorkOrderStatus: "Completed",
+            WorkOrderPaid: 1000,
+            WorkOrderBalance: 0));
+        Assert.Equal("finance", finance.RouteValues!["tab"]);
+    }
+
+    [Fact]
+    public void Work_order_next_actions_distinguish_create_from_open()
+    {
+        var approved = CommercialNextActionResolver.ResolveDocumentAction(new(Guid.NewGuid(), "Approved"));
+        Assert.Equal("create-work-order", approved.Code);
+        Assert.Equal("WorkOrder", approved.Handler);
+
+        var open = CommercialNextActionResolver.ResolveDocumentAction(new(
+            Guid.NewGuid(),
+            "ConvertedToWorkOrder",
+            WorkOrderId: Guid.NewGuid(),
+            WorkOrderStatus: "Cancelled"));
+        Assert.Equal("open-work-order", open.Code);
+        Assert.Null(open.Handler);
+        Assert.Equal("/WorkOrders/Details", open.Page);
+    }
+
+    [Fact]
+    public void Receipt_pending_payment_wins_over_an_older_existing_receipt()
+    {
+        var next = CommercialNextActionResolver.ResolveDocumentAction(new(
+            Guid.NewGuid(),
+            "ConvertedToWorkOrder",
+            WorkOrderId: Guid.NewGuid(),
+            WorkOrderStatus: "Completed",
+            WorkOrderPaid: 1000,
+            WorkOrderBalance: 0,
+            LatestPaymentId: Guid.NewGuid(),
+            LatestReceiptId: Guid.NewGuid()));
+
+        Assert.Equal("receipt-pending", next.Code);
+        Assert.Equal("Emitir recibo", next.Label);
+    }
+
+    [Fact]
     public void Document_details_exposes_financial_review_without_hiding_excluded_amounts()
     {
         var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));

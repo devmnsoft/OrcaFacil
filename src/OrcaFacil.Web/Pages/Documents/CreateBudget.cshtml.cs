@@ -127,6 +127,42 @@ public sealed class CreateBudgetModel : PageModel
         return new JsonResult(new { results });
     }
 
+    public async Task<IActionResult> OnGetClientSearchAsync(string? q, int? page, int? pageSize, CancellationToken ct)
+    {
+        if (_account.AccountId is not Guid accountId) return Forbid();
+        try { await _account.EnsureAccountAccessAsync(ct); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+
+        var canViewClients = await HasPermissionAsync(PermissionCodes.ClientsView, ct)
+            || await HasPermissionAsync(PermissionCodes.ClientsManage, ct)
+            || await HasPermissionAsync(PermissionCodes.DocumentsCreate, ct)
+            || await HasPermissionAsync(PermissionCodes.DocumentsEdit, ct);
+        if (!canViewClients) return StatusCode(403, new { error = "Você não possui permissão para consultar clientes." });
+
+        var take = Math.Clamp(pageSize ?? 12, 1, 25);
+        var skip = (Math.Max(page ?? 1, 1) - 1) * take;
+        var query = _db.Clients.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted && x.IsActive);
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var search = q.Trim();
+            var term = $"%{search}%";
+            var digits = new string(search.Where(char.IsDigit).ToArray());
+            query = query.Where(x => EF.Functions.ILike(x.Name, term)
+                || (x.TradeName != null && EF.Functions.ILike(x.TradeName, term))
+                || (x.DocumentNumber != null && x.DocumentNumber.Contains(digits.Length == 0 ? search : digits))
+                || (x.Phone != null && x.Phone.Contains(digits.Length == 0 ? search : digits))
+                || (x.Email != null && EF.Functions.ILike(x.Email, term))
+                || _db.ClientContacts.Any(c => c.AccountId == accountId && c.ClientId == x.Id && !c.IsDeleted &&
+                    (EF.Functions.ILike(c.Name, term) || EF.Functions.ILike(c.Value, term))));
+        }
+
+        var total = await query.CountAsync(ct);
+        var results = await query.OrderBy(x => x.Name).Skip(skip).Take(take)
+            .Select(x => new ClientChoice(x.Id, x.Name, x.DocumentNumber, x.Phone, x.Email, x.City))
+            .ToListAsync(ct);
+        return new JsonResult(new { results, total, page = Math.Max(page ?? 1, 1), pageSize = take });
+    }
+
     public sealed record QuickClientRequest(string Name, string? Phone, string? Email, string? City, string? DocumentNumber, bool AllowPossibleDuplicate);
 
     public async Task<IActionResult> OnPostQuickClientAsync([FromBody] QuickClientRequest input, CancellationToken ct)
@@ -135,8 +171,9 @@ public sealed class CreateBudgetModel : PageModel
         try { await _account.EnsureAccountAccessAsync(ct); }
         catch (UnauthorizedAccessException) { return Forbid(); }
 
-        var canEdit = await HasPermissionAsync(PermissionCodes.DocumentsEdit, ct) || await HasPermissionAsync("documents.edit", ct);
-        if (!canEdit) return StatusCode(403, new { error = "Você não possui permissão para editar documentos." });
+        var canCreateClient = await HasPermissionAsync(PermissionCodes.ClientsCreate, ct)
+            || await HasPermissionAsync(PermissionCodes.ClientsManage, ct);
+        if (!canCreateClient) return StatusCode(403, new { error = "Você não possui permissão para cadastrar clientes." });
 
         if (string.IsNullOrWhiteSpace(input.Name))
             return BadRequest(new { error = "Informe o nome do cliente." });

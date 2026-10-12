@@ -33,7 +33,7 @@ public static class CommercialNextActionResolver
                 "Envie uma versão segura ao cliente.", context.DocumentId, "sharing", "share"),
             "SENT" or "VIEWED" => DetailsAction("follow-up", "Programar retorno",
                 "Mantenha a negociacao avancando; visualizacao nao e aprovacao.", context.DocumentId, "negotiation", "share"),
-            "APPROVED" => DetailsAction("work-order", "Criar ordem",
+            "APPROVED" => DetailsAction("create-work-order", "Criar ordem",
                 "Transforme a aprovação em execução sem duplicar caixa ou recebimentos.", context.DocumentId, "summary", "work-order"),
             "REJECTED" => DetailsAction("duplicate", "Duplicar proposta",
                 "Preserve o histórico e use o conteúdo em uma nova negociação.", context.DocumentId, "summary", "copy-link"),
@@ -52,13 +52,14 @@ public static class CommercialNextActionResolver
         var handler = action.Code switch
         {
             "revision" => "Revision",
-            "work-order" => "WorkOrder",
+            "create-work-order" => "WorkOrder",
             "duplicate" => "Duplicate",
             _ => null
         };
 
         return new CommercialNextAction(action.Code, ToDocumentTitle(action), action.Description, ToDocumentLabel(action),
-            handler, handler is null ? action.Page : null, handler is null ? routeId : null, action.Icon);
+            handler, handler is null ? action.Page : null, handler is null ? routeId : null, action.Icon,
+            handler is null ? action.RouteValues : null);
     }
 
     private static NextActionDescriptor ResolveWorkOrderBackedQuote(CommercialNextActionContext context, Guid workOrderId)
@@ -81,13 +82,13 @@ public static class CommercialNextActionResolver
                 "Registre a conclusão técnica na ordem de serviço.", "/WorkOrders/Details", workOrderId, "success"),
             "Completed" when context.WorkOrderBalance > 0m => Action("payment", context.WorkOrderPaid > 0m ? "Registrar saldo restante" : "Registrar recebimento",
                 $"Saldo atual de {context.WorkOrderBalance:C}. Serviço concluído não significa quitação.", "/Payments/Register", workOrderId, "payment"),
-            _ when context.LatestReceiptId is { } receiptId => Action("receipt", "Consultar recibo",
-                "Pagamento e recibo vigente estão registrados.", "/Receipts/Details", receiptId, "receipt"),
             _ when context.WorkOrderPaid > 0m && context.LatestPaymentId is not null => Action("receipt-pending", "Emitir recibo",
                 "Há pagamento ativo sem recibo vigente.", "/WorkOrders/Details", workOrderId, "receipt"),
+            _ when context.LatestReceiptId is { } receiptId => Action("receipt", "Consultar recibo",
+                "Pagamento e recibo vigente estão registrados.", "/Receipts/Details", receiptId, "receipt"),
             _ when context.Balance is { IsSettled: true } => DetailsAction("finance", "Consultar financeiro",
                 "Contrato sem saldo operacional; acompanhe o histórico financeiro.", context.DocumentId, "finance", "payment"),
-            _ => Action("work-order", "Abrir ordem",
+            _ => Action("open-work-order", "Abrir ordem",
                 "Acompanhe execução, recebimentos e próximos passos pela ordem de serviço.", "/WorkOrders/Details", workOrderId, "work-order")
         };
     }
@@ -98,7 +99,8 @@ public static class CommercialNextActionResolver
         "share" => "Compartilhe a proposta",
         "follow-up" => "Acompanhe a resposta do cliente",
         "revision" => "Transforme o retorno em uma nova versão",
-        "work-order" when action.Page == "/Documents/Details" => "Converta a aprovação em operação",
+        "create-work-order" => "Converta a aprovação em operação",
+        "open-work-order" => "Abra a ordem de serviço",
         "payment" => action.Title,
         "receipt" => "Recibo disponível",
         "receipt-pending" => "Emita o recibo",
@@ -112,11 +114,12 @@ public static class CommercialNextActionResolver
         "share" => "Compartilhar",
         "follow-up" => "Ver interação",
         "revision" => "Criar nova versão",
-        "work-order" when action.Page == "/Documents/Details" => "Criar ordem de serviço",
+        "create-work-order" => "Criar ordem de serviço",
+        "open-work-order" => "Abrir ordem de serviço",
         "financial-review" => "Revisar financeiro",
         "overpaid" => "Revisar excedente",
         "receipt" => "Visualizar recibo",
-        "receipt-pending" => "Abrir ordem de serviço",
+        "receipt-pending" => "Emitir recibo",
         "finance" => "Ver financeiro",
         _ => action.Title
     };

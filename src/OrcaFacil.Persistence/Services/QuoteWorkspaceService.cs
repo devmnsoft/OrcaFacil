@@ -66,6 +66,15 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
             .Select(r => new { r.Id, r.DocumentId, r.VersionNumber, r.Total })
             .ToDictionaryAsync(r => r.DocumentId, r => r, cancellationToken);
 
+        var currentRevisionIds = revisions.Values.Select(r => r.Id).ToArray();
+        var changeRequestRevisionIds = currentRevisionIds.Length == 0 ? [] : await db.PublicDocumentDecisions.AsNoTracking()
+            .Where(d => d.AccountId == accountId && currentRevisionIds.Contains(d.DocumentRevisionId) &&
+                d.Decision == PublicDocumentDecisionType.ChangeRequested)
+            .Select(d => d.DocumentRevisionId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+        var changeRequestSet = changeRequestRevisionIds.ToHashSet();
+
         var workOrders = await db.WorkOrders.AsNoTracking()
             .Where(w => w.AccountId == accountId && w.SourceDocumentId != null && docIds.Contains(w.SourceDocumentId.Value) && !w.IsDeleted)
             .OrderByDescending(w => w.CreatedAt)
@@ -74,6 +83,21 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
 
         var workOrdersById = workOrders.ToDictionary(x => x.Id);
         var balanceMap = await balances.GetForDocumentsAsync(accountId, docIds, null, cancellationToken);
+        var workOrderIds = workOrders.Select(x => x.Id).ToArray();
+        var payments = await db.ManualPayments.AsNoTracking()
+            .Where(x => x.AccountId == accountId && !x.IsDeleted && x.Status == FinancialRecordStatus.Active &&
+                ((x.DocumentId != null && docIds.Contains(x.DocumentId.Value)) ||
+                 (x.WorkOrderId != null && workOrderIds.Contains(x.WorkOrderId.Value))))
+            .Select(x => new { x.Id, x.DocumentId, x.WorkOrderId, x.PaidAt })
+            .ToListAsync(cancellationToken);
+        var paymentIds = payments.Select(x => x.Id).ToArray();
+        var activeReceiptPaymentIds = paymentIds.Length == 0 ? [] : await db.Receipts.AsNoTracking()
+            .Where(x => x.AccountId == accountId && paymentIds.Contains(x.PaymentId) && !x.IsDeleted && x.CancelledAt == null)
+            .Select(x => new { x.Id, x.PaymentId, x.IssuedAt })
+            .ToListAsync(cancellationToken);
+        var receiptByPayment = activeReceiptPaymentIds
+            .GroupBy(x => x.PaymentId)
+            .ToDictionary(x => x.Key, x => x.OrderByDescending(r => r.IssuedAt).First());
 
         var allItems = new List<QuoteWorkspaceItem>(rows.Count);
         foreach (var row in rows)
@@ -85,6 +109,18 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
             var wo = balance?.WorkOrderId is { } workOrderId && workOrdersById.TryGetValue(workOrderId, out var selectedWorkOrder)
                 ? selectedWorkOrder
                 : null;
+            var relevantPayments = payments
+                .Where(x => x.DocumentId == row.Id || (wo is not null && x.WorkOrderId == wo.Id))
+                .OrderByDescending(x => x.PaidAt)
+                .ToArray();
+            var latestReceiptlessPaymentId = relevantPayments
+                .Where(x => !receiptByPayment.ContainsKey(x.Id))
+                .Select(x => (Guid?)x.Id)
+                .FirstOrDefault();
+            var latestReceiptId = relevantPayments
+                .Where(x => receiptByPayment.ContainsKey(x.Id))
+                .Select(x => (Guid?)receiptByPayment[x.Id].Id)
+                .FirstOrDefault();
             var baseTotal = balance?.ContractedAmount ?? currentRev?.Total ?? row.Total;
 
             allItems.Add(new QuoteWorkspaceItem(
@@ -99,11 +135,14 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
                 CommercialNextActionResolver.ResolveQuoteAction(new CommercialNextActionContext(
                     row.Id,
                     row.Status,
+                    currentRev is not null && changeRequestSet.Contains(currentRev.Id),
                     Balance: balance,
                     WorkOrderId: wo?.Id,
                     WorkOrderStatus: wo?.Status.ToString(),
                     WorkOrderPaid: balance?.ReceivedAmount ?? 0m,
-                    WorkOrderBalance: balance?.BalanceAmount ?? 0m)),
+                    WorkOrderBalance: balance?.BalanceAmount ?? 0m,
+                    LatestPaymentId: latestReceiptlessPaymentId,
+                    LatestReceiptId: latestReceiptId)),
                 revisionNumber,
                 assigneeName,
                 balance?.ReceivedAmount ?? 0m,

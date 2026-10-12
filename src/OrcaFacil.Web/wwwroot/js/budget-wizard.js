@@ -16,6 +16,10 @@ if (wizard) {
   let timer;
   let saving = false;
   let queued = false;
+  let clientSearchController;
+  let clientSearchSeq = 0;
+  let serviceSearchController;
+  let serviceSearchSeq = 0;
 
   const num = input => Math.max(0, Number.parseFloat(input?.value?.replace(',', '.')) || 0);
   const rows = () => [...itemHost.querySelectorAll('[data-budget-item]')];
@@ -109,7 +113,7 @@ if (wizard) {
     wizard.querySelectorAll('[data-client-option]').forEach(x => x.classList.toggle('is-selected', x === button));
     update(); scheduleSave();
   };
-  const addClientChoice = client => {
+  const addClientChoice = (client, shouldSelect = true) => {
     const button = document.createElement('button');
     const detail = client.detail || `${client.city || 'Cidade não informada'} · ${client.phone || client.email || 'Contato não informado'}`;
     button.type = 'button'; button.dataset.clientOption = 'true'; button.dataset.clientId = client.id; button.dataset.clientName = client.name;
@@ -119,18 +123,66 @@ if (wizard) {
     button.querySelector('small').textContent = detail;
     button.addEventListener('click', () => selectClient(button));
     clientChoices?.prepend(button);
-    selectClient(button);
+    if (shouldSelect) selectClient(button);
+  };
+  const renderClientChoices = clients => {
+    clientChoices?.replaceChildren();
+    if (!clients.length) {
+      const empty = document.createElement('p'); empty.className = 'of-inline-empty'; empty.textContent = 'Nenhum cliente encontrado nesta conta.';
+      clientChoices?.append(empty); return;
+    }
+    clients.slice().reverse().forEach(client => addClientChoice(client, false));
+    wizard.querySelector('[data-client-id]').value = '';
+    wizard.querySelector('[data-client-name]').value = '';
+    wizard.querySelectorAll('[data-client-option]').forEach(x => x.classList.remove('is-selected'));
+    update();
   };
   next.addEventListener('click', () => { if (valid()) go(currentStep + 1); }); previous.addEventListener('click', () => go(currentStep - 1));
   steps.forEach(x => x.addEventListener('click', () => { const target = Number(x.dataset.stepTarget); if (target <= currentStep || valid()) go(target); }));
   wizard.querySelector('[data-item-add]').addEventListener('click', () => addItem()); wizard.querySelectorAll('[data-service-example]').forEach(x => x.addEventListener('click', () => addItem(x.dataset.serviceExample)));
-  itemHost.addEventListener('click', event => { const row = event.target.closest('[data-budget-item]'); if (!row) return; if (event.target.closest('[data-item-remove]')) { if (rows().length === 1) row.querySelectorAll('input').forEach(x => x.value = x.matches('[data-item-quantity]') ? '1' : ''); else row.remove(); } if (event.target.closest('[data-item-duplicate]')) row.after(row.cloneNode(true)); rename(); update(); scheduleSave(); });
+  itemHost.addEventListener('click', event => {
+    const row = event.target.closest('[data-budget-item]'); if (!row) return;
+    if (event.target.closest('[data-item-remove]')) {
+      if (rows().length === 1) { delete row.dataset.serviceId; row.querySelectorAll('input').forEach(x => { x.value = x.matches('[data-item-quantity]') ? '1' : ''; x.setCustomValidity?.(''); }); }
+      else row.remove();
+    }
+    if (event.target.closest('[data-item-duplicate]')) {
+      const clone = row.cloneNode(true); clone.querySelectorAll('input').forEach(x => x.setCustomValidity?.('')); row.after(clone);
+    }
+    rename(); update(); scheduleSave();
+  });
   wizard.querySelectorAll('[data-client-option]').forEach(option => option.addEventListener('click', () => selectClient(option)));
-  wizard.querySelector('[data-client-search]').addEventListener('input', event => { event.target.setCustomValidity(''); const term = event.target.value.trim().toLocaleLowerCase('pt-BR'); wizard.querySelectorAll('[data-client-option]').forEach(x => x.hidden = !x.dataset.search.includes(term)); });
+  const clientSearch = wizard.querySelector('[data-client-search]');
+  let clientTimer;
+  clientSearch.addEventListener('input', event => {
+    event.target.setCustomValidity('');
+    clearTimeout(clientTimer);
+    const term = event.target.value.trim();
+    const seq = ++clientSearchSeq;
+    clientTimer = setTimeout(async () => {
+      clientSearchController?.abort();
+      clientSearchController = new AbortController();
+      clientChoices?.setAttribute('aria-busy', 'true');
+      try {
+        const response = await fetch(`?handler=ClientSearch&q=${encodeURIComponent(term)}&pageSize=12`, { signal: clientSearchController.signal });
+        const data = response.ok ? await response.json() : { results: [] };
+        if (seq === clientSearchSeq) renderClientChoices(data.results || []);
+      } catch (error) {
+        if (error.name !== 'AbortError' && seq === clientSearchSeq) {
+          clientChoices?.replaceChildren();
+          const failure = document.createElement('p'); failure.className = 'of-form-error'; failure.textContent = 'Não foi possível buscar clientes agora.';
+          clientChoices?.append(failure);
+        }
+      } finally {
+        if (seq === clientSearchSeq) clientChoices?.setAttribute('aria-busy', 'false');
+      }
+    }, 250);
+  });
   wizard.querySelector('[data-quick-client-submit]')?.addEventListener('click', async event => {
     const feedback = wizard.querySelector('[data-quick-client-feedback]');
     const root = wizard.querySelector('[data-quick-client]');
     const name = wizard.querySelector('[data-quick-client-name]');
+    const allowDuplicate = wizard.querySelector('[data-quick-client-allow-duplicate]');
     if (!name.value.trim()) { name.setCustomValidity('Informe o nome do cliente.'); name.reportValidity(); return; }
     event.currentTarget.disabled = true; feedback.textContent = 'Cadastrando cliente...';
     try {
@@ -142,28 +194,41 @@ if (wizard) {
           email: wizard.querySelector('[data-quick-client-email]')?.value || null,
           city: wizard.querySelector('[data-quick-client-city]')?.value || null,
           documentNumber: wizard.querySelector('[data-quick-client-document]')?.value || null,
-          allowPossibleDuplicate: root?.dataset.allowDuplicate === 'true'
+          allowPossibleDuplicate: allowDuplicate?.checked === true
         })
       });
       const data = await response.json();
       if (!response.ok) {
-        const candidates = Array.isArray(data.candidates) && data.candidates.length
-          ? ` ${data.candidates.map(x => `${x.name} (${x.reason})`).join(', ')}`
-          : '';
+        feedback.replaceChildren(document.createTextNode(data.error || 'Não foi possível cadastrar.'));
+        if (Array.isArray(data.candidates) && data.candidates.length) {
+          const list = document.createElement('div');
+          data.candidates.forEach(candidate => {
+            const button = document.createElement('button'); button.type = 'button'; button.className = 'of-command-link';
+            button.textContent = `Usar ${candidate.name} (${candidate.reason})`;
+            button.addEventListener('click', () => addClientChoice({ id: candidate.id, name: candidate.name, detail: candidate.reason }));
+            list.append(button);
+          });
+          feedback.append(list);
+        }
         if (response.status === 422) {
-          root.dataset.allowDuplicate = 'true';
-          feedback.textContent = `${data.error || 'Cliente parecido encontrado.'}${candidates} Clique novamente para cadastrar mesmo assim.`;
+          allowDuplicate.closest('label').hidden = false;
+          if (!allowDuplicate.checked) feedback.append(document.createTextNode(' Marque a confirmação se realmente deseja criar outro cadastro.'));
           return;
         }
-        throw new Error(`${data.error || 'Não foi possível cadastrar.'}${candidates}`);
+        throw new Error(data.error || 'Não foi possível cadastrar.');
       }
-      root.dataset.allowDuplicate = 'false';
+      if (allowDuplicate) { allowDuplicate.checked = false; allowDuplicate.closest('label').hidden = true; }
       feedback.textContent = 'Cliente cadastrado e selecionado.';
       addClientChoice(data.client);
       root.open = false;
     } catch (error) { feedback.textContent = error.message || 'Falha ao cadastrar cliente.'; }
     finally { event.currentTarget.disabled = false; }
   });
+  wizard.querySelectorAll('[data-quick-client] input').forEach(input => input.addEventListener('input', () => {
+    const allow = wizard.querySelector('[data-quick-client-allow-duplicate]');
+    if (allow) { allow.checked = false; allow.closest('label').hidden = true; }
+    wizard.querySelector('[data-quick-client-feedback]').textContent = '';
+  }));
   wizard.addEventListener('input', event => { event.target.setCustomValidity?.(''); update(); scheduleSave(); }); wizard.addEventListener('change', scheduleSave);
   wizard.querySelector('[data-summary-toggle]').addEventListener('click', event => { const content = wizard.querySelector('[data-summary-content]'); content.hidden = !content.hidden; event.currentTarget.setAttribute('aria-expanded', String(!content.hidden)); });
   wizard.querySelector('[data-preview-link]').addEventListener('click', async event => { event.preventDefault(); if (await save()) window.location.assign(event.currentTarget.href); });
@@ -174,23 +239,37 @@ if (wizard) {
   const serviceSearch = wizard.querySelector('[data-service-search]');
   const serviceResults = wizard.querySelector('[data-service-results]');
   let serviceTimer;
-  serviceSearch?.addEventListener('input', () => {
+  const searchServices = () => {
     clearTimeout(serviceTimer);
     serviceTimer = setTimeout(async () => {
       const query = serviceSearch.value.trim();
-      if (query.length < 2) { serviceResults.replaceChildren(); return; }
+      const seq = ++serviceSearchSeq;
+      serviceSearchController?.abort();
+      serviceSearchController = new AbortController();
       serviceResults.setAttribute('aria-busy', 'true');
-      const response = await fetch(`?handler=BudgetCatalog&q=${encodeURIComponent(query)}&limit=8`);
-      const data = response.ok ? await response.json() : { results: [] };
-      serviceResults.replaceChildren(...data.results.map(service => {
-        const button = document.createElement('button'); button.type = 'button'; button.className = 'of-service-result';
-        const marker = service.favorite ? 'Favorito · ' : '';
-        button.textContent = `${marker}${service.name} · ${money.format(service.price)}`;
-        button.title = service.deliveryTerm || service.defaultNotes || 'Adicionar ao orçamento';
-        button.addEventListener('click', () => addItem(service.description || service.name, service)); return button;
-      }));
-      serviceResults.setAttribute('aria-busy', 'false');
+      try {
+        const response = await fetch(`?handler=BudgetCatalog&q=${encodeURIComponent(query)}&limit=8`, { signal: serviceSearchController.signal });
+        const data = response.ok ? await response.json() : { results: [] };
+        if (seq !== serviceSearchSeq) return;
+        const results = data.results || [];
+        if (!results.length) { serviceResults.replaceChildren(Object.assign(document.createElement('p'), { className: 'of-inline-empty', textContent: 'Nenhum serviço encontrado.' })); return; }
+        serviceResults.replaceChildren(...results.map((service, index) => {
+          const button = document.createElement('button'); button.type = 'button'; button.className = 'of-service-result';
+          if (index === 0) button.dataset.firstServiceResult = 'true';
+          const marker = service.favorite ? 'Favorito · ' : service.recurring ? 'Recorrente · ' : '';
+          button.textContent = `${marker}${service.name} · ${service.unit} · ${money.format(service.price)}`;
+          button.title = service.deliveryTerm || service.defaultNotes || 'Adicionar ao orçamento';
+          button.addEventListener('click', () => addItem(service.description || service.name, service)); return button;
+        }));
+      } catch (error) {
+        if (error.name !== 'AbortError' && seq === serviceSearchSeq) serviceResults.replaceChildren(Object.assign(document.createElement('p'), { className: 'of-form-error', textContent: 'Não foi possível buscar o catálogo agora.' }));
+      } finally {
+        if (seq === serviceSearchSeq) serviceResults.setAttribute('aria-busy', 'false');
+      }
     }, 250);
-  });
+  };
+  serviceSearch?.addEventListener('input', searchServices);
+  serviceSearch?.addEventListener('focus', searchServices);
+  serviceSearch?.addEventListener('keydown', event => { if (event.key === 'ArrowDown') { event.preventDefault(); serviceResults.querySelector('[data-first-service-result]')?.focus(); } });
   rename(); update(); go(currentStep);
 }

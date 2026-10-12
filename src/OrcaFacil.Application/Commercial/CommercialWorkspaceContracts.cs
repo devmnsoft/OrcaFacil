@@ -12,7 +12,7 @@ public sealed record CommercialTimelineEvent(string Action, string Title, string
 public sealed record CommercialWorkOrderView(Guid Id, string Number, string Status, DateTime? ScheduledStart,
     DateTime? ScheduledEnd, decimal Paid, decimal Balance, Guid? LatestPaymentId, Guid? LatestReceiptId);
 public sealed record CommercialNextAction(string Code, string Title, string Description, string Label,
-    string? Handler, string? Page, Guid? RouteId, string Icon);
+    string? Handler, string? Page, Guid? RouteId, string Icon, IDictionary<string, string>? RouteValues = null);
 public sealed record CommercialFinancialPaymentView(Guid Id, Guid? DocumentId, Guid? WorkOrderId, decimal Amount,
     string PaymentMethod, DateTime PaidAt, string Status, bool IsReversed, bool IsExcluded,
     string? ExclusionReason, Guid? ReceiptId, string? ReceiptNumber, bool ReceiptCancelled,
