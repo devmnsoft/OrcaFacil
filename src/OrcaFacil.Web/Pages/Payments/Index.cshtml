@@ -17,6 +17,10 @@
     </header>
 <partial name="Partials/_ContextGuide" model='new ContextGuideViewModel("Registre valores recebidos","Manter um controle interno do que sua empresa recebeu.","Valor, método, data, origem e responsável pelo registro.","Você pode emitir um recibo para o cliente.","Pagamento registrado manualmente. A informação não representa confirmação automática do banco, cartão ou operadora.")' />
 
+    @if (Model.ReceiptFilter == "missing")
+    {
+        <p class="of-filter-note">Recebimentos ativos que ainda não têm recibo válido. Emitir o recibo não registra o dinheiro outra vez. <a asp-page="./Index">Limpar filtro</a></p>
+    }
     <section class="of-finance-summary" aria-label="Resumo financeiro">
         <article>
             <small>Total recebido</small>

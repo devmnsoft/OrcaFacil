@@ -11,7 +11,7 @@ public static class SuperAdminSeeder
 {
     public static async Task SeedAsync(IServiceProvider services, CancellationToken ct = default)
     {
-        using var scope = services.CreateScope();
+        await using var scope = services.CreateAsyncScope();
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("SuperAdminSeeder");
         var environment = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
         var explicitlyAllowed = string.Equals(Environment.GetEnvironmentVariable("ORCAFACIL_ALLOW_LOCAL_SUPERADMIN_SEED"), "true", StringComparison.OrdinalIgnoreCase);

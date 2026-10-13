@@ -170,6 +170,24 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         var responded = decisions.Select(x => x.DocumentId).Distinct().Count();
         var orders = await db.WorkOrders.AsNoTracking().Where(x => x.AccountId == AccountId && !x.IsDeleted).ToListAsync(ct);
         var activePayments = await db.ManualPayments.AsNoTracking().Where(x => x.AccountId == AccountId && !x.IsDeleted && x.Status == FinancialRecordStatus.Active).ToListAsync(ct);
+        var activePaymentIds = activePayments.Select(x => x.Id).ToArray();
+        var receiptedPaymentIds = activePaymentIds.Length == 0
+            ? []
+            : await db.Receipts.AsNoTracking()
+                .Where(x => x.AccountId == AccountId && !x.IsDeleted && x.CancelledAt == null && activePaymentIds.Contains(x.PaymentId))
+                .Select(x => x.PaymentId)
+                .ToListAsync(ct);
+        var paymentsWithoutReceipt = activePayments.Where(x => !receiptedPaymentIds.Contains(x.Id)).ToArray();
+        var calendarToday = DateOnly.FromDateTime(now);
+        var receivableRows = await db.FinancialEntries.AsNoTracking()
+            .Where(x => x.AccountId == AccountId && !x.IsDeleted)
+            .Select(x => new { x.Status, x.DueDate, x.Amount, x.PaidAmount })
+            .ToListAsync(ct);
+        var overdueReceivables = receivableRows.Where(x => x.Status == FinancialEntryStatus.Overdue
+            || (x.Status is FinancialEntryStatus.Pending or FinancialEntryStatus.PartiallyPaid && x.DueDate < calendarToday)).ToArray();
+        var upcomingUntil = now.AddDays(7);
+        var upcomingServices = orders.Count(x => x.ScheduledStart is { } start && start >= now && start <= upcomingUntil
+            && x.Status is not WorkOrderStatus.Completed and not WorkOrderStatus.Cancelled);
         var openOrders = orders.Count(x => x.Status is not WorkOrderStatus.Completed and not WorkOrderStatus.Cancelled);
         var openBalances = orders.Where(x => x.Status != WorkOrderStatus.Cancelled).Select(order =>
         {
@@ -179,16 +197,19 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
         }).Where(balance => balance > 0m).ToArray();
         var pending = new CommercialPendingItem[]
         {
-            new("Orçamentos aguardando decisão", "Inclui propostas enviadas ou visualizadas que ainda não têm resposta nesta revisão.", docs.Count(x => x.Status is "Sent" or "Viewed"), null, "/Documents?status=AwaitingDecision"),
-            new("Solicitações de alteração", "Inclui orçamentos em negociação ou com pedido de alteração. A decisão anterior permanece no histórico.", docs.Count(x => x.Status is "InNegotiation" or "ChangeRequested"), null, "/Documents?status=ChangeRequested"),
-            new("Ordens com próxima ação", "Inclui ordens que não estão concluídas nem canceladas.", openOrders, null, "/WorkOrders?phase=active"),
-            new("Saldos pendentes", "Soma do saldo de ordens não canceladas. Um serviço concluído pode continuar em aberto. Não inclui a assinatura do OrçaFácil.", openBalances.Length, openBalances.Sum(), "/WorkOrders?finance=open"),
-            new("Retornos comerciais agendados", "Inclui orçamentos com acompanhamento marcado como agendado.", docs.Count(x => x.FollowUpStatus == FollowUpStatus.Scheduled && x.NextFollowUpAt != null), null, "/Documents?status=FollowUpScheduled")
+            new("Propostas aguardando resposta", "Propostas enviadas ou visualizadas que ainda não têm resposta nesta revisão.", docs.Count(x => x.Status is "Sent" or "Viewed"), null, "/Documents?status=AwaitingDecision"),
+            new("Alterações solicitadas", "Orçamentos em negociação ou com pedido de alteração. A decisão anterior permanece no histórico.", docs.Count(x => x.Status is "InNegotiation" or "ChangeRequested"), null, "/Documents?status=ChangeRequested"),
+            new("Serviços próximos", "Ordens agendadas para os próximos 7 dias, ainda não concluídas nem canceladas.", upcomingServices, null, "/WorkOrders?agenda=upcoming"),
+            new("Pendências de execução", "Ordens que não estão concluídas nem canceladas.", openOrders, null, "/WorkOrders?phase=active"),
+            new("Recebimentos vencidos", "Contas pendentes ou parciais com vencimento anterior a hoje. A lista usa a mesma regra.", overdueReceivables.Length, overdueReceivables.Sum(x => Math.Max(0, x.Amount - x.PaidAmount)), "/Receivables?status=Overdue"),
+            new("Pagamentos sem recibo", "Recebimentos ativos sem recibo válido. Emitir o recibo não registra o valor outra vez.", paymentsWithoutReceipt.Length, paymentsWithoutReceipt.Sum(x => x.Amount), "/Payments?receipt=missing"),
+            new("Saldos em aberto", "Saldo das ordens não canceladas. Um serviço concluído pode continuar em aberto. Não inclui a assinatura do OrçaFácil.", openBalances.Length, openBalances.Sum(), "/WorkOrders?finance=open"),
+            new("Retornos agendados", "Orçamentos com acompanhamento marcado como agendado.", docs.Count(x => x.FollowUpStatus == FollowUpStatus.Scheduled && x.NextFollowUpAt != null), null, "/Documents?status=FollowUpScheduled")
         };
         return new(columns, attention.OrderBy(x => x.Severity).ThenByDescending(x => x.OccurredAt).Take(5).ToArray(),
             docs.Count(x => x.Status.Equals("Sent", StringComparison.OrdinalIgnoreCase)), docs.Count(x => x.Status.Equals("Viewed", StringComparison.OrdinalIgnoreCase)),
             approved.Length, approved.Sum(x => x.Total), responded == 0 ? null : decimal.Round(approved.Length * 100m / responded, 1),
-            approved.Length == 0 ? null : approved.Average(x => x.Total), pending);
+            approved.Length == 0 ? null : approved.Average(x => x.Total), pending, activePayments.Sum(x => x.Amount));
     }
 
     private static CommercialTimelineEvent MapEvent(ActivityEvent e) => e.Action switch {

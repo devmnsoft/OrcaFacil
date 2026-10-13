@@ -24,11 +24,23 @@ public sealed class IndexModel(OrcaFacilDbContext db) : PageModel
             TrialSubscriptions = await db.AccountModuleSubscriptions.CountAsync(x=>!x.IsDeleted && x.Status==SaasModuleSubscriptionStatus.Trial && x.TrialEndsAt>DateTime.UtcNow,ct),
             MonthlyRecurringRevenue = await db.AccountModuleSubscriptions.Where(x=>!x.IsDeleted && x.Status==SaasModuleSubscriptionStatus.Active).SumAsync(x=>(decimal?)(x.BillingPeriod==SaasBillingPeriod.Annual ? x.ContractedPrice/12m : x.ContractedPrice-x.DiscountAmount),ct) ?? 0
         };
-        TopModules = await db.SaasModules.AsNoTracking().Where(x=>x.IsActive&&!x.IsDeleted)
-            .Select(module=>new ModuleMetric(module.DisplayName,
-                db.AccountModuleSubscriptions.Count(x=>x.ModuleId==module.Id&&!x.IsDeleted&&(x.Status==SaasModuleSubscriptionStatus.Active||x.Status==SaasModuleSubscriptionStatus.Trial)),
-                db.AccountModuleUsageEvents.Count(x=>x.ModuleCode==module.Code&&!x.IsDeleted&&x.OccurredAt>=since)))
-            .OrderByDescending(x=>x.Subscriptions).ThenBy(x=>x.Name).Take(8).ToListAsync(ct);
+        var modules = await db.SaasModules.AsNoTracking().Where(x => x.IsActive && !x.IsDeleted)
+            .Select(x => new { x.Id, x.Code, x.DisplayName }).ToListAsync(ct);
+        var subscriptions = await db.AccountModuleSubscriptions.AsNoTracking()
+            .Where(x => !x.IsDeleted && (x.Status == SaasModuleSubscriptionStatus.Active || x.Status == SaasModuleSubscriptionStatus.Trial))
+            .GroupBy(x => x.ModuleId)
+            .Select(x => new { ModuleId = x.Key, Count = x.Count() })
+            .ToListAsync(ct);
+        var usage = await db.AccountModuleUsageEvents.AsNoTracking()
+            .Where(x => !x.IsDeleted && x.OccurredAt >= since)
+            .GroupBy(x => x.ModuleCode)
+            .Select(x => new { ModuleCode = x.Key, Count = x.Count() })
+            .ToListAsync(ct);
+        TopModules = modules.Select(module => new ModuleMetric(
+                module.DisplayName,
+                subscriptions.FirstOrDefault(x => x.ModuleId == module.Id)?.Count ?? 0,
+                usage.FirstOrDefault(x => x.ModuleCode == module.Code)?.Count ?? 0))
+            .OrderByDescending(x => x.Subscriptions).ThenBy(x => x.Name).Take(8).ToList();
     }
     public sealed class GlobalMetrics { public int ActiveAccounts{get;set;} public int BlockedAccounts{get;set;} public int TrialSubscriptions{get;set;} public int OverdueAccounts{get;set;} public int ActiveUsers{get;set;} public decimal MonthlyRecurringRevenue{get;set;} }
     public sealed record ModuleMetric(string Name,int Subscriptions,int Usage);

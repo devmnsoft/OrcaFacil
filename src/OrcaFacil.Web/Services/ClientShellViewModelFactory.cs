@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Saas.Modules;
 using OrcaFacil.Persistence;
 
 namespace OrcaFacil.Web.Services;
@@ -15,11 +16,14 @@ public sealed class ClientShellViewModelFactory(
     INotificationService notifications,
     IPlanExperienceService planExperience,
     INavigationMapService navigation,
+    SaasModuleRegistryService modules,
+    IModuleEntitlementService entitlements,
     OrcaFacilDbContext db) : IClientShellViewModelFactory
 {
     public async Task<ClientShellViewModel> CreateAsync(CancellationToken cancellationToken = default)
     {
-        var accountName = "Minha conta";
+        var platformOnly = account.IsPlatformUser && !account.HasAccount;
+        var accountName = platformOnly ? "Administração da plataforma" : "Minha conta";
         if (account.AccountId is { } accountId)
             accountName = await db.BusinessAccounts.AsNoTracking()
                 .Where(x => x.Id == accountId && !x.IsDeleted)
@@ -34,18 +38,45 @@ public sealed class ClientShellViewModelFactory(
             where role.Code == account.AccountRoleCode && !role.IsDeleted && !rolePermission.IsDeleted && !permission.IsDeleted
             orderby permission.Code
             select permission.Code).ToArrayAsync(cancellationToken);
-        var allowedMenus = navigation.GetGroups(permissions).Select(group => new ShellMenuGroup(group.Label,
-            group.Items.Select(item => new ShellMenuItem(item.Label, item.Page, item.Icon, RequiredPermission: item.RequiredPermission)).ToArray())).ToArray();
+        var allowedMenus = platformOnly
+            ? new[]
+            {
+                new ShellMenuGroup("Plataforma",
+                    [new ShellMenuItem("Administração", "/SuperAdmin/Index", "settings")],
+                    true)
+            }
+            : await FilterByContractAsync(navigation.GetGroups(permissions), cancellationToken);
         var unread = await notifications.GetUnreadCountAsync(user.UserId, cancellationToken);
         return new ClientShellViewModel(
             user.UserId, FirstName(user.Name), MaskEmail(user.Email), account.AccountId, accountName,
-            account.AccountRoleCode ?? "Responsável", plan.SelectedPlanCode, plan.SelectedPlanName,
+            platformOnly ? "SuperAdmin" : account.AccountRoleCode ?? "Responsável", plan.SelectedPlanCode, plan.SelectedPlanName,
             plan.EffectivePlanCode, plan.EffectivePlanName, plan.Status, plan.IsUsingFreeFallback,
             unread, allowedMenus, permissions,
             plan.UsageItems.Select(x => new ShellUsageItem(x.Label, x.Used, x.Limit)).ToArray(),
             plan.IsUsingFreeFallback ? plan.ContextualRecommendation : null, null,
             new ShellAction("Novo orçamento", "/Documents/CreateBudget", "quote"),
             "dashboard.overview");
+    }
+
+    private async Task<ShellMenuGroup[]> FilterByContractAsync(IReadOnlyList<NavigationGroup> groups, CancellationToken cancellationToken)
+    {
+        var visible = new List<ShellMenuGroup>();
+        foreach (var group in groups)
+        {
+            var items = new List<ShellMenuItem>();
+            foreach (var item in group.Items)
+            {
+                var module = modules.FindByPath(item.Page);
+                if (module is not null)
+                {
+                    var decision = await entitlements.CheckAsync(account.AccountId, module.Code, false, cancellationToken);
+                    if (!decision.Allowed) continue;
+                }
+                items.Add(new ShellMenuItem(item.Label, item.Page, item.Icon, RequiredPermission: item.RequiredPermission));
+            }
+            if (items.Count > 0) visible.Add(new ShellMenuGroup(group.Label, items, group.Primary));
+        }
+        return visible.ToArray();
     }
 
     private static string FirstName(string? name) => string.IsNullOrWhiteSpace(name) ? "bem-vindo" : name.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
@@ -65,7 +96,7 @@ public sealed record ClientShellViewModel(
     IReadOnlyList<ShellMenuGroup> Menus, IReadOnlyList<string> Permissions,
     IReadOnlyList<ShellUsageItem> UsageSummary, string? PaymentAlert, string? OnboardingSummary,
     ShellAction MainAction, string ContextualHelpCode);
-public sealed record ShellMenuGroup(string Label, IReadOnlyList<ShellMenuItem> Items);
+public sealed record ShellMenuGroup(string Label, IReadOnlyList<ShellMenuItem> Items, bool Primary = true);
 public sealed record ShellMenuItem(string Label, string Page, string Icon, bool Premium = false, string? RequiredPlan = null, string? RequiredPermission = null);
 public sealed record ShellAction(string Label, string Page, string Icon);
 public sealed record ShellUsageItem(string Label, int Used, int? Limit);

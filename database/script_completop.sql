@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS orcafacil.users (
     CONSTRAINT pk_orcafacil_users PRIMARY KEY (id),
     CONSTRAINT uq_orcafacil_users_email UNIQUE (email),
     CONSTRAINT ck_orcafacil_users_role CHECK (role IN ('User', 'Admin', 'SuperAdmin')),
-    CONSTRAINT ck_orcafacil_users_plan CHECK (plan IN ('Free', 'Pro'))
+    CONSTRAINT ck_orcafacil_users_plan CHECK (plan IN ('Free', 'Pro', 'Professional', 'Business', 'Enterprise'))
 );
 
 -- Contrato de autenticação (também corrige instalações em que users já existia).
@@ -1819,3 +1819,35 @@ ALTER TABLE orcafacil.budget_template_items ADD COLUMN IF NOT EXISTS discount nu
 
 -- V7.3: compatibilidade incremental para status textual/numerico em bases atualizadas.
 \ir hotfix_document_sequences_status_compat_v73.sql
+
+-- Journey module permissions required by the active registry. Owner and Administrator only. Reapplicable.
+INSERT INTO orcafacil.permissions (id, code, display_name, is_platform_permission, created_at, is_deleted)
+SELECT gen_random_uuid(), v.code, v.display_name, false, now(), false
+FROM (VALUES
+    ('Dashboard.View', 'Ver a visão geral'),
+    ('Clients.View', 'Ver clientes'),
+    ('Documents.View', 'Ver orçamentos'),
+    ('Documents.Create', 'Criar orçamentos'),
+    ('WorkOrders.View', 'Ver ordens de serviço'),
+    ('Schedule.View', 'Ver a agenda'),
+    ('Finance.View', 'Ver o financeiro'),
+    ('CommercialRoutine.View', 'Ver a rotina comercial')
+) AS v(code, display_name)
+WHERE NOT EXISTS (
+    SELECT 1 FROM orcafacil.permissions p
+    WHERE lower(p.code) = lower(v.code) AND p.is_deleted = false
+);
+
+INSERT INTO orcafacil.role_permissions (id, role_id, permission_id, created_at, is_deleted)
+SELECT gen_random_uuid(), r.id, p.id, now(), false
+FROM orcafacil.roles r
+JOIN orcafacil.permissions p ON p.is_deleted = false AND p.is_platform_permission = false
+    AND p.code IN (
+        'Dashboard.View', 'Clients.View', 'Documents.View', 'Documents.Create',
+        'WorkOrders.View', 'Schedule.View', 'Finance.View', 'CommercialRoutine.View'
+    )
+WHERE r.code IN ('Owner', 'Administrator') AND r.is_deleted = false
+  AND NOT EXISTS (
+      SELECT 1 FROM orcafacil.role_permissions rp
+      WHERE rp.role_id = r.id AND rp.permission_id = p.id AND rp.is_deleted = false
+  );

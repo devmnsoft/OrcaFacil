@@ -1,3 +1,4 @@
+@using System.Linq
 @using OrcaFacil.Web.Services
 @inject IClientShellViewModelFactory ShellFactory
 @{
@@ -38,7 +39,7 @@
             <aside class="of-client-sidebar" id="client-sidebar" aria-label="Navegação principal">
                 <div class="of-sidebar-brand-row">
                     <a class="of-shell-brand" asp-page="/Dashboard/Index">
-                        <img src="~/img/brand/orcafacil-wordmark-light.svg" alt="OrçaFácil, um produto MNSOFT" />
+                        <img src="~/img/brand/orcafacil-wordmark-dark.svg" alt="OrçaFácil, um produto MNSOFT" />
                     </a>
                     <button class="of-sidebar-toggle" type="button" data-sidebar-toggle aria-label="Recolher menu" aria-controls="client-sidebar" aria-expanded="true">
                         <svg class="of-icon" aria-hidden="true"><use href="#of-icon-menu" /></svg>
@@ -58,7 +59,7 @@
                     <span>Novo orçamento</span>
                 </a>
                 <nav class="of-grouped-menu" aria-label="Áreas de trabalho">
-                    @foreach (var group in shell.Menus)
+                    @foreach (var group in shell.Menus.Where(x => x.Primary))
                     {
                         <section>
                             <h2>@group.Label</h2>
@@ -68,13 +69,29 @@
                                 <a class="@(active ? "is-active" : null)" asp-page="@item.Page" aria-current="@(active ? "page" : null)" title="@item.Label">
                                     <svg class="of-icon" aria-hidden="true"><use href="#of-icon-@item.Icon" /></svg>
                                     <span class="of-menu-label">@item.Label</span>
-                                    @if (item.Premium)
-                                    {
-                                        <span class="of-premium-tag" title="Disponível no plano @item.RequiredPlan">@item.RequiredPlan</span>
-                                    }
                                 </a>
                             }
                         </section>
+                    }
+                    @{
+                        var extraMenus = shell.Menus.Where(x => !x.Primary && x.Items.Count > 0).ToArray();
+                    }
+                    @if (extraMenus.Length > 0)
+                    {
+                        <details class="of-more-nav">
+                            <summary>Outras ferramentas</summary>
+                            @foreach (var group in extraMenus)
+                            {
+                                @foreach (var item in group.Items)
+                                {
+                                    var active = currentPath.StartsWith(item.Page, StringComparison.OrdinalIgnoreCase);
+                                    <a class="@(active ? "is-active" : null)" asp-page="@item.Page" aria-current="@(active ? "page" : null)" title="@item.Label">
+                                        <svg class="of-icon" aria-hidden="true"><use href="#of-icon-@item.Icon" /></svg>
+                                        <span class="of-menu-label">@item.Label</span>
+                                    </a>
+                                }
+                            }
+                        </details>
                     }
                 </nav>
                 <div class="of-sidebar-profile">

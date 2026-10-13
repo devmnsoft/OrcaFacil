@@ -5,7 +5,7 @@ public sealed record NavigationItem(
     string? RequiredPermission, bool IsAdminOnly, bool IsVisible, int Order,
     IReadOnlyList<string> Keywords, bool IsAction = false);
 
-public sealed record NavigationGroup(string Id, string Label, int Order, IReadOnlyList<NavigationItem> Items);
+public sealed record NavigationGroup(string Id, string Label, int Order, IReadOnlyList<NavigationItem> Items, bool Primary = true);
 
 public interface INavigationMapService
 {
@@ -18,47 +18,48 @@ public sealed class NavigationMapService : INavigationMapService
 {
     private static readonly NavigationGroup[] Groups =
     [
-        Group("principal", "Principal", 10,
-            Item("dashboard", "Dashboard", "Visão geral da operação", "dashboard", "/Dashboard/Index", 10, "painel", "início"),
-            Item("search", "Busca global", "Encontre registros autorizados da conta", "search", "/Search/Index", 20, false, "Search.Global", "buscar", "localizar"),
-            Item("command-center", "Command Center", "Acesse ações rápidas autorizadas", "plus", "/CommandCenter/Index", 30, false, "CommandCenter.Use", "atalhos", "ações"),
-            Item("assistant", "Assistente interno", "Consulte regras, dados permitidos e ajuda", "help", "/Assistant/Index", 40, false, "Assistant.Use", "orientação", "perguntar")),
-        Group("comercial", "Comercial", 20,
-            Item("routine", "Rotina comercial", "Prioridades e próximos contatos", "calendar", "/CommercialRoutine/Index", 10, "follow-up"),
+        Group("overview", "Visão geral", 10, true,
+            Item("dashboard", "Visão geral", "Prioridades do dia na conta atual", "dashboard", "/Dashboard/Index", 10, "painel", "início")),
+        Group("clients", "Clientes", 20, true,
+            Item("clients", "Clientes", "Carteira e histórico de clientes", "client", "/Clients/Index", 10, false, "Clients.View", "contatos")),
+        Group("catalog", "Catálogo", 30, true,
+            Item("services", "Serviços", "Itens, unidades e preços do catálogo", "service", "/Services/Index", 10, false, "Documents.View", "catálogo"),
+            Item("templates", "Modelos", "Modelos de orçamento reutilizáveis", "quote-ready", "/Templates/Index", 20, false, "Documents.View", "modelos")),
+        Group("quotes", "Orçamentos", 40, true,
+            Item("budgets", "Orçamentos", "Propostas, revisões e decisões", "quote", "/Documents/Index", 10, false, "Documents.View", "propostas"),
             Item("new-budget", "Novo orçamento", "Crie uma proposta comercial", "quote", "/Documents/New", 20, true, "documents.create", "proposta", "criar orçamento"),
-            Item("budget-assistant", "Assistente de orçamento", "Sugestões revisáveis do seu catálogo", "help", "/Documents/BudgetAssistant", 25, false, "documents.create", "ia", "sugestão"),
-            Item("budgets", "Orçamentos", "Propostas e documentos comerciais", "quote", "/Documents/Index", 30, false, "documents.read", "propostas"),
-            Item("clients", "Clientes", "Carteira e histórico de clientes", "client", "/Clients/Index", 40, false, "clients.read", "contatos"),
-            Item("messages", "Templates de mensagem", "Mensagens comerciais reutilizáveis", "share", "/MessageTemplates/Index", 50, "mensagens")),
-        Group("operation", "Operação", 30,
-            Item("orders", "Ordens de serviço", "Execução e acompanhamento das OS", "work-order", "/WorkOrders/Index", 10, "os", "ordem"),
-            Item("schedule", "Agenda", "Compromissos e entregas", "calendar", "/Schedule/Index", 20, "calendário"),
-            Item("contracts", "Contratos", "Receitas e serviços recorrentes", "document", "/Contracts/Index", 30, "recorrência")),
-        Group("finance", "Financeiro", 40,
-            Item("payments", "Pagamentos", "Recebimentos e conciliação", "payment", "/Payments/Index", 10, "cobranças"),
-            Item("receipts", "Recibos", "Comprovantes emitidos", "receipt", "/Receipts/Index", 20, false, "receipts.read", "comprovantes"),
-            Item("plan", "Meu plano", "Assinatura e limites da conta", "plan", "/Subscription/Index", 30, "assinatura")),
-        Group("intelligence", "Inteligência", 50,
-            Item("reports", "Relatórios", "Indicadores comerciais e financeiros", "chart", "/Reports/Index", 10, "indicadores", "dashboard executivo"),
-            Item("analytics", "BI Executivo", "KPIs e comparativos reais", "chart", "/Analytics/Executive", 20, false, "Analytics.Executive", "analytics", "indicadores"),
-            Item("forecast", "Forecast", "Projeção determinística e explicável", "chart", "/Analytics/Forecast", 30, false, "Analytics.Forecast", "previsão"),
-            Item("data-quality", "Qualidade dos Dados", "Inconsistências com ações de correção", "notification", "/Analytics/DataQuality", 40, false, "DataQuality.View", "qualidade"),
-            Item("account-health", "Saúde da Conta", "Score operacional explicável", "chart", "/Analytics/AccountHealth", 50, false, "AccountHealth.View", "saúde"),
-            Item("alerts", "Alertas", "Pendências que exigem atenção", "notification", "/Alerts/Index", 60, "notificações")),
-        Group("administration", "Administração", 60,
-            Item("services", "Serviços", "Catálogo de serviços e preços", "service", "/Services/Index", 10, false, "services.read", "catálogo"),
-            Item("templates", "Templates", "Modelos de orçamento", "quote-ready", "/Templates/Index", 20, false, "templates.read", "modelos"),
-            Item("import", "Importação", "Importe dados para a conta", "upload", "/Import/Index", 30, "arquivos"),
-            Item("settings", "Configurações", "Empresa, documentos e segurança", "settings", "/Settings/Index", 40, "preferências"),
-            Item("quality", "Qualidade funcional", "Auditoria e prontidão dos módulos", "health", "/Admin/Quality/Index", 50, false, "Quality.View", "auditoria", "prontidão")),
-        Group("refinement", "Refinamento", 65,
-            Item("journey-refinement", "Refinamento de Jornadas", "Regras, UX e pendências derivadas de checks reais", "health", "/Admin/JourneyRefinement/Index", 10, false, "JourneyRefinement.View", "jornadas", "qualidade", "regras")),
-        Group("account", "Conta", 70,
-            Item("profile", "Dados do emitente", "Identidade da empresa", "account", "/Profile/Index", 10, "perfil"),
-            Item("notifications", "Notificações", "Central de atividades", "notification", "/Notifications/Index", 20, "avisos"),
-            Item("help", "Base de conhecimento", "Artigos publicados e ajuda contextual", "help", "/Help/Index", 30, false, "KnowledgeBase.View", "ajuda", "artigos"),
-            Item("productivity", "Produtividade", "Prioridades reais da rotina", "chart", "/Productivity/Index", 40, false, "Productivity.View", "pendências", "hoje"),
-            Item("support", "Suporte", "Ajuda e atendimento", "help", "/Support/Index", 50, "ajuda"))
+            Item("budget-assistant", "Sugestões do orçamento", "Sugestões editáveis, aplicadas só depois da confirmação", "help", "/Documents/BudgetAssistant", 30, false, "documents.create", "ia", "sugestão")),
+        Group("operations", "Ordens de serviço", 50, true,
+            Item("orders", "Ordens de serviço", "Escopo contratado, agenda e andamento", "work-order", "/WorkOrders/Index", 10, false, "WorkOrders.View", "os", "ordem"),
+            Item("schedule", "Agenda", "Serviços com data marcada", "calendar", "/Schedule/Index", 20, false, "Schedule.View", "calendário")),
+        Group("finance", "Financeiro", 60, true,
+            Item("payments", "Recebimentos", "Valores recebidos, parciais e estornos", "payment", "/Payments/Index", 10, false, "Finance.View", "cobranças", "pagamentos"),
+            Item("receivables", "Contas a receber", "Vencimentos e saldo em aberto", "payment", "/Receivables/Index", 20, false, "Finance.View", "vencidos"),
+            Item("receipts", "Recibos", "Comprovantes de pagamentos já registrados", "receipt", "/Receipts/Index", 30, false, "Finance.View", "comprovantes")),
+        Group("settings", "Configurações", 70, true,
+            Item("profile", "Dados do emitente", "Identidade usada nas propostas", "account", "/Profile/Index", 10, "perfil"),
+            Item("settings", "Configurações", "Empresa, documentos e segurança", "settings", "/Settings/Index", 20, "preferências"),
+            Item("plan", "Assinatura", "Plano e limites da conta", "plan", "/Subscription/Index", 30, "assinatura", "plano")),
+        Group("more-commercial", "Outras ferramentas", 80, false,
+            Item("routine", "Rotina comercial", "Prioridades e próximos contatos", "calendar", "/CommercialRoutine/Index", 10, "follow-up"),
+            Item("messages", "Mensagens", "Textos comerciais reutilizáveis", "share", "/MessageTemplates/Index", 20, "mensagens"),
+            Item("contracts", "Contratos", "Receitas e serviços recorrentes", "document", "/Contracts/Index", 30, "recorrência"),
+            Item("search", "Busca", "Registros autorizados da conta", "search", "/Search/Index", 40, false, "Search.Global", "buscar", "localizar"),
+            Item("reports", "Relatórios", "Indicadores comerciais e financeiros", "chart", "/Reports/Index", 50, "indicadores"),
+            Item("alerts", "Alertas", "Pendências que exigem atenção", "notification", "/Alerts/Index", 60, "notificações"),
+            Item("notifications", "Notificações", "Atividades da conta", "notification", "/Notifications/Index", 70, "avisos"),
+            Item("support", "Suporte", "Ajuda e atendimento", "help", "/Support/Index", 80, "ajuda"),
+            Item("help", "Como usar", "Artigos e ajuda contextual", "help", "/Help/Index", 90, false, "KnowledgeBase.View", "ajuda", "artigos"),
+            Item("import", "Importação", "Importe dados para a conta", "upload", "/Import/Index", 100, "arquivos"),
+            Item("assistant", "Assistente", "Consulta regras e dados permitidos", "help", "/Assistant/Index", 110, false, "Assistant.Use", "orientação"),
+            Item("command-center", "Ações rápidas", "Atalhos autorizados", "plus", "/CommandCenter/Index", 120, false, "CommandCenter.Use", "atalhos"),
+            Item("analytics", "Indicadores executivos", "Comparativos da conta", "chart", "/Analytics/Executive", 130, false, "Analytics.Executive", "analytics"),
+            Item("forecast", "Previsão", "Projeção explicável da conta", "chart", "/Analytics/Forecast", 140, false, "Analytics.Forecast", "previsão"),
+            Item("data-quality", "Qualidade dos dados", "Inconsistências com correção", "notification", "/Analytics/DataQuality", 150, false, "DataQuality.View", "qualidade"),
+            Item("account-health", "Saúde da conta", "Leitura operacional da conta", "chart", "/Analytics/AccountHealth", 160, false, "AccountHealth.View", "saúde"),
+            Item("productivity", "Produtividade", "Prioridades da rotina", "chart", "/Productivity/Index", 170, false, "Productivity.View", "pendências"),
+            Item("quality", "Qualidade funcional", "Auditoria dos módulos existentes", "health", "/Admin/Quality/Index", 180, false, "Quality.View", "auditoria"),
+            Item("journey-refinement", "Revisão de jornadas", "Pendências derivadas de verificações reais", "health", "/Admin/JourneyRefinement/Index", 190, false, "JourneyRefinement.View", "jornadas"))
     ];
 
     public IReadOnlyList<NavigationGroup> GetGroups(IReadOnlyCollection<string> permissions, bool isAdmin = false) => Groups
@@ -76,8 +77,8 @@ public sealed class NavigationMapService : INavigationMapService
 
     private static bool CanSee(NavigationItem item, IReadOnlyCollection<string> permissions, bool isAdmin) =>
         item.IsVisible && (!item.IsAdminOnly || isAdmin) && (item.RequiredPermission is null || permissions.Contains(item.RequiredPermission));
-    private static NavigationGroup Group(string id, string label, int order, params NavigationItem[] items) =>
-        new(id, label, order, items.Select(x => x with { Group = id }).ToArray());
+    private static NavigationGroup Group(string id, string label, int order, bool primary, params NavigationItem[] items) =>
+        new(id, label, order, items.Select(x => x with { Group = id }).ToArray(), primary);
     private static NavigationItem Item(string id, string label, string description, string icon, string page, int order, params string[] keywords) =>
         new(id, label, description, icon, page, "", null, false, true, order, keywords);
     private static NavigationItem Item(string id, string label, string description, string icon, string page, int order, bool action, string permission, params string[] keywords) =>

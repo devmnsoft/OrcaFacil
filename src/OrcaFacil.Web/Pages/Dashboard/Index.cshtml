@@ -1,4 +1,5 @@
 @page
+@using System.Linq
 @model OrcaFacil.Web.Pages.Dashboard.IndexModel
 @section Styles { <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" /> }
 @using OrcaFacil.Web.ViewModels
@@ -144,12 +145,18 @@ else if (experience.NextAction is { } next)
 }
 
 <section aria-labelledby="metrics-title">
-    <div class="of-section-heading"><div><p class="of-eyebrow">Visão comercial</p><h2 id="metrics-title">O mês em quatro sinais</h2></div><a asp-page="/Documents/Index">Ver relatório completo</a></div>
+    @{
+        var pipeline = experience.Commercial.Pipeline;
+        decimal Band(params string[] codes) => pipeline.Where(column => codes.Contains(column.Code)).Sum(column => column.Total);
+        var proposed = Band("ready", "sent", "viewed", "change");
+        var contracted = Band("approved", "converted");
+    }
+    <div class="of-section-heading"><div><p class="of-eyebrow">Dinheiro da operação</p><h2 id="metrics-title">Proposto, contratado, previsto e recebido</h2></div><a asp-page="/Documents/Index">Ver propostas</a></div>
     <div class="of-metric-grid">
-        <article><span>Orçamentos criados</span><strong>@dashboard.TotalBudgets</strong><small>@(dashboard.TotalBudgets == 0 ? "Você ainda não criou um orçamento." : "Propostas organizadas na sua conta.")</small></article>
-        <article class="is-money"><span>Valor em propostas</span><strong>@dashboard.BudgetTotal.ToString("C")</strong><small>Total apresentado aos clientes.</small></article>
-        <article><span>Documentos no mês</span><strong>@dashboard.DocumentsThisMonth</strong><small>Orçamentos e recibos criados no período atual.</small></article>
-        <article class="is-success"><span>Registrado em recibos</span><strong>@dashboard.ReceiptTotal.ToString("C")</strong><small>Valores informados por você no período.</small></article>
+        <article><span>Proposto</span><strong>@proposed.ToString("C")</strong><small>Propostas prontas, enviadas, visualizadas ou em alteração. Ainda não são venda.</small></article>
+        <article class="is-money"><span>Contratado</span><strong>@contracted.ToString("C")</strong><small>Propostas aprovadas ou já convertidas em ordem. A ordem não entra de novo como venda.</small></article>
+        <article><span>Previsto</span><strong>@((experience.Commercial.Pending.FirstOrDefault(item => item.Href.Contains("finance=open"))?.Amount ?? 0m).ToString("C"))</strong><small>Saldo das ordens não canceladas. Serviço concluído pode continuar em aberto.</small></article>
+        <article class="is-success"><span>Recebido</span><strong>@experience.Commercial.ReceivedAmount.ToString("C")</strong><small>Soma dos recebimentos ativos. O recibo não soma esse valor outra vez.</small></article>
     </div>
     @if (experience.Commercial.ApprovalRate is { } approvalRate)
     {
@@ -196,8 +203,12 @@ else if (experience.NextAction is { } next)
     else if (dashboard.TotalBudgets == 0)
     {
         <section class="of-guidance" aria-labelledby="first-budget-title">
-            <div><p class="of-eyebrow">Seu próximo resultado</p><h2 id="first-budget-title">Crie seu primeiro orçamento</h2><p>Transforme seus dados, cliente e serviço em uma proposta profissional.</p></div>
-            @if (hasDocuments) { <a asp-page="/Documents/New">Criar orçamento</a> }
+            <div><p class="of-eyebrow">Primeiro acesso</p><h2 id="first-budget-title">Três passos para a primeira proposta</h2><ol><li>Confira os dados do emitente.</li><li>Cadastre um cliente.</li><li>Crie o orçamento e envie.</li></ol></div>
+            <div class="of-workbench-actions">
+                @if (!experience.HasIssuerProfile) { <a class="of-button-secondary" asp-page="/Profile/Index">Configurar emitente</a> }
+                @if (hasClients) { <a class="of-button-secondary" asp-page="/Clients/Create">Cadastrar cliente</a> }
+                @if (hasDocuments) { <a class="of-button-primary" asp-page="/Documents/New">Criar orçamento</a> }
+            </div>
         </section>
     }
 </div>

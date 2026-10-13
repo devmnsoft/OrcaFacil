@@ -359,6 +359,12 @@ if (databaseConfigured && !app.Environment.IsEnvironment("Testing"))
 {
     await SuperAdminSeeder.SeedAsync(app.Services);
     await SaasModuleSeeder.SeedAsync(app.Services);
+    if (string.Equals(Environment.GetEnvironmentVariable("ORCAFACIL_HOMOLOGATION_SEED"), "true", StringComparison.OrdinalIgnoreCase))
+    {
+        await OrcaFacil.Web.Services.HomologationAccessSeeder.SeedAsync(app.Services);
+        if (string.Equals(Environment.GetEnvironmentVariable("ORCAFACIL_HOMOLOGATION_SEED_EXIT"), "true", StringComparison.OrdinalIgnoreCase))
+            return;
+    }
 }
 
 app.UseHttpsRedirection();

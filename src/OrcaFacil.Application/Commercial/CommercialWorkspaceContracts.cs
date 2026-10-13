@@ -44,7 +44,8 @@ public sealed record CommercialAttentionItem(Guid DocumentId, string Severity, s
 public sealed record CommercialPendingItem(string Title, string Explanation, int Count, decimal? Amount, string Href);
 public sealed record CommercialDashboardView(IReadOnlyList<CommercialPipelineColumn> Pipeline,
     IReadOnlyList<CommercialAttentionItem> Attention, int Sent, int Viewed, int Approved, decimal ApprovedValue,
-    decimal? ApprovalRate, decimal? AverageTicket, IReadOnlyList<CommercialPendingItem> Pending);
+    decimal? ApprovalRate, decimal? AverageTicket, IReadOnlyList<CommercialPendingItem> Pending,
+    decimal ReceivedAmount);
 
 public interface ICommercialWorkspaceQueryService
 {

@@ -212,7 +212,6 @@ C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\c6sjfkamh4-{0
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\2hrxbxwm5l-{0}-oe9aqxp97y-oe9aqxp97y.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\5p0xa3bo97-{0}-uv3qrsj8xt-uv3qrsj8xt.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\cp1ayu2vik-{0}-g3bcvl4exk-g3bcvl4exk.gz
-C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\l3ahdkoyfw-{0}-41iqp8ji25-41iqp8ji25.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\tzvun31vzw-{0}-1shifr3962-1shifr3962.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\miisyw5vxv-{0}-uqpttttiyo-uqpttttiyo.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\cejbdzecj9-{0}-dle4u2y1px-dle4u2y1px.gz
@@ -357,7 +356,6 @@ C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\refint\OrcaFacil.Web.dll
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\OrcaFacil.Web.pdb
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\OrcaFacil.Web.genruntimeconfig.cache
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\ref\OrcaFacil.Web.dll
-C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\ol298av7jg-{0}-pmae8q65jv-pmae8q65jv.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\birvprhlpn-{0}-8vo6w3lsta-8vo6w3lsta.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\ub0aiyu26q-{0}-ksdylowxjs-ksdylowxjs.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\vvrtlboftg-{0}-s9yw5fyqx2-s9yw5fyqx2.gz
@@ -377,3 +375,5 @@ C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\bin\Debug\net10.0\Localization\resources.e
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\i5vjxe32cr-{0}-n3u05ohvxz-n3u05ohvxz.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\f2372gl0po-{0}-uh8ne3nmuf-uh8ne3nmuf.gz
 C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\f7fyeujp8i-{0}-ufb183oezv-ufb183oezv.gz
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\ol298av7jg-{0}-6hmtj8goc0-6hmtj8goc0.gz
+C:\MNSOFT\OrcaFacil\src\OrcaFacil.Web\obj\Debug\net10.0\compressed\l3ahdkoyfw-{0}-ta7dokleou-ta7dokleou.gz

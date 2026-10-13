@@ -54,7 +54,7 @@ public sealed class CurrentAccountService(
                       join permission in db.Permissions.AsNoTracking() on rolePermission.PermissionId equals permission.Id
                       where member.Id == AccountMemberId && member.AccountId == AccountId && member.UserId == UserId &&
                             member.Status == AccountMemberStatus.Active && !member.IsDeleted &&
-                            permission.Code == permissionCode && !permission.IsDeleted
+                            permission.Code.ToLower() == permissionCode.ToLower() && !permission.IsDeleted
                       select permission.Id).AnyAsync(ct);
     }
 

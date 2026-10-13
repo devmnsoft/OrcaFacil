@@ -29,7 +29,7 @@ public class UserAccountConfiguration : IEntityTypeConfiguration<UserAccount>
         builder.Property(x => x.SessionVersion).HasColumnName("session_version").HasDefaultValue(1);
         builder.Property(x => x.PasswordResetReason).HasMaxLength(500);
         builder.HasCheckConstraint("ck_users_role", "role IN ('User','Admin','SuperAdmin','GlobalSupport','GlobalBilling','GlobalAuditor')");
-        builder.HasCheckConstraint("ck_users_plan", "plan IN ('Free','Professional','Business')");
+        builder.HasCheckConstraint("ck_users_plan", "plan IN ('Free','Pro','Professional','Business','Enterprise')");
         builder.HasIndex(x => x.Email).IsUnique();
         builder.HasIndex(x => x.AlternateEmail).IsUnique().HasFilter("alternate_email IS NOT NULL AND is_deleted = false");
         builder.HasIndex(x => x.DocumentNumber).IsUnique().HasFilter("document_number IS NOT NULL AND is_deleted = false");
