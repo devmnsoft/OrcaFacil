@@ -66,7 +66,7 @@
 }
 
 .of-pipeline-card:hover {
-  border-color: var(--of-primary, #246bfe);
+  border-color: var(--of-primary, #0f766e);
   box-shadow: 0 8px 24px rgb(23 32 51 / 8%);
 }
 
@@ -86,7 +86,7 @@
   margin-top: .4rem;
   padding-top: .55rem;
   border-top: 1px solid var(--of-border, #dce4ed);
-  color: var(--of-primary, #246bfe);
+  color: var(--of-primary, #0f766e);
   font-size: .82rem;
   font-weight: 700;
   text-decoration: none;

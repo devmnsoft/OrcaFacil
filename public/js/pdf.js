@@ -60,6 +60,6 @@ export function generatePdf(docData, profile={}){
   if(docData.notes){y=ensureSpace(pdf,y,80);pdf.setFillColor(...soft);pdf.roundedRect(margin,y,pageW-margin*2,70,8,8,'F');y+=20;pdf.setFont('helvetica','bold');pdf.setFontSize(11);pdf.text(docData.type==='orcamento'?'Observações e condições comerciais':'Observações',margin+14,y);y+=16;pdf.setFont('helvetica','normal');pdf.text(docData.notes,margin+14,y,{maxWidth:pageW-margin*2-28});}
   const isFree=(profile.plan||'free')!=='pro';
   const pages=pdf.internal.getNumberOfPages();
-  for(let i=1;i<=pages;i++){pdf.setPage(i);pdf.setFontSize(8);pdf.setTextColor(120);pdf.text(`Página ${i}/${pages}`,pageW-margin,820,{align:'right'});if(isFree){pdf.setTextColor(...green);pdf.setFont('helvetica','bold');pdf.text('Gerado com OrçaFácil — orçamentos e recibos profissionais em PDF',margin,820);}}
+  for(let i=1;i<=pages;i++){pdf.setPage(i);pdf.setFontSize(8);pdf.setTextColor(120);pdf.text(`Página ${i}/${pages}`,pageW-margin,820,{align:'right'});if(isFree){pdf.setTextColor(...green);pdf.setFont('helvetica','bold');pdf.text('Gerado com Fechô — Um produto MNSOFT',margin,820);}}
   pdf.save(`${docTitle(docData.type).toLowerCase()}-${pad(docData.number)}.pdf`);
 }

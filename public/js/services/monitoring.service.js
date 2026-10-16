@@ -45,7 +45,7 @@ export const MonitoringService = {
     const id=uid(); const severity=classify(error, context); const data={ id, message:String(error?.message||error||'Erro não tratado'), stack:String(error?.stack||''), code:String(error?.code||context?.code||''), severity, ...base(), context:safeJson(context), file:context.file||'', line:context.line||null, column:context.column||null, createdAt:serverTimestamp(), resolved:false, resolvedAt:null, resolvedBy:null, adminNote:'' };
     await write('systemErrors', data);
     if(canNotifyTelegram(severity, context)) {
-      try { await queueTelegramNotification(context.type||'CRITICAL_ERROR','🚨 OrçaFácil - Erro crítico',`${data.message}\nUsuário: ${data.userEmail||'-'}\nPágina: ${location.pathname}`, { ...data, demo:isDemo() }, 'critical'); } catch { /* Telegram nunca deve quebrar o fluxo principal. */ }
+      try { await queueTelegramNotification(context.type||'CRITICAL_ERROR','🚨 Fechô - Erro crítico',`${data.message}\nUsuário: ${data.userEmail||'-'}\nPágina: ${location.pathname}`, { ...data, demo:isDemo() }, 'critical'); } catch { /* Telegram nunca deve quebrar o fluxo principal. */ }
     }
     return id;
   },

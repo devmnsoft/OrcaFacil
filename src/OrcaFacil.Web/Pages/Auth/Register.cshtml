@@ -4,14 +4,14 @@
 <section class="of-public-auth of-surface-soft">
   <div class="of-container of-auth-page-space"><div class="of-auth-shell">
     <aside class="of-auth-context of-surface-brand" data-register-context>
-      <p class="of-eyebrow">Plano escolhido por você</p><h1>Seu trabalho, com uma apresentação mais profissional.</h1>
+      <p class="of-eyebrow">Orçou. Enviou. Fechô.</p><h1>Comece a organizar seus negócios com o Fechô.</h1>
       <p data-context-copy>Esses dados ajudam a identificar sua conta e preparar os documentos do seu trabalho.</p>
       <img src="/img/illustrations/register-person.svg" data-register-illustration alt="Dados de uma pessoa profissional organizados" />
       <p class="of-security-note"><partial name="Partials/_Icon" model='new IconViewModel("protected-data", "sm", Decorative: true)' /> Seus dados são usados para administrar a conta e preparar seus documentos.</p>
     </aside><div class="of-auth-form">
       <form method="post" data-account-registration novalidate>
         <p class="of-eyebrow">Sua conta</p>
-        <h1 >Como você vai usar o OrçaFácil?</h1>
+        <h1 >Como você vai usar o Fechô?</h1>
         <p class="of-text-secondary">Escolha uma opção para mostrarmos somente os dados necessários.</p>
         @if (Model.RegistrationErrorCode is not null) {<div class="of-registration-error of-surface-danger" role="alert" tabindex="-1" data-registration-error><h2 >Não conseguimos concluir seu cadastro.</h2><p>Seus dados ainda não foram salvos. Tente novamente. Caso o problema continue, envie o código abaixo ao suporte.</p><code>@Model.RegistrationErrorCode</code><div class="of-form-actions"><button type="button" class="of-button of-button-secondary" data-copy="@Model.RegistrationErrorCode">Copiar código</button><button type="button" class="of-button of-button-secondary" data-retry>Tentar novamente</button><a class="of-button of-button-tertiary" asp-page="/Support/Index" asp-route-correlationId="@Model.RegistrationErrorCode">Falar com o suporte</a></div></div>}
         <div asp-validation-summary="ModelOnly" class="of-form-summary" role="alert"></div>
@@ -47,7 +47,7 @@
           <div class="of-field" data-individual-field><label asp-for="Input.ProfessionalName" class="of-field-label">Nome profissional <span class="of-field-optional">(opcional)</span></label><input asp-for="Input.ProfessionalName" class="of-field-control" /><div class="of-field-help">Use este campo quando seus clientes conhecem você por outro nome.</div></div>
           <div class="of-field" data-company-field><label asp-for="Input.LegalName" class="of-field-label">Razão social</label><input asp-for="Input.LegalName" class="of-field-control" /><div class="of-field-help">Nome oficial registrado da empresa.</div><span asp-validation-for="Input.LegalName" class="of-field-error"></span></div>
           <div class="of-field" data-company-field><label asp-for="Input.TradeName" class="of-field-label">Nome fantasia</label><input asp-for="Input.TradeName" class="of-field-control" /><div class="of-field-help">Nome pelo qual seus clientes conhecem seu negócio.</div></div>
-          <div class="of-field" data-company-field><label asp-for="Input.ResponsibleName" class="of-field-label">Nome do responsável</label><input asp-for="Input.ResponsibleName" class="of-field-control" autocomplete="name" /><div class="of-field-help">Pessoa responsável por esta conta no OrçaFácil.</div><span asp-validation-for="Input.ResponsibleName" class="of-field-error"></span></div>
+          <div class="of-field" data-company-field><label asp-for="Input.ResponsibleName" class="of-field-label">Nome do responsável</label><input asp-for="Input.ResponsibleName" class="of-field-control" autocomplete="name" /><div class="of-field-help">Pessoa responsável por esta conta no Fechô.</div><span asp-validation-for="Input.ResponsibleName" class="of-field-error"></span></div>
           <div class="of-field"><label asp-for="Input.DocumentNumber" class="of-field-label" data-document-label>CPF ou CNPJ</label><input asp-for="Input.DocumentNumber" class="of-field-control" inputmode="numeric" data-account-document /><div class="of-field-help" data-document-help>O documento identifica sua conta e será usado nos dados de cobrança.</div><span asp-validation-for="Input.DocumentNumber" class="of-field-error"></span></div>
           <div class="of-field"><label asp-for="Input.Phone" class="of-field-label">Telefone ou WhatsApp</label><input asp-for="Input.Phone" class="of-field-control" inputmode="tel" autocomplete="tel" data-phone /><span asp-validation-for="Input.Phone" class="of-field-error"></span></div>
           <div class="of-field"><label asp-for="Input.Email" class="of-field-label">E-mail</label><input asp-for="Input.Email" class="of-field-control" autocomplete="email" /><span asp-validation-for="Input.Email" class="of-field-error"></span></div>

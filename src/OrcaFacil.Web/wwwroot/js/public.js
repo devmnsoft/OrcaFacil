@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  const safeInit = (name, fn) => { try { fn(); } catch (error) { console.error(`[OrcaFácil:${name}]`, error); } };
+  const safeInit = (name, fn) => { try { fn(); } catch (error) { console.error(`[Fechô:${name}]`, error); } };
 
   function getSamePageAnchorTarget(link) {
     if (!link) return null;

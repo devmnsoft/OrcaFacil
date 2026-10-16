@@ -1,6 +1,6 @@
 (() => {
   const safeInit = (name, initialize) => {
-    try { initialize(); } catch (error) { console.error(`[OrcaFácil:${name}]`, error); }
+    try { initialize(); } catch (error) { console.error(`[Fechô:${name}]`, error); }
   };
 
   safeInit('message-templates', () => {

@@ -31,7 +31,7 @@ public sealed class Sprint19SecurityContractTests
     {
         var root = FindRepositoryRoot();
         var source = File.ReadAllText(Path.Combine(root, "src", "OrcaFacil.Web", "Services", "InternalAssistantService.cs"));
-        Assert.Contains("Resposta baseada nas regras do OrçaFácil", source, StringComparison.Ordinal);
+        Assert.Contains("Resposta baseada nas regras do Fechô", source, StringComparison.Ordinal);
         Assert.Contains("AccountId == accountId", source, StringComparison.Ordinal);
         Assert.DoesNotContain("SaveChanges", source, StringComparison.Ordinal);
         Assert.DoesNotContain("HttpClient", source, StringComparison.Ordinal);

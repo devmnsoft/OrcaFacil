@@ -46,7 +46,7 @@ export async function queueTelegramNotification(type, title, message, payload={}
 
 export const TelegramNotificationService = {
   queueTelegramMessage: (type, title, message, severity='info', payload={}) => queueTelegramNotification(type, title, message, payload, severity),
-  notifyUserRegistered: user => queueTelegramNotification('USER_REGISTERED', '🆕 Novo usuário no OrçaFácil', `Nome: ${user?.displayName || user?.name || '-'}
+  notifyUserRegistered: user => queueTelegramNotification('USER_REGISTERED', '🆕 Novo usuário no Fechô', `Nome: ${user?.displayName || user?.name || '-'}
 E-mail: ${user?.email || '-'}
 Plano: ${user?.plan || 'Free'}
 Data: ${new Date().toLocaleString('pt-BR')}`, { uid:user?.uid, email:user?.email }, 'success'),
@@ -66,7 +66,7 @@ Mensagem: ${document?.clientDecisionNote || '-'}`, { documentId:document?.id, do
 Cliente: ${document?.clientName || '-'}
 Documento: ${document?.number || '-'}
 Mensagem: ${document?.clientDecisionNote || '-'}`, { documentId:document?.id, documentNumber:document?.number, uid:user?.uid }, 'warning'),
-  notifyCriticalError: (error, context={}) => queueTelegramNotification('CRITICAL_ERROR', '🚨 OrçaFácil - Erro crítico', `Usuário: ${context.userEmail || '-'}
+  notifyCriticalError: (error, context={}) => queueTelegramNotification('CRITICAL_ERROR', '🚨 Fechô - Erro crítico', `Usuário: ${context.userEmail || '-'}
 Erro: ${error?.message || error}
 Contexto: ${context.type || '-'}
 Página: ${location.pathname}

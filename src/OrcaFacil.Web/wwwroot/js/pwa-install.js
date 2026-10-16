@@ -9,8 +9,8 @@
     const region = document.createElement('aside');
     region.className = 'of-pwa-install';
     region.dataset.pwaInstall = '';
-    region.setAttribute('aria-label', 'Instalação do OrçaFácil');
-    region.innerHTML = '<span>Acesse o OrçaFácil mais rapidamente neste dispositivo.</span><div><button type="button" class="of-button of-button-primary" data-pwa-confirm>Instalar OrçaFácil</button><button type="button" class="of-button of-button-secondary" data-pwa-dismiss>Agora não</button></div>';
+    region.setAttribute('aria-label', 'Instalação do Fechô');
+    region.innerHTML = '<span>Acesse o Fechô mais rapidamente neste dispositivo.</span><div><button type="button" class="of-button of-button-primary" data-pwa-confirm>Instalar Fechô</button><button type="button" class="of-button of-button-secondary" data-pwa-dismiss>Agora não</button></div>';
     document.body.appendChild(region);
     region.querySelector('[data-pwa-confirm]').addEventListener('click', async () => {
       region.remove();

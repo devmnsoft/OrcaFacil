@@ -10,8 +10,8 @@
 <html lang="@System.Globalization.CultureInfo.CurrentUICulture.Name" dir="ltr">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>@ViewData["Title"] · OrçaFácil</title>
-  <meta name="theme-color" content="#0b1f33" />
+  <title>@ViewData["Title"] · Fechô</title>
+  <meta name="theme-color" content="#0B3835" />
   <link rel="manifest" href="~/site.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
   <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
@@ -22,11 +22,11 @@
 @if (User.Identity?.IsAuthenticated == true)
 {
   <aside class="of-sidebar" aria-label="Menu principal">
-    <a class="of-brand" asp-page="/Dashboard/Index"><span class="of-brand-mark">OF</span><span>OrçaFácil</span></a>
+    <a class="of-brand" asp-page="/Dashboard/Index"><img src="~/img/brand/fecho-symbol.svg" width="28" height="28" alt="" aria-hidden="true" /><span>Fechô</span></a>
     <partial name="Partials/_AuthenticatedNavigation" model="currentPath" />
     <div class="of-sidebar-footer"><a asp-page="/Notifications/Index">Notificações (@unreadNotifications)</a><small>@User.Identity?.Name</small><form method="post" asp-page="/Auth/Logout">@Html.AntiForgeryToken()<button type="submit" class="of-button">Sair</button></form></div>
   </aside>
-  <header class="of-mobilebar"><button class="of-menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="authenticated-menu" aria-label="Abrir menu"><span aria-hidden="true">☰</span></button><a class="of-brand" asp-page="/Dashboard/Index"><span class="of-brand-mark">OF</span><span>OrçaFácil</span></a></header>
+  <header class="of-mobilebar"><button class="of-menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="authenticated-menu" aria-label="Abrir menu"><span aria-hidden="true">☰</span></button><a class="of-brand" asp-page="/Dashboard/Index"><img src="~/img/brand/fecho-symbol.svg" width="28" height="28" alt="" aria-hidden="true" /><span>Fechô</span></a></header>
   <aside class="of-mobile-menu" id="authenticated-menu" data-menu-panel aria-hidden="true" aria-label="Menu principal móvel"><div class="of-mobile-menu__header"><strong>Menu</strong><button type="button" data-menu-close aria-label="Fechar menu"><span aria-hidden="true">×</span></button></div><partial name="Partials/_AuthenticatedNavigation" model="currentPath" /><form method="post" asp-page="/Auth/Logout">@Html.AntiForgeryToken()<button type="submit" class="of-button">Sair</button></form></aside>
   <main class="of-main" id="main-content" tabindex="-1"><partial name="_ToastHost" /><div class="of-page-container">@RenderBody()</div></main>
 }

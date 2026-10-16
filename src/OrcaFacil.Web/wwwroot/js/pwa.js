@@ -12,7 +12,7 @@
     banner.dataset.pwaUpdate = 'true';
     banner.setAttribute('role', 'status');
     const text = document.createElement('p');
-    text.textContent = 'Há uma versão nova do OrçaFácil. Recarregue esta aba para usar os arquivos correspondentes. Operações que dependem do servidor continuam exigindo conexão.';
+    text.textContent = 'Há uma versão nova do Fechô. Recarregue esta aba para usar os arquivos correspondentes. Operações que dependem do servidor continuam exigindo conexão.';
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'of-button';
@@ -31,5 +31,5 @@
         });
       });
     })
-    .catch(error => console.warn('[OrçaFácil:PWA] Service worker indisponível.', error)));
+    .catch(error => console.warn('[Fechô:PWA] Service worker indisponível.', error)));
 }());

@@ -1,7 +1,7 @@
 .of-menu { display:grid; gap:2px; padding:var(--of-space-3); }
 .of-menu a { position:relative; display:flex; align-items:center; min-height:42px; padding:.65rem .8rem; border-radius:var(--of-radius-sm); color:var(--of-text-inverse-muted); font-size:var(--of-text-sm); font-weight:600; text-decoration:none; transition:background var(--of-transition),color var(--of-transition),translate var(--of-transition); }
 .of-menu a:hover { color:var(--of-text-inverse); background:rgb(255 255 255 / 9%); translate:2px 0; }
-.of-menu a.is-active { color:#fff; background:rgb(36 107 254 / 32%); box-shadow:inset 3px 0 var(--of-primary); }
+.of-menu a.is-active { color:#fff; background:rgb(15 118 110 / 32%); box-shadow:inset 3px 0 var(--of-primary); }
 .of-menu-heading { margin:var(--of-space-4) .8rem var(--of-space-1); color:rgb(207 224 242 / 70%); font-size:.68rem; font-weight:800; letter-spacing:.11em; text-transform:uppercase; }
 .of-app-shell { min-height: 100vh; background: var(--of-page); }
 .of-app-shell .of-sidebar { position: sticky; top: 0; height: 100vh; overflow: auto; padding: var(--of-space-4); background: var(--of-navy); color: var(--of-text-inverse); }

@@ -57,7 +57,7 @@ if (shareCenter) {
   const encode = () => encodeURIComponent(message.value);
   const update = () => {
     shareCenter.querySelector('[data-share-whatsapp]').href = `https://wa.me/?text=${encode()}`;
-    shareCenter.querySelector('[data-share-email]').href = `mailto:?subject=${encodeURIComponent('Proposta OrçaFácil')}&body=${encode()}`;
+    shareCenter.querySelector('[data-share-email]').href = `mailto:?subject=${encodeURIComponent('Proposta Fechô')}&body=${encode()}`;
   };
   message.addEventListener('input', update); update();
   shareCenter.querySelector('[data-copy-message]')?.addEventListener('click', async (event) => {

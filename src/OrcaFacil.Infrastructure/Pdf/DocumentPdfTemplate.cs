@@ -3,6 +3,7 @@ using System.IO;
 using OrcaFacil.Application.Localization;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
+using OrcaFacil.Shared.Branding;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -12,9 +13,11 @@ namespace OrcaFacil.Infrastructure.Pdf;
 
 public abstract class DocumentPdfTemplate
 {
-    private const string Primary = "#1E3A5F";
-    private const string Accent = "#2D7DD2";
-    private const string Success = "#1F9D6B";
+    private const string Primary = CommercialBrand.ColorDeepGreen;
+    private const string Accent = CommercialBrand.ColorPetrol;
+    private const string Success = CommercialBrand.ColorPetrol;
+    private const string Surface = CommercialBrand.ColorIce;
+    private const string Border = "#D8E3E1";
 
     protected DocumentPdfTemplate(Document document, IssuerProfile? issuer, PlanType plan, string? languageCode = null, string? currencyCode = "BRL")
     {
@@ -69,7 +72,7 @@ public abstract class DocumentPdfTemplate
             "NotesScope" => "Notes / Scope:",
             "CommercialConditions" => "Commercial Terms",
             "Warranty" => "Warranty",
-            "GeneratedWith" => "Generated with OrçaFácil — a MNSOFT product",
+            "GeneratedWith" => "Generated with Fechô — a MNSOFT product",
             "QuoteTitle" => "Quote",
             "ReceiptTitle" => "Receipt",
             "PublicApprovalNotice" => "Customer approval block available via secure public link.",
@@ -95,7 +98,7 @@ public abstract class DocumentPdfTemplate
             "NotesScope" => "Observaciones / Alcance:",
             "CommercialConditions" => "Condiciones Comerciales",
             "Warranty" => "Garantía",
-            "GeneratedWith" => "Generado con OrçaFácil — un producto MNSOFT",
+            "GeneratedWith" => "Generado con Fechô — un producto MNSOFT",
             "QuoteTitle" => "Presupuesto",
             "ReceiptTitle" => "Recibo",
             "PublicApprovalNotice" => "Bloque de aprobación del cliente disponible a través del enlace público seguro.",
@@ -121,7 +124,7 @@ public abstract class DocumentPdfTemplate
             "NotesScope" => "Observações / Escopo:",
             "CommercialConditions" => "Condições Comerciais",
             "Warranty" => "Garantia",
-            "GeneratedWith" => "Gerado com OrçaFácil — um produto MNSOFT",
+            "GeneratedWith" => "Gerado com Fechô — Um produto MNSOFT",
             "QuoteTitle" => "Orçamento",
             "ReceiptTitle" => "Recibo",
             "PublicApprovalNotice" => "Bloco de aprovação do cliente disponível pelo link público.",
@@ -136,7 +139,7 @@ public abstract class DocumentPdfTemplate
         container.Page(page =>
         {
             page.Margin(34);
-            page.DefaultTextStyle(x => x.FontSize(10).FontColor("#1C2430"));
+            page.DefaultTextStyle(x => x.FontSize(10).FontColor(CommercialBrand.ColorGraphite));
             page.Header().Background(Primary).Padding(16).Row(row =>
             {
                 var logoBytes = GetLogoBytes();
@@ -150,10 +153,10 @@ public abstract class DocumentPdfTemplate
                 {
                     var headerTitle = !string.IsNullOrWhiteSpace(Issuer?.BusinessName)
                         ? Issuer.BusinessName
-                        : "OrçaFácil";
+                        : "Fechô";
                     col.Item().Text(headerTitle).FontColor(Colors.White).Bold().FontSize(18);
-                    col.Item().Text(GetLabel("Tagline")).FontColor("#E9F3FF").FontSize(9);
-                    col.Item().Text($"{Title} {Document.Number}").FontColor("#E9F3FF").FontSize(11).SemiBold();
+                    col.Item().Text(GetLabel("Tagline")).FontColor(CommercialBrand.ColorMint).FontSize(9);
+                    col.Item().Text($"{Title} {Document.Number}").FontColor(CommercialBrand.ColorMint).FontSize(11).SemiBold();
                 });
 
                 row.ConstantItem(130).AlignRight().Column(col =>
@@ -161,7 +164,7 @@ public abstract class DocumentPdfTemplate
                     col.Item().AlignRight().Text($"{GetLabel("Issued")} {FormatDate(Document.IssueDate)}").FontColor(Colors.White).SemiBold();
                     if (Document.ValidUntil.HasValue)
                     {
-                        col.Item().AlignRight().Text($"{GetLabel("ValidUntil")} {FormatDate(Document.ValidUntil.Value)}").FontColor("#E9F3FF").FontSize(9);
+                        col.Item().AlignRight().Text($"{GetLabel("ValidUntil")} {FormatDate(Document.ValidUntil.Value)}").FontColor(CommercialBrand.ColorMint).FontSize(9);
                     }
                 });
             });
@@ -171,7 +174,7 @@ public abstract class DocumentPdfTemplate
                 column.Spacing(12);
                 column.Item().Row(row =>
                 {
-                    row.RelativeItem().Border(1).BorderColor("#E2E8F0").Padding(12).Column(col =>
+                    row.RelativeItem().Border(1).BorderColor(Border).Padding(12).Column(col =>
                     {
                         col.Item().Text(GetLabel("Issuer")).FontColor(Accent).Bold();
                         col.Item().Text(Issuer?.BusinessName ?? GetLabel("NotSpecified")).Bold();
@@ -181,7 +184,7 @@ public abstract class DocumentPdfTemplate
                         if (!string.IsNullOrWhiteSpace(Issuer?.Address)) col.Item().Text(Issuer.Address);
                     });
                     row.ConstantItem(16);
-                    row.RelativeItem().Border(1).BorderColor("#E2E8F0").Padding(12).Column(col =>
+                    row.RelativeItem().Border(1).BorderColor(Border).Padding(12).Column(col =>
                     {
                         col.Item().Text(GetLabel("Client")).FontColor(Accent).Bold();
                         col.Item().Text(string.IsNullOrWhiteSpace(Document.ClientName) ? GetLabel("ClientNotSpecified") : Document.ClientName).Bold();
@@ -203,17 +206,17 @@ public abstract class DocumentPdfTemplate
                     });
                     table.Header(h =>
                     {
-                        h.Cell().Background("#EAF1F8").Padding(6).Text(GetLabel("Description")).FontColor(Primary).Bold();
-                        h.Cell().Background("#EAF1F8").Padding(6).AlignRight().Text(GetLabel("Qty")).FontColor(Primary).Bold();
-                        h.Cell().Background("#EAF1F8").Padding(6).AlignRight().Text(GetLabel("UnitPrice")).FontColor(Primary).Bold();
-                        h.Cell().Background("#EAF1F8").Padding(6).AlignRight().Text(GetLabel("Total")).FontColor(Primary).Bold();
+                        h.Cell().Background(Surface).Padding(6).Text(GetLabel("Description")).FontColor(Primary).Bold();
+                        h.Cell().Background(Surface).Padding(6).AlignRight().Text(GetLabel("Qty")).FontColor(Primary).Bold();
+                        h.Cell().Background(Surface).Padding(6).AlignRight().Text(GetLabel("UnitPrice")).FontColor(Primary).Bold();
+                        h.Cell().Background(Surface).Padding(6).AlignRight().Text(GetLabel("Total")).FontColor(Primary).Bold();
                     });
                     foreach (var item in Document.Items)
                     {
-                        table.Cell().ShowEntire().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).Text(item.Description);
-                        table.Cell().ShowEntire().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).AlignRight().Text(item.Quantity.ToString("N2", CultureInfo.GetCultureInfo(LanguageCode)));
-                        table.Cell().ShowEntire().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).AlignRight().Text(FormatCurrency(item.UnitPrice));
-                        table.Cell().ShowEntire().BorderBottom(1).BorderColor("#E2E8F0").Padding(6).AlignRight().Text(FormatCurrency(item.CalculateTotal()));
+                        table.Cell().ShowEntire().BorderBottom(1).BorderColor(Border).Padding(6).Text(item.Description);
+                        table.Cell().ShowEntire().BorderBottom(1).BorderColor(Border).Padding(6).AlignRight().Text(item.Quantity.ToString("N2", CultureInfo.GetCultureInfo(LanguageCode)));
+                        table.Cell().ShowEntire().BorderBottom(1).BorderColor(Border).Padding(6).AlignRight().Text(FormatCurrency(item.UnitPrice));
+                        table.Cell().ShowEntire().BorderBottom(1).BorderColor(Border).Padding(6).AlignRight().Text(FormatCurrency(item.CalculateTotal()));
                     }
                 });
 
@@ -223,11 +226,11 @@ public abstract class DocumentPdfTemplate
                     column.Item().AlignRight().Text($"{GetLabel("Discount")} {FormatCurrency(Document.Discount)}");
                 }
 
-                column.Item().AlignRight().Background("#E9F7F1").Padding(12).Text($"{GetLabel("Total")} {FormatCurrency(Document.Total)}").FontColor(Success).Bold().FontSize(18);
+                column.Item().AlignRight().Background(Surface).Padding(12).Text($"{GetLabel("Total")} {FormatCurrency(Document.Total)}").FontColor(Success).Bold().FontSize(18);
 
                 if (!string.IsNullOrWhiteSpace(Document.Notes))
                 {
-                    column.Item().Border(1).BorderColor("#E2E8F0").Padding(10).Column(c =>
+                    column.Item().Border(1).BorderColor(Border).Padding(10).Column(c =>
                     {
                         c.Item().Text(GetLabel("NotesScope")).SemiBold().FontColor(Primary);
                         c.Item().Text(Document.Notes);
@@ -240,7 +243,7 @@ public abstract class DocumentPdfTemplate
                     {
                         if (!string.IsNullOrWhiteSpace(Document.ConditionsText))
                         {
-                            r.RelativeItem().Border(1).BorderColor("#E2E8F0").Padding(8).Column(c =>
+                            r.RelativeItem().Border(1).BorderColor(Border).Padding(8).Column(c =>
                             {
                                 c.Item().Text(GetLabel("CommercialConditions")).SemiBold().FontColor(Primary);
                                 c.Item().Text(Document.ConditionsText);
@@ -252,7 +255,7 @@ public abstract class DocumentPdfTemplate
                         }
                         if (!string.IsNullOrWhiteSpace(Document.WarrantyText))
                         {
-                            r.RelativeItem().Border(1).BorderColor("#E2E8F0").Padding(8).Column(c =>
+                            r.RelativeItem().Border(1).BorderColor(Border).Padding(8).Column(c =>
                             {
                                 c.Item().Text(GetLabel("Warranty")).SemiBold().FontColor(Primary);
                                 c.Item().Text(Document.WarrantyText);
