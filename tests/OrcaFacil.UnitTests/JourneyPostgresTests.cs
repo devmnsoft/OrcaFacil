@@ -323,13 +323,8 @@ public sealed class JourneyPostgresTests
             reversed.ReversalReason = "Teste de estorno";
 
             await using var db = Context();
-            // As FKs de manual_payments existem no banco (tabela criada por SQL cru em
-            // AddManualPaymentsAndReceipts) mas não estão mapeadas no modelo EF. Sem o relacionamento,
-            // o EF pode inserir os pagamentos antes das ordens e violar manual_payments_work_order_id_fkey.
-            // Persistir os pais primeiro mantém o teste focado na regra de saldo.
-            db.AddRange(document, oldRevision, currentRevision, oldOrder, currentOrder);
-            await db.SaveChangesAsync();
-            db.AddRange(directPayment, oldOrderPayment, currentOrderPayment, reversed);
+            db.AddRange(document, oldRevision, currentRevision, oldOrder, currentOrder,
+                directPayment, oldOrderPayment, currentOrderPayment, reversed);
             await db.SaveChangesAsync();
             return new(document.Id, oldOrder.Id, currentOrder.Id);
         }
