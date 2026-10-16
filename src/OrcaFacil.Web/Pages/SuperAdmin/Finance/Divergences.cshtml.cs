@@ -31,9 +31,22 @@ public sealed class DivergencesModel(
     public FinancialIntegrityReport Report { get; private set; } = new([], 0, DateTime.UtcNow);
     public IReadOnlyDictionary<string, string> ReviewedFindings { get; private set; } =
         new Dictionary<string, string>();
+    public IReadOnlyList<AccountOption> Accounts { get; private set; } = [];
+
+    public sealed record AccountOption(Guid Value, string Label);
 
     public async Task OnGetAsync(CancellationToken ct)
     {
+        // Dropdown de contas (nome) em vez de um identificador técnico digitável: o operador
+        // escolhe uma conta conhecida e nunca digita um GUID livremente.
+        var accountRows = await db.BusinessAccounts.AsNoTracking()
+            .Where(x => !x.IsDeleted)
+            .OrderBy(x => x.DisplayName)
+            .Take(5000)
+            .Select(x => new { x.Id, Name = x.DisplayName })
+            .ToListAsync(ct);
+        Accounts = accountRows.Select(x => new AccountOption(x.Id, string.IsNullOrWhiteSpace(x.Name) ? x.Id.ToString() : x.Name)).ToList();
+
         Report = AccountId is { } accountId
             ? await diagnostics.ScanAccountAsync(accountId, ct)
             : await diagnostics.ScanAllAsync(ct: ct);

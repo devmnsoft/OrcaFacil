@@ -34,9 +34,14 @@
     <section class="form-panel">
         <form method="get" class="action-bar">
             <label for="accountId">Filtrar por conta</label>
-            <input id="accountId" name="accountId" type="text" value="@(Model.AccountId?.ToString() ?? string.Empty)" placeholder="Identificador da conta (opcional)" />
+            <select id="accountId" name="accountId">
+                <option value="">Toda a plataforma</option>
+                @foreach (var account in Model.Accounts)
+                {
+                    <option value="@account.Value" selected="@(Model.AccountId == account.Value)">@account.Label</option>
+                }
+            </select>
             <button type="submit" class="of-button of-button-secondary">Analisar</button>
-            <a asp-page="/SuperAdmin/Finance/Divergences" class="of-button of-button-secondary">Toda a plataforma</a>
         </form>
         @if (Model.Report.Truncated)
         {
