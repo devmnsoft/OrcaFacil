@@ -219,9 +219,11 @@ foreach (var providerName in new[] { "Groq", "Gemini", "DeepSeek", "MercadoPago"
 builder.Services.Configure<AiOptions>(builder.Configuration.GetSection("Ai"));
 builder.Services.AddSingleton<AiCircuitBreaker>();
 builder.Services.AddSingleton<AiAccountRateLimiter>();
-builder.Services.AddSingleton<IAiModelClient, GroqAiClient>();
-builder.Services.AddSingleton<IAiModelClient, GeminiAiClient>();
-builder.Services.AddSingleton<IAiModelClient, DeepSeekAiClient>();
+// Scoped on purpose: each request gets a fresh HttpClient from the named client factory, avoiding a
+// long-lived client captured by a singleton (stale DNS / socket handling). The orchestrator is scoped.
+builder.Services.AddScoped<IAiModelClient, GroqAiClient>();
+builder.Services.AddScoped<IAiModelClient, GeminiAiClient>();
+builder.Services.AddScoped<IAiModelClient, DeepSeekAiClient>();
 builder.Services.AddScoped<IAiOrchestrator, AiOrchestrator>();
 builder.Services.AddScoped<IAiConsumptionService, AiConsumptionService>();
 builder.Services.AddScoped<IAiSuggestionReviewService, AiSuggestionReviewService>();
