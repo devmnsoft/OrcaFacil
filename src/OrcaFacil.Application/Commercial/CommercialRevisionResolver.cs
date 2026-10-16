@@ -102,7 +102,7 @@ public sealed class CommercialRevisionResolver : ICommercialRevisionResolver
 
         // Caso seja rascunho sem revisão congelada:
         var lang = string.IsNullOrWhiteSpace(defaultLanguageCode) ? "pt-BR" : SupportedLocales.Normalize(defaultLanguageCode);
-        var activeIssuer = defaultIssuer ?? new IssuerProfile { BusinessName = "OrçaFácil" };
+        var activeIssuer = defaultIssuer ?? new IssuerProfile { BusinessName = "Fechô" };
         return OperationResult<ResolvedDocumentRevision>.Success(
             new ResolvedDocumentRevision(document, activeIssuer, lang, "BRL", fallbackPlan, false, null));
     }

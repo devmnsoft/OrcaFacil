@@ -1,5 +1,5 @@
 export const APP_CONFIG = {
-  name: 'OrçaFácil',
+  name: 'Fechô',
   version: '1.0.0',
   defaultPort: 8095,
   company: { name: 'MNSOFT', cnpj: '18.160.057/0001-13', email: 'comercial@mnsoft.com.br' },

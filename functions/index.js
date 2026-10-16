@@ -31,7 +31,7 @@ async function notifyTelegram(message) {
   const settings = await getSettings();
   const chatId = message.metadata?.telegramChatId || message.payload?.telegramChatId || settings.telegramChatId || env('TELEGRAM_DEFAULT_CHAT_ID') || '7535235489';
   if (!chatId) throw new Error('Chat ID do Telegram não configurado.');
-  const text = `${message.title || 'OrçaFácil'}\n\n${message.message || ''}`.slice(0, 3900);
+  const text = `${message.title || 'Fechô'}\n\n${message.message || ''}`.slice(0, 3900);
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }) });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.ok === false) throw new Error(data.description || `Telegram HTTP ${res.status}`);
@@ -58,7 +58,7 @@ exports.createCheckoutPreference = onCall(async (request) => {
     const accessToken = env('MERCADO_PAGO_ACCESS_TOKEN'); if (!accessToken) throw new Error('MERCADO_PAGO_ACCESS_TOKEN não configurado.');
     const baseUrl = env('APP_BASE_URL') || 'https://orcafacil-b771c.web.app';
     const externalReference = `${uid}:pro:${billingCycle}:${Date.now()}`;
-    const preference = { items: [{ id: `orcafacil-pro-${billingCycle}`, title: `OrçaFácil Pro ${billingCycle === 'yearly' ? 'anual' : 'mensal'}`, quantity: 1, currency_id: 'BRL', unit_price: amount }], payer: { email: user.email || request.auth.token.email || '' }, external_reference: externalReference, metadata: { uid, plan: 'pro', billing_cycle: billingCycle }, back_urls: { success: `${baseUrl}/pagamento-sucesso.html`, pending: `${baseUrl}/pagamento-pendente.html`, failure: `${baseUrl}/pagamento-falha.html` }, auto_return: 'approved', notification_url: `${baseUrl}/mercadoPagoWebhook` };
+    const preference = { items: [{ id: `orcafacil-pro-${billingCycle}`, title: `Fechô Pro ${billingCycle === 'yearly' ? 'anual' : 'mensal'}`, quantity: 1, currency_id: 'BRL', unit_price: amount }], payer: { email: user.email || request.auth.token.email || '' }, external_reference: externalReference, metadata: { uid, plan: 'pro', billing_cycle: billingCycle }, back_urls: { success: `${baseUrl}/pagamento-sucesso.html`, pending: `${baseUrl}/pagamento-pendente.html`, failure: `${baseUrl}/pagamento-falha.html` }, auto_return: 'approved', notification_url: `${baseUrl}/mercadoPagoWebhook` };
     const res = await fetch('https://api.mercadopago.com/checkout/preferences', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(preference) });
     const mp = await res.json(); if (!res.ok) throw new Error(mp.message || `Mercado Pago HTTP ${res.status}`);
     await db.doc(`users/${uid}/billing/subscription`).set({ provider: 'mercadopago', status: 'pending', plan: 'pro', billingCycle, amount, currency: 'BRL', externalPreferenceId: mp.id || '', updatedAt: fv.serverTimestamp(), updatedBy: 'createCheckoutPreference' }, { merge: true });
@@ -90,11 +90,11 @@ exports.mercadoPagoWebhook = onRequest(async (req, res) => {
       await db.doc(`users/${uid}/billing/subscription`).set({ provider: 'mercadopago', status: 'active', plan: 'pro', billingCycle, amount, currency: payment.currency_id || 'BRL', startedAt: now, expiresAt, lastPaymentAt: payment.date_approved ? new Date(payment.date_approved) : now, nextBillingAt: expiresAt, externalPaymentId: String(payment.id), externalPreferenceId: preferenceId, updatedAt: fv.serverTimestamp(), updatedBy: 'mercadoPagoWebhook' }, { merge: true });
       await db.doc(`users/${uid}`).set({ plan: 'pro', updatedAt: fv.serverTimestamp() }, { merge: true });
       await addAudit('PLAN_UPGRADED_TO_PRO', uid, null, { billingCycle, paymentId: payment.id, expiresAt }); await addEvent('PAYMENT_APPROVED', { uid, severity: 'success', metadata: { paymentId: payment.id, amount } }); await addEvent('SUBSCRIPTION_ACTIVATED', { uid, severity: 'success', metadata: { billingCycle, expiresAt } });
-      await queueFinanceTelegram('PAYMENT_APPROVED', '💰 OrçaFácil - Pagamento aprovado', `Usuário: ${payment.payer?.email || uid}\nPlano: Pro ${billingCycle}\nValor: R$ ${amount.toFixed(2).replace('.', ',')}\nStatus: approved`, { uid, paymentId }, 'success');
+      await queueFinanceTelegram('PAYMENT_APPROVED', '💰 Fechô - Pagamento aprovado', `Usuário: ${payment.payer?.email || uid}\nPlano: Pro ${billingCycle}\nValor: R$ ${amount.toFixed(2).replace('.', ',')}\nStatus: approved`, { uid, paymentId }, 'success');
     } else { await addEvent(status === 'pending' ? 'PAYMENT_PENDING' : 'PAYMENT_REJECTED', { uid, severity: status === 'pending' ? 'info' : 'warning', metadata: { paymentId: payment.id, status } }); }
     await webhookRef.set({ uid, externalPreferenceId: preferenceId, processed: true, status, processedAt: fv.serverTimestamp() }, { merge: true });
     await addEvent('PAYMENT_WEBHOOK_PROCESSED', { uid, severity: 'success', metadata: { paymentId, status } }); res.status(200).send('ok');
-  } catch (error) { logger.error('Mercado Pago webhook failed', error); await webhookRef.set({ processed: false, status: 'error', error: error.message || String(error), processedAt: fv.serverTimestamp() }, { merge: true }); await addError('billing/webhook-error', error, { paymentId }); await queueFinanceTelegram('PAYMENT_WEBHOOK_ERROR', '⚠️ OrçaFácil - Erro no webhook', `Pagamento: ${paymentId || '-'}\nErro: ${error.message || error}`, { paymentId }, 'critical'); res.status(200).send('received'); }
+  } catch (error) { logger.error('Mercado Pago webhook failed', error); await webhookRef.set({ processed: false, status: 'error', error: error.message || String(error), processedAt: fv.serverTimestamp() }, { merge: true }); await addError('billing/webhook-error', error, { paymentId }); await queueFinanceTelegram('PAYMENT_WEBHOOK_ERROR', '⚠️ Fechô - Erro no webhook', `Pagamento: ${paymentId || '-'}\nErro: ${error.message || error}`, { paymentId }, 'critical'); res.status(200).send('received'); }
 });
 
 exports.checkExpiredSubscriptions = onSchedule('every day 03:00', async () => {

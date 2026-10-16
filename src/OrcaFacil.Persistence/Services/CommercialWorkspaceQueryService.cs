@@ -203,7 +203,7 @@ public sealed class CommercialWorkspaceQueryService(OrcaFacilDbContext db, ICurr
             new("Pendências de execução", "Ordens que não estão concluídas nem canceladas.", openOrders, null, "/WorkOrders?phase=active"),
             new("Recebimentos vencidos", "Contas pendentes ou parciais com vencimento anterior a hoje. A lista usa a mesma regra.", overdueReceivables.Length, overdueReceivables.Sum(x => Math.Max(0, x.Amount - x.PaidAmount)), "/Receivables?status=Overdue"),
             new("Pagamentos sem recibo", "Recebimentos ativos sem recibo válido. Emitir o recibo não registra o valor outra vez.", paymentsWithoutReceipt.Length, paymentsWithoutReceipt.Sum(x => x.Amount), "/Payments?receipt=missing"),
-            new("Saldos em aberto", "Saldo das ordens não canceladas. Um serviço concluído pode continuar em aberto. Não inclui a assinatura do OrçaFácil.", openBalances.Length, openBalances.Sum(), "/WorkOrders?finance=open"),
+            new("Saldos em aberto", "Saldo das ordens não canceladas. Um serviço concluído pode continuar em aberto. Não inclui a assinatura do Fechô.", openBalances.Length, openBalances.Sum(), "/WorkOrders?finance=open"),
             new("Retornos agendados", "Orçamentos com acompanhamento marcado como agendado.", docs.Count(x => x.FollowUpStatus == FollowUpStatus.Scheduled && x.NextFollowUpAt != null), null, "/Documents?status=FollowUpScheduled")
         };
         return new(columns, attention.OrderBy(x => x.Severity).ThenByDescending(x => x.OccurredAt).Take(5).ToArray(),

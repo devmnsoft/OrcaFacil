@@ -1,7 +1,7 @@
 {
   "name": "orcafacil",
   "version": "1.0.0",
-  "description": "OrçaFácil - Orçamentos e recibos profissionais em PDF, em segundos.",
+  "description": "Fechô - Orçamentos e recibos profissionais em PDF, em segundos.",
   "main": "server.js",
   "type": "module",
   "scripts": {

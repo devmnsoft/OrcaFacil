@@ -5,7 +5,7 @@
     var authenticated = User.Identity?.IsAuthenticated == true;
     var shell = authenticated ? await ShellFactory.CreateAsync(Context.RequestAborted) : null;
     var currentPath = Context.Request.Path.Value ?? string.Empty;
-    var pageTitle = ViewData["Title"]?.ToString() ?? "OrçaFácil";
+    var pageTitle = ViewData["Title"]?.ToString() ?? "Fechô";
     var pageSection = ViewData["Section"]?.ToString() ?? "Início";
     var helpCode = ViewData["HelpCode"]?.ToString() ?? "dashboard";
 }
@@ -14,7 +14,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>@pageTitle · OrçaFácil</title>
+    <title>@pageTitle · Fechô</title>
     <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/icons.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/base.css" asp-append-version="true" />
@@ -39,7 +39,7 @@
             <aside class="of-client-sidebar" id="client-sidebar" aria-label="Navegação principal">
                 <div class="of-sidebar-brand-row">
                     <a class="of-shell-brand" asp-page="/Dashboard/Index">
-                        <img src="~/img/brand/orcafacil-wordmark-dark.svg" alt="OrçaFácil, um produto MNSOFT" />
+                        <img src="~/img/brand/fecho-logo-dark.svg" alt="Fechô, um produto MNSOFT" />
                     </a>
                     <button class="of-sidebar-toggle" type="button" data-sidebar-toggle aria-label="Recolher menu" aria-controls="client-sidebar" aria-expanded="true">
                         <svg class="of-icon" aria-hidden="true"><use href="#of-icon-menu" /></svg>

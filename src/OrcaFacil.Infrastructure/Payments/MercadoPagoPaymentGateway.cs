@@ -69,7 +69,7 @@ public class MercadoPagoPaymentGateway : IPaymentGateway
 
         var payload = new Dictionary<string, object?>
         {
-            ["reason"] = string.IsNullOrWhiteSpace(request.Description) ? "Assinatura OrçaFácil" : request.Description,
+            ["reason"] = string.IsNullOrWhiteSpace(request.Description) ? "Assinatura Fechô" : request.Description,
             ["payer_email"] = request.PayerEmail,
             ["auto_recurring"] = new Dictionary<string, object?>
             {
@@ -173,7 +173,7 @@ public class MercadoPagoPaymentGateway : IPaymentGateway
         var payload = new Dictionary<string, object?>
         {
             ["transaction_amount"] = decimal.Round(request.Amount, 2),
-            ["description"] = string.IsNullOrWhiteSpace(request.Description) ? "OrçaFácil cobrança" : request.Description,
+            ["description"] = string.IsNullOrWhiteSpace(request.Description) ? "Fechô cobrança" : request.Description,
             ["payment_method_id"] = paymentKind == "pix" ? "pix" : "bolbradesco",
             ["external_reference"] = request.ExternalReference,
             ["payer"] = new Dictionary<string, object?>

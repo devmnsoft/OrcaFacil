@@ -60,7 +60,7 @@ public class DocumentService
             await _notifications.CreateForUserAsync(command.UserId, title, "Seu orçamento foi salvo. Agora você pode gerar o PDF.", NotificationType.Success, NotificationCategory.Document, $"/Documents/Details?id={document.Id}", "Ver documento", ct);
             if (_documents.Query().Count(x => x.UserId == command.UserId && !x.IsDeleted) == 1)
             {
-                await _notifications.CreateForUserAsync(command.UserId, "Primeiro orçamento criado", "Parabéns pelo primeiro documento no OrçaFácil. Gere o PDF e envie ao cliente.", NotificationType.Info, NotificationCategory.Document, $"/Documents/Details?id={document.Id}", "Abrir", ct);
+                await _notifications.CreateForUserAsync(command.UserId, "Primeiro orçamento criado", "Parabéns pelo primeiro documento no Fechô. Gere o PDF e envie ao cliente.", NotificationType.Info, NotificationCategory.Document, $"/Documents/Details?id={document.Id}", "Abrir", ct);
             }
             _logger.LogInformation("DOCUMENT_CREATED {DocumentId} {AccountId}", document.Id, document.AccountId);
             return Result<Guid>.Ok(document.Id);

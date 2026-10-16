@@ -20,7 +20,7 @@ public class ReceiptPdfTemplate : DocumentPdfTemplate
         var formattedTotal = FormatCurrency(Document.Total);
         var receiptText = string.Format(GetLabel("ReceiptNotice"), formattedTotal, extenso);
 
-        column.Item().Border(1).BorderColor("#CBD5E1").Background("#F8FAFC").Padding(12).Column(c =>
+        column.Item().Border(1).BorderColor("#D8E3E1").Background("#F5F8F7").Padding(12).Column(c =>
         {
             c.Item().Text(receiptText).SemiBold();
             if (!string.IsNullOrWhiteSpace(Document.PaymentMethod))

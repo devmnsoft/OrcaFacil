@@ -46,7 +46,7 @@ public class ExceptionHandlingMiddleware
             {
                 context.Response.ContentType = "text/html; charset=utf-8";
                 var safeMessage = BuildDetail(ex);
-                await context.Response.WriteAsync($"<main style='font-family:Arial,sans-serif;max-width:720px;margin:48px auto;padding:24px;color:#1C2430'><h1>Não foi possível concluir a operação.</h1><p>{safeMessage}</p><p>Informe este código ao suporte: <strong>{correlationId}</strong></p></main>");
+                await context.Response.WriteAsync($"<main style='font-family:Inter,Arial,sans-serif;max-width:720px;margin:48px auto;padding:24px;color:#172B2A'><h1>Não foi possível concluir a operação.</h1><p>{safeMessage}</p><p>Informe este código ao suporte: <strong>{correlationId}</strong></p></main>");
                 return;
             }
 

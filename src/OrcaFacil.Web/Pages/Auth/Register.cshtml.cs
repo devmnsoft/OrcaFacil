@@ -19,7 +19,7 @@ public sealed class RegisterModel(AuthService authService, IUserSignInService si
 
     public sealed class InputModel
     {
-        [Required(ErrorMessage = "Escolha como você vai usar o OrçaFácil.")]
+        [Required(ErrorMessage = "Escolha como você vai usar o Fechô.")]
         public PersonType? AccountType { get; set; }
         [Required(ErrorMessage = "Informe seu CPF ou CNPJ.")] public string DocumentNumber { get; set; } = string.Empty;
         [MaxLength(180)] public string Name { get; set; } = string.Empty;

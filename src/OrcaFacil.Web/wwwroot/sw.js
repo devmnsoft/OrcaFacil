@@ -1,11 +1,11 @@
-/* OrçaFácil: cache público versionado. Páginas autenticadas e respostas privadas ficam fora. */
+/* Fechô: cache público versionado. Páginas autenticadas e respostas privadas ficam fora. */
 'use strict';
 const CACHE_PREFIX = 'orcafacil-public-';
-const CACHE_NAME = 'orcafacil-public-v1.8.2';
+const CACHE_NAME = 'orcafacil-public-v1.9.0';
 const PUBLIC_ASSETS = [
   '/Offline',
   '/favicon.svg',
-  '/img/brand/orcafacil-symbol.svg',
+  '/img/brand/fecho-symbol.svg',
   '/css/app.css',
   '/css/tokens.css',
   '/css/base.css',

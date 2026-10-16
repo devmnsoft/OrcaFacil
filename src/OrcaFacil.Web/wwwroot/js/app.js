@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  const safeInit=(name,fn)=>{try{fn()}catch(error){console.error(`[OrcaFácil:${name}]`,error)}};
+  const safeInit=(name,fn)=>{try{fn()}catch(error){console.error(`[Fechô:${name}]`,error)}};
   const money=v=>(Number(v||0)).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   window.initSidebar=()=>document.querySelectorAll('[data-sidebar-toggle]').forEach(btn=>btn.addEventListener('click',()=>document.body.classList.toggle('of-sidebar-collapsed')));
   window.toggleSidebar=()=>document.body.classList.toggle('of-sidebar-collapsed');

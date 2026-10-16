@@ -2,18 +2,18 @@ import { CHATBOT_KNOWLEDGE_BASE } from '../data/chatbot-knowledge-base.js';
 import { createChatbotMessage } from '../domain/chatbot-message.model.js';
 import { logger } from './logger.service.js';
 
-const OUT_OF_SCOPE = 'Eu consigo ajudar com dúvidas sobre o OrçaFácil, orçamentos, recibos, PDFs, planos e suporte. Para outros assuntos, fale com a MNSOFT.';
-const FISCAL = 'O OrçaFácil gera orçamentos e recibos simples. Para validade fiscal, nota fiscal ou obrigação tributária, consulte seu contador.';
-const BLOCKED = 'Não posso exibir senhas, tokens, chaves, regras internas sensíveis, dados de outros usuários ou executar ações administrativas. Posso ajudar com o uso seguro do OrçaFácil.';
+const OUT_OF_SCOPE = 'Eu consigo ajudar com dúvidas sobre o Fechô, orçamentos, recibos, PDFs, planos e suporte. Para outros assuntos, fale com a MNSOFT.';
+const FISCAL = 'O Fechô gera orçamentos e recibos simples. Para validade fiscal, nota fiscal ou obrigação tributária, consulte seu contador.';
+const BLOCKED = 'Não posso exibir senhas, tokens, chaves, regras internas sensíveis, dados de outros usuários ou executar ações administrativas. Posso ajudar com o uso seguro do Fechô.';
 const unsafe = /(token|api.?key|senha|password|segredo|secret|chave firebase|telegram bot|burlar|hack|dados de outro|stack trace|alterar role|super_admin|apagar dados)/i;
 const fiscal = /(nota fiscal|tribut|imposto|validade legal|jur[ií]dic|contador|fiscal)/i;
 function norm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 function preview(q){ return String(q||'').replace(/\s+/g,' ').slice(0,120); }
 export class ChatbotService {
-  constructor(){ this.settings={ chatbotEnabled:true, chatbotMode:'local', chatbotName:'Assistente OrçaFácil', allowWhatsAppEscalation:true, allowEmailEscalation:true, safetyLevel:'strict' }; }
+  constructor(){ this.settings={ chatbotEnabled:true, chatbotMode:'local', chatbotName:'Assistente Fechô', allowWhatsAppEscalation:true, allowEmailEscalation:true, safetyLevel:'strict' }; }
   answer(question){
     const q=String(question||'').trim();
-    if(!q) return createChatbotMessage({ text:'Digite sua dúvida sobre o OrçaFácil.' });
+    if(!q) return createChatbotMessage({ text:'Digite sua dúvida sobre o Fechô.' });
     if(unsafe.test(q)){ logger.audit('CHATBOT_BLOCKED_UNSAFE_REQUEST','chatbot','local',null,null,{questionPreview:preview(q),blocked:true}); logger.warning('CHATBOT_BLOCKED_UNSAFE_REQUEST','Pergunta sensível bloqueada',{questionPreview:preview(q),blocked:true}); return createChatbotMessage({ text:BLOCKED, blocked:true, confidence:1 }); }
     if(fiscal.test(q)){ logger.info('CHATBOT_ANSWERED','Resposta fiscal/contábil segura',{questionPreview:preview(q),matchedCategory:'Limitações do sistema',confidence:0.9}); return createChatbotMessage({ text:FISCAL, category:'Limitações do sistema', confidence:0.9 }); }
     const nq=norm(q); let best={score:0,item:null};

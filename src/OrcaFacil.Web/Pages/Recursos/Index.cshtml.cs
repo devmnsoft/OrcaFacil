@@ -13,7 +13,7 @@ public sealed class IndexModel : PageModel
  ["Portais"]=("Portais seguros","Ofereça jornadas específicas para clientes e parceiros autorizados.","Acesso e conteúdo dependem de autenticação ou token válido, conforme o portal."),
  ["API"]=("API e webhooks","Integre fluxos por credenciais, escopos e endpoints configurados.","Chaves, limites e webhooks são administrados nas configurações autenticadas."),
  ["IA"]=("IA governada","Use recursos de IA somente quando um provedor estiver configurado.","Sem provedor e consentimento operacional, o recurso permanece indisponível e não simula respostas.")};
- public string Title{get;private set;}="Recursos para uma operação conectada"; public string Description{get;private set;}="Conheça módulos existentes do OrçaFácil e escolha os que atendem seu processo."; public string HowItWorks{get;private set;}="Clientes, serviços, documentos e execução compartilham o mesmo contexto operacional.";
+ public string Title{get;private set;}="Recursos para uma operação conectada"; public string Description{get;private set;}="Conheça módulos existentes do Fechô e escolha os que atendem seu processo."; public string HowItWorks{get;private set;}="Clientes, serviços, documentos e execução compartilham o mesmo contexto operacional.";
  public IReadOnlyDictionary<string,string> Benefits{get;}=new Dictionary<string,string>{{"Menos retrabalho","Reutilize dados já cadastrados."},{"Mais contexto","Acompanhe histórico e próximas ações."},{"Acesso controlado","Permissões e plano governam a disponibilidade."}};
  public void OnGet(string? slug){if(slug is not null&&Catalog.TryGetValue(slug,out var item)){Title=item.Title;Description=item.Description;HowItWorks=item.How;}}
 }

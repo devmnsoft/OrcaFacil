@@ -7,7 +7,7 @@ public enum PackageInstallationStatus { Pending, Installing, Installed, Partiall
 public sealed class MarketplacePackage : Entity
 {
     public string Code { get; set; } = ""; public string Name { get; set; } = ""; public string Description { get; set; } = "";
-    public string Category { get; set; } = ""; public string TargetSegment { get; set; } = ""; public string Author { get; set; } = "OrçaFácil";
+    public string Category { get; set; } = ""; public string TargetSegment { get; set; } = ""; public string Author { get; set; } = "Fechô";
     public bool IsActive { get; set; } public bool IsPublished { get; set; } public Guid? CurrentVersionId { get; set; }
 }
 public sealed class MarketplacePackageVersion : Entity

@@ -1,44 +1,50 @@
-/* OrçaFácil Design System V5.8 — semantic foundations shared by every surface. */
+/* Fechô — Design System V5.8. Semantic foundations shared by every surface.
+   Marca comercial: Fechô (um produto MNSOFT). Identificadores técnicos internos seguem como OrcaFacil. */
 :root {
   color-scheme: light;
-  --of-page: #f5f7fb;
+  /* Paleta oficial Fechô */
+  --of-deep-green: #0b3835; /* Verde profundo — institucional */
+  --of-petrol: #0f766e;     /* Verde petróleo — botões e interações */
+  --of-mint: #b9f1d1;       /* Verde menta — destaques da marca */
+  --of-amber: #d6a34f;      /* Âmbar — alertas e destaques pontuais */
+  --of-page: #f5f8f7;       /* Fundo gelo */
   --of-surface: #ffffff;
-  --of-subtle: #eef3f8;
-  --of-navy: #0b1f33;
-  --of-primary: #246bfe;
-  --of-primary-hover: #1855d8;
-  --of-primary-soft: #eaf1ff;
-  --of-success: #0e8a5d;
-  --of-success-soft: #e8f7f1;
-  --of-premium: #6654d9;
-  --of-premium-soft: #f0edff;
-  --of-warning: #b76800;
-  --of-warning-soft: #fff4e2;
+  --of-subtle: #eaf1ef;
+  --of-navy: #0b3835;
+  --of-primary: #0f766e;
+  --of-primary-hover: #0b3835;
+  --of-primary-soft: #e3f3ed;
+  --of-success: #0e7a4f;
+  --of-success-soft: #e6f5ee;
+  --of-premium: #115e59;
+  --of-premium-soft: #e6f2f1;
+  --of-warning: #92400e;
+  --of-warning-soft: #fbf1e2;
   --of-danger: #b42318;
   --of-danger-soft: #fff0ee;
-  --of-info: #1769aa;
-  --of-info-soft: #e9f5ff;
-  --of-text: #172033;
-  --of-text-secondary: #617083;
-  --of-text-inverse: #f8fbff;
-  --of-text-inverse-muted: #cfe0f2;
-  --of-input-background-dark: #f8fbff;
-  --of-input-border-dark: #9cb2c8;
-  --of-input-helper-dark: #dbe8f6;
-  --of-link-inverse: #a9ccff;
+  --of-info: #1d4ed8;
+  --of-info-soft: #e8eefc;
+  --of-text: #172b2a;
+  --of-text-secondary: #536b67;
+  --of-text-inverse: #f5f8f7;
+  --of-text-inverse-muted: #c9ddd9;
+  --of-input-background-dark: #f5f8f7;
+  --of-input-border-dark: #9bb6b0;
+  --of-input-helper-dark: #d7e7e2;
+  --of-link-inverse: #b9f1d1;
   --of-danger-on-dark: #ffd7d1;
-  --of-disabled-background: #e4eaf1;
-  --of-disabled-text: #526174;
+  --of-disabled-background: #e2eae8;
+  --of-disabled-text: #52615f;
   --of-input-background: #ffffff;
-  --of-input-border: #b7c4d2;
-  --of-input-border-hover: #7d90a5;
-  --of-input-placeholder: #5f6f82;
-  --of-selection: #cddcff;
-  --of-skeleton: #dfe7f0;
-  --of-border: #dde5ee;
-  --of-border-strong: #b7c4d2;
-  --of-focus: #246bfe;
-  --of-overlay: rgb(11 31 51 / 64%);
+  --of-input-border: #b3c6c1;
+  --of-input-border-hover: #7c948f;
+  --of-input-placeholder: #5b6f6b;
+  --of-selection: #c7ead9;
+  --of-skeleton: #dde8e4;
+  --of-border: #dbe6e3;
+  --of-border-strong: #b3c6c1;
+  --of-focus: #0f766e;
+  --of-overlay: rgb(11 56 53 / 64%);
   --of-font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --of-space-1: 4px;
   --of-space-2: 8px;
@@ -58,11 +64,11 @@
   --of-radius-sm: 8px;
   --of-radius: 14px;
   --of-radius-lg: 22px;
-  --of-shadow-sm: 0 1px 2px rgb(11 31 51 / 8%);
-  --of-shadow-md: 0 10px 30px rgb(11 31 51 / 10%);
-  --of-shadow-lg: 0 24px 60px rgb(11 31 51 / 16%);
-  --of-brand-gradient: linear-gradient(135deg, #246bfe 0%, #6654d9 100%);
-  --of-brand-glow: 0 0 48px rgb(36 107 254 / 24%);
+  --of-shadow-sm: 0 1px 2px rgb(11 56 53 / 8%);
+  --of-shadow-md: 0 10px 30px rgb(11 56 53 / 10%);
+  --of-shadow-lg: 0 24px 60px rgb(11 56 53 / 16%);
+  --of-brand-gradient: linear-gradient(135deg, #0f766e 0%, #0b3835 100%);
+  --of-brand-glow: 0 0 48px rgb(15 118 110 / 24%);
   --of-brand-primary: var(--of-primary);
   --of-brand-primary-hover: var(--of-primary-hover);
   --of-brand-navy: var(--of-navy);
@@ -72,14 +78,14 @@
   --of-surface-dark: var(--of-navy);
   --of-surface-elevated: #ffffff;
   --of-surface-glass: rgb(255 255 255 / 82%);
-  --of-border-soft: rgb(23 32 51 / 10%);
-  --of-shadow-floating: 0 12px 32px rgb(11 31 51 / 12%);
-  --of-shadow-premium: 0 28px 72px rgb(11 31 51 / 18%);
+  --of-border-soft: rgb(23 43 42 / 10%);
+  --of-shadow-floating: 0 12px 32px rgb(11 56 53 / 12%);
+  --of-shadow-premium: 0 28px 72px rgb(11 56 53 / 18%);
   --of-shadow-card: var(--of-shadow-sm);
   --of-radius-xs: 6px;
   --of-radius-md: var(--of-radius);
   --of-radius-xl: 30px;
-  --of-focus-ring: 0 0 0 3px rgb(36 107 254 / 35%);
+  --of-focus-ring: 0 0 0 3px rgb(15 118 110 / 35%);
   --of-control-height: 48px;
   --of-sidebar-width: 272px;
   --of-sidebar-collapsed: 80px;
