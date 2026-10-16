@@ -55,7 +55,8 @@ Classificação de pendências: **P0** impede produção · **P1** impede opera�
 | R4 | **P0 (nova)** | Divergências históricas: **diagnóstico e revisão auditada** entregues nesta execução; a **correção** permanece manual e intencionalmente não automatizada (itens 4.3 e 20 proíbem correção em massa sem revisão). | `FinancialIntegrityDiagnostics.cs`, `SuperAdmin/Finance/Divergences` |
 | R5 | **P0** | Gateway Mercado Pago sem validação sandbox real (assinatura de webhook, dedup, reconciliação). | `docs/KNOWN_ISSUES.md` |
 | R6 | **P2** | Rota pública documentada como `/p/orcamento/{token}`; a implementação real é `/p/{token}`. Divergência de documentação. | `Pages/PublicQuotes/View.cshtml` |
-| R7 | **P1 (novo — exposto apenas com PostgreSQL real)** | `manual_payments` possui **6 FKs** no banco (criadas por SQL cru em `AddManualPaymentsAndReceipts`) mas **nenhuma relação mapeada no modelo EF** (`ManualPaymentConfiguration` não declara `HasOne`). Sem o relacionamento o EF não ordena os `INSERT` por dependência e pode violar `manual_payments_work_order_id_fkey` (SQLSTATE 23503) ao gravar pagamento e ordem no mesmo `SaveChanges`. Além disso, a migration histórica declara `work_order_id uuid NOT NULL` enquanto o banco atual é **nullable** (a entidade é `Guid?`). Correção proposta (requer autorização — altera o modelo EF e exige sincronizar `OrcaFacilDbContextModelSnapshot`): declarar os 6 relacionamentos e refletir no snapshot, sem nova migration de schema, pois as constraints já existem. | `Configurations/CommercialJourneyConfiguration.cs:89-101`, `Migrations/20260730000000_AddManualPaymentsAndReceipts.cs:12`, `JourneyPostgresTests.cs` |
+| R7 | **P1 — resolvido nesta execução** | `manual_payments` possui **6 FKs** no banco (criadas por SQL cru em `AddManualPaymentsAndReceipts` + hotfixes) mas nenhuma estava mapeada no modelo EF; o EF gravava `manual_payments` antes da `work_orders` e violava `manual_payments_work_order_id_fkey` (SQLSTATE 23503) ao persistir pagamento e ordem juntos — defeito exposto **só** com PostgreSQL real. **Corrigido:** os 6 relacionamentos foram declarados em `ManualPaymentConfiguration` com `DeleteBehavior.Restrict` (espelha `ON DELETE RESTRICT`). Sem nova migration (as FKs já existem nos bancos reais; criar uma quebraria a aplicação neles e mudaria `GetPendingMigrations`/health-check). O fixture voltou a um único `SaveChanges` e passa — prova pela jornada real. Nota: a migration histórica diz `work_order_id NOT NULL`, mas o banco atual é nullable (entidade `Guid?`) — drift documentado. | `Configurations/CommercialJourneyConfiguration.cs`, `tests/OrcaFacil.UnitTests/JourneyPostgresTests.cs` |
+| R9 | **P2 (higiene do repositório)** | Os artefatos `bin/obj` estão **rastreados e obsoletos** no git. Isso cria uma tensão real de validação: `check:git-safety` só fica verde quando o `bin` coincide com o HEAD (arquivo obsoleto), mas o teste `JsonTextLocalizer_LoadsCatalogs_AndTranslatesAcrossFourCultures` precisa do `resources.pt-BR.json` fresco no `bin` Release (o commit traz um stub de 500 bytes sem `Nav.Quotes`; o catálogo real tem 6386 bytes). Estado escolhido: **catálogos frescos no bin → suíte verde**; resíduo esperado: `check:git-safety` aponta churn de bin. Recomendação: parar de rastrear `bin/obj` (ou commitar um build integral consistente). | `src/*/bin`, `tests/*/bin`, `tests/OrcaFacil.UnitTests/MultilingualJourneyAndHomologationTests.cs` |
 | R8 | **P2 (baseline pré-existente de validadores)** | Dos 611 scripts `check:*`, um grupo (~30–40) falha **também no commit-base `1386356`**, ou seja, não foi causado por esta branch. Temas principais: página de Preços sem comunicar “contratação online ainda não está habilitada” (~10 checks de billing/trial/quota/upgrade), CTA “Ver Profissional” ausente na Home, contrato legado `dashboard.BudgetTotal`, tokens do Design System V5.6, segredo real em `appsettings.json` (`appsettings-secrets`), menu mobile que não fecha por teclado/toque externo, string “OrçaFácil” em `InternalAssistantService.cs` (`assistant-safety`), fallback inválido apontado em `GoLiveV65Services.cs` (`dapper-mapping`/`source-code-audit`/`method-consistency`/`no-fake-flows`) e 3 serviços sem registro de DI (`di-consistency`: `FunctionalQualityService`, `ModuleReadinessService`, `SourceCodeFindingService`). Item de higienização independente desta evolução. | `package.json` (scripts `check:*`), `scripts/sprint41-check-core.mjs`, `scripts/sprint55-design-checks.mjs` |
 
 ---
@@ -110,9 +111,11 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
   `orcafacil_journey_20261016` (schema `orcafacil` restaurado por `pg_dump --schema-only`; extensões `pgcrypto` e
   `pg_trgm`) → **683 aprovados, 0 falhas, 0 ignorados**. Inclui a jornada comercial completa, os 3 testes de
   homologação concorrente de IA e os cálculos de saldo/estorno.
-- Defeito real encontrado **apenas** com PostgreSQL real e documentado em R7: ordem de `INSERT` de
-  `manual_payments` (FK não mapeada no EF). O fixture de teste foi ajustado para persistir pais antes dos
-  dependentes, mantendo o foco do teste na regra de saldo.
+- Defeito real encontrado **apenas** com PostgreSQL real — **R7 (resolvido nesta execução):** as 6 FKs de
+  `manual_payments` não estavam mapeadas no EF; o `INSERT` violava `manual_payments_work_order_id_fkey`
+  (23503) ao gravar pagamento e ordem juntos. Corrigido declarando os relacionamentos em
+  `ManualPaymentConfiguration` (`DeleteBehavior.Restrict`), **sem nova migration**. O fixture voltou a um único
+  `SaveChanges` e a suíte passa pelo caminho real do produto (**683/0/0** reconfirmado).
 - **Validadores `package.json` (`check:*`, 611 scripts):** varridos contra o commit-base `1386356`.
   Os checks críticos para esta branch passam: `check:js`, `check:service-lifetimes`, `check:di-quality-gate`,
   `check:aspnet-scope`, `check:database-schema-contract`, `check:quality-gate-no-fake`, `check:build-blockers`,
@@ -141,13 +144,14 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
   `src/OrcaFacil.Persistence/Services/OnboardingApplicationService.cs`,
   `tests/OrcaFacil.UnitTests/Sprint55PremiumDesignTests.cs`,
   `tests/OrcaFacil.UnitTests/QualityGateDependencyInjectionTests.cs`,
-  `tests/OrcaFacil.UnitTests/JourneyPostgresTests.cs`.
+  `tests/OrcaFacil.UnitTests/JourneyPostgresTests.cs`,
+  `src/OrcaFacil.Persistence/Configurations/CommercialJourneyConfiguration.cs`.
 
 ## 6. Próxima ação
 
-1. Autorizar a correção do R7 (relacionamentos `manual_payments` no modelo EF + sincronizar o snapshot), com revisão.
-2. Fechar a evidência de navegador (R2): instalar `@playwright/test`, subir o servidor Web com seed e rodar as 5 specs de `tests/playwright/*`.
-3. Validar gateway Mercado Pago em sandbox (R5) e o fluxo de inadimplência/regularização.
-4. Evoluir a Sprint E (IA assistida) sobre a base de DI já corrigida.
-5. Higienizar o baseline de validadores pré-existente (R8) — separadamente desta evolução.
-6. Padronizar a rota pública documentada (R6).
+1. **R9 (higiene):** decidir parar de rastrear `bin/obj` (ou commitar build integral consistente) para eliminar a tensão `git-safety` × teste de localizacão; e decidir se sincroniza o snapshot de `manual_payments` (opcional — já consistente com o padrão do repo).
+2. **R2 (navegador):** instalar `@playwright/test`, subir o servidor Web com seed e rodar as 5 specs de `tests/playwright/*`.
+3. **R5:** validar gateway Mercado Pago em sandbox e o fluxo de inadimplência/regularização.
+4. **Sprint E:** evoluir a IA assistida sobre a base de DI já corrigida.
+5. **R8:** higienizar o baseline de validadores pré-existente (separadamente desta evolução).
+6. **R6:** padronizar a rota pública documentada.
