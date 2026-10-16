@@ -165,6 +165,7 @@ builder.Services.AddSingleton<ITechnicalFingerprintService>(
     _ => new OrcaFacil.Persistence.Services.TechnicalFingerprintService(technicalFingerprintPepper));
 builder.Services.AddScoped<CommercialJourneyService>();
 builder.Services.AddScoped<ICommercialBalanceService, CommercialBalanceService>();
+builder.Services.AddScoped<IFinancialIntegrityDiagnosticService, FinancialIntegrityDiagnosticService>();
 builder.Services.AddScoped<ICommercialJourneyService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<ICommercialWorkspaceQueryService, CommercialWorkspaceQueryService>();
 builder.Services.AddScoped<IPublicDocumentAccessService>(sp => sp.GetRequiredService<CommercialJourneyService>());
