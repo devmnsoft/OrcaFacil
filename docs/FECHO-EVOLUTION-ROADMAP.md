@@ -38,7 +38,7 @@ Status usados: **Funcional** (backend + persistência + interface + regra + test
 | **Filtro financeiro min/max (P0 4.4)** | `QuoteWorkspaceService` | pushdown SQL de `document.Total` | — | pushdown quando não há revisão/OS; fallback em memória preservado | **`QuoteWorkspaceFilterPushdownTests`** | **Funcional (novo nesta execução)** |
 | Planos e assinaturas | `PlanAccessService`, `EfPlanAccessDataSource`, `EfPlanCatalogService` | `plans`, `plan_versions`, `plan_features`, `account_module_subscriptions` | `Pages/Subscription`, `Areas/Admin/Plans` | catálogo versionado, limites persistidos, sem `if` por nome | `PlanAccessServiceTests` | **Funcional** |
 | SuperAdministrador | Pages em `Pages/SuperAdmin` | várias | shell global + menu dinâmico | policy `SuperAdminOnly`, auditoria de ações críticas | `SuperAdminGlobalAccessTests`, `SaasEnterpriseV66Tests` | **Funcional** |
-| Assistente de IA | `AiOrchestrator`, `AiClients` (Groq/Gemini/DeepSeek) | `AiOperations` | `Pages/Assistant` | orquestração + governança | testes de contrato | **Parcial** (ver risco de DI) |
+| Assistente de IA | `AiOrchestrator`, `AiClients` (Groq/Gemini/DeepSeek) | `AiOperations` | `Pages/Assistant` | orquestração + governança; DI corrigida (scoped) | contratos de DI + governança | **Parcial** (nestes termos: provedores reais dependem de credenciais) |
 | Integração de cobrança (Mercado Pago) | `Infrastructure/Payments` | `payment_events`, `billing_invoices` | retorno/webhook | dedup/reprocessamento | testes de contrato | **Parcial** (sandbox não validado) |
 
 ---
@@ -49,9 +49,9 @@ Classificação de pendências: **P0** impede produção · **P1** impede opera�
 
 | ID | Severidade | Descrição | Evidência |
 |---|---|---|---|
-| R1 | **P1** | Clientes de IA (`GroqAiClient`, `GeminiAiClient`, `DeepSeekAiClient`) são registrados como `Singleton` mas preferem o `HttpClient` injetado em vez do `IHttpClientFactory.CreateClient("<provider>")`, o que pode capturar handler/timeout incorretos. | `Web/Program.cs:213-225`, `Infrastructure/Ai/AiClients.cs` |
+| R1 | **P1 — resolvido nesta execução** | Clientes de IA (`GroqAiClient`, `GeminiAiClient`, `DeepSeekAiClient`) eram registrados como `Singleton` mas obtinham o `HttpClient` do factory, capturando um cliente de longa duração. Agora são `AddScoped`, alinhados ao `AiOrchestrator` (também scoped); o `HttpClient` é recriado por requisição via `IHttpClientFactory`. | `Web/Program.cs:213-227`, `Infrastructure/Ai/AiClients.cs` |
 | R2 | **P0 (bloqueio de evidência)** | Testes de integração PostgreSQL estão ignorados sem `ORCAFACIL_JOURNEY_CONNECTION`; Playwright não executado. Sem ambiente, a jornada ponta a ponta **não é homologada**. | `JourneyPostgresTests.cs:19-21`, `tests/playwright/*` |
-| R3 | **P1** | Onboarding sem teste dedicado. | ausência em `tests/OrcaFacil.UnitTests` |
+| R3 | **P1 — resolvido nesta execução** | Onboarding não tinha teste dedicado. As regras de etapa foram extraídas para `OnboardingStepRules` (puro) e cobertas por `OnboardingRulesTests`, incluindo a garantia de upsert idempotente `(account_id, user_id)`. | `OnboardingStepRules.cs`, `OnboardingRulesTests.cs` |
 | R4 | **P0 (nova)** | Divergências históricas: **diagnóstico e revisão auditada** entregues nesta execução; a **correção** permanece manual e intencionalmente não automatizada (itens 4.3 e 20 proíbem correção em massa sem revisão). | `FinancialIntegrityDiagnostics.cs`, `SuperAdmin/Finance/Divergences` |
 | R5 | **P0** | Gateway Mercado Pago sem validação sandbox real (assinatura de webhook, dedup, reconciliação). | `docs/KNOWN_ISSUES.md` |
 | R6 | **P2** | Rota pública documentada como `/p/orcamento/{token}`; a implementação real é `/p/{token}`. Divergência de documentação. | `Pages/PublicQuotes/View.cshtml` |
@@ -90,8 +90,9 @@ evidência Playwright (R2).
 
 ### Sprint E — Inteligência e produtividade (P1) — **parcial**
 
-Orquestrador e provedores existem; **corrigir a vida útil de DI dos clientes de IA (R1)** antes de evoluir
-orçamento assistido, sugestão de textos e acompanhamento comercial.
+Orquestrador e provedores existem. **Vida útil de DI dos clientes de IA corrigida** (R1, registrados como
+`Scoped`, com teste de contrato). Próximo passo: evoluir orçamento assistido, sugestão de textos e
+acompanhamento comercial com cobertura de testes.
 
 ### Sprint F — Homologação final (P0) — **não iniciado**
 
@@ -106,15 +107,19 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
 - Arquivos criados: `src/OrcaFacil.Application/Commercial/FinancialIntegrityDiagnostics.cs`,
   `src/OrcaFacil.Persistence/Services/FinancialIntegrityDiagnosticService.cs`,
   `src/OrcaFacil.Web/Pages/SuperAdmin/Finance/Divergences.cshtml(.cs)`,
+  `src/OrcaFacil.Application/Onboarding/OnboardingStepRules.cs`,
   `tests/OrcaFacil.UnitTests/FinancialIntegrityDiagnosticsTests.cs`,
-  `tests/OrcaFacil.UnitTests/QuoteWorkspaceFilterPushdownTests.cs`, este documento.
+  `tests/OrcaFacil.UnitTests/QuoteWorkspaceFilterPushdownTests.cs`,
+  `tests/OrcaFacil.UnitTests/OnboardingRulesTests.cs`, este documento.
 - Arquivos alterados: `src/OrcaFacil.Web/Program.cs`, `src/OrcaFacil.Api/Program.cs`,
   `src/OrcaFacil.Web/Services/ModuleMenuComposer.cs`, `src/OrcaFacil.Persistence/Services/QuoteWorkspaceService.cs`,
-  `tests/OrcaFacil.UnitTests/Sprint55PremiumDesignTests.cs`.
+  `src/OrcaFacil.Persistence/Services/OnboardingApplicationService.cs`,
+  `tests/OrcaFacil.UnitTests/Sprint55PremiumDesignTests.cs`,
+  `tests/OrcaFacil.UnitTests/QualityGateDependencyInjectionTests.cs`.
 
 ## 6. Próxima ação
 
-1. Corrigir a vida útil de DI dos clientes de IA (R1) e cobrir com teste de contrato.
-2. Criar teste dedicado de onboarding (R3).
-3. Disponibilizar PostgreSQL descartável e navegador para habilitar `JourneyPostgresTests` e Playwright (R2).
-4. Validar gateway em sandbox (R5).
+1. Disponibilizar PostgreSQL descartável e navegador para habilitar `JourneyPostgresTests` e Playwright (R2).
+2. Validar gateway Mercado Pago em sandbox (R5) e o fluxo de inadimplência/regularização.
+3. Evoluir a Sprint E (IA assistida) sobre a base de DI já corrigida.
+4. Padronizar a rota pública documentada (R6).
