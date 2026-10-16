@@ -50,12 +50,13 @@ Classificação de pendências: **P0** impede produção · **P1** impede opera�
 | ID | Severidade | Descrição | Evidência |
 |---|---|---|---|
 | R1 | **P1 — resolvido nesta execução** | Clientes de IA (`GroqAiClient`, `GeminiAiClient`, `DeepSeekAiClient`) eram registrados como `Singleton` mas obtinham o `HttpClient` do factory, capturando um cliente de longa duração. Agora são `AddScoped`, alinhados ao `AiOrchestrator` (também scoped); o `HttpClient` é recriado por requisição via `IHttpClientFactory`. | `Web/Program.cs:213-227`, `Infrastructure/Ai/AiClients.cs` |
-| R2 | **P1 — mitigado nesta execução (PostgreSQL)** | Testes de integração PostgreSQL estavam ignorados sem `ORCAFACIL_JOURNEY_CONNECTION`. Com banco **descartável** local (schema `orcafacil` restaurado por `pg_dump --schema-only` em `orcafacil_journey_20261016`), os 13 testes antes ignorados executaram: **683 aprovados, 0 falhas, 0 ignorados**. Permanece pendente apenas Playwright/navegador visível. | `JourneyPostgresTests.cs:19-21`, `HomologationPostgresTests.cs`, `tests/playwright/*` |
+| R2 | **P1 — mitigado nesta execução (PostgreSQL)** | Testes de integração PostgreSQL estavam ignorados sem `ORCAFACIL_JOURNEY_CONNECTION`. Com banco **descartável** local (schema `orcafacil` restaurado por `pg_dump --schema-only` em `orcafacil_journey_20261016`), os 13 testes antes ignorados executaram: **683 aprovados, 0 falhas, 0 ignorados**. Restante do R2: evidência de navegador via Playwright — **Node v24 está presente**, mas `@playwright/test` **não está instalado** no ambiente e há 5 specs em `tests/playwright/*`; habilitar requer instalar a dependência, um servidor Web rodando e dados de seed (fora do repositório). | `JourneyPostgresTests.cs:19-21`, `HomologationPostgresTests.cs`, `tests/playwright/*` |
 | R3 | **P1 — resolvido nesta execução** | Onboarding não tinha teste dedicado. As regras de etapa foram extraídas para `OnboardingStepRules` (puro) e cobertas por `OnboardingRulesTests`, incluindo a garantia de upsert idempotente `(account_id, user_id)`. | `OnboardingStepRules.cs`, `OnboardingRulesTests.cs` |
 | R4 | **P0 (nova)** | Divergências históricas: **diagnóstico e revisão auditada** entregues nesta execução; a **correção** permanece manual e intencionalmente não automatizada (itens 4.3 e 20 proíbem correção em massa sem revisão). | `FinancialIntegrityDiagnostics.cs`, `SuperAdmin/Finance/Divergences` |
 | R5 | **P0** | Gateway Mercado Pago sem validação sandbox real (assinatura de webhook, dedup, reconciliação). | `docs/KNOWN_ISSUES.md` |
 | R6 | **P2** | Rota pública documentada como `/p/orcamento/{token}`; a implementação real é `/p/{token}`. Divergência de documentação. | `Pages/PublicQuotes/View.cshtml` |
 | R7 | **P1 (novo — exposto apenas com PostgreSQL real)** | `manual_payments` possui **6 FKs** no banco (criadas por SQL cru em `AddManualPaymentsAndReceipts`) mas **nenhuma relação mapeada no modelo EF** (`ManualPaymentConfiguration` não declara `HasOne`). Sem o relacionamento o EF não ordena os `INSERT` por dependência e pode violar `manual_payments_work_order_id_fkey` (SQLSTATE 23503) ao gravar pagamento e ordem no mesmo `SaveChanges`. Além disso, a migration histórica declara `work_order_id uuid NOT NULL` enquanto o banco atual é **nullable** (a entidade é `Guid?`). Correção proposta (requer autorização — altera o modelo EF e exige sincronizar `OrcaFacilDbContextModelSnapshot`): declarar os 6 relacionamentos e refletir no snapshot, sem nova migration de schema, pois as constraints já existem. | `Configurations/CommercialJourneyConfiguration.cs:89-101`, `Migrations/20260730000000_AddManualPaymentsAndReceipts.cs:12`, `JourneyPostgresTests.cs` |
+| R8 | **P2 (baseline pré-existente de validadores)** | Dos 611 scripts `check:*`, um grupo (~30–40) falha **também no commit-base `1386356`**, ou seja, não foi causado por esta branch. Temas principais: página de Preços sem comunicar “contratação online ainda não está habilitada” (~10 checks de billing/trial/quota/upgrade), CTA “Ver Profissional” ausente na Home, contrato legado `dashboard.BudgetTotal`, tokens do Design System V5.6, segredo real em `appsettings.json` (`appsettings-secrets`), menu mobile que não fecha por teclado/toque externo, string “OrçaFácil” em `InternalAssistantService.cs` (`assistant-safety`), fallback inválido apontado em `GoLiveV65Services.cs` (`dapper-mapping`/`source-code-audit`/`method-consistency`/`no-fake-flows`) e 3 serviços sem registro de DI (`di-consistency`: `FunctionalQualityService`, `ModuleReadinessService`, `SourceCodeFindingService`). Item de higienização independente desta evolução. | `package.json` (scripts `check:*`), `scripts/sprint41-check-core.mjs`, `scripts/sprint55-design-checks.mjs` |
 
 ---
 
@@ -112,6 +113,22 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
 - Defeito real encontrado **apenas** com PostgreSQL real e documentado em R7: ordem de `INSERT` de
   `manual_payments` (FK não mapeada no EF). O fixture de teste foi ajustado para persistir pais antes dos
   dependentes, mantendo o foco do teste na regra de saldo.
+- **Validadores `package.json` (`check:*`, 611 scripts):** varridos contra o commit-base `1386356`.
+  Os checks críticos para esta branch passam: `check:js`, `check:service-lifetimes`, `check:di-quality-gate`,
+  `check:aspnet-scope`, `check:database-schema-contract`, `check:quality-gate-no-fake`, `check:build-blockers`,
+  `check:csharp-test-types`, `check:query-safety`, `check:dapper-mapping`* e `check:financial-flow(-consistency|journey)`.
+  As mudanças desta branch **não introduzem falha nova** (diferença vs base verificada).
+  - *Correção aplicada:* os validadores `sprint41`/`sprint55` marcavam minha nova tela `Divergences.cshtml` como
+    “ID técnico exposto como entrada livre” (o filtro era um `<input>` de GUID). Substituído por `<select>` de
+    contas por nome → 8 checks (`functional-flows`, `portal-security`, `business-rules`, `commerce-flow`,
+    `omnichannel-flow`, `support-flow`, `workflow-rules`, `bi-reports`) voltaram a passar.
+  - `check:git-safety` só falhava por churn de artefatos `bin/obj` rastreados do build Release; restaurados ao
+    HEAD fica verde. **Não** é defeito de código.
+  - *Falhas pré-existentes (presentes também na base, fora do escopo desta branch):* mensagens da página de
+    Preços (“contratação online ainda não está habilitada”), CTA “Ver Profissional” na Home, contrato legado
+    `dashboard.BudgetTotal`, tokens do Design System V5.6, `appsettings-secrets`, fechamento do menu mobile,
+    string `OrçaFácil` em `assistant-safety`, fallback inválido em `GoLiveV65Services.cs` e 3 serviços sem DI
+    (`FunctionalQualityService`, `ModuleReadinessService`, `SourceCodeFindingService`). Detalhe completo em R8.
 - Arquivos criados: `src/OrcaFacil.Application/Commercial/FinancialIntegrityDiagnostics.cs`,
   `src/OrcaFacil.Persistence/Services/FinancialIntegrityDiagnosticService.cs`,
   `src/OrcaFacil.Web/Pages/SuperAdmin/Finance/Divergences.cshtml(.cs)`,
@@ -129,7 +146,8 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
 ## 6. Próxima ação
 
 1. Autorizar a correção do R7 (relacionamentos `manual_payments` no modelo EF + sincronizar o snapshot), com revisão.
-2. Habilitar navegador visível para o Playwright e fechar a evidência ponta a ponta (R2).
+2. Fechar a evidência de navegador (R2): instalar `@playwright/test`, subir o servidor Web com seed e rodar as 5 specs de `tests/playwright/*`.
 3. Validar gateway Mercado Pago em sandbox (R5) e o fluxo de inadimplência/regularização.
 4. Evoluir a Sprint E (IA assistida) sobre a base de DI já corrigida.
-5. Padronizar a rota pública documentada (R6).
+5. Higienizar o baseline de validadores pré-existente (R8) — separadamente desta evolução.
+6. Padronizar a rota pública documentada (R6).
