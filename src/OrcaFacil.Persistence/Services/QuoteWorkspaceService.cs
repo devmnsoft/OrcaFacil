@@ -41,17 +41,45 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
         if (request.From is { } from) query = query.Where(document => document.IssueDate >= from);
         if (request.To is { } to) query = query.Where(document => document.IssueDate < to.Date.AddDays(1));
 
-        var needsFinancialMaterialization = request.Minimum.HasValue
+        var wantsFinancialFilter = request.Minimum.HasValue
             || request.Maximum.HasValue
             || string.Equals(request.Sort, "value-desc", StringComparison.OrdinalIgnoreCase)
             || string.Equals(request.Sort, "value-asc", StringComparison.OrdinalIgnoreCase);
 
-        var rows = needsFinancialMaterialization
-            ? await SelectRows(query).ToListAsync(cancellationToken)
-            : await SelectRows(ApplyDocumentSort(query, request.Sort))
+        // When the account has no revisions or work orders, the contracted amount of every quote is
+        // exactly document.Total, so the financial filter/sort can be pushed to PostgreSQL instead of
+        // materializing the whole account in memory. Versioned contracts keep the in-memory path.
+        var pushFinancialToSql = wantsFinancialFilter &&
+            !await db.DocumentRevisions.AnyAsync(x => x.AccountId == accountId, cancellationToken) &&
+            !await db.WorkOrders.AnyAsync(x => x.AccountId == accountId && !x.IsDeleted, cancellationToken);
+        var needsFinancialMaterialization = wantsFinancialFilter && !pushFinancialToSql;
+
+        if (pushFinancialToSql)
+        {
+            if (request.Minimum is { } minFilter) query = query.Where(document => document.Total >= minFilter);
+            if (request.Maximum is { } maxFilter) query = query.Where(document => document.Total <= maxFilter);
+        }
+
+        var valueSortDesc = pushFinancialToSql && string.Equals(request.Sort, "value-desc", StringComparison.OrdinalIgnoreCase);
+        var valueSortAsc = pushFinancialToSql && string.Equals(request.Sort, "value-asc", StringComparison.OrdinalIgnoreCase);
+        if (valueSortDesc)
+            query = query.OrderByDescending(document => document.Total).ThenByDescending(document => document.CreatedAt).ThenBy(document => document.Id);
+        else if (valueSortAsc)
+            query = query.OrderBy(document => document.Total).ThenByDescending(document => document.CreatedAt).ThenBy(document => document.Id);
+
+        IReadOnlyList<DocumentListRow> rows;
+        if (needsFinancialMaterialization)
+        {
+            rows = await SelectRows(query).ToListAsync(cancellationToken);
+        }
+        else
+        {
+            var ordered = valueSortDesc || valueSortAsc ? query : ApplyDocumentSort(query, request.Sort);
+            rows = await SelectRows(ordered)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync(cancellationToken);
+        }
 
         var totalBeforeFinancialFilters = needsFinancialMaterialization ? 0 : await query.CountAsync(cancellationToken);
 
