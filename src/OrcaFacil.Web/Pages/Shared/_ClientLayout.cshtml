@@ -65,7 +65,8 @@
                             <h2>@group.Label</h2>
                             @foreach (var item in group.Items)
                             {
-                                var active = currentPath.StartsWith(item.Page, StringComparison.OrdinalIgnoreCase);
+                                var itemPath = item.Page.EndsWith("/Index", StringComparison.OrdinalIgnoreCase) ? item.Page.Substring(0, item.Page.Length - 6) : item.Page;
+var active = currentPath.Equals(itemPath, StringComparison.OrdinalIgnoreCase) || currentPath.StartsWith(itemPath + "/", StringComparison.OrdinalIgnoreCase);
                                 <a class="@(active ? "is-active" : null)" asp-page="@item.Page" aria-current="@(active ? "page" : null)" title="@item.Label">
                                     <svg class="of-icon" aria-hidden="true"><use href="#of-icon-@item.Icon" /></svg>
                                     <span class="of-menu-label">@item.Label</span>
@@ -84,7 +85,8 @@
                             {
                                 @foreach (var item in group.Items)
                                 {
-                                    var active = currentPath.StartsWith(item.Page, StringComparison.OrdinalIgnoreCase);
+                                    var itemPath = item.Page.EndsWith("/Index", StringComparison.OrdinalIgnoreCase) ? item.Page.Substring(0, item.Page.Length - 6) : item.Page;
+var active = currentPath.Equals(itemPath, StringComparison.OrdinalIgnoreCase) || currentPath.StartsWith(itemPath + "/", StringComparison.OrdinalIgnoreCase);
                                     <a class="@(active ? "is-active" : null)" asp-page="@item.Page" aria-current="@(active ? "page" : null)" title="@item.Label">
                                         <svg class="of-icon" aria-hidden="true"><use href="#of-icon-@item.Icon" /></svg>
                                         <span class="of-menu-label">@item.Label</span>

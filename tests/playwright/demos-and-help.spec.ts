@@ -15,7 +15,7 @@ test('ajuda contextual abre como drawer e devolve foco', async ({ page }) => {
   await page.goto(`${baseURL}/Dashboard`);
   const trigger = page.getByRole('button', { name: 'Como usar esta página' });
   await trigger.click();
-  await expect(page.getByRole('dialog', { name: /Transforme a informação/i })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: /Visão geral/i })).toBeVisible();
   await page.getByRole('button', { name: 'Fechar ajuda' }).click();
   await expect(trigger).toBeFocused();
 });

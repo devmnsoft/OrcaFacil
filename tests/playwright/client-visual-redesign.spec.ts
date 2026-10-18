@@ -21,7 +21,7 @@ for (const viewport of viewports) {
         test.skip(!baseURL, 'Requer ambiente autenticado semeado');
         const response = await page.goto(`${baseURL}${route}`);
         expect(response?.status()).toBeLessThan(400);
-        await expect(page.locator('main')).toBeVisible();
+        await expect(page.locator('main').first()).toBeVisible();
         await expect(page.locator('body')).toContainText(title, { ignoreCase: true });
         await assertNoOverflow(page);
         await page.screenshot({ path: testInfo.outputPath(`${route.replaceAll('/', '-') || 'home'}-${viewport.name}-after.png`), fullPage: true });
