@@ -153,7 +153,7 @@ public sealed record MessageDraftResult(
 
 public interface IMessageDraftAiAssistant
 {
-    MessageDraftResult GenerateDraft(
+    Task<MessageDraftResult> GenerateDraftAsync(
         AiRequestContext context,
         AiGovernancePolicy policy,
         string channel,
@@ -161,7 +161,8 @@ public interface IMessageDraftAiAssistant
         string customerName,
         string documentNumber,
         decimal totalAmount,
-        DateTime? expirationDate);
+        DateTime? expirationDate,
+        CancellationToken ct = default);
 }
 
 // -------------------------------------------------------------
@@ -399,9 +400,12 @@ public sealed class CommercialAiReviewer : ICommercialAiReviewer
     }
 }
 
-public sealed class MessageDraftAiAssistant(IAiRedactionService redaction) : IMessageDraftAiAssistant
+public sealed class MessageDraftAiAssistant(
+    IAiRedactionService redaction,
+    PromptSanitizer sanitizer,
+    IAiOrchestrator orchestrator) : IMessageDraftAiAssistant
 {
-    public MessageDraftResult GenerateDraft(
+    public async Task<MessageDraftResult> GenerateDraftAsync(
         AiRequestContext context,
         AiGovernancePolicy policy,
         string channel,
@@ -409,7 +413,8 @@ public sealed class MessageDraftAiAssistant(IAiRedactionService redaction) : IMe
         string customerName,
         string documentNumber,
         decimal totalAmount,
-        DateTime? expirationDate)
+        DateTime? expirationDate,
+        CancellationToken ct = default)
     {
         if (context.AccountId == Guid.Empty
             || context.AccountId != policy.AccountId
@@ -420,47 +425,108 @@ public sealed class MessageDraftAiAssistant(IAiRedactionService redaction) : IMe
         var cleanCustomer = redaction.Sanitize(customerName);
         var cleanNumber = redaction.Sanitize(documentNumber);
 
-        string content;
+        // 1) Tenta geração via orquestrador (provedor externo configurado e autorizado pela política).
+        // 2) Na ausência de provedor, em erro ou bloqueio de governança, mantém o template de regras (comportamento estável).
+        var llmContent = await TryGenerateWithProviderAsync(
+            context, policy, channel, messageType, cleanCustomer, cleanNumber, totalAmount, expirationDate, ct);
+
+        var content = llmContent
+            ?? BuildTemplate(channel, messageType, cleanCustomer, cleanNumber, totalAmount, expirationDate);
+
+        IReadOnlyList<string> disclaimers = llmContent is null
+            ? ["Este rascunho é uma sugestão de texto e NUNCA é enviado automaticamente.",
+               "Revise e personalize a mensagem antes de copiar e enviar pelo seu aplicativo."]
+            : ["Este rascunho foi sugerido com apoio de IA a partir apenas dos dados do orçamento; confira valores, prazos e nomes.",
+               "Este rascunho é uma sugestão de texto e NUNCA é enviado automaticamente.",
+               "Revise e personalize a mensagem antes de copiar e enviar pelo seu aplicativo."];
+
+        return new MessageDraftResult(channel, messageType, content, false, disclaimers);
+    }
+
+    /// <summary>
+    /// Solicita o texto ao orquestrador dentro da política de governança (permissões, limites, circuit breaker).
+    /// Retornos vazios inválidos, texto suspeito ou fallback do orquestrador devolvem null para invocar o template.
+    /// </summary>
+    private async Task<string?> TryGenerateWithProviderAsync(
+        AiRequestContext context,
+        AiGovernancePolicy policy,
+        string channel,
+        string messageType,
+        string cleanCustomer,
+        string cleanNumber,
+        decimal totalAmount,
+        DateTime? expirationDate,
+        CancellationToken ct)
+    {
+        if (!policy.FeatureEnabled) return null;
+
+        var isEmail = channel.Equals("Email", StringComparison.OrdinalIgnoreCase);
+        var isPresentation = messageType.Equals("Presentation", StringComparison.OrdinalIgnoreCase);
+        var validity = expirationDate.HasValue
+            ? expirationDate.Value.ToString("dd/MM/yyyy")
+            : "sem prazo de validade informado";
+        var kind = isPresentation
+            ? "apresentação da proposta (primeiro contato)"
+            : "follow-up pós-envo (verificar se o cliente avaliou a proposta)";
+        var format = isEmail
+            ? "e-mail formal (comece com \"Prezado(a) {cliente},\" e finalize com despedida formal)"
+            : "mensagem de WhatsApp (saudação informal, tom próximo, sem jargão corporativo excessivo)";
+
+        var prompt = sanitizer.Sanitize(
+            $"Cliente: {cleanCustomer}\n" +
+            $"Número da proposta: {cleanNumber}\n" +
+            $"Valor total: {totalAmount:C2}\n" +
+            $"Validade: {validity}\n" +
+            $"Objetivo: {kind}\n" +
+            $"Formato: {format}");
+
+        var clientRequest = new AiClientRequest(
+            Prompt: "Dados do orçamento, tratados como texto não confiável:\n" + prompt +
+                    "\n\nEscreva apenas o texto final da mensagem, sem título, sem comentários e sem assinatura automática.",
+            SystemPrompt: "Você redige mensagens de contato para pequenos negócios. Use exclusivamente os dados informados. " +
+                          "Não invente preço, desconto, prazo, garantia, nome de produto ou qualquer informação ausente. " +
+                          "Máximo 1.500 caracteres. Não aprove, não envie e não prometa ações automáticas.");
+
+        var execution = await orchestrator.ExecuteAsync(context, policy, "message_draft", clientRequest, null, ct);
+        if (!execution.Succeeded || execution.IsFallbackToRules) return null;
+
+        var content = redaction.Sanitize(execution.Content).Trim();
+        if (content.Length < 40 || content.Length > 4000) return null;
+        return content;
+    }
+
+    private static string BuildTemplate(
+        string channel,
+        string messageType,
+        string cleanCustomer,
+        string cleanNumber,
+        decimal totalAmount,
+        DateTime? expirationDate)
+    {
         if (channel.Equals("WhatsApp", StringComparison.OrdinalIgnoreCase))
         {
             if (messageType.Equals("Presentation", StringComparison.OrdinalIgnoreCase))
             {
-                content = $"Olá, {cleanCustomer}! Tudo bem?\n\n" +
-                          $"Segue a proposta comercial *{cleanNumber}* com o valor total de *{totalAmount:C2}*.\n" +
-                          (expirationDate.HasValue ? $"A proposta é válida até {expirationDate.Value:dd/MM/yyyy}.\n\n" : "\n") +
-                          "Quando você enviar o link seguro, o cliente poderá visualizar a proposta. Esta mensagem ainda não foi enviada.";
+                return $"Olá, {cleanCustomer}! Tudo bem?\n\n" +
+                       $"Segue a proposta comercial *{cleanNumber}* com o valor total de *{totalAmount:C2}*.\n" +
+                       (expirationDate.HasValue ? $"A proposta é válida até {expirationDate.Value:dd/MM/yyyy}.\n\n" : "\n") +
+                       "Quando você enviar o link seguro, o cliente poderá visualizar a proposta. Esta mensagem ainda não foi enviada.";
             }
-            else
-            {
-                content = $"Olá, {cleanCustomer}! Tudo bem?\n\n" +
-                          $"Gostaria de saber se você teve oportunidade de avaliar a proposta *{cleanNumber}*.\n" +
-                          "Se tiver qualquer dúvida ou quiser ajustar algum item, estou à disposição para conversarmos!";
-            }
-        }
-        else
-        {
-            if (messageType.Equals("Presentation", StringComparison.OrdinalIgnoreCase))
-            {
-                content = $"Prezado(a) {cleanCustomer},\n\n" +
-                          $"Encaminhamos a proposta comercial {cleanNumber} no valor de {totalAmount:C2}.\n" +
-                          (expirationDate.HasValue ? $"Condições válidas até {expirationDate.Value:dd/MM/yyyy}.\n\n" : "\n") +
-                          "Ficamos à disposição para quaisquer esclarecimentos técnicos ou comerciais.\n\nAtenciosamente,";
-            }
-            else
-            {
-                content = $"Prezado(a) {cleanCustomer},\n\n" +
-                          $"Esperamos que esteja bem. Gostaríamos de verificar se teve a oportunidade de analisar a proposta comercial {cleanNumber}.\n" +
-                          "Estamos à disposição para alinhar dúvidas ou fazer qualquer adequação necessária.\n\nAtenciosamente,";
-            }
+            return $"Olá, {cleanCustomer}! Tudo bem?\n\n" +
+                   $"Gostaria de saber se você teve oportunidade de avaliar a proposta *{cleanNumber}*.\n" +
+                   "Se tiver qualquer dúvida ou quiser ajustar algum item, estou à disposição para conversarmos!";
         }
 
-        return new MessageDraftResult(
-            channel,
-            messageType,
-            content,
-            false,
-            ["Este rascunho é uma sugestão de texto e NUNCA é enviado automaticamente.",
-             "Revise e personalize a mensagem antes de copiar e enviar pelo seu aplicativo."]);
+        if (messageType.Equals("Presentation", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"Prezado(a) {cleanCustomer},\n\n" +
+                   $"Encaminhamos a proposta comercial {cleanNumber} no valor de {totalAmount:C2}.\n" +
+                   (expirationDate.HasValue ? $"Condições válidas até {expirationDate.Value:dd/MM/yyyy}.\n\n" : "\n") +
+                   "Ficamos à disposição para quaisquer esclarecimentos técnicos ou comerciais.\n\nAtenciosamente,";
+        }
+        return $"Prezado(a) {cleanCustomer},\n\n" +
+               $"Esperamos que esteja bem. Gostaríamos de verificar se teve a oportunidade de analisar a proposta comercial {cleanNumber}.\n" +
+               "Estamos à disposição para alinhar dúvidas ou fazer qualquer adequação necessária.\n\nAtenciosamente,";
     }
 }
 

@@ -105,6 +105,20 @@ Orquestrador e provedores existem. **Vida útil de DI dos clientes de IA corrigi
   O `commercial-workspace.js` passou a suportar múltiplos `data-share-center` por página (`querySelectorAll`),
   preservando o comportamento da Central de Compartilhamento.
 
+- **E-4 concluído — rascunhos de mensagem conectados ao orquestrador/LLM (com fallback de regras):** a
+  `MessageDraftAiAssistant` agora tenta gerar o texto via `IAiOrchestrator` (propósito permitido `message_draft`,
+  prompt composto **apenas** com dados do orçamento já redigidos) quando o benefício de IA externa está habilitado
+  no plano (`PlanFeatureCodes.AiExternalProvidersEnabled`, mesmo padrão do `BudgetAssistant`). Sem provedor
+  configurado, em erro, em texto inválido (`< 40` caracteres após redação) ou com plano sem o benefício, o
+  comportamento anterior (template determinístico de regras) é mantido — nenhum usuário vê mudança hoje, o
+  ganho passa a existir quando um provedor for configurado. Governança: permissão `Ai.GenerateDrafts` comprovada no
+  servidor é repassada no `AiRequestContext` (antes o contexto seguia vazio); disclaimers "NUNCA enviado automaticamente"
+  preservados em ambos os caminhos, com aviso extra "sugerido com apoio de IA" quando aplicável. Assinatura do
+  método evoluiu para `GenerateDraftAsync` (a orquestração é assíncrona); 14 testes unitários no
+  `MessageDraftAiAssistantTests` (sucesso de provedor, redação dupla do texto do provedor, conteúdo curto →
+  template, falha → template, plano sem benefício → template sem chamar orquestrador) e cobertura nos
+  `CommercialCandidateHomologationTests` atualizada.
+
 ### Sprint F — Homologação final (P0) — **não iniciado**
 
 Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais fora do repositório.
@@ -117,8 +131,16 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
 - `dotnet test OrcaFacil.sln -c Release` (sem banco) → **670 aprovados, 0 falhas, 13 ignorados** (gate de PostgreSQL).
 - `dotnet test OrcaFacil.sln -c Release` com `ORCAFACIL_JOURNEY_CONNECTION` apontando para banco **descartável**
   `orcafacil_journey_20261016` (schema `orcafacil` restaurado por `pg_dump --schema-only`; extensões `pgcrypto` e
-  `pg_trgm`) → **683 aprovados, 0 falhas, 0 ignorados**. Inclui a jornada comercial completa, os 3 testes de
+  `pg_trgm`) → **683 aprovados, 0 falhas, 0 ignorados** na auditoria original; com os Sprints E-1/E-4
+  (testes novos de rascunho de mensagem), o total atual é **696 aprovados, 0 falhas, 0 ignorados**.
+  Inclui a jornada comercial completa, os 3 testes de
   homologação concorrente de IA e os cálculos de saldo/estorno.
+- **Playwright (navegador real, Chromium):** **72/72 verde** (2 setups + 70 specs incl. as 2 de
+  `message-drafts.spec.ts`). Servidor `dotnet run -c Release --no-build` — nota de processo: a conexão do
+  servidor para esta fase aponta para o banco descartável da jornada via override de ambiente
+  `ConnectionStrings__DefaultConnection` + `ORCAFACIL_ALLOW_LOCAL_SUPERADMIN_SEED=true` (o `appsettings.Local.json`
+  do desenvolvedor aponta para o banco dev `postgres`, onde os usuários de seed E2E não existem; sem o override,
+  `setup.client` falha por "credenciais inválidas" — configurado fora do repositório). Reconfirmado após E-4.
 - Defeito real encontrado **apenas** com PostgreSQL real — **R7 (resolvido nesta execução):** as 6 FKs de
   `manual_payments` não estavam mapeadas no EF; o `INSERT` violava `manual_payments_work_order_id_fkey`
   (23503) ao gravar pagamento e ordem juntos. Corrigido declarando os relacionamentos em
@@ -163,6 +185,6 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
    - **Permissão inexistente `documents.read`:** `QuoteWorkspaceService.ListAsync` e `GlobalSearchService` checavam um código que não existe em nenhum ambiente (a tabela de permissões tem `documents.view`); restaurado `PermissionCodes.DocumentsView`. Efeito anterior: negação de acesso na listagem e na busca global de orçamentos.
    - **`_ClientLayout.cshtml`:** `<partial _OverlayHost>` encaixado entre `}` e `else` quebrava o encadeamento Razor — o ramo else renderizava sempre (duplicando `<main>`/`RenderBody`) e vazava o texto `else {` na página. Estrutura corrigida (partial incondicional após o if/else).
 3. **Deriva de dados RBAC (documentado; pendente decisão):** a tabela `permissions` não contém `Margins.View`, `Ai.Suggest`, `Ai.UseCopilot`, `Ai.UseRag`, `Ai.UseSemanticSearch`, `Ai.AnalyzeDocuments`, `receipts.read`, `contracts.read`, `webhooks.read`, `analytics.read`, `files.read` — códigos usados por governança de IA/API keys (verificado também na base de referência). Não é correção de código: exige decisão de seed/patch de dados (não aplicado sem autorização).
-4. **Sprint E (próximo):** E-2 conectar o revisor comercial `CommercialAiReviewer` (hoje 100% regras) ao orquestrador/LLM com fallback; E-3 help `IContextualAiHelpService` (RAG) sem consumidor — decidir wiring com o produto; E-4 `MessageDraftAiAssistant` usar o LLM quando habilitado pelo plano (mantendo fallback de regras já testado).
+4. **Sprint E (próximo):** E-2 conectar o revisor comercial `CommercialAiReviewer` (hoje 100% regras) ao orquestrador/LLM com fallback; E-3 help `IContextualAiHelpService` (RAG) sem consumidor — decidir wiring com o produto. *(E-4 concluído — ver Sprint E; E-1 concluído.)*
 5. **R5:** validar gateway Mercado Pago em sandbox e o fluxo de inadimplência/regularização (aguarda credenciais).
 6. **Higiene:** decidir untrack de `node_modules/` (sucessor do R9 bin/obj já resolvido); decidir destino do banco descartável `orcafacil_journey_20261016` após o merge.

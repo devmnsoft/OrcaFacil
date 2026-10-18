@@ -6,8 +6,10 @@ using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Ai;
 using OrcaFacil.Application.Commercial;
 using OrcaFacil.Application.Documents;
+using OrcaFacil.Application.Plans;
 using OrcaFacil.Application.Security;
 using OrcaFacil.Domain.Enums;
+using OrcaFacil.Domain.Plans;
 using OrcaFacil.Persistence;
 
 namespace OrcaFacil.Web.Pages.Documents;
@@ -15,7 +17,8 @@ namespace OrcaFacil.Web.Pages.Documents;
 [Authorize]
 public sealed class DetailsModel(ICommercialWorkspaceQueryService workspace, ICurrentAccountService account,
     DocumentService documents, ICommercialJourneyService journey, BudgetWizardService wizard,
-    OrcaFacilDbContext db, IAuditService audit, IMessageDraftAiAssistant messageDrafts) : PageModel
+    OrcaFacilDbContext db, IAuditService audit, IMessageDraftAiAssistant messageDrafts,
+    IPlanAccessService plans) : PageModel
 {
     public CommercialDocumentWorkspaceView Document { get; private set; } = null!;
 
@@ -175,6 +178,8 @@ public sealed class DetailsModel(ICommercialWorkspaceQueryService workspace, ICu
     /// Gera um rascunho de mensagem de acompanhamento (WhatsApp ou e-mail) para este
     /// orçamento. O rascunho é somente texto sugerido: nunca é enviado automaticamente
     /// e o usuário revisa, personaliza e envia pelo aplicativo de sua escolha.
+    /// A permissão Ai.GenerateDrafts foi comprovada no servidor; IA externa exige benefício
+    /// do plano (AiExternalProvidersEnabled), mesmo padrão do BudgetAssistant.
     /// </summary>
     public async Task<IActionResult> OnPostDraftMessageAsync(Guid id, string? channel, CancellationToken ct)
     {
@@ -190,15 +195,20 @@ public sealed class DetailsModel(ICommercialWorkspaceQueryService workspace, ICu
         var view = await workspace.GetAsync(id, ct);
         if (view is null) return NotFound();
 
-        var result = messageDrafts.GenerateDraft(
-            new AiRequestContext(accountId, account.UserId, new HashSet<string>(StringComparer.OrdinalIgnoreCase)),
-            new AiGovernancePolicy(accountId, AccountActive: account.AccountStatus is null or AccountStatus.Active),
+        var accountActive = account.AccountStatus is null or AccountStatus.Active;
+        var externalAiAllowed = accountActive && (await plans.CanUseAsync(accountId, PlanFeatureCodes.AiExternalProvidersEnabled, ct)).IsAllowed;
+
+        var result = await messageDrafts.GenerateDraftAsync(
+            new AiRequestContext(accountId, account.UserId,
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase) { PermissionCodes.AiGenerateDrafts }),
+            new AiGovernancePolicy(accountId, AccountActive: accountActive, FeatureEnabled: externalAiAllowed),
             channel?.Trim().Equals("Email", StringComparison.OrdinalIgnoreCase) == true ? "Email" : "WhatsApp",
             "FollowUp",
             view.ClientName,
             view.Number,
             view.Total,
-            view.ValidUntil);
+            view.ValidUntil,
+            ct);
 
         TempData["Success"] = "Rascunho sugerido. Revise e personalize antes de copiar e enviar.";
         TempData["AiDraftMessage"] = result.DraftContent;
