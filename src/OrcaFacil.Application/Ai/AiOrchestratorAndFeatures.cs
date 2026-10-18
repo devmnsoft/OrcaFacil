@@ -411,6 +411,12 @@ public sealed class MessageDraftAiAssistant(IAiRedactionService redaction) : IMe
         decimal totalAmount,
         DateTime? expirationDate)
     {
+        if (context.AccountId == Guid.Empty
+            || context.AccountId != policy.AccountId
+            || !policy.AccountActive)
+            return new(channel, messageType, string.Empty, false,
+                ["Rascunho indisponível: confirme a conta selecionada e a situação do plano antes de tentar novamente."]);
+
         var cleanCustomer = redaction.Sanitize(customerName);
         var cleanNumber = redaction.Sanitize(documentNumber);
 
