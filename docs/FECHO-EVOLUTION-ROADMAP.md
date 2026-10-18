@@ -150,7 +150,7 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
 ## 6. Próxima ação
 
 1. **R9 (higiene):** decidir parar de rastrear `bin/obj` (ou commitar build integral consistente) para eliminar a tensão `git-safety` × teste de localizacão; e decidir se sincroniza o snapshot de `manual_payments` (opcional — já consistente com o padrão do repo).
-2. **R2 (navegador):** instalar `@playwright/test`, subir o servidor Web com seed e rodar as 5 specs de `tests/playwright/*`.
+2. **R2 (navegador) — evidência obtida:** `@playwright/test` instalado, servidor Web subido contra banco semeado (SuperAdmin via seeder + conta cliente E2E + RBAC/módulos), 5 specs executadas: **70/70 aprovados** (15 admin + 39 cliente + 2 demos/ajuda + 9 experiência + 3 fluxos guiados + 2 setups). Correções de copy desatualizado nos specs e uma correção real de produto (destaque ativo do menu em `_ClientLayout.cshtml`). Observação: muitas páginas têm `<main>` próprio além do `<main id="main-content">` do layout (landmark duplicado) — spec usa `.first()`; vale higienizar em sprint de acessibilidade.
 3. **R5:** validar gateway Mercado Pago em sandbox e o fluxo de inadimplência/regularização.
 4. **Sprint E:** evoluir a IA assistida sobre a base de DI já corrigida.
 5. **R8:** higienizar o baseline de validadores pré-existente (separadamente desta evolução).
