@@ -173,7 +173,7 @@ const rewriteConfig = `<?xml version="1.0" encoding="UTF-8"?>
 `;
 
 function publicationReadme() {
-  return `OrçaFácil - Publicação IIS
+  return `Fechô - Publicação IIS
 
 Esta pasta dist está pronta para ser publicada no IIS.
 
@@ -206,7 +206,7 @@ async function writeGeneratedFiles() {
   await fs.writeFile(path.join(distDir, 'web.config'), webConfig);
   await fs.writeFile(path.join(distDir, 'web.rewrite.config'), rewriteConfig);
   await fs.writeFile(path.join(distDir, 'version.json'), JSON.stringify({
-    app: 'OrçaFácil',
+    app: 'Fechô',
     version: pkg.version,
     buildDate: new Date().toISOString(),
     target: 'iis',

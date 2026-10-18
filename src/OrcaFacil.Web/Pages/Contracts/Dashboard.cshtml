@@ -9,5 +9,5 @@
 </div>
 <section class="contract-panel"><div class="panel-heading"><div><span class="eyebrow">Prioridade operacional</span><h2>Contratos em risco</h2></div></div>
 @if(Model.AtRisk.Count==0){<div class="contract-empty"><strong>Nenhum contrato crítico calculado.</strong><p>Os snapshots de saúde aparecerão aqui após processamento com dados operacionais.</p></div>}
-else {<div class="contract-table-wrap"><table><thead><tr><th>Contrato</th><th>Saúde</th><th>Próxima ação</th><th></th></tr></thead><tbody>@foreach(var row in Model.AtRisk){<tr><td><strong>@row.Number</strong><small>@row.Title</small></td><td><span class="health-badge health-@row.Score">@row.Score · @row.Classification</span></td><td>@row.NextAction</td><td><a asp-page="/Contracts/Details" asp-route-id="@row.Id">Abrir 360</a></td></tr>}</tbody></table></div>}
+else {<div class="contract-table-wrap"><table><thead><tr><th>Contrato</th><th>Saúde</th><th>Próxima ação</th><th></th></tr></thead><tbody>@foreach(var row in Model.AtRisk){<tr><td><strong>@row.Number</strong><small>@row.Title</small></td><td><span class="health-badge health-@row.Score">@row.Score · @row.Classification</span></td><td>@row.NextAction</td><td><a asp-page="/Contracts/Details" asp-route-id="@row.Id">Abrir</a></td></tr>}</tbody></table></div>}
 </section></section>
