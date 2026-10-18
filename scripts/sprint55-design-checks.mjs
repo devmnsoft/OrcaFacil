@@ -18,7 +18,7 @@ export async function runSprint55Check(mode) {
 
   if (mode === 'design-system-v56' || mode === 'design-premium') {
     for (const name of cssFiles) if (!await exists(`${root}/wwwroot/css/${name}.css`)) failures.push(`CSS obrigatório ausente: ${name}.css`);
-    failures.push(...requireTokens(tokens, ['Design System V5.6','--of-primary','--of-success','--of-danger','--of-shadow-md','--of-radius-xl','--of-transition-fast','--of-icon-md','--of-z-dialog','--of-breakpoint-md'], 'tokens.css'));
+    failures.push(...requireTokens(tokens, ['Design System V5.8','--of-primary','--of-success','--of-danger','--of-shadow-md','--of-radius-xl','--of-transition-fast','--of-icon-md','--of-z-dialog','--of-breakpoint-md'], 'tokens.css'));
     failures.push(...requireTokens(design, ['page-shell','page-hero','page-header','section-header','summary-card','action-card','status-badge','priority-badge','risk-badge','empty-state','loading-state','filter-bar','action-bar','premium-table','responsive-table-card','form-panel','form-grid','input-group','validation-message','timeline','kanban-card','wizard-steps','breadcrumb','quick-actions','command-card','health-card','prefers-reduced-motion'], 'design-system.css'));
   }
   if (mode === 'login-premium') {
@@ -29,7 +29,7 @@ export async function runSprint55Check(mode) {
   }
   if (mode === 'dashboard-premium') {
     const dashboard = sources['Pages/Dashboard/Index.cshtml'];
-    failures.push(...requireTokens(dashboard, ['<h1','dashboard.TotalBudgets','dashboard.BudgetTotal','BestRecommendation','of-quick-actions','of-metric-grid','_EmptyState','Commercial.Attention'], 'Dashboard'));
+    failures.push(...requireTokens(dashboard, ['<h1','dashboard.TotalBudgets','dashboard.TotalDocuments','BestRecommendation','of-quick-actions','of-metric-grid','_EmptyState','Commercial.Attention'], 'Dashboard'));
     if (/Math\.random|Random\s*\(/i.test(dashboard)) failures.push('Dashboard usa valor aleatório.');
   }
   if (mode === 'public-home-design') failures.push(...requireTokens(sources['Pages/Index.cshtml'], ['of-public-hero','<h1','of-home-actions','como-funciona','of-feature-grid','of-final-cta','data-submit-loading'], 'Home pública'));
