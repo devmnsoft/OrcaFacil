@@ -3,6 +3,7 @@ using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Commercial;
 using OrcaFacil.Application.Common;
 using OrcaFacil.Application.Documents;
+using OrcaFacil.Application.Security;
 using OrcaFacil.Domain.Enums;
 
 namespace OrcaFacil.Persistence.Services;
@@ -15,7 +16,7 @@ public sealed class QuoteWorkspaceService(OrcaFacilDbContext db, ICurrentAccount
     {
         await currentAccount.EnsureAccountAccessAsync(cancellationToken);
         if (currentAccount.AccountId is not { } accountId ||
-            !await currentAccount.HasPermissionAsync("documents.read", cancellationToken))
+            !await currentAccount.HasPermissionAsync(PermissionCodes.DocumentsView, cancellationToken))
             return OperationResult<PagedResult<QuoteWorkspaceItem>>.Failure("access_denied", "Você não tem acesso aos orçamentos desta conta.");
 
         var page = Math.Max(1, request.Page);

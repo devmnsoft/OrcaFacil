@@ -12,7 +12,7 @@ public sealed class IndexModel(ICommercialAutomationService automation, ICommerc
     public IReadOnlyList<RoutineItem> Items { get; private set; } = [];
     public IReadOnlyList<RoutineItem> AllItems { get; private set; } = [];
     public string? LoadError { get; private set; }
-    [BindProperty(SupportsGet = true)] public string Filter { get; set; } = "pending";
+    [BindProperty(SupportsGet = true)] public string? Filter { get; set; } = "pending";
 
     public async Task OnGetAsync(CancellationToken ct)
     {
