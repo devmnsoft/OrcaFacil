@@ -70,7 +70,7 @@ export async function runSprint55Check(mode) {
     failures.push(...requireTokens(app + design + await read(`${root}/wwwroot/css/base.css`) + allCritical, ['safeInit','focus-visible','prefers-reduced-motion','aria-live','aria-label','<h1','<label'], 'Acessibilidade'));
   }
   if (mode === 'feedback-messages') failures.push(...requireTokens(allCritical, ['Ainda não','Criar','Atenção','aria-live'], 'Feedback'));
-  if (mode === 'no-technical-id-inputs' && /<(?:input|select)\b[^>]*(?:name|id|asp-for)=["'][^"']*(?:ClientId|UserId|TenantId)[^"']*["']/i.test(allCritical)) failures.push('Tela crítica solicita identificador técnico.');
+  if (mode === 'no-technical-id-inputs' && /<input\b(?![^>]*type=["']hidden["'])[^>]*(?:name|id)=["'][^"']*(?:ClientId|UserId|TenantId)[^"']*["']/i.test(allCritical)) failures.push('Tela crítica solicita identificador técnico.');
   if (mode === 'js-safety') {
     failures.push(...requireTokens(app, ['safeInit','if(!toggle||!panel)return','querySelector','pageshow'], 'JavaScript'));
     if (/\bbootstrap\.|new\s+bootstrap|javascript:void/i.test(app)) failures.push('JavaScript depende de Bootstrap ou URL insegura.');

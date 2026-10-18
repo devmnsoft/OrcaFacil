@@ -12,5 +12,5 @@
 </section>
 <section class="form-panel"><div class="action-bar"><h2>Módulos mais contratados</h2><a asp-page="/SuperAdmin/Clients/Index" class="of-button of-button-secondary">Gerenciar clientes</a></div>
 @if (Model.TopModules.Count == 0) { <div class="empty-state"><h3>Ainda não há contratações</h3><p>Cadastre um cliente ou aprove uma solicitação de módulo.</p></div> }
-else { <div class="responsive-table"><table class="premium-table"><thead><tr><th>Módulo</th><th>Contratos ativos</th><th>Eventos de uso (30 dias)</th></tr></thead><tbody>@foreach(var item in Model.TopModules){<tr><td>@item.Name</td><td>@item.Subscriptions</td><td>@item.Usage</td></tr>}</tbody></table></div> }
+else { <div class="responsive-table"><div class="of-responsive-table"><table class="premium-table"><thead><tr><th>Módulo</th><th>Contratos ativos</th><th>Eventos de uso (30 dias)</th></tr></thead><tbody>@foreach(var item in Model.TopModules){<tr><td>@item.Name</td><td>@item.Subscriptions</td><td>@item.Usage</td></tr>}</tbody></table></div></div> }
 </section></main>

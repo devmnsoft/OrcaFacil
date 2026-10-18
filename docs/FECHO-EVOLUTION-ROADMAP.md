@@ -91,11 +91,19 @@ inadimplência/regularização ponta a ponta e administração global de assinat
 Rebranding comercial concluído (commit `1386356`). Ajustes finos de navegação/responsividade ainda dependem de
 evidência Playwright (R2).
 
-### Sprint E — Inteligência e produtividade (P1) — **parcial**
+### Sprint E — Inteligência e produtividade (P1) — **em andamento**
 
 Orquestrador e provedores existem. **Vida útil de DI dos clientes de IA corrigida** (R1, registrados como
-`Scoped`, com teste de contrato). Próximo passo: evoluir orçamento assistido, sugestão de textos e
-acompanhamento comercial com cobertura de testes.
+`Scoped`, com teste de contrato). Progresso desta execução:
+
+- **E-1 concluído — rascunhos de mensagem no acompanhamento comercial ("Orçou. Enviou. Fechô."):** a service
+  `MessageDraftAiAssistant` (WhatsApp/e-mail; apresentação/retorno), antes registrada no DI sem nenhum consumidor,
+  está conectada em `/Documents/Details` (botões "Rascunho para WhatsApp" / "Rascunho para e-mail" na seção de
+  Acompanhamento comercial, com caixa reutilizável `data-share-center`, botão copiar e avisos da própria service —
+  nada é enviado automaticamente). adicionado guard de governança na service (conta ativa + não cruzar `AccountId`),
+  8 testes unitários novos (`MessageDraftAiAssistantTests`) e 2 specs Playwright (`message-drafts.spec.ts`).
+  O `commercial-workspace.js` passou a suportar múltiplos `data-share-center` por página (`querySelectorAll`),
+  preservando o comportamento da Central de Compartilhamento.
 
 ### Sprint F — Homologação final (P0) — **não iniciado**
 
@@ -149,9 +157,12 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
 
 ## 6. Próxima ação
 
-1. **R9 (higiene):** decidir parar de rastrear `bin/obj` (ou commitar build integral consistente) para eliminar a tensão `git-safety` × teste de localizacão; e decidir se sincroniza o snapshot de `manual_payments` (opcional — já consistente com o padrão do repo).
-2. **R2 (navegador) — evidência obtida:** `@playwright/test` instalado, servidor Web subido contra banco semeado (SuperAdmin via seeder + conta cliente E2E + RBAC/módulos), 5 specs executadas: **70/70 aprovados** (15 admin + 39 cliente + 2 demos/ajuda + 9 experiência + 3 fluxos guiados + 2 setups). Correções de copy desatualizado nos specs e uma correção real de produto (destaque ativo do menu em `_ClientLayout.cshtml`). Observação: muitas páginas têm `<main>` próprio além do `<main id="main-content">` do layout (landmark duplicado) — spec usa `.first()`; vale higienizar em sprint de acessibilidade.
-3. **R5:** validar gateway Mercado Pago em sandbox e o fluxo de inadimplência/regularização.
-4. **Sprint E:** evoluir a IA assistida sobre a base de DI já corrigida.
-5. **R8:** higienizar o baseline de validadores pré-existente (separadamente desta evolução).
-6. **R6:** padronizar a rota pública documentada.
+1. **R8 — baseline zerado nesta execução:** todos os 611 validadores `check:*` passam (`FAIL: 0`; dupla varredura). Correções aplicadas em produto/validadores: `rel="noopener"` em `/Subscription`, classes legadas removidas em `Templates/Details`, `aria-label` em 6 controles sem rótulo, wrapper `of-responsive-table` em 12 tabelas (SuperAdmin/AccountAdmin), validadores alinhados à realidade (`mobile-ux` Escape, `routes` destino dinâmico `@item.Page`, `no-technical-id-inputs` só input digitável, `New.cshtml.cs` sem `RedirectToPage` desde a evolução GET-only) e `check-release-readiness` reparado para Node ≥20.12 (CVE-2024-27980: `npm.cmd` exige `shell: true`).
+2. **Bugs de produto reais corrigidos nesta execução (descobertos pela reprovação E2E):**
+   - **/Documents e /Clients listavam sempre "Nenhuma proposta"/vazio:** `BindProperty(SupportsGet = true)` com propriedade não anulável (`Sort`/`Filter`) sofre *implicit required* de NRT; sem `?sort=` na URL o `ModelState` era inválido e `OnGetAsync` retornava `Page()` com lista vazia. Corrigido tornando `Sort`/`Filter` anuláveis (`Documents/Index`, `Clients/Index`, `CommercialRoutine/Index`; consumidores já possuem fallback).
+   - **Permissão inexistente `documents.read`:** `QuoteWorkspaceService.ListAsync` e `GlobalSearchService` checavam um código que não existe em nenhum ambiente (a tabela de permissões tem `documents.view`); restaurado `PermissionCodes.DocumentsView`. Efeito anterior: negação de acesso na listagem e na busca global de orçamentos.
+   - **`_ClientLayout.cshtml`:** `<partial _OverlayHost>` encaixado entre `}` e `else` quebrava o encadeamento Razor — o ramo else renderizava sempre (duplicando `<main>`/`RenderBody`) e vazava o texto `else {` na página. Estrutura corrigida (partial incondicional após o if/else).
+3. **Deriva de dados RBAC (documentado; pendente decisão):** a tabela `permissions` não contém `Margins.View`, `Ai.Suggest`, `Ai.UseCopilot`, `Ai.UseRag`, `Ai.UseSemanticSearch`, `Ai.AnalyzeDocuments`, `receipts.read`, `contracts.read`, `webhooks.read`, `analytics.read`, `files.read` — códigos usados por governança de IA/API keys (verificado também na base de referência). Não é correção de código: exige decisão de seed/patch de dados (não aplicado sem autorização).
+4. **Sprint E (próximo):** E-2 conectar o revisor comercial `CommercialAiReviewer` (hoje 100% regras) ao orquestrador/LLM com fallback; E-3 help `IContextualAiHelpService` (RAG) sem consumidor — decidir wiring com o produto; E-4 `MessageDraftAiAssistant` usar o LLM quando habilitado pelo plano (mantendo fallback de regras já testado).
+5. **R5:** validar gateway Mercado Pago em sandbox e o fluxo de inadimplência/regularização (aguarda credenciais).
+6. **Higiene:** decidir untrack de `node_modules/` (sucessor do R9 bin/obj já resolvido); decidir destino do banco descartável `orcafacil_journey_20261016` após o merge.

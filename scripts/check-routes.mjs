@@ -22,6 +22,7 @@ for (const relative of sources) {
   const source = await readFile(path.join(razorRoot, relative), 'utf8');
   for (const match of source.matchAll(/<a\b[^>]*\basp-page="([^"]+)"[^>]*>/gi)) {
     if (match[0].includes('asp-area="Admin"')) continue;
+    if (match[1].includes('@')) continue; // destino resolvido no servidor via handler/navigation service
     if (!await pageExists(match[1])) failures.push(`${relative}: página não encontrada: ${match[1]}`);
   }
   for (const match of source.matchAll(/<button\b([^>]*)>/gi)) {
