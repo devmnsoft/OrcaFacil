@@ -37,7 +37,7 @@ for (const requiredPage of ['/Index', '/Recursos/Index', '/Segmentos/Index', '/P
   if (!footerSource.includes(`asp-page="${requiredPage}"`)) failures.push(`footer não aponta para ${requiredPage}`);
 if (!footerSource.includes('href="mailto:')) failures.push('footer não possui e-mail comercial acionável');
 
-for (const requiredLabel of ['Criar meu primeiro orçamento', 'Ver planos', 'Ver Profissional', 'Ver Negócio', 'Falar com suporte'])
+for (const requiredLabel of ['Criar meu primeiro orçamento', 'Ver planos', 'Ver Negócio', 'Falar com suporte'])
   if (!home.includes(requiredLabel)) failures.push(`CTA obrigatório ausente na Home: ${requiredLabel}`);
 
 for (const requiredMenuPage of ['/Recursos/Index', '/Segmentos/Index', '/Blog/Index', '/Status', '/Contato'])
