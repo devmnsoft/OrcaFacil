@@ -85,7 +85,7 @@ public sealed class PlanFeatureReadinessService : IPlanFeatureReadinessService
             Partial(PlanFeatureCodes.PublicLinkSharingEnabled, "Link público é liberado junto da aprovação pública, sem gate próprio."),
             Partial(PlanFeatureCodes.OperationalReceiptsEnabled, "Recibos existem e operam igualmente em todos os planos."),
             Partial(PlanFeatureCodes.DocumentConvertToReceiptEnabled, "Conversão em recibo existe e ainda não consulta o plano."),
-            Partial(PlanFeatureCodes.BasicReportsEnabled, "Relatórios básicos existem e ainda não exigem plano."),
+            Ready(PlanFeatureCodes.BasicReportsEnabled, "/Reports", "IPlanAccessService", "CanUseAsync", "IntelligenceReport", "account.member"),
             Partial(PlanFeatureCodes.AdvancedReportsEnabled, "Relatórios avançados existem e ainda não exigem plano pago."),
             Partial(PlanFeatureCodes.CommercialPipelineEnabled, "Pipeline comercial existe e ainda não exige plano pago."),
             Partial(PlanFeatureCodes.CommercialFollowUpsEnabled, "Acompanhamentos comerciais existem e ainda não exigem plano pago."),

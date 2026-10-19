@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Plans;
+using OrcaFacil.Domain.Plans;
 using OrcaFacil.Persistence;
+using OrcaFacil.Web.Extensions;
 using OrcaFacil.Web.Services;
 
 namespace OrcaFacil.Web.Pages.Reports;
@@ -12,6 +16,7 @@ public sealed class IndexModel(
     IIntelligenceReportService reports,
     IOperationalAlertService alerts,
     ICurrentAccountService account,
+    IPlanAccessService plans,
     OrcaFacilDbContext db) : PageModel
 {
     public IntelligenceReport Funnel { get; private set; } = new("Funil comercial", [], []);
@@ -20,8 +25,18 @@ public sealed class IndexModel(
     public IntelligenceReport Services { get; private set; } = new("Serviços", [], []);
     public int OpenAlerts { get; private set; }
 
-    public async Task OnGetAsync(CancellationToken ct)
+    public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
+        if (account.AccountId is { } id)
+        {
+            var decision = await plans.CanUseAsync(id, PlanFeatureCodes.BasicReportsEnabled, ct);
+            if (!decision.IsAllowed)
+            {
+                TempData.Warning("Os relatórios básicos estão disponíveis a partir do plano Profissional. Conheça os planos.");
+                return RedirectToPage("/Subscription/Index");
+            }
+        }
+
         var today = DateTime.UtcNow.Date;
         var filter = new ReportFilter(today.AddDays(1 - today.Day), today);
 
@@ -35,6 +50,7 @@ public sealed class IndexModel(
         var accountId = account.AccountId ?? throw new UnauthorizedAccessException("Selecione uma conta para consultar relatórios.");
         OpenAlerts = await db.Notifications.AsNoTracking().CountAsync(x =>
             x.AccountId == accountId && !x.IsDeleted && !x.IsRead && x.Message.Contains("[alert:"), ct);
+        return Page();
     }
 
     public Metric? FindMetric(IntelligenceReport report, string label) =>
