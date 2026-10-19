@@ -61,6 +61,14 @@
 .of-drawer header button { width: 40px; height: 40px; border: 0; border-radius: 10px; background: var(--of-subtle); font-size: 1.5rem; }
 .of-drawer section { padding: var(--of-space-5) 0; border-top: 1px solid var(--of-border); }
 .of-drawer h3 { margin-bottom: var(--of-space-2); font-size: 1rem; }
+.of-help-ask h3 { margin: 0 0 var(--of-space-2); }
+.of-help-ask__note { margin: var(--of-space-2) 0 0; color: var(--of-text-secondary); font-size: var(--of-text-sm); }
+.of-help-ask form { display: flex; gap: var(--of-space-2); margin-top: var(--of-space-3); }
+.of-help-ask input { flex: 1; min-width: 0; }
+.of-help-ask [data-help-ask-answer] { margin-top: var(--of-space-3); }
+.of-help-ask [data-help-ask-answer] h4 { margin: var(--of-space-3) 0 var(--of-space-1); font-size: var(--of-text-sm); }
+.of-help-ask [data-help-ask-answer] ul { margin: 0; padding-left: 1.1rem; }
+@media (max-width: 480px) { .of-help-ask form { flex-direction: column; } }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 .of-account-switcher-current,
 .of-account-choice { display:flex; align-items:center; gap:var(--of-space-3); }

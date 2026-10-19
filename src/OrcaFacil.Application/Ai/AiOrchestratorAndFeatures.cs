@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -172,6 +173,7 @@ public interface IContextualAiHelpService
 {
     Task<AiAnswer> AskHelpAsync(
         AiRequestContext context,
+        AiGovernancePolicy policy,
         string question,
         IEnumerable<AiSource> knowledgeBase,
         CancellationToken ct = default);
@@ -613,15 +615,35 @@ public sealed class MessageDraftAiAssistant(
 
 public sealed class ContextualAiHelpService(
     AiPromptInjectionGuard injectionGuard,
-    IAiOrchestrator orchestrator) : IContextualAiHelpService
+    IAiOrchestrator orchestrator,
+    PromptSanitizer? sanitizer = null,
+    IAiRedactionService? redaction = null) : IContextualAiHelpService
 {
+    // Palavras sem poder de discriminação: se entrassem na busca, quase todo guia casaria
+    // com qualquer pergunta e a resposta deixaria de ser fundamentada.
+    private static readonly HashSet<string> StopWords = new(StringComparer.Ordinal)
+    {
+        "como", "onde", "qual", "quais", "quando", "para", "sobre", "esta", "este", "esse", "essa",
+        "isso", "meu", "minha", "posso", "fazer", "usar", "pela", "pelo", "dos", "das", "uma",
+        "com", "que", "por", "the", "aqui", "mais", "devo", "consigo"
+    };
+
     public async Task<AiAnswer> AskHelpAsync(
         AiRequestContext context,
+        AiGovernancePolicy policy,
         string question,
         IEnumerable<AiSource> knowledgeBase,
         CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(question))
+        // A conta do contexto e a do plano precisam ser a mesma: nenhuma chamada cruza tenant.
+        if (context.AccountId == Guid.Empty || policy.AccountId != context.AccountId)
+        {
+            return new("Não foi possível validar a conta desta consulta.", AiOperatingMode.RulesOnly,
+                AiConfidence.Insufficient, [], ["A ajuda inteligente exige uma conta autenticada."]);
+        }
+
+        var cleanQuestion = (sanitizer?.Sanitize(question ?? string.Empty) ?? question ?? string.Empty).Trim();
+        if (cleanQuestion.Length == 0)
             return new("Digite sua dúvida para buscar ajuda.", AiOperatingMode.RulesOnly, AiConfidence.Insufficient, [], []);
 
         // Pre-filter sources BEFORE calling LLM
@@ -629,13 +651,7 @@ public sealed class ContextualAiHelpService(
             .Where(x => x.AccountId == context.AccountId && x.IsAccessible && !injectionGuard.IsSuspicious(x.Content))
             .ToList();
 
-        var qLower = question.ToLowerInvariant();
-        var relevant = candidateSources
-            .Where(x => x.Title.ToLowerInvariant().Contains(qLower) ||
-                        x.Content.ToLowerInvariant().Contains(qLower) ||
-                        qLower.Split(' ').Any(w => w.Length > 3 && x.Content.ToLowerInvariant().Contains(w)))
-            .Take(3)
-            .ToList();
+        var relevant = SelectRelevant(candidateSources, cleanQuestion);
 
         if (relevant.Count == 0)
         {
@@ -649,13 +665,15 @@ public sealed class ContextualAiHelpService(
 
         var sourceContext = string.Join("\n\n", relevant.Select(r => $"Fonte: {r.Title}\n{r.Content}"));
         var clientRequest = new AiClientRequest(
-            Prompt: $"Pergunta do usuário: {question}\n\nFontes oficiais:\n{sourceContext}",
+            Prompt: $"Pergunta do usuário: {cleanQuestion}\n\nFontes oficiais:\n{sourceContext}",
             SystemPrompt: "Responda à dúvida do usuário exclusivamente com base nas fontes oficiais fornecidas. " +
                           "Se a fonte não tiver a resposta, declare que não possui evidência. Não invente.");
 
+        // O plano e o estado da conta entram no orquestrador: sem o benefício de IA externa
+        // (ou com conta inativa) ele devolve fallback e a resposta sai das próprias fontes.
         var execution = await orchestrator.ExecuteAsync(
             context,
-            new AiGovernancePolicy(context.AccountId),
+            policy,
             "contextual_help",
             clientRequest,
             null,
@@ -663,9 +681,10 @@ public sealed class ContextualAiHelpService(
 
         if (execution.Succeeded && !execution.IsFallbackToRules)
         {
+            var generated = redaction?.Sanitize(execution.Content) ?? execution.Content;
             return new(
-                execution.Content,
-                AiOperatingMode.SecureRag,
+                generated,
+                AiOperatingMode.ExternalProvider,
                 relevant.Count > 1 ? AiConfidence.High : AiConfidence.Medium,
                 relevant,
                 ["Resposta gerada com base estrita na documentação autorizada do produto."],
@@ -681,5 +700,53 @@ public sealed class ContextualAiHelpService(
             relevant,
             ["Resposta baseada diretamente no texto das fontes oficiais."],
             "Revise as fontes documentadas.");
+    }
+
+    private static IReadOnlyList<AiSource> SelectRelevant(IReadOnlyList<AiSource> candidates, string question)
+    {
+        var normalizedQuestion = Normalize(question);
+        var tokens = normalizedQuestion
+            .Split([' ', '.', ',', '?', '!', ';', ':', '\n', '\r', '\t', '/', '\\', '-', '(', ')', '"', '\''],
+                StringSplitOptions.RemoveEmptyEntries)
+            .Where(token => token.Length > 3 && !StopWords.Contains(token))
+            .Distinct()
+            .ToArray();
+
+        return candidates
+            .Select(source => (Source: source, Score: Score(source, normalizedQuestion, tokens)))
+            .Where(item => item.Score > 0)
+            .OrderByDescending(item => item.Score)
+            .Take(3)
+            .Select(item => item.Source)
+            .ToList();
+    }
+
+    private static int Score(AiSource source, string normalizedQuestion, IReadOnlyList<string> tokens)
+    {
+        var title = Normalize(source.Title);
+        var content = Normalize(source.Content);
+
+        var score = 0;
+        if (title.Contains(normalizedQuestion, StringComparison.Ordinal)) score += 6;
+        if (content.Contains(normalizedQuestion, StringComparison.Ordinal)) score += 4;
+        foreach (var token in tokens)
+        {
+            if (title.Contains(token, StringComparison.Ordinal)) score += 3;
+            if (content.Contains(token, StringComparison.Ordinal)) score += 1;
+        }
+        return score;
+    }
+
+    // "Orçamento" e "orcamento" precisam casar: a mesma normalização vale para pergunta e fonte.
+    private static string Normalize(string value)
+    {
+        var decomposed = (value ?? string.Empty).ToLowerInvariant().Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder(decomposed.Length);
+        foreach (var character in decomposed)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+                builder.Append(character);
+        }
+        return builder.ToString().Normalize(NormalizationForm.FormC);
     }
 }

@@ -137,6 +137,30 @@ Orquestrador e provedores existem. **Vida útil de DI dos clientes de IA corrigi
   alterado no orçamento", renderizado em ambos os ramos (com/sem apontamentos). 11 testes unitários no arquivo
   `CommercialAiReviewerAiTests` e 2 specs Playwright novas (`commercial-review.spec.ts`,
   fluxo do wizard até o painel do assistente, aplicação e descarte).
+- **E-3 concluído — ajuda contextual conectada ao RAG (`IContextualAiHelpService`), com fontes reais:** decisão de
+  produto registrada nesta execução: a ajuda inteligente mora no **drawer de ajuda já existente** (`_ClientLayout`,
+  botão "Como usar esta página", presente em todas as páginas autenticadas), em vez de criar nova página. O drawer
+  ganhou a seção "Pergunte sobre esta tela" (campo + botão, `data-help-ask-*`), que envia `POST /Internal/Help/Ask`
+  (`RequireAuthorization` + antiforgery validado no servidor) e renderiza resposta, fontes consultadas e limites.
+  O corpus é composto por **todos os guias estáticos do produto** (`IContextualHelpService.All()`, guia da tela
+  primeiro) **+ artigos publicados** de `KnowledgeBaseArticle` (`IHelpKnowledgeSource`/`EfHelpKnowledgeSource`,
+  somente `IsPublished && !IsDeleted`, até 50 em ordem de exibição). Nada é inventado: sem fonte relevante o serviço
+  devolve `Insufficient` e a UI diz que não há evidência (`Succeeded=false`). Governança corrigida no caminho:
+  `ContextualAiHelpService.AskHelpAsync` passou a **receber a política** (`AiGovernancePolicy`) em vez de criar uma
+  política local com `FeatureEnabled=true` — o gate do plano `AiExternalProvidersEnabled` + conta ativa agora chega
+  de fato ao orquestrador (antes era decorativo). O serviço também valida `context.AccountId == policy.AccountId`
+  (nenhuma chamada cruza conta), sanitiza a pergunta (`PromptSanitizer`) e redige o texto do provedor
+  (`IAiRedactionService`), retornando `ExternalProvider` quando o LLM respondeu e `RulesOnly` no fallback. O
+  matching de fontes virou acento-insensível (`orçamento`/`orcamento`), com stopwords (`como`, `faço`, `isso`…)
+  para não casar qualquer guia, ranking por título/conteúdo e limite de 3 fontes. UI honesta: "Resposta sugerida com
+  apoio de IA … nada foi alterado na sua conta" vs "Resposta montada a partir do texto das fontes oficiais listadas.
+  Nenhuma ação foi executada.", além de "Fontes consultadas" com links (`/Help/Article?slug=…`). 10 testes unitários
+  do endpoint (`ContextualAiHelpTests`: 403 sem conta, 400 pergunta curta, corpus com guia da tela e artigos
+  publicados, permissões provadas repassadas, política do plano repassada, aviso por origem, `Insufficient` sem fonte)
+  + 9 do serviço (`ContextualAiHelpServiceTests`: isolamento de conta, fonte inacessível, acentuação, stopwords,
+  política repassada, redação de segredo na pergunta e na resposta, fallback) + 3 specs Playwright
+  (`contextual-help-ai.spec.ts`: resposta com fontes e aviso, corpus de guias sem artigo publicado, pergunta curta
+  recusada no cliente).
 ### Sprint F — Homologação final (P0) — **não iniciado**
 
 Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais fora do repositório.
@@ -150,11 +174,12 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
 - `dotnet test OrcaFacil.sln -c Release` com `ORCAFACIL_JOURNEY_CONNECTION` apontando para banco **descartável**
   `orcafacil_journey_20261016` (schema `orcafacil` restaurado por `pg_dump --schema-only`; extensões `pgcrypto` e
   `pg_trgm`) → **683 aprovados, 0 falhas, 0 ignorados** na auditoria original; com os Sprints E-1/E-4
-  (testes novos de rascunho de mensagem), o total atual é **706 aprovados, 0 falhas, 0 ignorados** (696 + 10 testes de IA do E-2).
+  (testes novos de rascunho de mensagem), o total atual é **724 aprovados, 0 falhas, 0 ignorados**
+  (706 do E-2 + 10 testes de endpoint do E-3 + 9 testes do serviço de ajuda contextual, menos 1 teste reescrito).
   Inclui a jornada comercial completa, os 3 testes de
   homologação concorrente de IA e os cálculos de saldo/estorno.
-- **Playwright (navegador real, Chromium):** **74/74 verde** (2 setups + 72 specs incl. as 2 de
-  `message-drafts.spec.ts` e as 2 de `commercial-review.spec.ts`). Servidor `dotnet run -c Release --no-build` — nota de processo: a conexão do
+- **Playwright (navegador real, Chromium):** **77/77 verde** (2 setups + 75 specs incl. as 2 de
+  `message-drafts.spec.ts`, as 2 de `commercial-review.spec.ts` e as 3 de `contextual-help-ai.spec.ts`). Servidor `dotnet run -c Release --no-build` — nota de processo: a conexão do
   servidor para esta fase aponta para o banco descartável da jornada via override de ambiente
   `ConnectionStrings__DefaultConnection` + `ORCAFACIL_ALLOW_LOCAL_SUPERADMIN_SEED=true` (o `appsettings.Local.json`
   do desenvolvedor aponta para o banco dev `postgres`, onde os usuários de seed E2E não existem; sem o override,
@@ -164,7 +189,8 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
   (23503) ao gravar pagamento e ordem juntos. Corrigido declarando os relacionamentos em
   `ManualPaymentConfiguration` (`DeleteBehavior.Restrict`), **sem nova migration**. O fixture voltou a um único
   `SaveChanges` e a suíte passa pelo caminho real do produto (**683/0/0** reconfirmado).
-- **Validadores `package.json` (`check:*`, 611 scripts):** varridos contra o commit-base `1386356`.
+- **Validadores `package.json` (`check:*`, 611 scripts):** varridos contra o commit-base `1386356` e
+  revalidados na árvore final do E-3: **611/611 verdes (`FAIL: 0`)**.
   Os checks críticos para esta branch passam: `check:js`, `check:service-lifetimes`, `check:di-quality-gate`,
   `check:aspnet-scope`, `check:database-schema-contract`, `check:quality-gate-no-fake`, `check:build-blockers`,
   `check:csharp-test-types`, `check:query-safety`, `check:dapper-mapping`* e `check:financial-flow(-consistency|journey)`.
@@ -203,6 +229,6 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
    - **Permissão inexistente `documents.read`:** `QuoteWorkspaceService.ListAsync` e `GlobalSearchService` checavam um código que não existe em nenhum ambiente (a tabela de permissões tem `documents.view`); restaurado `PermissionCodes.DocumentsView`. Efeito anterior: negação de acesso na listagem e na busca global de orçamentos.
    - **`_ClientLayout.cshtml`:** `<partial _OverlayHost>` encaixado entre `}` e `else` quebrava o encadeamento Razor — o ramo else renderizava sempre (duplicando `<main>`/`RenderBody`) e vazava o texto `else {` na página. Estrutura corrigida (partial incondicional após o if/else).
 3. **Deriva de dados RBAC (documentado; pendente decisão):** a tabela `permissions` não contém `Margins.View`, `Ai.Suggest`, `Ai.UseCopilot`, `Ai.UseRag`, `Ai.UseSemanticSearch`, `Ai.AnalyzeDocuments`, `receipts.read`, `contracts.read`, `webhooks.read`, `analytics.read`, `files.read` — códigos usados por governança de IA/API keys (verificado também na base de referência). Não é correção de código: exige decisão de seed/patch de dados (não aplicado sem autorização).
-4. **Sprint E:** E-1, E-2 e E-4 concluídos (ver Sprint E). **E-3 é o próximo** — help `IContextualAiHelpService` (RAG) sem consumidor — e exige decisão de produto sobre onde o help aparece (roteiro sugerido: marketplace/Wizard dentro de páginas de alto valor, com gating de plano).
+4. **Sprint E concluído (E-1, E-2, E-3 e E-4):** o `IContextualAiHelpService` (RAG) agora tem consumidor real no drawer de ajuda, com corpus de guias + artigos publicados, gating de plano e fallback determinístico. Resta apenas ampliar a base de conhecimento (artigos publicados) para melhorar a cobertura — dado operacional, não código.
 5. **R5:** validar gateway Mercado Pago em sandbox e o fluxo de inadimplência/regularização (aguarda credenciais).
 6. **Higiene:** decidir untrack de `node_modules/` (sucessor do R9 bin/obj já resolvido); decidir destino do banco descartável `orcafacil_journey_20261016` após o merge.

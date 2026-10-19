@@ -207,6 +207,17 @@ var active = currentPath.Equals(itemPath, StringComparison.OrdinalIgnoreCase) ||
             <div>
                 <header><div><p class="of-eyebrow">Como usar esta página</p><h2 id="help-title" data-help-title>Carregando ajuda…</h2></div><button type="button" data-dialog-close aria-label="Fechar ajuda"><partial name="Partials/_Icon" model='new IconViewModel("close")' /></button></header>
                 <div data-help-content aria-live="polite" aria-busy="true"><p>Buscando orientações específicas para esta etapa.</p></div>
+                <section class="of-help-ask" data-help-ask aria-labelledby="help-ask-title">
+                    <h3 id="help-ask-title">Pergunte sobre esta tela</h3>
+                    <p class="of-help-ask__note">A resposta usa apenas os guias e artigos publicados do produto. Nada é executado automaticamente.</p>
+                    <form data-help-ask-form method="post" action="/Internal/Help/Ask">
+                        <label class="of-sr-only" for="help-ask-question">Sua dúvida sobre esta tela</label>
+                        <input id="help-ask-question" name="question" type="text" maxlength="500" autocomplete="off"
+                               placeholder="Ex.: como revogar o link público?" data-help-ask-question />
+                        <button class="of-button-secondary" type="submit" data-help-ask-submit>Perguntar</button>
+                    </form>
+                    <div data-help-ask-answer aria-live="polite" aria-busy="false"></div>
+                </section>
             </div>
         </div>
     }

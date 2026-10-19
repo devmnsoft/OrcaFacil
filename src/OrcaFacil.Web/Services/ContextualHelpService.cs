@@ -5,6 +5,7 @@ public interface IContextualHelpService
     HelpContentDefinition? Find(string code);
     Task<HelpContentDefinition?> GetAsync(string code, CancellationToken cancellationToken = default);
     IReadOnlyList<HelpContentDefinition> ForPage(string page);
+    IReadOnlyList<HelpContentDefinition> All();
 }
 
 public sealed class ContextualHelpService : IContextualHelpService
@@ -39,6 +40,7 @@ public sealed class ContextualHelpService : IContextualHelpService
     public HelpContentDefinition? Find(string code) => Content.FirstOrDefault(x => x.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
     public Task<HelpContentDefinition?> GetAsync(string code, CancellationToken cancellationToken = default) => Task.FromResult(Find(code));
     public IReadOnlyList<HelpContentDefinition> ForPage(string page) => Content.Where(x => x.RelatedPage.Equals(page, StringComparison.OrdinalIgnoreCase)).ToArray();
+    public IReadOnlyList<HelpContentDefinition> All() => Content.ToArray();
 
     private static HelpContentDefinition Help(string code, string title, string purpose, string whenToUse, string beforeStarting,
         IReadOnlyList<string> steps, string example, IReadOnlyList<string> commonErrors, string whatHappensNext, string relatedPage, string? requiredPlan = null) =>

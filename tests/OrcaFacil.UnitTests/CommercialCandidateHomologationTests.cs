@@ -391,7 +391,7 @@ public sealed class CommercialCandidateHomologationTests
             new(accountB, "doc", "2", "Segredos Confidenciais Conta B", "url2", "Dados sensíveis da Conta B", true)
         };
 
-        var answer = await helpService.AskHelpAsync(contextA, "Faturamento", sources);
+        var answer = await helpService.AskHelpAsync(contextA, new AiGovernancePolicy(accountA), "Faturamento", sources);
 
         // Result must NOT contain or reference Account B sources!
         Assert.DoesNotContain(answer.Sources, s => s.AccountId == accountB);

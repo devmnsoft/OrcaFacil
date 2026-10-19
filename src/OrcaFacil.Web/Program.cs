@@ -236,6 +236,8 @@ builder.Services.AddScoped<IMessageDraftAiAssistant, MessageDraftAiAssistant>();
 builder.Services.AddScoped<MessageDraftAiAssistant>();
 builder.Services.AddScoped<IContextualAiHelpService, ContextualAiHelpService>();
 builder.Services.AddScoped<ContextualAiHelpService>();
+builder.Services.AddScoped<OrcaFacil.Web.Services.ContextualAiHelpEndpoint>();
+builder.Services.AddScoped<OrcaFacil.Web.Services.IHelpKnowledgeSource, OrcaFacil.Web.Services.EfHelpKnowledgeSource>();
 builder.Services.AddScoped<UserUsageService>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
@@ -530,6 +532,14 @@ app.MapGet("/Internal/Help/{code}", async Task<IResult> (string code, IContextua
 {
     var content = await help.GetAsync(code, ct);
     return content is null ? Results.NotFound(new { message = "Ajuda não encontrada para esta página." }) : Results.Ok(content);
+}).RequireAuthorization();
+app.MapPost("/Internal/Help/Ask", async Task<IResult> (OrcaFacil.Web.Services.ContextualAiHelpEndpoint.AskHelpRequest input,
+    HttpContext httpContext, Microsoft.AspNetCore.Antiforgery.IAntiforgery antiforgery,
+    OrcaFacil.Web.Services.ContextualAiHelpEndpoint endpoint, CancellationToken ct) =>
+{
+    await antiforgery.ValidateRequestAsync(httpContext);
+    var (status, body) = await endpoint.AskAsync(input, ct);
+    return Results.Json(body, statusCode: status);
 }).RequireAuthorization();
 app.MapControllers();
 app.MapPublicApiV1();
