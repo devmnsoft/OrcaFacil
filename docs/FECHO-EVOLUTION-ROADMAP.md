@@ -168,6 +168,45 @@ Orquestrador e provedores existem. **Vida útil de DI dos clientes de IA corrigi
 
 Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais fora do repositório.
 
+### Sprint P — Catálogo de planos coerente (P0) — **concluído nesta execução**
+
+A auditoria de "todas as funcionalidades dos planos" encontrou divergência real entre
+o que é vendido e o que o produto aplica:
+
+- **Matriz de recursos não provisionada.** `script_completop.sql` criava
+  `features`/`plan_feature_values`, mas não populava a matriz por plano (a base de jornada só tinha 8 linhas,
+  todas de IA). Como `PlanAccessService.CanUseAsync` lê a matriz, Aprovação pública, Ordens de serviço e
+  Pagamentos manuais eram **negados para todos os planos** (motivo `FeatureNotConfigured`), e a página
+  `/Precos` exibia cards quase vazios.
+- **Três recursos exigidos por código sem linha em `features`:** `work_orders.enabled`,
+  `payments.manual.enabled` e `receipts.operational.enabled`.
+- **Recurso fantasma:** `Program.cs` exigia `documents.create`, que não existe no catálogo → negava a prévia
+  de rascunho.
+- **Códigos dessincronizados:** 6 recursos existiam só no banco (`documents.monthly_limit`,
+  `public_approval.monthly_limit`, `document.convert_to_receipt`, `sharing.public_link`,
+  `numbering.custom_prefix`, `support.priority`) e 3 só no código.
+
+Correções (sem `DROP`/`TRUNCATE`, reversíveis):
+
+- `PlanCatalogDefinitions` reescrito como matriz explícita cobrindo **os 29 recursos** nos 4 planos, com
+  `PlanFeatureCodes.All` + `DisplayNames` como fonte única.
+- `PlanAccessService.GetPlanFeaturesAsync` agora combina banco + matriz (`MergeWithCatalog`): o banco manda e a
+  matriz cobre o que ainda não foi provisionado — assim um recurso anunciado nunca é negado por falta de seed.
+- `PlanFeatureReadinessService` cobre todos os 29 recursos e distingue `Ready` (gate aplicado) de `Partial`
+  (superfície existe mas ainda não consulta o plano), com motivo por recurso. A publicação só bloqueia
+  `Missing` ou código desconhecido.
+- `Program.cs`: prévia de rascunho passa a usar `PlanFeatureCodes.DocumentsMonthlyLimit`.
+- Patch idempotente `database/hotfix_plan_feature_catalog_v75.sql`: garante as 29 linhas de `features`
+  (corrigindo o nome exibido de `pdf.watermark` para a marca Fechô) e provisiona as **116 linhas** de
+  `plan_feature_values` (4 planos × 29 recursos). Aplicado na base de jornada (`INSERT 0 29` + `INSERT 0 116`).
+- Testes: 6 de paridade de catálogo (`PlanCatalogParityTests`) + 2 de provisionamento PostgreSQL
+  (`PlanCatalogPostgresSeedTests`) + 2 specs Playwright (`plan-catalog.spec.ts`: diferenciais na página de
+  preços e usabilidade no celular sem rolagem horizontal, 375px).
+
+Pendência honesta (registrada no manifesto com status `Partial`): 19 recursos já têm interface mas ainda não
+consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.account`, `pdf.watermark`,
+`sharing.whatsapp`). Ligar cada gate de rota é o próximo incremento da monetização.
+
 ---
 
 ## 5. Evidências desta execução
@@ -177,12 +216,12 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
 - `dotnet test OrcaFacil.sln -c Release` com `ORCAFACIL_JOURNEY_CONNECTION` apontando para banco **descartável**
   `orcafacil_journey_20261016` (schema `orcafacil` restaurado por `pg_dump --schema-only`; extensões `pgcrypto` e
   `pg_trgm`) → **683 aprovados, 0 falhas, 0 ignorados** na auditoria original; com os Sprints E-1/E-4
-  (testes novos de rascunho de mensagem), o total atual é **736 aprovados, 0 falhas, 0 ignorados**
+  (testes novos de rascunho de mensagem) e do Sprint P (8 testes de catálogo/provisionamento), o total atual é **744 aprovados, 0 falhas, 0 ignorados**
   (706 do E-2 + 11 testes de endpoint do E-3 + 9 do serviço de ajuda contextual + 7 da resolução do guia
   pela rota + 4 do seed de RBAC de IA/margens, menos 1 teste reescrito).
   Inclui a jornada comercial completa, os 3 testes de
   homologação concorrente de IA e os cálculos de saldo/estorno.
-- **Playwright (navegador real, Chromium):** **77/77 verde** (2 setups + 75 specs incl. as 2 de
+- **Playwright (navegador real, Chromium):** **79/79 verde** (inclui as 2 specs de `plan-catalog.spec.ts` do Sprint P) (2 setups + 75 specs incl. as 2 de
   `message-drafts.spec.ts`, as 2 de `commercial-review.spec.ts` e as 3 de `contextual-help-ai.spec.ts`). Servidor `dotnet run -c Release --no-build` — nota de processo: a conexão do
   servidor para esta fase aponta para o banco descartável da jornada via override de ambiente
   `ConnectionStrings__DefaultConnection` + `ORCAFACIL_ALLOW_LOCAL_SUPERADMIN_SEED=true` (o `appsettings.Local.json`
@@ -210,6 +249,11 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
     `dashboard.BudgetTotal`, tokens do Design System V5.6, `appsettings-secrets`, fechamento do menu mobile,
     string `OrçaFácil` em `assistant-safety`, fallback inválido em `GoLiveV65Services.cs` e 3 serviços sem DI
     (`FunctionalQualityService`, `ModuleReadinessService`, `SourceCodeFindingService`). Detalhe completo em R8.
+- **Sprint P (catálogo de planos) — verificado com PostgreSQL e navegador real:** build Release **0 erros**;
+  `dotnet test` com banco de jornada **744/0/0** (736 + 8 novos); `plan-catalog.spec.ts` **2/2 verde**
+  (diferenciais pagos visíveis em `/Precos`; 3 cards e CTA em 375px sem rolagem horizontal); patch aplicado
+  (`INSERT 0 29` recursos + `INSERT 0 116` valores); página conferida visualmente em 375px e 1366px
+  (capturas de tela são artefatos locais, fora do versionamento).
 - Arquivos criados: `src/OrcaFacil.Application/Commercial/FinancialIntegrityDiagnostics.cs`,
   `src/OrcaFacil.Persistence/Services/FinancialIntegrityDiagnosticService.cs`,
   `src/OrcaFacil.Web/Pages/SuperAdmin/Finance/Divergences.cshtml(.cs)`,
@@ -240,4 +284,8 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
    - `receipts.read`, `contracts.read`, `webhooks.read`, `analytics.read` e `files.read` **não** são permissões de RBAC: são escopos de chave de API (`ApiKeyService.AllowedScopes`) e os demais escopos (ex.: `clients.read`) também não têm linha em `permissions` — por isso ficaram de fora do seed.
 4. **Sprint E concluído (E-1, E-2, E-3 e E-4):** o `IContextualAiHelpService` (RAG) agora tem consumidor real no drawer de ajuda, com corpus de guias + artigos publicados, gating de plano e fallback determinístico. Resta apenas ampliar a base de conhecimento (artigos publicados) para melhorar a cobertura — dado operacional, não código.
 5. **R5:** validar gateway Mercado Pago em sandbox e o fluxo de inadimplência/regularização (aguarda credenciais).
+7. **Monetização (próximo incremento do Sprint P):** ligar o gate de plano nos 19 recursos que já têm interface
+   (`reports.basic`/`advanced`, `exports.csv`, `commercial.pipeline|followups|metrics`, `audit.account`,
+   `branding.custom_logo`, `templates.custom_enabled`, `sharing.whatsapp`, `pdf.watermark` e os limites de
+   clientes/serviços/equipe/templates), reclassificando-os de `Partial` para `Ready` no manifesto de prontidão.
 6. **Higiene:** decidir untrack de `node_modules/` (sucessor do R9 bin/obj já resolvido); decidir destino do banco descartável `orcafacil_journey_20261016` após o merge.

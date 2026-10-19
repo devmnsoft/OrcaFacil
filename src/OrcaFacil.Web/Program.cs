@@ -592,7 +592,7 @@ app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (
         // Prévia de rascunho mutável exige permissão ativa de criação/edição comercial
         if (targetAccountId.HasValue)
         {
-            var canDraft = await plans.CanUseAsync(targetAccountId.Value, "documents.create", ct);
+            var canDraft = await plans.CanUseAsync(targetAccountId.Value, OrcaFacil.Domain.Plans.PlanFeatureCodes.DocumentsMonthlyLimit, ct);
             if (!canDraft.IsAllowed)
                 return Results.Problem(statusCode: StatusCodes.Status403Forbidden, title: "Plano não autorizado", detail: canDraft.UserMessage);
         }

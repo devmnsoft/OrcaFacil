@@ -34,7 +34,7 @@ export default defineConfig({
     },
     {
       name: 'client',
-      testMatch: /(client-visual-redesign|demos-and-help|experience-system|guided-workflows|message-drafts|commercial-review|contextual-help-ai)\.spec\.ts/,
+      testMatch: /(client-visual-redesign|demos-and-help|experience-system|guided-workflows|message-drafts|commercial-review|contextual-help-ai|plan-catalog)\.spec\.ts/,
       dependencies: ['setup-client'],
       use: { ...devices['Desktop Chrome'], storageState: 'auth/client.json', env: { ORCA_E2E_BASE_URL: base } },
     },
