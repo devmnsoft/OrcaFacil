@@ -177,9 +177,9 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
 - `dotnet test OrcaFacil.sln -c Release` com `ORCAFACIL_JOURNEY_CONNECTION` apontando para banco **descartável**
   `orcafacil_journey_20261016` (schema `orcafacil` restaurado por `pg_dump --schema-only`; extensões `pgcrypto` e
   `pg_trgm`) → **683 aprovados, 0 falhas, 0 ignorados** na auditoria original; com os Sprints E-1/E-4
-  (testes novos de rascunho de mensagem), o total atual é **732 aprovados, 0 falhas, 0 ignorados**
+  (testes novos de rascunho de mensagem), o total atual é **736 aprovados, 0 falhas, 0 ignorados**
   (706 do E-2 + 11 testes de endpoint do E-3 + 9 do serviço de ajuda contextual + 7 da resolução do guia
-  pela rota, menos 1 teste reescrito).
+  pela rota + 4 do seed de RBAC de IA/margens, menos 1 teste reescrito).
   Inclui a jornada comercial completa, os 3 testes de
   homologação concorrente de IA e os cálculos de saldo/estorno.
 - **Playwright (navegador real, Chromium):** **77/77 verde** (2 setups + 75 specs incl. as 2 de
@@ -232,7 +232,12 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
    - **/Documents e /Clients listavam sempre "Nenhuma proposta"/vazio:** `BindProperty(SupportsGet = true)` com propriedade não anulável (`Sort`/`Filter`) sofre *implicit required* de NRT; sem `?sort=` na URL o `ModelState` era inválido e `OnGetAsync` retornava `Page()` com lista vazia. Corrigido tornando `Sort`/`Filter` anuláveis (`Documents/Index`, `Clients/Index`, `CommercialRoutine/Index`; consumidores já possuem fallback).
    - **Permissão inexistente `documents.read`:** `QuoteWorkspaceService.ListAsync` e `GlobalSearchService` checavam um código que não existe em nenhum ambiente (a tabela de permissões tem `documents.view`); restaurado `PermissionCodes.DocumentsView`. Efeito anterior: negação de acesso na listagem e na busca global de orçamentos.
    - **`_ClientLayout.cshtml`:** `<partial _OverlayHost>` encaixado entre `}` e `else` quebrava o encadeamento Razor — o ramo else renderizava sempre (duplicando `<main>`/`RenderBody`) e vazava o texto `else {` na página. Estrutura corrigida (partial incondicional após o if/else).
-3. **Deriva de dados RBAC (documentado; pendente decisão):** a tabela `permissions` não contém `Margins.View`, `Ai.Suggest`, `Ai.UseCopilot`, `Ai.UseRag`, `Ai.UseSemanticSearch`, `Ai.AnalyzeDocuments`, `receipts.read`, `contracts.read`, `webhooks.read`, `analytics.read`, `files.read` — códigos usados por governança de IA/API keys (verificado também na base de referência). Não é correção de código: exige decisão de seed/patch de dados (não aplicado sem autorização).
+3. **Deriva de seed de RBAC (corrigida com autorização em 2026-10-19):** `Margins.View`, `Ai.Suggest`, `Ai.UseCopilot`, `Ai.UseRag`, `Ai.UseSemanticSearch` e `Ai.AnalyzeDocuments` são exigidos pelo código (`AiGovernance` / orquestrador de IA) e não existiam em `orcafacil.permissions`, o que deixava copiloto, busca semântica e análise de documentos inutilizáveis para **todos** os papéis. Correção aditiva, idempotente e sem `DROP`/`TRUNCATE`:
+   - migração `20261019120000_GrantAiGovernancePermissions` (registrada em `dotnet ef migrations list`, `--no-connect`);
+   - patch `database/hotfix_ai_governance_permissions_v74.sql` aplicado na base de jornada (`INSERT 0 6` permissões + `INSERT 0 22` concessões);
+   - papéis derivados do catálogo existente, não inventados: os códigos `Ai.*` seguem `Ai.View` (Owner, Administrator, Manager, Commercial) e `Margins.View` segue `Finance.View` (Owner, Administrator); o gate de custo/margem segue duplo (permissão + `AllowCostAndMargin` do plano);
+   - 4 testes PostgreSQL de guarda (`RbacAiGovernanceSeedTests`) travam a regra contra nova divergência;
+   - `receipts.read`, `contracts.read`, `webhooks.read`, `analytics.read` e `files.read` **não** são permissões de RBAC: são escopos de chave de API (`ApiKeyService.AllowedScopes`) e os demais escopos (ex.: `clients.read`) também não têm linha em `permissions` — por isso ficaram de fora do seed.
 4. **Sprint E concluído (E-1, E-2, E-3 e E-4):** o `IContextualAiHelpService` (RAG) agora tem consumidor real no drawer de ajuda, com corpus de guias + artigos publicados, gating de plano e fallback determinístico. Resta apenas ampliar a base de conhecimento (artigos publicados) para melhorar a cobertura — dado operacional, não código.
 5. **R5:** validar gateway Mercado Pago em sandbox e o fluxo de inadimplência/regularização (aguarda credenciais).
 6. **Higiene:** decidir untrack de `node_modules/` (sucessor do R9 bin/obj já resolvido); decidir destino do banco descartável `orcafacil_journey_20261016` após o merge.
