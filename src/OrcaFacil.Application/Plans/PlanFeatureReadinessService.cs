@@ -90,7 +90,7 @@ public sealed class PlanFeatureReadinessService : IPlanFeatureReadinessService
             Partial(PlanFeatureCodes.CommercialPipelineEnabled, "Pipeline comercial existe e ainda não exige plano pago."),
             Partial(PlanFeatureCodes.CommercialFollowUpsEnabled, "Acompanhamentos comerciais existem e ainda não exigem plano pago."),
             Partial(PlanFeatureCodes.CommercialMetricsEnabled, "Indicadores comerciais existem e ainda não exigem plano pago."),
-            Partial(PlanFeatureCodes.CsvExportEnabled, "Exportação CSV existe e ainda não exige plano pago."),
+            Ready(PlanFeatureCodes.CsvExportEnabled, "/Exports", "IPlanAccessService", "CanUseAsync", "DataExport", "account.member"),
             Partial(PlanFeatureCodes.AccountAuditEnabled, "Trilha de auditoria existe e ainda não exige plano pago."),
             Partial(PlanFeatureCodes.SupportPriorityEnabled, "Suporte prioritário ainda é apenas um rótulo comercial.")
         }.ToDictionary(x => x.Code, StringComparer.Ordinal);
