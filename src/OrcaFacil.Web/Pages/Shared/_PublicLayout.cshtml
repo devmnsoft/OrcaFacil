@@ -37,7 +37,7 @@
   <a class="of-skip-link" href="#main-content">Ir para o conteúdo principal</a>
   <header class="of-public-header" data-public-header>
     <nav class="of-public-nav of-container" aria-label="Navegação principal">
-      <a class="of-public-brand" asp-page="/Index" aria-label="Fechô, início">
+      <a class="of-public-brand" asp-page="/Index">
         <img src="~/img/brand/fecho-logo-white.svg" width="190" height="42" alt="Fechô" />
         <span>um produto <strong>MNSOFT</strong></span>
       </a>
@@ -53,7 +53,6 @@
         <form method="post" action="/locale" class="of-locale-selector">
           @Html.AntiForgeryToken()
           <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
-          <label class="of-sr-only" for="public-locale">Idioma</label>
           <select id="public-locale" name="culture" aria-label="Idioma" onchange="this.form.submit()">
             @foreach (var locale in SupportedLocales.All.Values.Where(x => x.IsActive && x.IsPublicEnabled))
             { <option value="@locale.Code" selected="@(locale.Code == currentLocale)">@locale.NativeName</option> }

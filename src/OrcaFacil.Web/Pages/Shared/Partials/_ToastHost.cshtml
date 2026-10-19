@@ -1,6 +1,6 @@
 @using OrcaFacil.Web.Extensions
 @{ var toasts = TempData.ReadToasts(); }
-<div class="of-toast-host" id="toastHost" data-toast-host aria-live="polite" aria-atomic="false" aria-label="Notificações">
+<div class="of-toast-host" id="toastHost" data-toast-host aria-live="polite" aria-atomic="false">
 @foreach (var toast in toasts)
 {
   <div class="of-toast of-toast--@toast.Type" role="@(toast.Type == "danger" ? "alert" : "status")" data-toast data-toast-type="@toast.Type">
