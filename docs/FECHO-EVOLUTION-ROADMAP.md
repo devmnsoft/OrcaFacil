@@ -119,6 +119,24 @@ Orquestrador e provedores existem. **Vida útil de DI dos clientes de IA corrigi
   template, falha → template, plano sem benefício → template sem chamar orquestrador) e cobertura nos
   `CommercialCandidateHomologationTests` atualizada.
 
+- **E-2 concluído — revisão comercial conectada ao orquestrador/LLM (regras sempre como rede de segurança):** a
+  `CommercialAiReviewer` (motor 100% regras, DI-registered, consumidor `OnPostAssistScopeAsync` em
+  `/Documents/CreateBudget`) agora roda as regras determinísticas **sempre** (itens ausentes, valores zerados,
+  validade, contatos — mesma cobertura e mesmos achados de antes) e, **além** delas, tenta a IA externa via
+  `IAiOrchestrator` (propósito `quote_review`; prompt só com dados redigidos da proposta; pedido de JSON
+  estrito). Título, condições e apontamentos extra do provedor entram quando autorizados pela política (`FeatureEnabled`
+  do plano `AiExternalProvidersEnabled` + conta ativa, mesmo padrão do E-4, agora aplicado no handler do
+  `CreateBudget` via `IPlanAccessService`); permissão `Ai.ApplySuggestions` comprovada no servidor é
+  repassada no `AiRequestContext`. Parser `CommercialReviewParser` (público, arquivo próprio, padrão do
+  `BudgetSuggestionParser`): JSON em qualquer cerca aceito, severidade normalizada (Crítica/Alta/Média/Baixa)
+  para valores fora da lista, máx. 8 apontamentos, campos ausentes descartados (nada inventado), todos os textos
+  do provedor redigidos (`IAiRedactionService`, dupla proteção). Achados duplicados do provedor não entram
+  (dedup por mensagem). Em falha/JSON inválido/plano sem benefício, retorno idêntico ao de regras
+  (`isProviderGenerated=false`, aviso "regras de consistência") — nenhum usuário vê mudança hoje. Quando o
+  provedor responde, a página marca `isProviderGenerated=true` e troca o aviso para "sugerido com apoio de IA ... nada foi
+  alterado no orçamento", renderizado em ambos os ramos (com/sem apontamentos). 11 testes unitários no arquivo
+  `CommercialAiReviewerAiTests` e 2 specs Playwright novas (`commercial-review.spec.ts`,
+  fluxo do wizard até o painel do assistente, aplicação e descarte).
 ### Sprint F — Homologação final (P0) — **não iniciado**
 
 Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais fora do repositório.
@@ -132,15 +150,15 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
 - `dotnet test OrcaFacil.sln -c Release` com `ORCAFACIL_JOURNEY_CONNECTION` apontando para banco **descartável**
   `orcafacil_journey_20261016` (schema `orcafacil` restaurado por `pg_dump --schema-only`; extensões `pgcrypto` e
   `pg_trgm`) → **683 aprovados, 0 falhas, 0 ignorados** na auditoria original; com os Sprints E-1/E-4
-  (testes novos de rascunho de mensagem), o total atual é **696 aprovados, 0 falhas, 0 ignorados**.
+  (testes novos de rascunho de mensagem), o total atual é **706 aprovados, 0 falhas, 0 ignorados** (696 + 10 testes de IA do E-2).
   Inclui a jornada comercial completa, os 3 testes de
   homologação concorrente de IA e os cálculos de saldo/estorno.
-- **Playwright (navegador real, Chromium):** **72/72 verde** (2 setups + 70 specs incl. as 2 de
-  `message-drafts.spec.ts`). Servidor `dotnet run -c Release --no-build` — nota de processo: a conexão do
+- **Playwright (navegador real, Chromium):** **74/74 verde** (2 setups + 72 specs incl. as 2 de
+  `message-drafts.spec.ts` e as 2 de `commercial-review.spec.ts`). Servidor `dotnet run -c Release --no-build` — nota de processo: a conexão do
   servidor para esta fase aponta para o banco descartável da jornada via override de ambiente
   `ConnectionStrings__DefaultConnection` + `ORCAFACIL_ALLOW_LOCAL_SUPERADMIN_SEED=true` (o `appsettings.Local.json`
   do desenvolvedor aponta para o banco dev `postgres`, onde os usuários de seed E2E não existem; sem o override,
-  `setup.client` falha por "credenciais inválidas" — configurado fora do repositório). Reconfirmado após E-4.
+  `setup.client` falha por "credenciais inválidas" — configurado fora do repositório). Reconfirmado após E-4 e E-2.
 - Defeito real encontrado **apenas** com PostgreSQL real — **R7 (resolvido nesta execução):** as 6 FKs de
   `manual_payments` não estavam mapeadas no EF; o `INSERT` violava `manual_payments_work_order_id_fkey`
   (23503) ao gravar pagamento e ordem juntos. Corrigido declarando os relacionamentos em
@@ -185,6 +203,6 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
    - **Permissão inexistente `documents.read`:** `QuoteWorkspaceService.ListAsync` e `GlobalSearchService` checavam um código que não existe em nenhum ambiente (a tabela de permissões tem `documents.view`); restaurado `PermissionCodes.DocumentsView`. Efeito anterior: negação de acesso na listagem e na busca global de orçamentos.
    - **`_ClientLayout.cshtml`:** `<partial _OverlayHost>` encaixado entre `}` e `else` quebrava o encadeamento Razor — o ramo else renderizava sempre (duplicando `<main>`/`RenderBody`) e vazava o texto `else {` na página. Estrutura corrigida (partial incondicional após o if/else).
 3. **Deriva de dados RBAC (documentado; pendente decisão):** a tabela `permissions` não contém `Margins.View`, `Ai.Suggest`, `Ai.UseCopilot`, `Ai.UseRag`, `Ai.UseSemanticSearch`, `Ai.AnalyzeDocuments`, `receipts.read`, `contracts.read`, `webhooks.read`, `analytics.read`, `files.read` — códigos usados por governança de IA/API keys (verificado também na base de referência). Não é correção de código: exige decisão de seed/patch de dados (não aplicado sem autorização).
-4. **Sprint E (próximo):** E-2 conectar o revisor comercial `CommercialAiReviewer` (hoje 100% regras) ao orquestrador/LLM com fallback; E-3 help `IContextualAiHelpService` (RAG) sem consumidor — decidir wiring com o produto. *(E-4 concluído — ver Sprint E; E-1 concluído.)*
+4. **Sprint E:** E-1, E-2 e E-4 concluídos (ver Sprint E). **E-3 é o próximo** — help `IContextualAiHelpService` (RAG) sem consumidor — e exige decisão de produto sobre onde o help aparece (roteiro sugerido: marketplace/Wizard dentro de páginas de alto valor, com gating de plano).
 5. **R5:** validar gateway Mercado Pago em sandbox e o fluxo de inadimplência/regularização (aguarda credenciais).
 6. **Higiene:** decidir untrack de `node_modules/` (sucessor do R9 bin/obj já resolvido); decidir destino do banco descartável `orcafacil_journey_20261016` após o merge.
