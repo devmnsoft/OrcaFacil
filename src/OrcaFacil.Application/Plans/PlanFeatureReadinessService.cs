@@ -86,7 +86,7 @@ public sealed class PlanFeatureReadinessService : IPlanFeatureReadinessService
             Partial(PlanFeatureCodes.OperationalReceiptsEnabled, "Recibos existem e operam igualmente em todos os planos."),
             Partial(PlanFeatureCodes.DocumentConvertToReceiptEnabled, "Conversão em recibo existe e ainda não consulta o plano."),
             Ready(PlanFeatureCodes.BasicReportsEnabled, "/Reports", "IPlanAccessService", "CanUseAsync", "IntelligenceReport", "account.member"),
-            Partial(PlanFeatureCodes.AdvancedReportsEnabled, "Relatórios avançados existem e ainda não exigem plano pago."),
+            Ready(PlanFeatureCodes.AdvancedReportsEnabled, "/Analytics/Executive", "IPlanAccessService", "CanUseAsync", "AnalyticsDashboard", "account.member"),
             Ready(PlanFeatureCodes.CommercialPipelineEnabled, "/CommercialPipeline", "IPlanAccessService", "CanUseAsync", "CommercialDashboardView", "account.member"),
             Ready(PlanFeatureCodes.CommercialFollowUpsEnabled, "/CommercialRoutine", "IPlanAccessService", "CanUseAsync", "RoutineItem", "account.member"),
             Partial(PlanFeatureCodes.CommercialMetricsEnabled, "Indicadores comerciais existem e ainda não exigem plano pago."),
