@@ -88,7 +88,7 @@ public sealed class PlanFeatureReadinessService : IPlanFeatureReadinessService
             Ready(PlanFeatureCodes.BasicReportsEnabled, "/Reports", "IPlanAccessService", "CanUseAsync", "IntelligenceReport", "account.member"),
             Partial(PlanFeatureCodes.AdvancedReportsEnabled, "Relatórios avançados existem e ainda não exigem plano pago."),
             Ready(PlanFeatureCodes.CommercialPipelineEnabled, "/CommercialPipeline", "IPlanAccessService", "CanUseAsync", "CommercialDashboardView", "account.member"),
-            Partial(PlanFeatureCodes.CommercialFollowUpsEnabled, "Acompanhamentos comerciais existem e ainda não exigem plano pago."),
+            Ready(PlanFeatureCodes.CommercialFollowUpsEnabled, "/CommercialRoutine", "IPlanAccessService", "CanUseAsync", "RoutineItem", "account.member"),
             Partial(PlanFeatureCodes.CommercialMetricsEnabled, "Indicadores comerciais existem e ainda não exigem plano pago."),
             Ready(PlanFeatureCodes.CsvExportEnabled, "/Exports", "IPlanAccessService", "CanUseAsync", "DataExport", "account.member"),
             Partial(PlanFeatureCodes.AccountAuditEnabled, "Trilha de auditoria existe e ainda não exige plano pago."),
