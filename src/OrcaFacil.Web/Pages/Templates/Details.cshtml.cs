@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Plans;
 using OrcaFacil.Application.Security;
 using OrcaFacil.Domain.Entities;
+using OrcaFacil.Domain.Plans;
 using OrcaFacil.Persistence;
 
 namespace OrcaFacil.Web.Pages.Templates;
@@ -15,12 +17,14 @@ public class DetailsModel : PageModel
     private readonly OrcaFacilDbContext _db;
     private readonly ICurrentAccountService _currentAccount;
     private readonly IAuditService _audit;
+    private readonly IPlanAccessService _plans;
 
-    public DetailsModel(OrcaFacilDbContext db, ICurrentAccountService currentAccount, IAuditService audit)
+    public DetailsModel(OrcaFacilDbContext db, ICurrentAccountService currentAccount, IAuditService audit, IPlanAccessService plans)
     {
         _db = db;
         _currentAccount = currentAccount;
         _audit = audit;
+        _plans = plans;
     }
 
     public BudgetTemplate? Template { get; private set; }
@@ -97,6 +101,42 @@ public class DetailsModel : PageModel
                             await _currentAccount.HasPermissionAsync(PermissionCodes.DocumentTemplatesManage, ct) ||
                             await _currentAccount.HasPermissionAsync(PermissionCodes.DocumentsCreate, ct);
             if (!canManage) return Forbid();
+
+            // Gate de plano: CustomTemplatesEnabled — modelos personalizados exigem plano Pro
+            var customAllowed = await _plans.CanUseAsync(accountId.Value, PlanFeatureCodes.CustomTemplatesEnabled, ct);
+            if (!customAllowed.IsAllowed)
+            {
+                ModelState.AddModelError(string.Empty, "Modelos personalizados estão disponíveis a partir do plano Profissional. Conheça os planos.");
+                Template = await _db.BudgetTemplates.Include(x => x.Items).SingleOrDefaultAsync(x => x.Id == id && !x.IsDeleted, ct);
+                CanEdit = true;
+                return Page();
+            }
+
+            // Gate de plano: BasicTemplatesLimit — limite de modelos básicos
+            var templateLimit = await _plans.GetLimitAsync(accountId.Value, PlanFeatureCodes.BasicTemplatesLimit, ct);
+            if (templateLimit.HasValue)
+            {
+                var currentTemplateCount = await _db.BudgetTemplates.CountAsync(x => x.AccountId == accountId.Value && !x.IsDeleted && !x.IsSystemTemplate, ct);
+                if (currentTemplateCount >= templateLimit.Value)
+                {
+                    ModelState.AddModelError(string.Empty, $"Seu plano permite até {templateLimit.Value} modelo(s) básico(s). Faça upgrade para criar mais modelos.");
+                    Template = await _db.BudgetTemplates.Include(x => x.Items).SingleOrDefaultAsync(x => x.Id == id && !x.IsDeleted, ct);
+                    CanEdit = true;
+                    return Page();
+                }
+            }
+        }
+        else
+        {
+            // Gate de plano: CustomTemplatesEnabled — modelos personalizados exigem plano Pro
+            var customAllowed = await _plans.CanUseAsync(Guid.Empty, PlanFeatureCodes.CustomTemplatesEnabled, ct);
+            if (!customAllowed.IsAllowed)
+            {
+                ModelState.AddModelError(string.Empty, "Modelos personalizados estão disponíveis a partir do plano Profissional. Conheça os planos.");
+                Template = await _db.BudgetTemplates.Include(x => x.Items).SingleOrDefaultAsync(x => x.Id == id && !x.IsDeleted, ct);
+                CanEdit = true;
+                return Page();
+            }
         }
 
         var template = await _db.BudgetTemplates

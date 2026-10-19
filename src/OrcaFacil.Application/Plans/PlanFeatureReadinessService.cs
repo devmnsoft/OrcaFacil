@@ -76,10 +76,10 @@ public sealed class PlanFeatureReadinessService : IPlanFeatureReadinessService
             // Superfícies implementadas que ainda não consultam o plano.
             Ready(PlanFeatureCodes.TeamMembersLimit, "/AccountAdmin/Users/New", "IPlanAccessService", "GetLimitAsync", "AccountMember", "account.member"),
             Ready(PlanFeatureCodes.PdfWatermark, "/Documents (PDF)", "QuestPdfDocumentService", "GenerateDocumentPdfAsync", "Document", "documents.generate"),
-            Partial(PlanFeatureCodes.BasicTemplatesLimit, "Catálogo de modelos existe, mas a criação ainda não compara com o limite do plano."),
-            Partial(PlanFeatureCodes.CustomTemplatesEnabled, "Modelos personalizados existem e ainda não exigem plano pago."),
-            Partial(PlanFeatureCodes.CustomBrandingEnabled, "Logo próprio é aceito e ainda não exige plano pago."),
-            Partial(PlanFeatureCodes.NumberingCustomPrefix, "Prefixo de numeração existe e ainda não exige plano pago."),
+            Ready(PlanFeatureCodes.BasicTemplatesLimit, "/Templates/Details", "IPlanAccessService", "GetLimitAsync", "BudgetTemplate", "account.member"),
+            Ready(PlanFeatureCodes.CustomTemplatesEnabled, "/Templates/Details", "IPlanAccessService", "CanUseAsync", "BudgetTemplate", "account.member"),
+            Ready(PlanFeatureCodes.CustomBrandingEnabled, "/Profile", "IPlanAccessService", "CanUseAsync", "IssuerProfile", "account.member"),
+            Ready(PlanFeatureCodes.NumberingCustomPrefix, "/Settings", "IPlanAccessService", "CanUseAsync", "AccountSettings", "account.member"),
             Ready(PlanFeatureCodes.PublicApprovalMonthlyLimit, "/CommercialJourneyService", "IPlanAccessService", "CanUseAsync", "PublicDocumentAccess", "documents.generate"),
             Ready(PlanFeatureCodes.WhatsAppSharingEnabled, "/Receipts/Details", "IPlanAccessService", "CanUseAsync", "Receipt", "account.member"),
             Ready(PlanFeatureCodes.PublicLinkSharingEnabled, "/CommercialJourneyService", "IPlanAccessService", "CanUseAsync", "PublicDocumentAccess", "documents.generate"),
@@ -89,10 +89,10 @@ public sealed class PlanFeatureReadinessService : IPlanFeatureReadinessService
             Ready(PlanFeatureCodes.AdvancedReportsEnabled, "/Analytics/Executive", "IPlanAccessService", "CanUseAsync", "AnalyticsDashboard", "account.member"),
             Ready(PlanFeatureCodes.CommercialPipelineEnabled, "/CommercialPipeline", "IPlanAccessService", "CanUseAsync", "CommercialDashboardView", "account.member"),
             Ready(PlanFeatureCodes.CommercialFollowUpsEnabled, "/CommercialRoutine", "IPlanAccessService", "CanUseAsync", "RoutineItem", "account.member"),
-            Partial(PlanFeatureCodes.CommercialMetricsEnabled, "Indicadores comerciais existem e ainda não exigem plano pago."),
+            Ready(PlanFeatureCodes.CommercialMetricsEnabled, "/Reports/CommercialFunnel", "IPlanAccessService", "CanUseAsync", "IntelligenceReport", "account.member"),
             Ready(PlanFeatureCodes.CsvExportEnabled, "/Exports", "IPlanAccessService", "CanUseAsync", "DataExport", "account.member"),
             Ready(PlanFeatureCodes.AccountAuditEnabled, "/Settings/Audit", "IPlanAccessService", "CanUseAsync", "AuditLog", "account.member"),
-            Partial(PlanFeatureCodes.SupportPriorityEnabled, "Suporte prioritário ainda é apenas um rótulo comercial.")
+            Ready(PlanFeatureCodes.SupportPriorityEnabled, "/Support/Tickets", "IPlanAccessService", "CanUseAsync", "SupportTicket", "account.member")
         }.ToDictionary(x => x.Code, StringComparer.Ordinal);
     }
 }

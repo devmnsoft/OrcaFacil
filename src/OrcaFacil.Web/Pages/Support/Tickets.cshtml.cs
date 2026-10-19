@@ -4,15 +4,17 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Plans;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
+using OrcaFacil.Domain.Plans;
 using OrcaFacil.Persistence;
 using OrcaFacil.Web.Extensions;
 
 namespace OrcaFacil.Web.Pages.Support;
 
 [Authorize]
-public sealed class TicketsModel(OrcaFacilDbContext db, ICurrentAccountService current) : PageModel
+public sealed class TicketsModel(OrcaFacilDbContext db, ICurrentAccountService current, IPlanAccessService plans) : PageModel
 {
     public IReadOnlyList<SupportTicket> Tickets { get; private set; } = [];
     [BindProperty, Required, StringLength(180)] public string Subject { get; set; } = string.Empty;
@@ -27,6 +29,19 @@ public sealed class TicketsModel(OrcaFacilDbContext db, ICurrentAccountService c
     {
         if (current.AccountId is not Guid accountId) return Forbid();
         if (!ModelState.IsValid) { await Load(ct); return Page(); }
+
+        // Gate de plano: SupportPriorityEnabled — prioridade alta exige plano Pro
+        if (Priority == SupportTicketPriority.High || Priority == SupportTicketPriority.Urgent)
+        {
+            var priorityAllowed = await plans.CanUseAsync(accountId, PlanFeatureCodes.SupportPriorityEnabled, ct);
+            if (!priorityAllowed.IsAllowed)
+            {
+                ModelState.AddModelError(string.Empty, "Suporte prioritário está disponível a partir do plano Profissional. Conheça os planos.");
+                await Load(ct);
+                return Page();
+            }
+        }
+
         var ticket = new SupportTicket { AccountId = accountId, OpenedByUserId = current.UserId, Protocol = $"SUP-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid():N}"[..21].ToUpperInvariant(), Category = Category, Priority = Priority, Subject = Subject.Trim(), Description = Description.Trim(), RelatedPage = RelatedPage?.Trim(), CorrelationId = string.IsNullOrWhiteSpace(CorrelationId) ? HttpContext.TraceIdentifier : CorrelationId.Trim(), BrowserInfo = Request.Headers.UserAgent.FirstOrDefault()?[..Math.Min(Request.Headers.UserAgent.FirstOrDefault()!.Length, 500)] };
         db.SupportTickets.Add(ticket);
         db.SupportTicketMessages.Add(new SupportTicketMessage { TicketId = ticket.Id, AuthorUserId = current.UserId, Body = ticket.Description });

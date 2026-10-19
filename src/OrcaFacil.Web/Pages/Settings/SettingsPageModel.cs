@@ -3,13 +3,15 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Plans;
 using OrcaFacil.Domain.Entities;
+using OrcaFacil.Domain.Plans;
 using OrcaFacil.Persistence;
 
 namespace OrcaFacil.Web.Pages.Settings;
 
 [Authorize]
-public class SettingsPageModel(OrcaFacilDbContext db, ICurrentAccountService current, IAuditService audit, IWebHostEnvironment environment) : PageModel
+public class SettingsPageModel(OrcaFacilDbContext db, ICurrentAccountService current, IAuditService audit, IWebHostEnvironment environment, IPlanAccessService plans) : PageModel
 {
     [BindProperty] public AccountSettings Input { get; set; } = new();
     [BindProperty] public IFormFile? MainLogo { get; set; }
@@ -31,7 +33,24 @@ public class SettingsPageModel(OrcaFacilDbContext db, ICurrentAccountService cur
         if (!await CanManageAsync(ct)) return Forbid();
         if (!ModelState.IsValid) { await LoadAccountAsync(ct); return Page(); }
         var accountId = current.AccountId.Value;
+
+        // Gate de plano: NumberingCustomPrefix — prefixo personalizado exige plano Pro
         var stored = await db.AccountSettings.SingleOrDefaultAsync(x => x.AccountId == accountId && !x.IsDeleted, ct);
+        var prefixosPersonalizados = stored is null ||
+            (Input.QuotePrefix != stored.QuotePrefix && Input.QuotePrefix != "ORC") ||
+            (Input.WorkOrderPrefix != stored.WorkOrderPrefix && Input.WorkOrderPrefix != "OS") ||
+            (Input.ReceiptPrefix != stored.ReceiptPrefix && Input.ReceiptPrefix != "REC");
+        if (prefixosPersonalizados)
+        {
+            var numberingAllowed = await plans.CanUseAsync(accountId, PlanFeatureCodes.NumberingCustomPrefix, ct);
+            if (!numberingAllowed.IsAllowed)
+            {
+                ModelState.AddModelError(string.Empty, "Prefixo personalizado de numeração está disponível a partir do plano Profissional. Conheça os planos.");
+                await LoadAccountAsync(ct);
+                return Page();
+            }
+        }
+
         var before = stored is null ? null : new { stored.UpdatedAt };
         if (stored is null)
         {
