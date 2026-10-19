@@ -40,6 +40,10 @@ public sealed class ContextualAiHelpEndpoint(
         try { await account.EnsureAccountAccessAsync(ct); }
         catch (UnauthorizedAccessException) { return (StatusCodes.Status403Forbidden, new { message = "Sem acesso a esta conta." }); }
 
+        // Permissão real de IA no servidor: a UI pode esconder o campo, mas a decisão é aqui.
+        if (!await account.HasPermissionAsync("Ai.View", ct))
+            return (StatusCodes.Status403Forbidden, new { message = "Sua conta não tem permissão para usar a ajuda inteligente." });
+
         var question = (input.Question ?? string.Empty).Trim();
         if (question.Length < 3)
             return (StatusCodes.Status400BadRequest, new { message = "Descreva sua dúvida com pelo menos 3 caracteres." });

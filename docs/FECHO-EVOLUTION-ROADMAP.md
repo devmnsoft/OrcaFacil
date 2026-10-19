@@ -177,8 +177,8 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
 - `dotnet test OrcaFacil.sln -c Release` com `ORCAFACIL_JOURNEY_CONNECTION` apontando para banco **descartável**
   `orcafacil_journey_20261016` (schema `orcafacil` restaurado por `pg_dump --schema-only`; extensões `pgcrypto` e
   `pg_trgm`) → **683 aprovados, 0 falhas, 0 ignorados** na auditoria original; com os Sprints E-1/E-4
-  (testes novos de rascunho de mensagem), o total atual é **731 aprovados, 0 falhas, 0 ignorados**
-  (706 do E-2 + 10 testes de endpoint do E-3 + 9 do serviço de ajuda contextual + 7 da resolução do guia
+  (testes novos de rascunho de mensagem), o total atual é **732 aprovados, 0 falhas, 0 ignorados**
+  (706 do E-2 + 11 testes de endpoint do E-3 + 9 do serviço de ajuda contextual + 7 da resolução do guia
   pela rota, menos 1 teste reescrito).
   Inclui a jornada comercial completa, os 3 testes de
   homologação concorrente de IA e os cálculos de saldo/estorno.

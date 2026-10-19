@@ -96,9 +96,20 @@ public sealed class ContextualAiHelpTests
     }
 
     [Fact]
+    public async Task Sem_permissao_Ai_View_retorna_403()
+    {
+        var stub = new StubAiHelp(ExternalAnswer());
+        var (status, _) = await Endpoint(stub, new StubAccount(AccountId)).AskAsync(
+            new("Como revogar o link?", "document.details"), CancellationToken.None);
+
+        Assert.Equal(403, status);
+        Assert.Null(stub.LastContext); // o serviço nem é chamado
+    }
+
+    [Fact]
     public async Task Pergunta_curta_retorna_400()
     {
-        var (status, _) = await Endpoint(new StubAiHelp(ExternalAnswer()), new StubAccount(AccountId)).AskAsync(
+        var (status, _) = await Endpoint(new StubAiHelp(ExternalAnswer()), new StubAccount(AccountId, "Ai.View")).AskAsync(
             new("oi", "dashboard"), CancellationToken.None);
         Assert.Equal(400, status);
     }

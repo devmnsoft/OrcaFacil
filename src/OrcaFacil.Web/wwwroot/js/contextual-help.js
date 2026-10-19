@@ -70,6 +70,10 @@ function initializeHelpAsk(trigger) {
         body: JSON.stringify({ question, helpCode: trigger?.dataset.helpCode ?? '' }),
       });
       const data = await response.json().catch(() => null);
+      if (response.status === 403) {
+        answer.innerHTML = `<p role="alert">${escapeHtml(data?.message ?? 'Sua conta não tem permissão para usar a ajuda inteligente.')}</p>`;
+        return;
+      }
       if (!response.ok || !data) {
         answer.innerHTML = '<p role="alert">Não foi possível consultar a ajuda agora. Tente novamente.</p>';
         return;
