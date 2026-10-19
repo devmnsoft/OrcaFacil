@@ -145,7 +145,10 @@ Orquestrador e provedores existem. **Vida útil de DI dos clientes de IA corrigi
   O corpus é composto por **todos os guias estáticos do produto** (`IContextualHelpService.All()`, guia da tela
   primeiro) **+ artigos publicados** de `KnowledgeBaseArticle` (`IHelpKnowledgeSource`/`EfHelpKnowledgeSource`,
   somente `IsPublished && !IsDeleted`, até 50 em ordem de exibição). Nada é inventado: sem fonte relevante o serviço
-  devolve `Insufficient` e a UI diz que não há evidência (`Succeeded=false`). Governança corrigida no caminho:
+  devolve `Insufficient` e a UI diz que não há evidência (`Succeeded=false`). O drawer resolve o guia pela
+  **rota atual** (`IContextualHelpService.ForPath`: detalhe herda a página-mãe, barra final e caixa são toleradas,
+  prefixo parcial não casa), com fallback para o código informado e depois visão geral; os códigos antigos
+  inexistentes (`quotes`, `budget-create`) foram corrigidos para os guias reais. Governança corrigida no caminho:
   `ContextualAiHelpService.AskHelpAsync` passou a **receber a política** (`AiGovernancePolicy`) em vez de criar uma
   política local com `FeatureEnabled=true` — o gate do plano `AiExternalProvidersEnabled` + conta ativa agora chega
   de fato ao orquestrador (antes era decorativo). O serviço também valida `context.AccountId == policy.AccountId`
@@ -174,8 +177,9 @@ Depende de PostgreSQL descartável, HTTPS/SMTP, navegador visível e credenciais
 - `dotnet test OrcaFacil.sln -c Release` com `ORCAFACIL_JOURNEY_CONNECTION` apontando para banco **descartável**
   `orcafacil_journey_20261016` (schema `orcafacil` restaurado por `pg_dump --schema-only`; extensões `pgcrypto` e
   `pg_trgm`) → **683 aprovados, 0 falhas, 0 ignorados** na auditoria original; com os Sprints E-1/E-4
-  (testes novos de rascunho de mensagem), o total atual é **724 aprovados, 0 falhas, 0 ignorados**
-  (706 do E-2 + 10 testes de endpoint do E-3 + 9 testes do serviço de ajuda contextual, menos 1 teste reescrito).
+  (testes novos de rascunho de mensagem), o total atual é **731 aprovados, 0 falhas, 0 ignorados**
+  (706 do E-2 + 10 testes de endpoint do E-3 + 9 do serviço de ajuda contextual + 7 da resolução do guia
+  pela rota, menos 1 teste reescrito).
   Inclui a jornada comercial completa, os 3 testes de
   homologação concorrente de IA e os cálculos de saldo/estorno.
 - **Playwright (navegador real, Chromium):** **77/77 verde** (2 setups + 75 specs incl. as 2 de

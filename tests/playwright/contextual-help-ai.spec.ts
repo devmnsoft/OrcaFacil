@@ -32,6 +32,8 @@ test('sem artigo publicado a resposta sai dos guias oficiais e diz que nada foi 
   await page.getByRole('button', { name: 'Como usar esta página' }).click();
   const drawer = page.locator('[data-help-drawer]');
   await expect(drawer).toBeVisible();
+  // O código antigo da tela ("quotes") não existia; a rota agora resolve o guia correto.
+  await expect(drawer.locator('[data-help-title]')).toHaveText('Orçamentos');
 
   await drawer.locator('[data-help-ask-question]').fill('Como acompanhar as propostas aguardando resposta?');
   await drawer.locator('[data-help-ask-submit]').click();

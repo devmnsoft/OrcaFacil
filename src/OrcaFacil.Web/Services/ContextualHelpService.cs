@@ -5,6 +5,7 @@ public interface IContextualHelpService
     HelpContentDefinition? Find(string code);
     Task<HelpContentDefinition?> GetAsync(string code, CancellationToken cancellationToken = default);
     IReadOnlyList<HelpContentDefinition> ForPage(string page);
+    HelpContentDefinition? ForPath(string path);
     IReadOnlyList<HelpContentDefinition> All();
 }
 
@@ -40,7 +41,36 @@ public sealed class ContextualHelpService : IContextualHelpService
     public HelpContentDefinition? Find(string code) => Content.FirstOrDefault(x => x.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
     public Task<HelpContentDefinition?> GetAsync(string code, CancellationToken cancellationToken = default) => Task.FromResult(Find(code));
     public IReadOnlyList<HelpContentDefinition> ForPage(string page) => Content.Where(x => x.RelatedPage.Equals(page, StringComparison.OrdinalIgnoreCase)).ToArray();
+
+    // O layout resolve o guia pela rota atual. Detalhes como /Documents/Details/{id} e
+    // /Receipts/Details/{id} herdam o guia da página-mãe, e o código só precisa ser
+    // explícito quando a tela tem mais de um guia (etapas do orçamento).
+    public HelpContentDefinition? ForPath(string path)
+    {
+        var normalized = NormalizePath(path);
+        if (normalized.Length == 0) return null;
+
+        return Content
+            .Where(x => MatchesPath(normalized, x.RelatedPage))
+            .OrderByDescending(x => x.RelatedPage.Length)
+            .FirstOrDefault();
+    }
+
     public IReadOnlyList<HelpContentDefinition> All() => Content.ToArray();
+
+    private static bool MatchesPath(string path, string relatedPage)
+    {
+        if (string.IsNullOrWhiteSpace(relatedPage)) return false;
+        return path.Equals(relatedPage, StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith(relatedPage + "/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizePath(string path)
+    {
+        var value = (path ?? string.Empty).Trim();
+        if (value.Length > 1) value = value.TrimEnd('/');
+        return value;
+    }
 
     private static HelpContentDefinition Help(string code, string title, string purpose, string whenToUse, string beforeStarting,
         IReadOnlyList<string> steps, string example, IReadOnlyList<string> commonErrors, string whatHappensNext, string relatedPage, string? requiredPlan = null) =>

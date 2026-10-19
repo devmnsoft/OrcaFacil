@@ -1,13 +1,19 @@
 @using System.Linq
 @using OrcaFacil.Web.Services
 @inject IClientShellViewModelFactory ShellFactory
+@inject IContextualHelpService ContextualHelp
 @{
     var authenticated = User.Identity?.IsAuthenticated == true;
     var shell = authenticated ? await ShellFactory.CreateAsync(Context.RequestAborted) : null;
     var currentPath = Context.Request.Path.Value ?? string.Empty;
     var pageTitle = ViewData["Title"]?.ToString() ?? "Fechô";
     var pageSection = ViewData["Section"]?.ToString() ?? "Início";
-    var helpCode = ViewData["HelpCode"]?.ToString() ?? "dashboard";
+    // Código informado pela página pode não existir mais; nesse caso a rota atual decide o
+    // guia e, por último, a visão geral. O drawer nunca abre num guia de outra tela.
+    var requestedHelpCode = ViewData["HelpCode"]?.ToString();
+    var helpCode = (string.IsNullOrWhiteSpace(requestedHelpCode) ? null : ContextualHelp.Find(requestedHelpCode)?.Code)
+        ?? ContextualHelp.ForPath(currentPath)?.Code
+        ?? "dashboard";
 }
 <!doctype html>
 <html lang="@System.Globalization.CultureInfo.CurrentUICulture.Name" dir="ltr">
