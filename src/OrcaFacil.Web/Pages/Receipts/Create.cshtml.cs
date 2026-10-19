@@ -4,15 +4,18 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Plans;
 using OrcaFacil.Application.Receipts;
 using OrcaFacil.Domain.Enums;
+using OrcaFacil.Domain.Plans;
 using OrcaFacil.Persistence;
+using OrcaFacil.Web.Extensions;
 using OrcaFacil.Web.ViewModels.Receipts;
 
 namespace OrcaFacil.Web.Pages.Receipts;
 
 [Authorize]
-public sealed class CreateModel(IReceiptApplicationService receipts, ICurrentAccountService account, OrcaFacilDbContext db) : PageModel
+public sealed class CreateModel(IReceiptApplicationService receipts, ICurrentAccountService account, IPlanAccessService plans, OrcaFacilDbContext db) : PageModel
 {
     [BindProperty] public ReceiptCreateInput Input { get; set; } = new();
     public IReadOnlyList<SelectListItem> Clients { get; private set; } = [];
@@ -31,6 +34,13 @@ public sealed class CreateModel(IReceiptApplicationService receipts, ICurrentAcc
     public async Task<IActionResult> OnGetAsync(Guid? clientId, Guid? workOrderId, Guid? paymentId, Guid? documentId, CancellationToken ct)
     {
         if (!account.HasAccount) return Forbid();
+        if ((documentId.HasValue || workOrderId.HasValue || paymentId.HasValue) &&
+            account.AccountId is Guid convertingAccount &&
+            !(await plans.CanUseAsync(convertingAccount, PlanFeatureCodes.DocumentConvertToReceiptEnabled, ct)).IsAllowed)
+        {
+            TempData.Warning("A conversão de documentos em recibo não está incluída no plano atual. Conheça os planos.");
+            return RedirectToPage("/Subscription/Index");
+        }
         await LoadOptionsAsync(ct);
         Input.ClientId = clientId ?? Guid.Empty; Input.WorkOrderId = workOrderId; Input.DocumentId = documentId;
         Input.OriginType = workOrderId.HasValue ? ReceiptOriginType.WorkOrder : documentId.HasValue ? ReceiptOriginType.Budget : ReceiptOriginType.Standalone;
@@ -75,6 +85,12 @@ public sealed class CreateModel(IReceiptApplicationService receipts, ICurrentAcc
         if (Input.PaidAt.Date > DateTime.UtcNow.Date) ModelState.AddModelError("Input.PaidAt", "A data não pode estar no futuro.");
         if (!ModelState.IsValid) { await LoadOptionsAsync(ct); return Page(); }
         if (account.AccountId is not Guid accountId) return Forbid();
+        if ((Input.DocumentId.HasValue || Input.WorkOrderId.HasValue || Input.PaymentId.HasValue) &&
+            !(await plans.CanUseAsync(accountId, PlanFeatureCodes.DocumentConvertToReceiptEnabled, ct)).IsAllowed)
+        {
+            TempData.Warning("A conversão de documentos em recibo não está incluída no plano atual. Conheça os planos.");
+            return RedirectToPage("/Subscription/Index");
+        }
         if (string.IsNullOrWhiteSpace(Input.IdempotencyKey)) Input.IdempotencyKey = Guid.NewGuid().ToString("N");
         var result = Input.PaymentId is Guid paymentId
             ? await receipts.CreateForPaymentAsync(paymentId, Input.ServiceDescription, Input.City, Input.Notes, ct)

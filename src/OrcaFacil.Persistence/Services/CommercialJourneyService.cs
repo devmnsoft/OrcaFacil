@@ -44,6 +44,14 @@ public sealed class CommercialJourneyService(
         if (!plan.IsAllowed)
             return PublicQuote(false, QuoteLifecycleCode.PlanLimitReached, plan.UserMessage, correlation);
 
+        var link = await plans.CanUseAsync(AccountId, PlanFeatureCodes.PublicLinkSharingEnabled, ct);
+        if (!link.IsAllowed)
+            return PublicQuote(false, QuoteLifecycleCode.PlanLimitReached, link.UserMessage, correlation);
+
+        var monthlyCap = await plans.CanUseAsync(AccountId, PlanFeatureCodes.PublicApprovalMonthlyLimit, ct);
+        if (!monthlyCap.IsAllowed)
+            return PublicQuote(false, QuoteLifecycleCode.PlanLimitReached, monthlyCap.UserMessage, correlation);
+
         await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         var revision = await CreateOrReuseRevisionCoreAsync(documentId, "essential", correlation, ct);
         if (!revision.Succeeded)

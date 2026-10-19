@@ -44,7 +44,14 @@
                     <form method="post" asp-page-handler="Share">
                         <button type="submit" class="of-button of-button--primary">Registrar compartilhamento</button>
                     </form>
-                    <a class="of-button" href="@Model.WhatsAppShareUrl" rel="noopener noreferrer">WhatsApp</a>
+                    @if (!string.IsNullOrEmpty(Model.WhatsAppShareUrl))
+                    {
+                        <a class="of-button" href="@Model.WhatsAppShareUrl" rel="noopener noreferrer" target="_blank">WhatsApp</a>
+                    }
+                    else
+                    {
+                        <p class="of-help-text">Compartilhar por WhatsApp está disponível a partir do plano Profissional. <a asp-page="/Subscription/Index">Ver planos</a></p>
+                    }
                     <form method="post" asp-page-handler="Cancel">
                         <label>
                             Motivo do cancelamento
