@@ -283,7 +283,24 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
    - 4 testes PostgreSQL de guarda (`RbacAiGovernanceSeedTests`) travam a regra contra nova divergência;
    - `receipts.read`, `contracts.read`, `webhooks.read`, `analytics.read` e `files.read` **não** são permissões de RBAC: são escopos de chave de API (`ApiKeyService.AllowedScopes`) e os demais escopos (ex.: `clients.read`) também não têm linha em `permissions` — por isso ficaram de fora do seed.
 4. **Sprint E concluído (E-1, E-2, E-3 e E-4):** o `IContextualAiHelpService` (RAG) agora tem consumidor real no drawer de ajuda, com corpus de guias + artigos publicados, gating de plano e fallback determinístico. Resta apenas ampliar a base de conhecimento (artigos publicados) para melhorar a cobertura — dado operacional, não código.
-5. **R5:** validar gateway Mercado Pago em sandbox e o fluxo de inadimplência/regularização (aguarda credenciais).
+5. **R5 — parte do ciclo de inadimplência fechada nesta execução (2026-10-20):**
+   - **Correção real de carência fictícia:** as versões de plano eram semeadas sem `grace_period_days`
+     (DEFAULT 0). O `BillingStatusService` anunciava "carência de 3 dias" no evento de atraso, mas o
+     `PlanAccessService` lê somente `plan_versions.grace_period_days` — com 0 dias, os benefícios pagos eram
+     cortados no mesmo instante do vencimento. Correção aditiva e idempotente: seeds
+     (`script_completop.sql`/`import_orcafacil.sql`) agora provisionam 3 dias nos planos pagos (0 no FREE,
+     coerentes com `BillingOptions.GracePeriodDays`), e o patch `database/hotfix_plan_grace_period_v76.sql`
+     corrige versões publicadas em bancos existentes (nunca reduz valor já configurado).
+   - **Prova ponta a ponta (sem gateway):** `DunningCycleHomologationTests` trava o ciclo
+     pago completo — PastDue na carência com benefícios ATIVOS, plano efetivo cai para FREE ao fim da
+     carência, suspensão após o prazo, restauração automática pelo worker com cobertura comprovada
+     (`billing.restored`) e benefícios de volta no plano pago; além de assinatura quitada pelo webhook que
+     não regride no sync e o congelamento do contrato carência anunciada = carência efetiva.
+     Suíte: 728 aprovados, 0 falhas (19 ignorados por gate de PostgreSQL); build Release 0 erros;
+     validadores `check:database-schema`, `check:database-schema-contract`, `check:billing-flow`,
+     `check:data-migration` e `check:database-connection-config` verdes.
+   - **Resta:** validar gateway Mercado Pago em **sandbox** (assinatura de webhook, dedup, reconciliação e o
+     ciclo acima com eventos reais) — aguarda credenciais do ambiente.
 7. **Monetização (próximo incremento do Sprint P):** ligar o gate de plano nos 19 recursos que já têm interface
    (`reports.basic`/`advanced`, `exports.csv`, `commercial.pipeline|followups|metrics`, `audit.account`,
    `branding.custom_logo`, `templates.custom_enabled`, `sharing.whatsapp`, `pdf.watermark` e os limites de
