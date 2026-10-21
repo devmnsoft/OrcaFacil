@@ -356,3 +356,20 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
    - **Resta (execução com DB real):** homologação visual do aceite num PostgreSQL descartável; caso de
      borda registrado: se o e-mail do convidado se cadastrar sozinho depois do convite, o aceite cai no
      caminho de vínculo à conta existente (sem trocar senha).
+9. **PWA (item 2 de `NEXT-RELEASE.md`) fechado nesta execução (2026-10-21):** commit `89e3573`. O esqueleto
+   já existia (manifest, service worker, banner de instalação, página `/Offline`) mas faltava o que torna o
+   app **instalável de fato** e faltava evidência. Nesta execução:
+   - **Ícones rasterizados com honestidade:** `fecho-pwa-192.png`, `fecho-pwa-512.png` e
+     `apple-touch-icon.png` (180) gerados por renderização do próprio `fecho-symbol.svg` em canvas do
+     browser (fundo full-bleed `#0B3835`, símbolo em 80% — zona segura maskable), não desenhos
+     aproximados. O iOS ganhou `apple-touch-icon` nos dois layouts (antes usaria screenshot da página).
+   - **Manifest instalável:** PNG 192/512 declarados com `sizes` e `purpose` reais (antes só SVG);
+     dimensões verificadas lendo o cabeçalho IHDR dos bytes, não confiando só na declaração.
+   - **Faixa de segurança do SW preservada e travada:** rotas privadas (`Auth/Settings/Api/Admin/...`)
+     fora do cache, navegação em rede com fallback `/Offline` e **nunca** cache de navegação (conteria
+     dados de sessão); banner de atualização pede recarga (nunca recarrega sozinho); envio de formulário
+     offline é bloqueado, não simulado.
+   - **Evidência:** novo validador `check:pwa` (`scripts/check-pwa.mjs`) — manifest, arquivos de ícone com
+     dimensões reais, 28 assets de precache existentes, SENSITIVE_PATH, fallback offline, registro nos dois
+     layouts e honestidade dos banners; verde. Suíte 743 aprovados, 0 falhas; build 0 erros;
+     `check:git-safety`, `check:authenticated-design`, `check:public-design` verdes.
