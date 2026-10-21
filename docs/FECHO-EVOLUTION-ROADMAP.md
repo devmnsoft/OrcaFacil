@@ -305,4 +305,7 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
    (`reports.basic`/`advanced`, `exports.csv`, `commercial.pipeline|followups|metrics`, `audit.account`,
    `branding.custom_logo`, `templates.custom_enabled`, `sharing.whatsapp`, `pdf.watermark` e os limites de
    clientes/serviços/equipe/templates), reclassificando-os de `Partial` para `Ready` no manifesto de prontidão.
-6. **Higiene:** decidir untrack de `node_modules/` (sucessor do R9 bin/obj já resolvido); decidir destino do banco descartável `orcafacil_journey_20261016` após o merge.
+6. **Higiene — untrack de `node_modules/` e `.vs/` concluído nesta execução (2026-10-20):** commit `e0f4568`
+   removeu 1157 arquivos rastreados (sucessor do R9 bin/obj) mantendo os arquivos no disco; `.vs/` (estado do
+   Visual Studio, incl. DBs do Copilot) entrou no `.gitignore`; `check:git-safety` verde; índice caiu de 3324
+   para 2167 arquivos. Pendente: decidir o destino do banco descartável `orcafacil_journey_20261016` após o merge.
