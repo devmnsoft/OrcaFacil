@@ -299,6 +299,15 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
      Suíte: 728 aprovados, 0 falhas (19 ignorados por gate de PostgreSQL); build Release 0 erros;
      validadores `check:database-schema`, `check:database-schema-contract`, `check:billing-flow`,
      `check:data-migration` e `check:database-connection-config` verdes.
+   - **Divergência de base nova descoberta e corrigida (PostgreSQL real, 2026-10-20):** a suíte de jornada
+     executada contra um banco PostgreSQL descartável provisionado exclusivamente por
+     `database/script_completop.sql` revelou que o consolidado **não encadeava** os patches de RBAC de IA
+     (v74), catálogo de planos (v75) e carência mínima (v76) — a cadeia `\ir` parava no v73. Uma go-live nova
+     pelo runbook oficial nasce com catálogo incompleto (26 recursos/8 valores/4 permissões Ai.*/sem
+     Margins.View/carência 0) e **falha nos próprios guards** (`RbacAiGovernanceSeedTests`,
+     `PlanCatalogPostgresSeedTests`). Correção: os três patches passam a encadear no fim do consolidado
+     (aditivos, idempotentes — segunda aplicação sem erro e sem duplicação). Base nova do consolidado: 29
+     recursos, 116 valores (4 planos × 29), 9 permissões Ai.* + Margins.View, carência paga 3 dias.
    - **Resta:** validar gateway Mercado Pago em **sandbox** (assinatura de webhook, dedup, reconciliação e o
      ciclo acima com eventos reais) — aguarda credenciais do ambiente.
 7. **Monetização (próximo incremento do Sprint P):** ligar o gate de plano nos 19 recursos que já têm interface
