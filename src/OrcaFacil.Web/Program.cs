@@ -565,6 +565,7 @@ app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (
     OrcaFacil.Application.Abstractions.ICurrentUserService currentUser,
     OrcaFacil.Application.Abstractions.ICurrentAccountService currentAccount,
     OrcaFacil.Application.Plans.IPlanAccessService plans,
+    OrcaFacil.Application.Plans.UserUsageService usage,
     OrcaFacil.Application.Commercial.ICommercialRevisionResolver resolver,
     OrcaFacil.Application.Abstractions.IPdfService pdf,
     OrcaFacil.Persistence.OrcaFacilDbContext db,
@@ -610,6 +611,20 @@ app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (
         }
     }
 
+    // Cota mensal de PDFs do plano (Free: 10). A checagem usa limite/uso diretamente
+    // para não reabrir a política de consulta histórica pós-trial já garantida acima.
+    if (targetAccountId.HasValue)
+    {
+        var pdfLimit = await plans.GetLimitAsync(targetAccountId.Value, OrcaFacil.Domain.Plans.PlanFeatureCodes.PdfMonthlyLimit, ct);
+        if (pdfLimit.HasValue)
+        {
+            var pdfUsage = await plans.GetUsageAsync(targetAccountId.Value, OrcaFacil.Domain.Plans.PlanFeatureCodes.PdfMonthlyLimit, ct);
+            if (pdfUsage >= pdfLimit.Value)
+                return Results.Problem(statusCode: StatusCodes.Status403Forbidden, title: "Limite de PDFs do plano",
+                    detail: $"Seu plano permite {pdfLimit.Value} PDF(s) por mês. Conheça os planos e regularize sua conta.");
+        }
+    }
+
     IssuerProfile? defaultIssuer = null;
     if (targetAccountId.HasValue)
     {
@@ -641,6 +656,8 @@ app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (
 
     var resolved = resolution.Value!;
     var bytes = await pdf.GenerateDocumentPdfAsync(resolved.Document, resolved.Issuer, resolved.EffectivePlan, resolved.LanguageCode, resolved.CurrencyCode, ct);
+    if (accountId.HasValue)
+        await usage.RegisterPdfAsync(currentUser.UserId, accountId, ct);
     return Results.File(bytes, "application/pdf", $"{document.Number}.pdf");
 }).RequireAuthorization();
 app.Run();

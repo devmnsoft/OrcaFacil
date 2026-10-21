@@ -23,7 +23,7 @@ public class UserUsageService
 
     public async Task RegisterDocumentAsync(Guid userId, DocumentType type, CancellationToken ct = default)
     {
-        var item = await GetOrCreateAsync(userId, ct);
+        var item = await GetOrCreateAsync(userId, null, ct);
         item.DocumentsCreated++;
         if (type == DocumentType.Budget) item.BudgetsCreated++;
         if (type == DocumentType.Receipt) item.ReceiptsCreated++;
@@ -31,19 +31,20 @@ public class UserUsageService
         _logger.LogInformation("USER_USAGE_DOCUMENT_INCREMENTED {UserId} {Type}", userId, type);
     }
 
-    public async Task RegisterPdfAsync(Guid userId, CancellationToken ct = default)
+    public async Task RegisterPdfAsync(Guid userId, Guid? accountId, CancellationToken ct = default)
     {
-        var item = await GetOrCreateAsync(userId, ct);
+        var item = await GetOrCreateAsync(userId, accountId, ct);
+        if (accountId.HasValue && item.AccountId is null) item.AccountId = accountId.Value;
         item.PdfGenerated++;
         await _uow.SaveChangesAsync(ct);
-        _logger.LogInformation("USER_USAGE_PDF_INCREMENTED {UserId}", userId);
+        _logger.LogInformation("USER_USAGE_PDF_INCREMENTED {UserId} {AccountId}", userId, accountId);
     }
 
-    private async Task<UserUsage> GetOrCreateAsync(Guid userId, CancellationToken ct)
+    private async Task<UserUsage> GetOrCreateAsync(Guid userId, Guid? accountId, CancellationToken ct)
     {
         var item = await GetCurrentAsync(userId, ct);
         if (item is not null) return item;
-        item = new UserUsage { UserId = userId, Period = Period() };
+        item = new UserUsage { UserId = userId, AccountId = accountId, Period = Period() };
         await _usage.AddAsync(item, ct);
         return item;
     }

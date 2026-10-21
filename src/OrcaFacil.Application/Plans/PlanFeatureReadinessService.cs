@@ -73,7 +73,7 @@ public sealed class PlanFeatureReadinessService : IPlanFeatureReadinessService
             Ready(PlanFeatureCodes.AiExternalProvidersEnabled, "/Assistant", "IPlanAccessService", "CanUseAsync", "AiUsageLog", "account.member"),
             Ready(PlanFeatureCodes.AiMonthlyLimit, "/Assistant", "IAiGovernanceService", "CanUseAsync", "AiUsageLog", "account.member"),
 
-            // Superfícies implementadas que ainda não consultam o plano.
+            // Superfícies com interface, agora ligadas ao plano (gate por código na própria jornada).
             Ready(PlanFeatureCodes.TeamMembersLimit, "/AccountAdmin/Users/New", "IPlanAccessService", "GetLimitAsync", "AccountMember", "account.member"),
             Ready(PlanFeatureCodes.PdfWatermark, "/Documents (PDF)", "QuestPdfDocumentService", "GenerateDocumentPdfAsync", "Document", "documents.generate"),
             Ready(PlanFeatureCodes.BasicTemplatesLimit, "/Templates/Details", "IPlanAccessService", "GetLimitAsync", "BudgetTemplate", "account.member"),
