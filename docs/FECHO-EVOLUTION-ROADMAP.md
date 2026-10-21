@@ -325,10 +325,25 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
      em varreduras estáveis).
    - **Resta (execução):** rodar a matriz de aceites do runbook com credenciais sandbox e registrar a
      evidência.
-7. **Monetização (próximo incremento do Sprint P):** ligar o gate de plano nos 19 recursos que já têm interface
-   (`reports.basic`/`advanced`, `exports.csv`, `commercial.pipeline|followups|metrics`, `audit.account`,
-   `branding.custom_logo`, `templates.custom_enabled`, `sharing.whatsapp`, `pdf.watermark` e os limites de
-   clientes/serviços/equipe/templates), reclassificando-os de `Partial` para `Ready` no manifesto de prontidão.
+7. **Monetização — gates de plano nos 19 recursos concluídos (gates em 2026-10-19; fechamento com prova em
+   2026-10-19→21):** os 29 recursos do catálogo estão `Ready` no manifesto de prontidão, e a verificação desta
+   execução **encontrou e corrigiu três alegações `Ready` sem enforcement nenhum no código**:
+   - `clients.active_limit` / `services.active_limit`: nenhuma tela consultava o plano — agora `/Clients/Create`
+     e `/Services/Create` chamam `CanUseAsync` antes de criar (bloqueio com o teto do plano na mensagem, na
+     mesma linha de estilo do limite de equipe); o contador de serviços media eventos `ServiceActivated` que
+     **ninguém grava** (uso sempre zero) e passou a contar os itens ativos do catálogo.
+   - `pdf.monthly_limit`: a constante não era usada em lugar algum — a cota Free de 10 PDFs/mês agora é
+     aplicada em `/Documents/Pdf/{id}` (Web) e `DocumentsController.Pdf` (API) por **limite+uso direto**
+     (`GetLimitAsync`/`GetUsageAsync`), sem reabrir a política de consulta histórica pós-trial; o gasto é
+     registrado em `user_usage` via `RegisterPdfAsync` (antes código morto, agora com `AccountId`), e a
+     contagem soma os PDFs das pessoas **ativas da conta** (`user_usage` × `account_members`) — não pode ser
+     contornada trocando de conta e erra para cima, nunca para baixo. Bônus: o registro de auditoria
+     `PDF_GENERATED` da API era adicionado ao contexto e **nunca salvo** — agora persiste.
+   - **Prova (novo validador `check:feature-gates`):** para cada entrada `Ready`, exige que a constante do
+     recurso seja usada fora das definições por um arquivo que chama `CanUseAsync`/`GetLimitAsync` (ou
+     `RequiredFeature` com enforcement na base); a marca d'água do PDF é exceção declarada verificada por
+     tokens (gate por plan type `Free` no template, coerente com a matriz 1 Enabled/3 Disabled). Também
+     trava **zero entradas `Partial`**. Verde: 29/29, suíte 743/0/19, build 0 erros.
 6. **Higiene — untrack de `node_modules/` e `.vs/` concluído nesta execução (2026-10-20):** commit `e0f4568`
    removeu 1157 arquivos rastreados (sucessor do R9 bin/obj) mantendo os arquivos no disco; `.vs/` (estado do
    Visual Studio, incl. DBs do Copilot) entrou no `.gitignore`; `check:git-safety` verde; índice caiu de 3324
