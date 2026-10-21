@@ -262,6 +262,7 @@
     "check:growth-revenue": "node scripts/check-growth-revenue.mjs",
     "check:no-fake-growth": "node scripts/check-no-fake-growth.mjs",
     "check:public-site": "node scripts/check-public-site.mjs",
+    "check:pwa": "node scripts/check-pwa.mjs",
     "check:seo-technical": "node scripts/check-seo-technical.mjs",
     "check:sitemap-robots": "node scripts/check-sitemap-robots.mjs",
     "check:structured-data": "node scripts/check-structured-data.mjs",
