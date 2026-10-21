@@ -17,6 +17,7 @@ src/OrcaFacil.Api/appsettings.Local.json
 
 # Build/produção
 node_modules/
+.vs/
 bin/
 obj/
 dist/
