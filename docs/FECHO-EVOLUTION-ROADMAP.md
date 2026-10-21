@@ -333,3 +333,26 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
    removeu 1157 arquivos rastreados (sucessor do R9 bin/obj) mantendo os arquivos no disco; `.vs/` (estado do
    Visual Studio, incl. DBs do Copilot) entrou no `.gitignore`; `check:git-safety` verde; índice caiu de 3324
    para 2167 arquivos. Pendente: decidir o destino do banco descartável `orcafacil_journey_20261016` após o merge.
+8. **Convites de equipe por e-mail (item 1 de `NEXT-RELEASE.md`) concluídos nesta execução (2026-10-21):**
+   commit `26cf4e6`. Antes, o único caminho era senha temporária digitada pelo admin (a pessoa nunca era
+   avisada por e-mail). Agora o admin marca **"Enviar convite por e-mail"** na criação de usuário
+   (`/AccountAdmin/Users/New`) e o convidado define a própria senha no aceite. Implementação:
+   - **Entidade `AccountInvitation`** (`orcafacil.account_invitations`): token cru nunca persistido (só
+     hash SHA-256 com pepper), aceite ÚNICO com validade de 7 dias, revogação que expira no ato sem apagar
+     histórico (sem `DROP`/`DELETE`); migração EF estritamente aditiva (`20261021120031` — o gerador
+     detectou drift pré-existente de `budget_templates`/`manual_payments`/`ck_users_plan` e foi enxugado
+     manualmente para criar somente a tabela nova) + tabela no `script_completop.sql` com índices.
+   - **Fluxo completo:** convite no `AccountInvitationService` (reemissão revoga pendentes anteriores do
+     mesmo e-mail; e-mail já cadastrado no Fechô vira vínculo direto, não convite), e-mail transacional na
+     outbox (idempotente por convite, template `account-invite`) e página pública `/Auth/AcceptInvite`
+     (dados por token, senha própria, termos de uso, aceite único em transação serializável, login direto).
+   - **Limite de vagas honesto:** convite pendente OCUPA vaga (`AccountInvitationRules.TeamCapReached`) —
+     membros ativos + pendentes >= `TeamMembersLimit` bloqueia com mensagem de upgrade; o limite não pode
+     mais ser furado por enfileirar convites.
+   - **Evidência:** 743 aprovados, 0 falhas sem DB (13 testes novos em `AccountInvitationRulesTests`
+     travando cânon de vagas, perfis atribuíveis, unicidade/expiração/revogação do token); build 0 erros;
+     validadores `check:database-schema`, `check:database-schema-contract`, `check:billing-flow`,
+     `check:data-migration`, `check:git-safety`, `check:admin-billing` verdes.
+   - **Resta (execução com DB real):** homologação visual do aceite num PostgreSQL descartável; caso de
+     borda registrado: se o e-mail do convidado se cadastrar sozinho depois do convite, o aceite cai no
+     caminho de vínculo à conta existente (sem trocar senha).
