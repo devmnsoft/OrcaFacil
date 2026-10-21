@@ -308,8 +308,14 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
      `PlanCatalogPostgresSeedTests`). Correção: os três patches passam a encadear no fim do consolidado
      (aditivos, idempotentes — segunda aplicação sem erro e sem duplicação). Base nova do consolidado: 29
      recursos, 116 valores (4 planos × 29), 9 permissões Ai.* + Margins.View, carência paga 3 dias.
-   - **Resta:** validar gateway Mercado Pago em **sandbox** (assinatura de webhook, dedup, reconciliação e o
-     ciclo acima com eventos reais) — aguarda credenciais do ambiente.
+   - **Instrumento e runbook prontos nesta execução (2026-10-20):**
+     `scripts/sandbox/mercadopago-sandbox.mjs` (CLI sem dependências: cria Pix/boleto sandbox, consulta
+     status e envia webhooks assinados no formato oficial `ts/v1` — inclusive a moldura `--tamper` que
+     falha se a aplicação aceitar assinatura inválida, e `--echo` para conferência offline do HMAC contra
+     verificador independente) e `docs/SANDBOX-MERCADOPAGO-R5.md` (passos, SQL de verificação, matriz de
+     aceites e critério de fechamento). Executar a matriz exige apenas as credenciais TEST- no ambiente.
+   - **Resta (execução):** rodar a matriz de aceites do runbook com credenciais sandbox e registrar a
+     evidência.
 7. **Monetização (próximo incremento do Sprint P):** ligar o gate de plano nos 19 recursos que já têm interface
    (`reports.basic`/`advanced`, `exports.csv`, `commercial.pipeline|followups|metrics`, `audit.account`,
    `branding.custom_logo`, `templates.custom_enabled`, `sharing.whatsapp`, `pdf.watermark` e os limites de
