@@ -314,6 +314,15 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
      falha se a aplicação aceitar assinatura inválida, e `--echo` para conferência offline do HMAC contra
      verificador independente) e `docs/SANDBOX-MERCADOPAGO-R5.md` (passos, SQL de verificação, matriz de
      aceites e critério de fechamento). Executar a matriz exige apenas as credenciais TEST- no ambiente.
+   - **E-mail transacional de cobrança (novo nesta execução):** toda transição real do ciclo de inadimplência
+     agora avisa o titular — `billing.overdue` (carência com benefícios ativos), `billing.grace_ended`,
+     `billing.suspended` (benefícios pausados, dados preservados) e `billing.restored`. Implementação:
+     `IBillingNoticeService` (Application, política em `BillingStatusService.NoticeEventTypes` — liberação
+     manual e estado de teste nunca viram e-mail de cobrança) + `BillingNoticeEmailService` (Web) escrevendo
+     na outbox com destinatário Owner ativo da conta, payload protegido por Data Protection e **idempotência**
+     por `IdempotencyKey` única (`evento:assinatura:dia`) — o worker nunca repete o mesmo aviso. Contrato
+     travado em `BillingNoticeContractTests` (aviso só por transição real, só após persistência, sem ruído
+     em varreduras estáveis).
    - **Resta (execução):** rodar a matriz de aceites do runbook com credenciais sandbox e registrar a
      evidência.
 7. **Monetização (próximo incremento do Sprint P):** ligar o gate de plano nos 19 recursos que já têm interface
