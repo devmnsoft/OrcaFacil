@@ -15,6 +15,8 @@ public class BillingStatusService
     private readonly IUnitOfWork _uow;
     private readonly BillingOptions _options;
     private readonly IClock _clock;
+    private readonly IBillingNoticeService? _notices;
+    private readonly List<(Subscription Subscription, string EventType, string Details)> _pendingNotices = [];
 
     public BillingStatusService(
         IRepository<Subscription> subscriptions,
@@ -23,7 +25,8 @@ public class BillingStatusService
         IRepository<SubscriptionEvent> events,
         IUnitOfWork uow,
         IOptions<BillingOptions>? options = null,
-        IClock? clock = null)
+        IClock? clock = null,
+        IBillingNoticeService? notices = null)
     {
         _subscriptions = subscriptions;
         _payments = payments;
@@ -32,6 +35,7 @@ public class BillingStatusService
         _uow = uow;
         _options = options?.Value ?? new BillingOptions();
         _clock = clock ?? new SystemClock();
+        _notices = notices;
     }
 
     public async Task<int> SyncOverdueSubscriptionsAsync(CancellationToken ct = default)
@@ -147,6 +151,8 @@ public class BillingStatusService
         if (processed > 0)
             await _uow.SaveChangesAsync(ct);
 
+        await FlushNoticesAsync(ct);
+
         return processed;
     }
 
@@ -178,6 +184,8 @@ public class BillingStatusService
         if (restored > 0)
             await _uow.SaveChangesAsync(ct);
 
+        await FlushNoticesAsync(ct);
+
         return restored;
     }
 
@@ -206,6 +214,25 @@ public class BillingStatusService
             EventType = eventType,
             Details = details
         }, ct);
+        if (_notices is not null && NoticeEventTypes.Contains(eventType))
+            _pendingNotices.Add((subscription, eventType, details));
+    }
+
+    /// <summary>Transições que avisam o titular. Liberação manual e estado de
+    /// teste são ações de operação/onboarding — não viram e-mail de cobrança.</summary>
+    public static readonly IReadOnlyCollection<string> NoticeEventTypes =
+    [
+        "billing.overdue", "billing.grace_ended", "billing.suspended", "billing.restored"
+    ];
+
+    private async Task FlushNoticesAsync(CancellationToken ct)
+    {
+        if (_notices is null || _pendingNotices.Count == 0) return;
+
+        foreach (var (subscription, eventType, details) in _pendingNotices)
+            await _notices.NotifyAsync(subscription, eventType, details, ct);
+
+        _pendingNotices.Clear();
     }
 }
 

@@ -200,6 +200,7 @@ builder.Services.AddScoped<IPlanCatalogService, EfPlanCatalogService>();
 builder.Services.AddScoped<TrialProService>();
 builder.Services.Configure<PlanOptions>(builder.Configuration.GetSection("Plans"));
 builder.Services.AddScoped<BillingStatusService>();
+builder.Services.AddScoped<IBillingNoticeService, BillingNoticeEmailService>();
 builder.Services.AddScoped<BillingPaymentService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<FriendlyMessageService>();
