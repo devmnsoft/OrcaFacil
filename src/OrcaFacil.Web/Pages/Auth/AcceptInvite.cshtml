@@ -1,0 +1,28 @@
+@page
+@model OrcaFacil.Web.Pages.Auth.AcceptInviteModel
+@{ Layout = "/Pages/Shared/_PublicLayout.cshtml"; ViewData["Title"] = "Aceitar convite"; }
+<section class="of-public-auth">
+<div class="of-container">
+<div class="of-auth-card of-auth-card-standalone">@if(!Model.Available){
+<div class="of-form-section">
+<h1>Este convite não está mais disponível.</h1>
+@if(!string.IsNullOrEmpty(Model.Error)){<p class="of-text-secondary">@Model.Error</p>}else{<p class="of-text-secondary">Ele já foi usado, expirou ou foi revogado.</p>}
+<a asp-page="/Auth/Login" class="of-button of-button-tertiary">Voltar para entrar</a>
+<a asp-page="/Support/Index" class="of-button of-button-tertiary">Falar com o suporte</a>
+</div>
+}else{
+<form method="post" class="of-form-section">@Html.AntiForgeryToken()<input asp-for="Token" type="hidden"/>
+<h1>Convite para a conta @Model.AccountName</h1>
+<p class="of-text-secondary">@Model.FullName (@Model.Email) foi convidado(a) para colaborar com o perfil @Model.RoleCode. Defina sua senha para entrar.</p>
+<div asp-validation-summary="ModelOnly" class="of-form-summary">
+</div>
+<label asp-for="Password" class="of-field-label">Sua senha</label>
+<input asp-for="Password" type="password" class="of-field-control" autocomplete="new-password"/>
+<label asp-for="Confirmation" class="of-field-label">Confirmar senha</label>
+<input asp-for="Confirmation" type="password" class="of-field-control" autocomplete="new-password"/>
+<div class="of-consent-field"><input asp-for="AcceptTerms" class="of-consent-control" /><label asp-for="AcceptTerms" class="of-consent-label">Li e concordo com os <a asp-page="/Termos" target="_blank" rel="noopener">Termos de Uso</a>.</label><span asp-validation-for="AcceptTerms" class="of-field-error"></span></div>
+<button type="submit" class="of-button of-button-primary of-button-block">Aceitar convite</button>
+</form>
+}</div>
+</div>
+</section>

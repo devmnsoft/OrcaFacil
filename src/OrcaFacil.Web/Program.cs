@@ -251,6 +251,7 @@ builder.Services.AddSingleton<IValidateOptions<PasswordResetOptions>, PasswordRe
 builder.Services.AddSingleton<IValidateOptions<SecuritySecretOptions>, SecuritySecretOptionsValidator>();
 builder.Services.AddScoped<IPasswordResetTokenService, PasswordResetTokenService>();
 builder.Services.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
+builder.Services.AddScoped<IAccountInvitationService, AccountInvitationService>();
 builder.Services.AddScoped<IEmailSender, GmailSmtpEmailSender>();
 builder.Services.AddHostedService<EmailOutboxWorker>();
 builder.Services.AddHostedService<ProductionConfigurationValidator>();

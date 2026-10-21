@@ -619,6 +619,15 @@ COMMIT;
 -- RELEASE OPERACIONAL 4: recuperação segura e fila transacional
 CREATE TABLE IF NOT EXISTS orcafacil.password_reset_tokens (id uuid PRIMARY KEY, user_id uuid NOT NULL REFERENCES orcafacil.users(id) ON DELETE RESTRICT, token_hash varchar(64) NOT NULL UNIQUE, created_at timestamptz NOT NULL, updated_at timestamptz, expires_at timestamptz NOT NULL, used_at timestamptz, revoked_at timestamptz, requested_correlation_id varchar(100) NOT NULL, requested_ip_hash varchar(64), user_agent_hash varchar(64), created_by varchar(60) NOT NULL, is_deleted boolean NOT NULL DEFAULT false);
 CREATE TABLE IF NOT EXISTS orcafacil.email_outbox_messages (id uuid PRIMARY KEY, template_code varchar(80) NOT NULL, recipient_hash varchar(64) NOT NULL, recipient_masked varchar(254) NOT NULL, protected_recipient text NOT NULL, protected_payload text, status varchar(20) NOT NULL, priority varchar(20) NOT NULL, attempts integer NOT NULL DEFAULT 0, next_attempt_at timestamptz NOT NULL, processing_started_at timestamptz, processing_instance_id varchar(100), created_at timestamptz NOT NULL, updated_at timestamptz, sent_at timestamptz, dead_lettered_at timestamptz, last_error_code varchar(80), correlation_id varchar(100) NOT NULL, idempotency_key varchar(160) NOT NULL UNIQUE, is_deleted boolean NOT NULL DEFAULT false);
+-- Convites de equipe por e-mail (migration 20261021120031). Aditivo, reversível, sem reuso de token:
+-- cru nunca persistido, so SHA-256; aceite unico com expiracao; revogacao expira no ato.
+CREATE TABLE IF NOT EXISTS orcafacil.account_invitations (id uuid PRIMARY KEY, account_id uuid NOT NULL REFERENCES orcafacil.business_accounts(id) ON DELETE RESTRICT, email varchar(254) NOT NULL, full_name varchar(180) NOT NULL, role_code varchar(40) NOT NULL, invited_by_user_id uuid NOT NULL REFERENCES orcafacil.users(id) ON DELETE RESTRICT, token_hash varchar(64) NOT NULL UNIQUE, expires_at timestamptz NOT NULL, used_at timestamptz, used_by_user_id uuid, requested_correlation_id varchar(100) NOT NULL, created_at timestamptz NOT NULL, updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE INDEX IF NOT EXISTS IX_account_invitations_account_id ON orcafacil.account_invitations(account_id);
+CREATE INDEX IF NOT EXISTS IX_account_invitations_account_id_email ON orcafacil.account_invitations(account_id, email);
+CREATE INDEX IF NOT EXISTS IX_account_invitations_created_at ON orcafacil.account_invitations(created_at);
+CREATE INDEX IF NOT EXISTS IX_account_invitations_expires_at ON orcafacil.account_invitations(expires_at);
+CREATE INDEX IF NOT EXISTS IX_account_invitations_invited_by_user_id ON orcafacil.account_invitations(invited_by_user_id);
+CREATE INDEX IF NOT EXISTS IX_account_invitations_used_at ON orcafacil.account_invitations(used_at);
 
 
 -- RELEASE OPERACIONAL 6: jornada comercial (migration 20260729000000)

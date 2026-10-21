@@ -92,6 +92,7 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<ActivityEvent> ActivityEvents => Set<ActivityEvent>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<EmailOutboxMessage> EmailOutboxMessages => Set<EmailOutboxMessage>();
+    public DbSet<AccountInvitation> AccountInvitations => Set<AccountInvitation>();
     public DbSet<DocumentRevision> DocumentRevisions => Set<DocumentRevision>();
     public DbSet<PublicDocumentAccess> PublicDocumentAccesses => Set<PublicDocumentAccess>();
     public DbSet<PublicDocumentDecision> PublicDocumentDecisions => Set<PublicDocumentDecision>();

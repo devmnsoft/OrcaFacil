@@ -119,6 +119,95 @@ namespace OrcaFacil.Persistence.Migrations
                     b.ToTable("account_entitlements", "orcafacil");
                 });
 
+            modelBuilder.Entity("OrcaFacil.Domain.Entities.AccountInvitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("email");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(180)
+                        .HasColumnType("character varying(180)")
+                        .HasColumnName("full_name");
+
+                    b.Property<Guid>("InvitedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("invited_by_user_id");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<string>("RequestedCorrelationId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("requested_correlation_id");
+
+                    b.Property<string>("RoleCode")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("role_code");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_at");
+
+                    b.Property<Guid?>("UsedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("used_by_user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("InvitedByUserId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UsedAt");
+
+                    b.HasIndex("AccountId", "Email");
+
+                    b.ToTable("account_invitations", "orcafacil");
+                });
+
             modelBuilder.Entity("OrcaFacil.Domain.Entities.AccountMember", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3230,6 +3319,10 @@ namespace OrcaFacil.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("account_id");
 
+                    b.Property<string>("ConditionsText")
+                        .HasColumnType("text")
+                        .HasColumnName("conditions_text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -3239,6 +3332,11 @@ namespace OrcaFacil.Persistence.Migrations
                         .HasMaxLength(800)
                         .HasColumnType("character varying(800)")
                         .HasColumnName("description");
+
+                    b.Property<decimal>("Discount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("discount");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
@@ -3251,6 +3349,11 @@ namespace OrcaFacil.Persistence.Migrations
                     b.Property<bool>("IsSystemTemplate")
                         .HasColumnType("boolean")
                         .HasColumnName("is_system_template");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("payment_method");
 
                     b.Property<string>("Profession")
                         .IsRequired()
@@ -3271,6 +3374,11 @@ namespace OrcaFacil.Persistence.Migrations
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
+
+                    b.Property<string>("WarrantyText")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("warranty_text");
 
                     b.HasKey("Id");
 
@@ -3315,6 +3423,11 @@ namespace OrcaFacil.Persistence.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)")
                         .HasColumnName("description");
+
+                    b.Property<decimal>("Discount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("discount");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean")
@@ -10683,8 +10796,21 @@ namespace OrcaFacil.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("DocumentId");
+
+                    b.HasIndex("RegisteredByUserId");
+
+                    b.HasIndex("ReversedByUserId");
+
+                    b.HasIndex("WorkOrderId");
+
                     b.HasIndex("AccountId", "IdempotencyKey")
                         .IsUnique();
+
+                    b.HasIndex("AccountId", "DocumentId", "PaidAt")
+                        .HasFilter("document_id IS NOT NULL");
 
                     b.HasIndex("AccountId", "WorkOrderId", "PaidAt");
 
@@ -19993,7 +20119,7 @@ namespace OrcaFacil.Persistence.Migrations
 
                     b.ToTable("users", "orcafacil", t =>
                         {
-                            t.HasCheckConstraint("ck_users_plan", "plan IN ('Free','Professional','Business')");
+                            t.HasCheckConstraint("ck_users_plan", "plan IN ('Free','Pro','Professional','Business','Enterprise')");
 
                             t.HasCheckConstraint("ck_users_role", "role IN ('User','Admin','SuperAdmin','GlobalSupport','GlobalBilling','GlobalAuditor')");
                         });
@@ -20496,6 +20622,9 @@ namespace OrcaFacil.Persistence.Migrations
                         .IsUnique()
                         .HasFilter("contract_id IS NOT NULL");
 
+                    b.HasIndex("AccountId", "SourceDocumentId", "CreatedAt")
+                        .HasFilter("source_document_id IS NOT NULL");
+
                     b.HasIndex("AccountId", "Status", "ScheduledStart");
 
                     b.ToTable("work_orders", "orcafacil");
@@ -20929,6 +21058,21 @@ namespace OrcaFacil.Persistence.Migrations
                     b.ToTable("workflow_versions", "orcafacil");
                 });
 
+            modelBuilder.Entity("OrcaFacil.Domain.Entities.AccountInvitation", b =>
+                {
+                    b.HasOne("OrcaFacil.Domain.Entities.BusinessAccount", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OrcaFacil.Domain.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("InvitedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("OrcaFacil.Domain.Entities.AccountMember", b =>
                 {
                     b.HasOne("OrcaFacil.Domain.Entities.BusinessAccount", null)
@@ -21114,6 +21258,42 @@ namespace OrcaFacil.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("LegalDocument");
+                });
+
+            modelBuilder.Entity("OrcaFacil.Domain.Entities.ManualPayment", b =>
+                {
+                    b.HasOne("OrcaFacil.Domain.Entities.BusinessAccount", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OrcaFacil.Domain.Entities.Client", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OrcaFacil.Domain.Entities.Document", null)
+                        .WithMany()
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("OrcaFacil.Domain.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("RegisteredByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OrcaFacil.Domain.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("ReversedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("OrcaFacil.Domain.Entities.WorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("WorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("OrcaFacil.Domain.Entities.Notification", b =>
