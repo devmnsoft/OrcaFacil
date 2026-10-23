@@ -609,3 +609,27 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
         fallback `/Offline`; (b) ainda não há app nativo para loja (Capacitor) nem notificações push — candidatos a incrementos
         próprios; (c) a barra complementa (não substitui) o menu superior em standalone, que mantém acesso a menu/sair/
         notificações.
+
+17. **API pública — leitura dos recursos de negócio (item 11 de `NEXT-RELEASE.md`) fechado nesta execução (2026-10-23):** commit `723d29e`.
+       O audit mostrou que a API pública V1 já tinha base sólida — auth por chave de API (hash SHA-256), rate-limit, paginação,
+       idempotência, erro consistente (ApiError), OpenAPI e UI de gestão de chaves em Settings/ApiKeys. O gap era preciso:
+       ApiKeyService.AllowedScopes JÁ declarava escopos sem endpoint (quotes.read/write, work_orders.read, receipts.read,
+       contracts.read) e o catálogo /webhooks/events já prometia eventos de orçamento/ordem/recibo/contrato sem rota.
+       Escopo fechado aqui: **API de leitura** desses recursos, reutilizando os escopos já declarados.
+      - **Novos endpoints (leitura):** GET /quotes (+/{id}), GET /work-orders (+/{id}), GET /receipts (+/{id}) e GET /contracts (+/{id}),
+        cada um com lista paginada + detalhe. Orçamentos = DocumentType.Budget; contratos = RecurringContract.
+      - **Mesmo contrato da V1:** todos isolados por conta (Account(user)), AsNoTracking, paginados e com o mesmo ApiError/Pagination;
+        enums devolvidos pelo nome (ClientDecision, WorkOrderStatus, ContractStatus etc., via ToString em memória para não
+        depender de tradução no provider).
+      - **Sem migração, sem novo escopo:** reusa os 4 escos de leitura já existentes no AllowedScopes; não mexe em schema,
+        appsettings nem registro de DI.
+      - **Evidência:** o validador check-public-api (que já validava o contrato V1 — tenant/scopes/hash/idempotência/registro)
+        foi MESCLADO com novas asserções para os recursos + consistência escopo x AllowedScopes; **provado por mutação** (5
+        mutações nas duas seções: escopo removido do AllowedScopes, filtro Budget virou Receipt, rota de detalhe quebrada,
+        escopo inválido usado, e o token scope_required do contrato). Suíte C# inalterada **880 aprovados, 0 falhas, 19 ignorados**
+        ; regressões verdes (public-api, api-scopes, api-security, api-idempotency, routes, razor-pages, authenticated-navigation,
+        service-lifetimes, aspnet-scope, build-blockers, design-consistency, fiscal-flow, pwa, mobile-app).
+      - **Limites conhecidos (não fechados aqui):** (a) só LEITURA — writes (quotes.write), webhooks.manage, files.read e
+        analytics.read seguem sem endpoint (candidatos a incremento próprio); (b) webhooks ainda só listam o catálogo de
+        eventos (/webhooks/events), sem entrega assinada; (c) sem filtros de busca/status por recurso (só paginação) —
+        integradores paginam e filtram no cliente.
