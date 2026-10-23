@@ -582,3 +582,30 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
         credencial por env — critério R5) continua manual; (b) a âncora é o recebível `FinancialEntry` — pagamento/recibo avulso sem
         lançamento ainda não ganha nota; (c) sem índice único em `(AccountId, ReceivableId)`: a idempotência é em nível de serviço
         (um pedido aberto por recebível), suficiente para a operação de um único operador.
+
+16. **Aplicativo móvel — experiência app-grade no PWA instalado (item 10 de `NEXT-RELEASE.md`) fechado nesta execução (2026-10-23):** commit `b3a5839`.
+       O audit mostrou que o único "móvel" era o PWA do item 2 — instalável, porém conservador: manifest sem atalhos de
+       lançamento rápido e sem "casca" de app quando instalado; a navegação mobile seguia só via menu hambúrguer. Não há
+       projeto nativo (MAUI/Capacitor/RN). Escopo fechado aqui: **experiência app-grade sobre o PWA existente**, sem toolchain
+       nativa e sem tocar na faixa de segurança do service worker (rotas autenticadas continuam fora do cache).
+      - **Atalhos de lançamento rápido:** `site.webmanifest` ganha `shortcuts` para Início (`/Dashboard`), Agenda (`/Schedule`),
+        Ordens (`/WorkOrders`), Pagamentos (`/Payments`) e Fiscal (`/Fiscal`) — no Android/iOS o app instalado abre direto nesses
+        fluxos de campo.
+      - **Bottom tab bar de campo:** `mobile-app.css` + `mobile-app-shell.js` mostram uma barra de abas inferior com os 5
+        atalhos, **somente** quando o app roda em modo standalone (instalado) E a tela é pequena (<= 820px); em desktop/
+        navegador fica inerte e a navegação por menu permanece. A barra respeita `env(safe-area-inset-bottom)` (notch) e dá
+        inset ao `.of-main` para nada ficar escondido atrás dela.
+      - **Estado atual visível:** o script destaca o tab ativo pela rota (`data-path-prefix` + `aria-current`) e re-avalia em
+        `resize`/`orientationchange`.
+      - **Integração segura:** ligada no `_Layout.cshtml` só dentro da guarda de autenticação; os tokens exigidos pelo
+        `check:pwa` (manifest, apple-touch-icon, theme-color, pwa.js, pwa-install.js, offline-status.js) continuam intactos.
+        Sem chave nova em appsettings e sem migração.
+      - **Evidência:** validador `check-mobile-app` (coleta todas as falhas), **provado por mutação** (4 mutações em 4 arquivos
+        capturadas: rota de shortcut inválida, tab bar visível por padrão, shell ativada sem limite de largura, atalho de campo
+        ausente). Cobertura front-end via validador — não há runner de testes JS no repositório (mesmo papel do `check:pwa`).
+        Suíte C# inalterada **880 aprovados, 0 falhas, 19 ignorados**; regressões verdes (pwa, routes, razor-pages,
+        design-consistency, authenticated-navigation, service-lifetimes, aspnet-scope, build-blockers).
+      - **Limites conhecidos (não fechados aqui):** (a) os assets da shell não entram no precache do SW — offline segue com o
+        fallback `/Offline`; (b) ainda não há app nativo para loja (Capacitor) nem notificações push — candidatos a incrementos
+        próprios; (c) a barra complementa (não substitui) o menu superior em standalone, que mantém acesso a menu/sair/
+        notificações.
