@@ -465,3 +465,35 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
       avisos novos; `check:omnichannel-flow`, `check:commercial-journey`, `check:database-schema-contract`,
       `check:di-consistency`, `check:service-lifetimes`, `check:aspnet-scope`, `check:quality-gate-no-fake`,
       `check:build-blockers`, `check:git-safety` verdes.
+12. **Assinatura recorrente do cliente — cobrança das competências automática (item 6 de `NEXT-RELEASE.md`) fechado nesta execução (2026-10-23):** commit `9386fee`.
+     O módulo de contratos já tinha `NextBillingDate`, `ContractPayment`, `ContractRecurrenceRun` e a leitura de
+     atraso e expiração, mas a auditoria achou o mesmo padrão do item 5: **a cobrança recorrente não andava sozinha**.
+     `NextBillingDate` era gravada na criação e nunca avançava; nenhuma competência era gerada; `Overdue` e
+     `Expired` só existiam como contagem calculada na leitura. Sem geração automática, a "assinatura" era um
+     formulário de previsão manual.
+    - **Regras puras `RecurringBillingRules`:** período em meses, avanço do vencimento mantendo o dia e grampeado
+      ao fim do mês (31 de janeiro vira 28 de fevereiro), quando gerar, quando vence e quando expira. Período
+      personalizado sem meses positivos é recusado (senão avançaria zero meses em loop).
+    - **Geração com o mesmo rastro financeiro do caminho manual:** cada competência cria `ContractPayment`
+      pendente e o `FinancialEntry` vinculado, então a cobrança aparece em Financeiro e no relatório recorrente.
+    - **Sem cobrança duplicada:** competência já existente (inclusive a lançada à mão) é pulada; o índice único
+      (conta, contrato, competência) segura a corrida entre instâncias; o avanço de `NextBillingDate` impede
+      reprocessar a mesma data. Teto de 12 competências por rodada, para o catch-up após reativação não virar
+      rajada.
+    - **Atraso e expiração gravados:** cobrança pendente com vencimento passado vira `Overdue` (e o lançamento
+      financeiro acompanha); contrato ativo com prazo encerrado vira `Expired`. Cobrança paga, cancelada, ou de
+      contrato pausado/suspenso não é tocada.
+    - **Worker de hora em hora** (`RecurringContractBillingWorker`) sob `IJobLockService`, na **data civil de São
+      Paulo**. Usar o UTC do servidor cobraria até 3 horas antes do vencimento.
+    - **Sem migração:** todas as colunas e status já existiam no schema; o status `Overdue` cabe no `varchar(24)`.
+    - **Evidência:** validador `check:recurring-billing` (7 grupos), provado por mutação que pega a remoção do
+      avanço de `NextBillingDate` (o defeito que faria cobrar a mesma competência a cada hora). 32 testes novos em
+      `RecurringBillingRulesTests`, incluindo fim de mês, contrato pausado, término no próprio dia e cobrança paga.
+      Suíte **824 aprovados, 0 falhas, 19 ignorados** (gate de PostgreSQL pré-existente); `check:work-orders`,
+      `check:commercial-journey`, `check:database-schema-contract`, `check:di-consistency`,
+      `check:service-lifetimes`, `check:aspnet-scope`, `check:quality-gate-no-fake`, `check:build-blockers` verdes.
+    - **Limites conhecidos (não fechados aqui):** (a) eventos automáticos vão para a atividade geral, não para a
+      linha do tempo do contrato, porque `ContractEvent.UserId` é obrigatório e não há usuário na geração;
+      (b) "Ativar" um contrato já expirado, sem ajustar a vigência, é expirado de novo na rodada seguinte;
+      (c) `PendingRenewal` e `Suspended` continuam sem transição automática. Renovação segue manual.
+      (d) a homologação com cobrança real (boleto/Pix) é o item 7, "cobrança do cliente".
