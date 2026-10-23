@@ -50,6 +50,7 @@
     "check:authenticated-navigation": "node scripts/check-authenticated-navigation.mjs",
     "check:routes": "node scripts/check-routes.mjs",
     "check:razor-pages": "node scripts/check-razor-pages.mjs",
+    "check:mobile-app": "node scripts/check-mobile-app.mjs",
     "check:open-features": "node scripts/check-open-features.mjs",
     "check:release-readiness": "node scripts/check-release-readiness.mjs",
     "check:authenticated-ui": "node scripts/check-authenticated-ui-legacy-dependencies.mjs",
