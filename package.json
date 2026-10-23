@@ -313,6 +313,7 @@
     "check:web-chat": "node scripts/check-web-chat.mjs",
     "check:inbound-email": "node scripts/check-inbound-email.mjs",
     "check:whatsapp-control": "node scripts/check-whatsapp-control.mjs",
+    "check:whatsapp-api": "node scripts/check-whatsapp-api.mjs",
     "check:omnichannel-routing": "node scripts/check-omnichannel-routing.mjs",
     "check:omnichannel-sla": "node scripts/check-omnichannel-sla.mjs",
     "check:conversation-to-ticket": "node scripts/check-conversation-to-ticket.mjs",

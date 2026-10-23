@@ -1249,7 +1249,12 @@ CREATE INDEX IF NOT EXISTS ix_tenant_domain_audit_account_date ON orcafacil.tena
 COMMIT;
 
 -- Sprint 37 is maintained in database/sprint37_support_desk_v38.sql and applied by patch_release_candidate_schema.sql.
--- Sprint 38 is maintained in database/sprint38_omnichannel_v39.sql and applied by patch_release_candidate_schema.sql.
+-- Sprint 38 / omnichannel: encadeado na base nova. Antes, só o patch aplicava — base nova nascia sem o
+-- módulo (canal, conversas, contas WhatsApp). Aditivo e idempotente.
+\ir sprint38_omnichannel_v39.sql
+
+-- V7.7: conta da Cloud API do WhatsApp (Meta) — colunas tipadas, aditivo e idempotente.
+\ir hotfix_omnichannel_whatsapp_api_v77.sql
 
 -- Sprint 42 / V4.3 is applied by database/sprint42_field_operations_v43.sql.
 \ir sprint42_field_operations_v43.sql

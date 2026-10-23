@@ -12332,6 +12332,85 @@ namespace OrcaFacil.Persistence.Migrations
                     b.ToTable("omnichannel_web_chat_sessions", "orcafacil");
                 });
 
+            modelBuilder.Entity("OrcaFacil.Domain.Entities.OmnichannelWhatsAppAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("BusinessAccountId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("business_account_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("display_name");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_enabled");
+
+                    b.Property<string>("LastFailure")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("last_failure");
+
+                    b.Property<DateTime?>("LastHealthCheckAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_health_check_at");
+
+                    b.Property<string>("PhoneNumberId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("phone_number_id");
+
+                    b.Property<string>("ProtectedAccessToken")
+                        .HasColumnType("text")
+                        .HasColumnName("protected_access_token");
+
+                    b.Property<string>("ProtectedAppSecret")
+                        .HasColumnType("text")
+                        .HasColumnName("protected_app_secret");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("WebhookVerifyToken")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("webhook_verify_token");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.ToTable("omnichannel_whatsapp_accounts", "orcafacil");
+                });
+
             modelBuilder.Entity("OrcaFacil.Domain.Entities.OutsourcingAssignment", b =>
                 {
                     b.Property<Guid>("Id")

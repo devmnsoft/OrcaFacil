@@ -140,6 +140,7 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<OmnichannelOptOutEvent> OmnichannelOptOutEvents => Set<OmnichannelOptOutEvent>();
     public DbSet<OmnichannelSlaEvent> OmnichannelSlaEvents => Set<OmnichannelSlaEvent>();
     public DbSet<OmnichannelCsatResponse> OmnichannelCsatResponses => Set<OmnichannelCsatResponse>();
+    public DbSet<OmnichannelWhatsAppAccount> OmnichannelWhatsAppAccounts => Set<OmnichannelWhatsAppAccount>();
     public DbSet<UserFeedback> UserFeedback => Set<UserFeedback>();
     public DbSet<KnowledgeBaseArticle> KnowledgeBaseArticles => Set<KnowledgeBaseArticle>();
     public DbSet<ReleaseNote> ReleaseNotes => Set<ReleaseNote>();

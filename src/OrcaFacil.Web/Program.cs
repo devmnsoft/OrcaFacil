@@ -10,11 +10,13 @@ using OrcaFacil.Application.Documents;
 using OrcaFacil.Application.Plans;
 using OrcaFacil.Application.Payments;
 using OrcaFacil.Application.Notifications;
+using OrcaFacil.Application.Omnichannel;
 using OrcaFacil.Application.Billing;
 using OrcaFacil.Application.Ai;
 using OrcaFacil.Infrastructure.Ai;
 using OrcaFacil.Web.Billing;
 using OrcaFacil.Infrastructure.Payments;
+using OrcaFacil.Infrastructure.WhatsApp;
 using OrcaFacil.Application.Profile;
 using OrcaFacil.Infrastructure;
 using OrcaFacil.Infrastructure.Pdf;
@@ -210,6 +212,10 @@ builder.Services.Configure<BillingOptions>(builder.Configuration.GetSection("Bil
 builder.Services.AddScoped<IPaymentGateway, MercadoPagoPaymentGateway>();
 builder.Services.AddScoped<ISubscriptionCheckoutService, SubscriptionCheckoutService>();
 builder.Services.AddScoped<IMercadoPagoWebhookProcessor, MercadoPagoWebhookProcessor>();
+builder.Services.AddHttpClient<IWhatsAppGraphClient, WhatsAppGraphClient>("WhatsApp",
+    client => client.Timeout = TimeSpan.FromSeconds(30));
+builder.Services.AddScoped<IWhatsAppWebhookProcessor, WhatsAppWebhookProcessor>();
+builder.Services.AddScoped<OmnichannelWhatsAppApiService>();
 builder.Services.AddHostedService<BillingBackgroundWorker>();
 builder.Services.AddHttpClient();
 foreach (var providerName in new[] { "Groq", "Gemini", "DeepSeek", "MercadoPago" })
@@ -488,6 +494,24 @@ app.MapPost("/api/webhooks/mercadopago", async (HttpRequest request, IMercadoPag
     var headers = request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString());
     var correlationId = OrcaFacil.Web.HttpContextTrace.Current(request.HttpContext);
     var result = await processor.ProcessAsync(body, headers, correlationId, ct);
+    if (!result.Succeeded)
+        return Results.Unauthorized();
+    return Results.Ok(new { received = true, eventKey = result.EventKey, duplicate = result.Duplicate, status = result.Status });
+}).AllowAnonymous();
+// Webhook oficial da Cloud API do WhatsApp (Meta). GET = handshake de verificação,
+// POST = eventos (mensagens de entrada e callbacks de status). Assinatura HMAC
+// verificada com o app secret da conta; eventos duplicados são ignorados.
+app.MapGet("/api/webhooks/whatsapp", async (IWhatsAppWebhookProcessor processor, string? hub_mode, string? hub_verify_token, string? hub_challenge, CancellationToken ct) =>
+{
+    var (ok, challenge) = await processor.VerifyHandshakeAsync(hub_mode, hub_verify_token, hub_challenge, ct);
+    return ok ? Results.Text(challenge) : Results.Unauthorized();
+}).AllowAnonymous();
+app.MapPost("/api/webhooks/whatsapp", async (HttpRequest request, IWhatsAppWebhookProcessor processor, CancellationToken ct) =>
+{
+    using var reader = new StreamReader(request.Body);
+    var body = await reader.ReadToEndAsync(ct);
+    var headers = request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString());
+    var result = await processor.ProcessAsync(body, headers, ct);
     if (!result.Succeeded)
         return Results.Unauthorized();
     return Results.Ok(new { received = true, eventKey = result.EventKey, duplicate = result.Duplicate, status = result.Status });

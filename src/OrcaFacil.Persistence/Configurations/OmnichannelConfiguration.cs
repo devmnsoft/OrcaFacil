@@ -10,7 +10,8 @@ public sealed class OmnichannelConfiguration :
     IEntityTypeConfiguration<OmnichannelParticipant>, IEntityTypeConfiguration<OmnichannelMessage>,
     IEntityTypeConfiguration<OmnichannelDeliveryLog>, IEntityTypeConfiguration<OmnichannelWebChatSession>,
     IEntityTypeConfiguration<OmnichannelInboundEmailAccount>, IEntityTypeConfiguration<OmnichannelOptOutEvent>,
-    IEntityTypeConfiguration<OmnichannelSlaEvent>, IEntityTypeConfiguration<OmnichannelCsatResponse>
+    IEntityTypeConfiguration<OmnichannelSlaEvent>, IEntityTypeConfiguration<OmnichannelCsatResponse>,
+    IEntityTypeConfiguration<OmnichannelWhatsAppAccount>
 {
     private static void Base<T>(EntityTypeBuilder<T> b, string table) where T : Entity { b.ToTable(table,"orcafacil"); b.ConfigureBase(); b.HasQueryFilter(x=>!x.IsDeleted); }
     public void Configure(EntityTypeBuilder<OmnichannelChannel> b) { Base(b,"omnichannel_channels"); b.Property(x=>x.Type).HasConversion<string>().HasMaxLength(32); b.Property(x=>x.Status).HasConversion<string>().HasMaxLength(24); b.Property(x=>x.Name).HasMaxLength(120).IsRequired(); b.HasIndex(x=>new{x.AccountId,x.Type}).IsUnique(); }
@@ -23,4 +24,5 @@ public sealed class OmnichannelConfiguration :
     public void Configure(EntityTypeBuilder<OmnichannelOptOutEvent> b) { Base(b,"omnichannel_opt_out_events"); b.HasIndex(x=>new{x.AccountId,x.IdentityHash,x.Channel,x.Scope}); }
     public void Configure(EntityTypeBuilder<OmnichannelSlaEvent> b) { Base(b,"omnichannel_sla_events"); b.HasIndex(x=>new{x.ConversationId,x.Type}).IsUnique(); }
     public void Configure(EntityTypeBuilder<OmnichannelCsatResponse> b) { Base(b,"omnichannel_csat_responses"); b.HasIndex(x=>x.RequestTokenHash).IsUnique(); b.HasIndex(x=>x.ConversationId).IsUnique(); }
+    public void Configure(EntityTypeBuilder<OmnichannelWhatsAppAccount> b) { Base(b,"omnichannel_whatsapp_accounts"); b.Property(x=>x.PhoneNumberId).HasMaxLength(100).IsRequired(); b.Property(x=>x.BusinessAccountId).HasMaxLength(100); b.Property(x=>x.DisplayName).HasMaxLength(200).IsRequired(); b.Property(x=>x.WebhookVerifyToken).HasMaxLength(200); b.Property(x=>x.Status).HasMaxLength(20).IsRequired(); b.Property(x=>x.LastFailure).HasMaxLength(1000); b.HasIndex(x=>x.AccountId); }
 }
