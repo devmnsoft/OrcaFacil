@@ -104,6 +104,7 @@
     "check:pdf-real": "node scripts/check-pdf-real.mjs",
     "check:public-document-safety": "node scripts/check-public-document-safety.mjs",
     "check:privacy-compliance": "node scripts/check-privacy-compliance.mjs",
+    "check:data-export": "node scripts/check-data-export.mjs",
     "check:lgpd-flows": "node scripts/check-lgpd-flows.mjs",
     "check:audit-sanitization": "node scripts/check-audit-sanitization.mjs",
     "check:sensitive-data": "node scripts/check-sensitive-data.mjs",

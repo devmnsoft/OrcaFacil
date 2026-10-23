@@ -40,6 +40,15 @@ public class UserUsageService
         _logger.LogInformation("USER_USAGE_PDF_INCREMENTED {UserId} {AccountId}", userId, accountId);
     }
 
+    public async Task RegisterBackupExportAsync(Guid userId, Guid? accountId, CancellationToken ct = default)
+    {
+        var item = await GetOrCreateAsync(userId, accountId, ct);
+        if (accountId.HasValue && item.AccountId is null) item.AccountId = accountId.Value;
+        item.BackupExports++;
+        await _uow.SaveChangesAsync(ct);
+        _logger.LogInformation("USER_USAGE_BACKUP_EXPORT_INCREMENTED {UserId} {AccountId}", userId, accountId);
+    }
+
     private async Task<UserUsage> GetOrCreateAsync(Guid userId, Guid? accountId, CancellationToken ct)
     {
         var item = await GetCurrentAsync(userId, ct);
