@@ -178,6 +178,7 @@ builder.Services.AddScoped<IPublicDocumentAccessService>(sp => sp.GetRequiredSer
 builder.Services.AddScoped<IManualPaymentRegistrationService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IReceiptApplicationService, ReceiptApplicationService>();
 builder.Services.AddScoped<IReceiptQueryService, ReceiptQueryService>();
+builder.Services.AddScoped<OrcaFacil.Application.Fiscal.IFiscalDocumentWorkflowService, FiscalDocumentWorkflowService>();
 builder.Services.AddScoped<IClientWorkspaceService, ClientWorkspaceService>();
 builder.Services.AddScoped<OrcaFacil.Application.Onboarding.IOnboardingApplicationService, OnboardingApplicationService>();
 builder.Services.AddScoped<IQuoteWorkspaceService, QuoteWorkspaceService>();
