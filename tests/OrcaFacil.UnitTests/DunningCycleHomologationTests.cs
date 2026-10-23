@@ -253,5 +253,8 @@ public sealed class DunningCycleHomologationTests
 
         public Task<IReadOnlyList<PlanFeatureCandidate>> GetPublicPlanCandidatesAsync(string featureCode, DateTime utcNow, CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<PlanFeatureCandidate>>([]);
+
+        public Task<IReadOnlyDictionary<string, int>> GetAddonIncrementsAsync(Guid accountId, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyDictionary<string, int>>(new Dictionary<string, int>());
     }
 }

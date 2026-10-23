@@ -99,4 +99,16 @@ public sealed class EfPlanAccessDataSource(OrcaFacilDbContext db) : IPlanAccessD
         };
     }
 
+    public async Task<IReadOnlyDictionary<string, int>> GetAddonIncrementsAsync(Guid accountId, CancellationToken ct)
+    {
+        var rows = await (from addon in db.AccountAddons.AsNoTracking()
+                          join planAddon in db.PlanAddons.AsNoTracking() on addon.AddonId equals planAddon.Id
+                          where addon.AccountId == accountId && !addon.IsDeleted && addon.DeactivatedAt == null &&
+                                !planAddon.IsDeleted && planAddon.IsActive && planAddon.LimitType != ""
+                          select new { planAddon.LimitType, Increment = (int)addon.Quantity * (int)planAddon.LimitIncrement })
+                         .ToListAsync(ct);
+
+        return rows.GroupBy(x => x.LimitType).ToDictionary(g => g.Key, g => g.Sum(x => x.Increment));
+    }
+
 }

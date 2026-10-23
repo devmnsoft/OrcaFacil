@@ -255,6 +255,7 @@ builder.Services.AddScoped<ContextualAiHelpService>();
 builder.Services.AddScoped<OrcaFacil.Web.Services.ContextualAiHelpEndpoint>();
 builder.Services.AddScoped<OrcaFacil.Web.Services.IHelpKnowledgeSource, OrcaFacil.Web.Services.EfHelpKnowledgeSource>();
 builder.Services.AddScoped<UserUsageService>();
+builder.Services.AddScoped<IAdditionalSeatService, AdditionalSeatService>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.Configure<EmailOutboxOptions>(builder.Configuration.GetSection("EmailOutbox"));

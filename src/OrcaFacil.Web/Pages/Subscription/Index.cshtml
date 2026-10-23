@@ -113,6 +113,40 @@
     }
 </section>
 
+@if (Model.Seats is { } s)
+{
+    <section class="of-subscription-section" id="usuarios-adicionais">
+        <h2>Usuários adicionais</h2>
+        @if (s.BaseLimit is null)
+        {
+            <p>Seu plano não define limite de pessoas na equipe.</p>
+        }
+        else
+        {
+            <p style="color:#94a3b8;">Plano com <strong>@s.BaseLimit</strong> pessoa(s) incluída(s) · <strong>@s.PurchasedSeats</strong> contratada(s) · total liberado: <strong>@s.EffectiveLimit</strong>.</p>
+            @if (!Model.CanManageSubscription)
+            {
+                <p style="color:#94a3b8; font-size:.9rem;">Somente quem gerencia a assinatura pode contratar vagas extras.</p>
+            }
+            else if (s.RemainingPurchasable <= 0)
+            {
+                <p style="color:#eab308;">Esta conta já contratou o máximo de assentos adicionais permitido.</p>
+            }
+            else
+            {
+                <form method="post" asp-page-handler="PurchaseSeats" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:12px;">
+                    <label>Quantidade
+                        <input type="number" name="quantity" min="1" max="@s.RemainingPurchasable" value="1" style="width:80px;" />
+                    </label>
+                    <span style="color:#94a3b8;">@s.SeatPriceMonthly.ToString("C") por usuário/mês</span>
+                    <button type="submit" class="of-button of-button--primary" style="cursor:pointer;">Contratar</button>
+                </form>
+                <p style="color:#94a3b8; font-size:.85rem; margin-top:8px;">A contratação libera a vaga imediatamente e o valor mensal passa a compor a fatura da conta.</p>
+            }
+        }
+    </section>
+}
+
 <div class="of-benefit-columns">
     <section>
         <h2>Benefícios ativos</h2>

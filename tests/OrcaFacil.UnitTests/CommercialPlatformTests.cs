@@ -88,6 +88,8 @@ public sealed class CommercialPlatformTests
         }
 
         public Task<Subscription?> GetSubscriptionAsync(Guid accountId, CancellationToken ct) => Task.FromResult(Subscription);
+        public Task<IReadOnlyDictionary<string, int>> GetAddonIncrementsAsync(Guid accountId, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyDictionary<string, int>>(new Dictionary<string, int>());
         public Task<PlanOverride?> GetActiveOverrideAsync(Guid accountId, DateTime now, CancellationToken ct) =>
             Task.FromResult(Override?.IsEffective(now) == true ? Override : null);
         public Task<PlanVersion?> GetPlanVersionAsync(Guid id, CancellationToken ct) =>

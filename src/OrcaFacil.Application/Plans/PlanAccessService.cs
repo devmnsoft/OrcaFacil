@@ -101,7 +101,15 @@ public sealed class PlanAccessService(IPlanAccessDataSource dataSource, TimeProv
         if (version is null) return new Dictionary<string, PlanFeatureSetting>();
         var plan = await dataSource.GetPlanAsync(version.PlanId, ct);
         var stored = await dataSource.GetFeaturesAsync(version.Id, ct);
-        return MergeWithCatalog(plan?.Code, stored);
+        var merged = new Dictionary<string, PlanFeatureSetting>(MergeWithCatalog(plan?.Code, stored), StringComparer.OrdinalIgnoreCase);
+        // Addons contratados pela conta (ex.: assentos de equipe adicionais) somam ao teto base do plano.
+        var increments = await dataSource.GetAddonIncrementsAsync(accountId, ct);
+        foreach (var (code, extra) in increments)
+        {
+            if (extra <= 0 || !merged.TryGetValue(code, out var setting) || setting.IsUnlimited || setting.Limit is null) continue;
+            merged[code] = new PlanFeatureSetting(setting.Enabled, AdditionalSeatRules.AddLimitIncrement(setting.Limit, extra), setting.IsUnlimited);
+        }
+        return merged;
     }
 
     /// <summary>
