@@ -319,6 +319,7 @@
     "check:recurring-billing": "node scripts/check-recurring-billing.mjs",
     "check:receivable-reminder": "node scripts/check-receivable-reminder.mjs",
     "check:fiscal-flow": "node scripts/check-fiscal-flow.mjs",
+    "check:accounting-export": "node scripts/check-accounting-export.mjs",
     "check:omnichannel-routing": "node scripts/check-omnichannel-routing.mjs",
     "check:omnichannel-sla": "node scripts/check-omnichannel-sla.mjs",
     "check:conversation-to-ticket": "node scripts/check-conversation-to-ticket.mjs",

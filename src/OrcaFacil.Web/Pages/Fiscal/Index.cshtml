@@ -20,6 +20,26 @@
 </section>
 
 <section class="of-panel" style="margin-top:1rem">
+    <h2>Pacote para a contabilidade</h2>
+    <p style="color:#5a6b7d;font-size:.88rem">Baixe os documentos fiscais <strong>emitidos</strong> desta conta em CSV ou JSON, prontos para o contador importar e conciliar. Dá para limitar o período por competência (data de emissão no fuso comercial). @OrcaFacil.Application.Fiscal.FiscalRules.AccountingDisclaimer</p>
+    @if (Model.IssuedCount == 0)
+    {
+        <p style="color:#5a6b7d;font-size:.88rem;margin-top:.5rem">Ainda não há notas emitidas para exportar.</p>
+    }
+    else
+    {
+        <form method="get" asp-page-handler="Export" style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-end;max-width:72ch;margin-top:.6rem">
+            <label style="display:grid;gap:.25rem;font-size:.85rem">De (competência)<input type="date" name="desde" /></label>
+            <label style="display:grid;gap:.25rem;font-size:.85rem">Até<input type="date" name="ate" /></label>
+            <div style="display:flex;gap:.5rem">
+                <button type="submit" name="format" value="csv" class="of-button">Baixar CSV</button>
+                <button type="submit" name="format" value="json" class="of-button">Baixar JSON</button>
+            </div>
+        </form>
+    }
+</section>
+
+<section class="of-panel" style="margin-top:1rem">
     <h2>Solicitar nota para um recebível pago</h2>
     @if (Model.Receivables.Count == 0)
     {

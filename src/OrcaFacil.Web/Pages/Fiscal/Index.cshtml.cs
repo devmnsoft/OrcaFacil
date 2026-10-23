@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Commercial;
 using OrcaFacil.Application.Fiscal;
+using OrcaFacil.Application.Scheduling;
 using OrcaFacil.Application.Security;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Persistence;
@@ -104,6 +106,85 @@ public sealed class IndexModel(
         await LoadAsync(accountId, ct);
         return Page();
     }
+
+    public async Task<IActionResult> OnGetExportAsync(string format, DateOnly? desde, DateOnly? ate, CancellationToken ct)
+    {
+        if (account.AccountId is not Guid accountId) return Forbid();
+        if (!await CanAccessAsync(ct)) return Forbid();
+        try
+        {
+            return await BuildAccountingExportAsync(accountId, format, desde, ate, ct);
+        }
+        catch (Exception ex) { ErrorMessage = ex.Message; return Page(); }
+    }
+
+    /// <summary>Builds the accountant package (CSV or JSON) from the account's ISSUED notes only, honoring an optional
+    /// competence window measured on the business-zone civil day of issuance. Reuses the shared, unit-tested export
+    /// service and never fabricates values — a missing number is flagged, retention stays zero.</summary>
+    private async Task<FileResult> BuildAccountingExportAsync(Guid accountId, string format, DateOnly? desde, DateOnly? ate, CancellationToken ct)
+    {
+        var isJson = string.Equals(format, "json", StringComparison.OrdinalIgnoreCase);
+        if (!isJson && !string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Formato inválido. Use CSV ou JSON.");
+
+        var rows = await db.FiscalDocumentRequests.AsNoTracking()
+            .Where(x => x.AccountId == accountId && !x.IsDeleted && x.Status == FiscalRequestStatus.Issued)
+            .ToListAsync(ct);
+
+        var entryIds = rows.Where(r => r.ReceivableId.HasValue).Select(r => r.ReceivableId!.Value).Distinct().ToList();
+        var entryMap = await db.FinancialEntries.AsNoTracking()
+            .Where(e => entryIds.Contains(e.Id))
+            .ToDictionaryAsync(e => e.Id, ct);
+
+        var snapshots = new List<FiscalDocumentSnapshot>(rows.Count);
+        foreach (var r in rows)
+        {
+            var issuedUtc = CommercialClock.NormalizeToUtc(r.IssuedAt ?? r.RequestedAt);
+            if (!InCompetence(issuedUtc, desde, ate)) continue;
+            entryMap.TryGetValue(r.ReceivableId ?? Guid.Empty, out var entry);
+            snapshots.Add(FiscalAccountingSnapshotMapper.ToSnapshot(new FiscalAccountingSource(
+                r.AccountId, r.ClientId, r.ExternalNumber, issuedUtc,
+                entry?.Description, r.FiscalDocumentType, entry?.PaidAmount,
+                r.ProviderName, r.ExternalKeyMasked)));
+        }
+
+        var exporter = new FiscalAccountingExportService();
+        var bytes = isJson ? exporter.ExportJson(accountId, snapshots) : exporter.ExportCsv(accountId, snapshots);
+        var contentType = isJson ? "application/json" : "text/csv";
+        var name = $"fecho-contabil-{CompetenceTag(desde, ate)}.{(isJson ? "json" : "csv")}";
+
+        db.ActivityEvents.Add(new ActivityEvent
+        {
+            AccountId = accountId,
+            ActorUserId = ActorId(),
+            Action = "FiscalAccountingExported",
+            EntityType = nameof(FiscalDocumentRequest),
+            EntityId = Guid.Empty,
+            Summary = $"Pacote contábil exportado ({(isJson ? "JSON" : "CSV")}): {snapshots.Count} documento(s) emitido(s)." + CompetenceNote(desde, ate),
+        });
+        await db.SaveChangesAsync(ct);
+        return File(bytes, contentType, name);
+    }
+
+    /// <summary>The competence window is compared on the business-zone civil day of the issuance instant (never server-local).</summary>
+    private static bool InCompetence(DateTime issuedUtc, DateOnly? desde, DateOnly? ate)
+    {
+        if (desde is null && ate is null) return true;
+        var day = ScheduleAgendaRules.BusinessToday(issuedUtc);
+        return (desde is null || day >= desde.Value) && (ate is null || day <= ate.Value);
+    }
+
+    private static string CompetenceTag(DateOnly? desde, DateOnly? ate)
+        => desde is not null && ate is not null ? $"{desde.Value:yyyyMM}-{ate.Value:yyyyMM}"
+         : desde is not null ? $"{desde.Value:yyyyMM}-atual"
+         : ate is not null ? $"ate-{ate.Value:yyyyMM}"
+         : "completo";
+
+    private static string CompetenceNote(DateOnly? desde, DateOnly? ate)
+        => desde is not null && ate is not null ? $" Período {desde.Value:dd/MM/yyyy} a {ate.Value:dd/MM/yyyy}."
+         : desde is not null ? $" Período de {desde.Value:dd/MM/yyyy} em diante."
+         : ate is not null ? $" Período até {ate.Value:dd/MM/yyyy}."
+         : "";
 
     private Guid ActorId() => user.TryGetUserId() ?? Guid.Empty;
 
