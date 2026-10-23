@@ -530,3 +530,23 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
        Mercado Pago por conta — critério R5) continua manual; (b) duplo envio raro de WhatsApp num crash entre o envio e o
        `SaveChanges` final — o e-mail, esse, está protegido pela idempotência; (c) cadência e limite são globais por deploy, ainda
        não por conta.
+
+14. **Agenda operacional — data civil na zona de negócio e conflitos de horário visíveis (item 8 de `NEXT-RELEASE.md`) fechado nesta execução (2026-10-23):** commit `348a170`.
+      A auditoria achou dois defeitos reais na página `Pages/Schedule`: as visões hoje/semana bucketizavam pelo **dia UTC do servidor**
+      (serviço noturno caía no dia errado — mesma classe do bug que o item 6 corrigiu no billing recorrente) e as horas eram exibidas
+      no fuso local da máquina. Além disso, a dobra do mesmo responsável só aparecia ao salvar, nunca na grade. Escopo fechado aqui:
+      corrigir a data civil e tornar o conflito visível, **sem tocar em schema**.
+     - **Regras puras `ScheduleAgendaRules`:** `BusinessToday`/`CivilDayStartUtc`/`Window` decidem o dia de negócio em America/Sao_Paulo
+       e projetam a meia-noite local para UTC; `FindConflicts` marca sobreposição **estrita** de janela para o **mesmo responsável**, com
+       a mesma semântica de `FieldScheduleService` (fronteira comum não conflita). Sobrecargas com `TimeZoneInfo` explícita permitem provas
+       hermeticamente determinísticas nos testes.
+     - **Página:** hoje/semana filtrados pela janela civil; atrasadas/sem agenda mantidas; horas exibidas já projetadas para a zona de negócio;
+       badge "Horário sobreposto" por serviço + resumo de quantos conflitam antes de despachar.
+     - **Evidência:** `check:schedule-flow` estendido (bucketing civil, exibição na zona de negócio, conflito visível) e provado por mutação
+       (7 mutações pegadas). 9 testes novos em `ScheduleAgendaRulesTests` (dia civil ≠ dia UTC, meia-noite local → UTC, janela, fronteira
+       comum, conflito apenas no mesmo responsável). Suíte **847 aprovados, 0 falhas, 19 ignorados**; regressões verdes (schema-contract,
+       service-lifetimes, aspnet-scope, quality-gate, build-blockers, commercial-journey, work-orders, recurring-billing,
+       receivable-reminder, design-consistency, razor-pages, routes, authenticated-navigation).
+     - **Limites conhecidos (não fechados aqui):** (a) o detector roda sobre as ≤100 linhas já carregadas na visão, então um conflito com
+       um serviço fora do recorte pode não aparecer ali — a checagem autoritativa continua sendo a do save via `FieldScheduleService`;
+       (b) conflito é por `AssignedUserId` (um único recurso), ainda não por equipe; (c) a exibição segue em lista, não em grade visual de horas.
