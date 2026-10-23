@@ -41,6 +41,7 @@ using OrcaFacil.Web.Security;
 using Microsoft.Extensions.Options;
 using OrcaFacil.Application.WorkOrders;
 using OrcaFacil.Application.Commercial;
+using OrcaFacil.Application.Contracts;
 using OrcaFacil.Application.Receipts;
 using OrcaFacil.Application.Clients;
 using OrcaFacil.Application.Pricing;
@@ -170,6 +171,7 @@ builder.Services.AddScoped<ICommercialBalanceService, CommercialBalanceService>(
 builder.Services.AddScoped<IFinancialIntegrityDiagnosticService, FinancialIntegrityDiagnosticService>();
 builder.Services.AddScoped<ICommercialJourneyService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IWorkOrderOverdueService, WorkOrderOverdueService>();
+builder.Services.AddScoped<IRecurringContractBillingService, RecurringContractBillingService>();
 builder.Services.AddScoped<ICommercialWorkspaceQueryService, CommercialWorkspaceQueryService>();
 builder.Services.AddScoped<IPublicDocumentAccessService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IManualPaymentRegistrationService>(sp => sp.GetRequiredService<CommercialJourneyService>());
@@ -219,6 +221,7 @@ builder.Services.AddScoped<IWhatsAppWebhookProcessor, WhatsAppWebhookProcessor>(
 builder.Services.AddScoped<OmnichannelWhatsAppApiService>();
 builder.Services.AddHostedService<BillingBackgroundWorker>();
 builder.Services.AddHostedService<WorkOrderOverdueWorker>();
+builder.Services.AddHostedService<RecurringContractBillingWorker>();
 builder.Services.AddHttpClient();
 foreach (var providerName in new[] { "Groq", "Gemini", "DeepSeek", "MercadoPago" })
 {
