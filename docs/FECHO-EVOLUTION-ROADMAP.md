@@ -497,3 +497,36 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
       (b) "Ativar" um contrato já expirado, sem ajustar a vigência, é expirado de novo na rodada seguinte;
       (c) `PendingRenewal` e `Suspended` continuam sem transição automática. Renovação segue manual.
       (d) a homologação com cobrança real (boleto/Pix) é o item 7, "cobrança do cliente".
+
+13. **Cobrança do cliente — lembretes de recebimento vencido (item 7 de `NEXT-RELEASE.md`) fechado nesta execução (2026-10-23):** commit `0db02bb`.
+      A auditoria separou o que já existia do que faltava: a assinatura **recorrente** (item 6) já gera a competência e marca
+      `Overdue`, e a cobrança da assinatura SaaS da conta própria é outro fluxo (`IBillingNoticeService`). Mas **nada avisava o
+      cliente final sobre o próprio recebimento vencido** — o `Overdue` do item 6 não disparava nada, e recebimento de OS,
+      orçamento ou manual vencido nem era marcado (ficava `Pending`). Escopo fechado aqui: **lembrete sem repasse de dinheiro**;
+      cobrar via boleto/Pix por tenant segue adiado.
+     - **Sem mover dinheiro (critério de escopo):** o lembrete só diz ao cliente quanto falta; não cria pagamento, não altera
+       `Amount`/`PaidAmount` e não toca em gateway. Repasse com chave Mercado Pago por conta (critério R5) fica para depois.
+     - **Regras puras `ReceivableReminderRules`:** recebimento aberto exige status em aberto + saldo (pago, cancelado ou sem saldo
+       não é lembrado); janela de grace após o vencimento; intervalo mínimo entre lembretes; teto que encerra a cobrança automática;
+       nunca lembra antes do vencimento. Decididas por **data civil**, como o item 6.
+     - **Dois canais, opt-out respeitado:** e-mail entra na outbox (`EmailOutboxMessage`) com chave de idempotência por
+       (recebimento, dia) e só quando o envio está habilitado na conta; WhatsApp reutiliza `OmnichannelWhatsAppApiService.SendAsync`,
+       que já checa conta configurada + opt-out comercial; opt-out de e-mail lido em `OmnichannelOptOutEvent` (canal "Email").
+       Quem não tem canal alcançável é pulado **sem contar** — para lembrar quando o contato aparecer.
+     - **Cadência no próprio recebimento:** `FinancialEntry` ganha `LastReminderAt` (data civil) e `ReminderCount`; a rodada grava
+       a atividade `ReceivableReminded` e atualiza os dois campos, então nenhuma varredura repete o mesmo envio.
+     - **Worker de hora em hora** (`ReceivableReminderWorker`) sob `IJobLockService`, na data civil de São Paulo.
+     - **Configuração:** seção `ReceivableReminder` (`Enabled`/`GraceDays`/`IntervalDays`/`MaxReminders`) registrada no
+       `Program.cs` e documentada em `appsettings.Example.json` (defaults: grace 3, intervalo 7, teto 3).
+     - **Schema:** migration `20261023130000_AddFinancialEntryReminderState` + snapshot EF + hotfix idempotente
+       `hotfix_financial_entry_reminder_v79.sql` **encadeado no `script_completop.sql`**.
+     - **Evidência:** validador `check:receivable-reminder` (8 grupos), provado por mutação que pega a remoção da cadência, do
+       incremento do contador, do opt-out de e-mail e do gate de envio habilitado. 14 testes novos em `ReceivableReminderRulesTests`
+       (aberto/saldo, nunca antes do vencimento, intervalo, teto, decisão completa). Suíte **838 aprovados, 0 falhas,
+       19 ignorados** (gate de PostgreSQL pré-existente); `check:database-schema-contract`, `check:service-lifetimes`,
+       `check:aspnet-scope`, `check:quality-gate-no-fake`, `check:build-blockers`, `check:commercial-journey`,
+       `check:work-orders`, `check:recurring-billing` verdes.
+     - **Limites conhecidos (não fechados aqui):** (a) cobrança com **repasse de dinheiro** (boleto/Pix por tenant, chave do
+       Mercado Pago por conta — critério R5) continua manual; (b) duplo envio raro de WhatsApp num crash entre o envio e o
+       `SaveChanges` final — o e-mail, esse, está protegido pela idempotência; (c) cadência e limite são globais por deploy, ainda
+       não por conta.
