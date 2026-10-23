@@ -388,3 +388,48 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
      dimensões reais, 28 assets de precache existentes, SENSITIVE_PATH, fallback offline, registro nos dois
      layouts e honestidade dos banners; verde. Suíte 743 aprovados, 0 falhas; build 0 erros;
      `check:git-safety`, `check:authenticated-design`, `check:public-design` verdes.
+10. **WhatsApp oficial — Cloud API do Meta (item 4 de `NEXT-RELEASE.md`) fechado nesta execução (2026-10-23):** commit `862fa3e`.
+    O canal anterior era `WhatsAppPreparedText`: gerava um link `wa.me` e gravava a mensagem como
+    `Prepared`. O envio nunca saía do produto. Esta entrega liga o canal real, e o critério de aceite é o
+    mesmo dos demais itens: **nada é declarado como enviado sem evidência do provedor**.
+    - **Envio real (`WhatsAppGraphClient` → Graph API v21.0):** `POST /{phone_number_id}/messages` com
+      `messaging_product=whatsapp` e Bearer do token da conta. Rede indisponível, status não-2xx ou corpo
+      sem `messages[0].id` viram `Succeeded=false` com erro sanitizado — nenhum desses caminhos grava
+      `Sent`. A mensagem é registrada `Queued` e só muda de estado com o **callback do próprio Meta**
+      (`sent`/`delivered`/`read`/`failed`), nunca por conta do envio.
+    - **Webhook com assinatura (`/api/webhooks/whatsapp`):** GET é o handshake do Meta (só responde quando
+      o `hub.verify_token` pertence a uma conta **habilitada**); POST é verificado por HMAC-SHA256 com o
+      **app secret da própria conta** (`X-Hub-Signature-256`, comparação em tempo constante). Assinatura
+      inválida ou `phone_number_id` sem conta habilitada são recusados com 401 — o evento não toca em dado.
+    - **Duas armadilhas de deduplicação corrigidas antes de virar incidente** (ambas testadas):
+      (a) a chave era `object:entry.id`, mas o `entry.id` do Meta **é constante por conta** (é o phone
+      number id) — a segunda mensagem real seria descartada como "duplicada" e nunca chegaria à caixa de
+      entrada; (b) os callbacks de status de uma mesma mensagem compartilham o `id`, então `sent`,
+      `delivered` e `read` cairiam na mesma chave e **o status nunca avançaria**. A chave passou a ser por
+      conteúdo (id de mensagem; id **+ estado** de status), com fallback determinístico por hash do corpo;
+      o hash curto deduplica em `event_type varchar(40)` e a chave completa fica em `provider_reference`.
+    - **Correções que só apareceriam em produção:** `NormalizePhone` era um no-op (os dois ramos do
+      ternário devolviam `digits`) e mandava número local para a API; agora aplica DDI 55 só a nacional
+      com DDD, sem adivinhar país. O serviço de envio lia a conta com `AsNoTracking` e **mutava** `Status`/
+      `LastFailure` — as atualizações de saúde nunca persistiam. Mensagens recebidas eram gravadas sem
+      encode, contra a disciplina do resto da caixa de entrada; não-texto virava linha vazia, agora registra
+      o tipo real recebido (`[image]` etc.).
+    - **Configuração auditada:** nova seção "WhatsApp Cloud API" em `/Settings/Integrations` (handler
+      próprio, permissão `IntegrationsManage`). Access token e app secret são gravados **protegidos**
+      (mesmo propósito `OrcaFacil.Omnichannel.WhatsApp.v1` em gravação e leitura), nunca voltam à tela —
+      a tela só mostra "já salvo"; habilitar exige os dois segredos (sem app secret a assinatura nunca
+      passaria). A URL do webhook é exibida para colar no app da Meta, e todo salvamento gera auditoria.
+      O opt-out comercial é checado antes de qualquer envio.
+    - **Schema:** `omnichannel_whatsapp_accounts` com colunas tipadas (migration `20261021165111` +
+      snapshot) e hotfix idempotente `hotfix_omnichannel_whatsapp_api_v77.sql` **encadeado no
+      `script_completop.sql`** — antes, só o patch aplicava e a base nova nascia sem o módulo.
+    - **Evidência:** novo validador `check:whatsapp-api` (10 grupos de contrato, incluindo a presença dos
+      testes das regressões que já doeram) — verde, e falha ao se reintroduzir a deduplicação antiga
+      (mutação verificada). 32 testes novos em `WhatsAppCloudApiContractTests` (normalização, assinatura,
+      dedup por conteúdo e por estado, cliente sem simulação de sucesso, DI). Suíte **775 aprovados,
+      0 falhas, 19 ignorados** (gate de PostgreSQL pré-existente); build Release 0 erros, sem avisos novos;
+      `check:omnichannel-flow`, `check:support-flow`, `check:integrations`, `check:di-consistency`,
+      `check:aspnet-scope`, `check:permissions`, `check:secrets-masking`, `check:quality-gate-no-fake` verdes.
+    - **Resta (fora deste repositório):** homologar handshake e envio com um número real no sandbox da
+      Meta (credenciais fora do repositório, mesmo critério do R5). Nenhum envio de produção foi feito ou
+      simulado aqui.
