@@ -6,6 +6,7 @@
     var received = Model.FindMetric(Model.Financial, "Valor recebido")?.Value ?? 0;
     var clientCount = Model.FindMetric(Model.Clients, "Cadastrados")?.Value ?? 0;
     var serviceCount = Model.FindMetric(Model.Services, "Serviços cadastrados")?.Value ?? 0;
+    var convRate = Model.FindMetric(Model.Conversion, "Taxa de conversão")?.Value;
 }
 <header class="report-hero of-report-hub-hero">
   <div><span class="eyebrow">DECISÕES COM CONTEXTO</span><h1>Central de inteligência</h1><p>Acompanhe o mês com dados reais da conta selecionada e avance direto para cada análise.</p></div>
@@ -14,6 +15,7 @@
 
 <section class="of-report-hub" aria-label="Relatórios disponíveis">
   <article class="of-report-tile is-commercial"><span class="of-report-icon" aria-hidden="true">↗</span><p>COMERCIAL</p><h2>Funil comercial</h2><strong>@funnelCount.ToString("0") propostas no mês</strong><small>Etapas, valores, aprovação e tempo sem avanço.</small><a asp-page="/Reports/CommercialFunnel">Abrir funil <span aria-hidden="true">→</span></a></article>
+  <article class="of-report-tile is-commercial"><span class="of-report-icon" aria-hidden="true">⇄</span><p>CONVERSÃO</p><h2>Conversão comercial</h2><strong>@(convRate is >= 0 ? $"{convRate:0.#}% aprovadas viraram serviço" : "sem aprovações no período")</strong><small>Aprovado → ordem de serviço ou recibo → recebido, com taxa e tempo médio por cliente.</small><a asp-page="/Reports/Conversion">Analisar conversão <span aria-hidden="true">→</span></a></article>
   <article class="of-report-tile is-financial"><span class="of-report-icon" aria-hidden="true">$</span><p>FINANCEIRO</p><h2>Financeiro</h2><strong>@received.ToString("C") recebidos</strong><small>Proposto, aprovado, recebido, pendências e formas de pagamento.</small><a asp-page="/Reports/Financial">Analisar financeiro <span aria-hidden="true">→</span></a></article>
   <article class="of-report-tile"><span class="of-report-icon" aria-hidden="true">◎</span><p>RELACIONAMENTO</p><h2>Clientes</h2><strong>@clientCount.ToString("0") cadastrados</strong><small>Movimentação, valor aprovado, recebimentos e inatividade.</small><a asp-page="/Reports/Clients">Analisar clientes <span aria-hidden="true">→</span></a></article>
   <article class="of-report-tile"><span class="of-report-icon" aria-hidden="true">◇</span><p>PORTFÓLIO</p><h2>Serviços</h2><strong>@serviceCount.ToString("0") no catálogo</strong><small>Uso, vendas, aprovação e margem apenas quando autorizada.</small><a asp-page="/Reports/Services">Analisar serviços <span aria-hidden="true">→</span></a></article>

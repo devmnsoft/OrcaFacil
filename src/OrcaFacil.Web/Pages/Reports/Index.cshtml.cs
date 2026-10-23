@@ -23,6 +23,7 @@ public sealed class IndexModel(
     public IntelligenceReport Financial { get; private set; } = new("Financeiro", [], []);
     public IntelligenceReport Clients { get; private set; } = new("Clientes", [], []);
     public IntelligenceReport Services { get; private set; } = new("Serviços", [], []);
+    public IntelligenceReport Conversion { get; private set; } = new("Conversão comercial", [], []);
     public int OpenAlerts { get; private set; }
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
@@ -45,6 +46,7 @@ public sealed class IndexModel(
         Financial = await reports.FinancialAsync(filter, ct);
         Clients = await reports.ClientsAsync(filter, ct);
         Services = await reports.ServicesAsync(filter, ct);
+        Conversion = await reports.ConversionAsync(filter, ct);
 
         await alerts.GenerateAsync(ct);
         var accountId = account.AccountId ?? throw new UnauthorizedAccessException("Selecione uma conta para consultar relatórios.");
