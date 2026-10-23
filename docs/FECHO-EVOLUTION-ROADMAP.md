@@ -682,3 +682,26 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
       - **Limites conhecidos (não fechados aqui):** (a) só EXPORT — importar/restaurar de volta (round-trip) fica adiado
         (requer remapeamento de IDs e tratamento de conflitos); (b) o bundle cobre registros de negócio, não anexos/arquivos
         nem configuração/modelos; (c) export síncrono (sem fila assíncrona) — contas muito grandes podem demorar.
+
+20. **Relatórios de conversão — relatório de conversão comercial na central de inteligência (item 14 de `NEXT-RELEASE.md`) fechado nesta execução (2026-10-23):** commit `c02eaaa`.
+       O audit mostrou que a família de relatórios já existia e era sólida: IntelligenceReportService com quatro relatórios,
+       ReportPageModel base (filtros de período, export CSV, gate de plano) e o hub /Reports com tiles. O que faltava era o
+       relatório de CONVERSÃO — o trajeto real do negócio: proposta aprovada -> ordem de serviço OU recibo -> dinheiro recebido.
+       O modelo de dados já trazia a proveniência (status ConvertedToWorkOrder/Converted, ConvertedReceiptId/Number e
+       ManualPayment.DocumentId). Escopo fechado aqui: **adicionar o relatório de conversão à família existente, sem duplicar a infraestrutura**.
+      - **Métricas novas:** propostas aprovadas, valor aprovado, convertidas em OS, convertidas em recibo, valor convertido,
+        taxa de conversão, valor recebido das aprovadas e tempo médio decisão->conversão; -1 vira "Dados insuficientes" na view.
+      - **Linhas por cliente:** aprovações, valor aprovado, convertido, recebido e taxa individual, ordenado por valor convertido;
+        export CSV herdado da base (prefixo conversao-comercial).
+      - **Regras puras testadas:** novo ConversionReportRules (união OS/recibo, guarda de divisão, tempo médio com fallbacks e
+        clamp não negativo) — 17 testes novos, herméticos, sem DbContext.
+      - **Gate e isolamento:** mesmo gate de plano do funil (CommercialMetricsEnabled); consultas isoladas por conta + !IsDeleted;
+        recebimentos apenas ativos e pagos no período, atribuídos por documento.
+      - **Hub:** tile "Conversão comercial" na central de inteligência com a taxa ao vivo.
+      - **Evidência:** novo validador check:conversion-report, **provado por mutação** (5 mutações: divisor da taxa, união da
+        conversão virou interseção, status do recebimento trocado, prefixo CSV quebrado e tile do hub removido). Suíte C#
+        **909 aprovados, 0 falhas, 19 ignorados**; regressões verdes (executive-reports, bi-reports, no-fake-analytics, routes,
+        razor-pages, design-consistency, authenticated-navigation, screen-quality).
+      - **Limites conhecidos (não fechados aqui):** (a) conversão medida sobre orçamentos aprovados criados no período (mesma
+        semântica dos demais relatórios); (b) "tempo até converter" usa UpdatedAt como proxy de etapa quando houve várias
+        transições; (c) sem comparação entre períodos (mês vs mês) — o _Report compartilhado ainda é de período único.
