@@ -705,3 +705,29 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
       - **Limites conhecidos (não fechados aqui):** (a) conversão medida sobre orçamentos aprovados criados no período (mesma
         semântica dos demais relatórios); (b) "tempo até converter" usa UpdatedAt como proxy de etapa quando houve várias
         transições; (c) sem comparação entre períodos (mês vs mês) — o _Report compartilhado ainda é de período único.
+
+21. **Usuários adicionais pagos no Negócio — assentos extras de equipe no plano Business fecham a fila de evolução (item 15 de `NEXT-RELEASE.md`) nesta execução (2026-10-23):** commit `c31abb7`.
+       O audit encontrou o subsistema já modelado e órfão: PlanAddon (Code, PriceMonthly, LimitType, LimitIncrement)
+       e AccountAddon (AccountId, AddonId, Quantity, DeactivatedAt) existiam apenas como entidade + configuração EF +
+       migração, sem nenhum serviço, página ou seed. Caminho escolhido: **ligar esse modelo ao pipeline de planos** em vez
+       de criar coluna nova em Subscription. O Negócio (BUSINESS) inclui 3 pessoas na equipe; o item permite comprar até
+       5 assentos extras por conta (teto total de 8), a R$ 19,90/usuário/mês.
+      - **Regras puras testadas:** novo AdditionalSeatRules (elegibilidade só BUSINESS, teto por conta, validação da
+        quantidade, custo mensal e incremento de teto null-safe) — 11 testes novos, herméticos, sem DbContext.
+      - **O teto cresce em todo o lugar:** IPlanAccessDataSource ganhou GetAddonIncrementsAsync (somente addons ativos);
+        PlanAccessService soma os incrementos aos limites do plano, então o teto da equipe se expande automaticamente nos
+        convites (AccountInvitationRules.TeamCapReached), em CanUseAsync e nas mensagens de limite — verdade única.
+      - **Compra:** nova seção "Usuários adicionais" na página Assinatura (gate Subscriptions.Manage) com seed idempotente
+        do addon por código, upsert de AccountAddon, auditoria Subscription.AdditionalSeatsPurchased e log estruturado;
+        IAdditionalSeatService registrado como scoped no Web.
+      - **Evidência:** novo validador check:additional-seats, **provado por mutação** (5 mutações: incremento zerado,
+        addon desativado contando, auditoria trocada, handler da página renomeado e formulário da view quebrado). Suíte C#
+        **920 aprovados, 0 falhas, 19 ignorados**; regressões verdes (saas-billing-v19, plan-limits, quota-limits,
+        module-entitlements-v66, module-pricing-v66, tenant-isolation-v66, permissions, razor-pages, routes,
+        design-consistency, authenticated-navigation, billing-dunning, no-fake-buttons).
+      - **Limites conhecidos (não fechados aqui):** (a) cobrança efetiva dos assentos fica com a decisão de provedor de
+        pagamento (R5) — a contratação é registrada com provedor manual e passa a compor a fatura da conta;
+        (b) os assentos não expiram nem retroagem sozinhos a cada ciclo (desliga-se via DeactivatedAt, que já é modelado);
+        (c) a elegibilidade segue o plano vigente — override de outro plano bloqueia a compra até reverter.
+       **Fim da fila:** com este item, os 15 itens do backlog de `NEXT-RELEASE.md` estão concluídos (commits registrados
+       item a item acima, da rota de evolução 2.0).
