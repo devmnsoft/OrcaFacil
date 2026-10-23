@@ -633,3 +633,28 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
         analytics.read seguem sem endpoint (candidatos a incremento próprio); (b) webhooks ainda só listam o catálogo de
         eventos (/webhooks/events), sem entrega assinada; (c) sem filtros de busca/status por recurso (só paginação) —
         integradores paginam e filtram no cliente.
+
+18. **Integração com contadores — exportação contábil das notas emitidas (item 12 de `NEXT-RELEASE.md`) fechado nesta execução (2026-10-23):** commit `3739bd1`.
+       O audit mostrou a mesma situação do item 9 — fundação órfã pronta para ligar: o FiscalAccountingExportService JÁ existia
+       (e já era unit-testado) gerando o pacote contábil em CSV/JSON (documento, cliente, data, serviço, bruto, retensões,
+       líquido, status, origem, protocolo), e o escopo Fiscal.ExportAccounting estava declarado mas FORA do catálogo All e sem
+       nenhum plano concedendo-o. O gap era preciso: não havia como o operador gerar e baixar o pacote pronto para o contador.
+       Escopo fechado aqui: **exportação contábil das NFs emitidas**, reutilizando o serviço e o fluxo já existentes.
+      - **Nada novo de infra:** reusa o FiscalAccountingExportService compartilhado (CSV/JSON) sem reimplementar; o mapeamento para
+        FiscalDocumentSnapshot ficou num mapeador puro (FiscalAccountingSnapshotMapper) livre do DbContext, por isso unit-testável.
+      - **Fiel ao registro manual:** só notas EMITIDAS da conta entram no pacote; número ausente vira "(sem número)" (nunca fabricado),
+        retenção fica 0 (controle manual não registra retenção), status mapeia para ManualRegistered (controle manual, sem
+        autorização de prefeitura) e provider/origem são preservados; o serviço vem da descrição do recebível vinculado.
+      - **Competência no fuso comercial:** o filtro opcional desde/até compara o dia civil da emissão em America/Sao_Paulo
+        (CommercialClock.NormalizeToUtc + ScheduleAgendaRules.BusinessToday), nunca no fuso do servidor. Download nomeado por período
+        (fecho-contabil-AAAAMM.csv/json) e a página exibe a ressalva contábil (AccountingDisclaimer).
+      - **Auditoria + gate:** cada export grava um evento FiscalAccountingExported (quantos documentos e período); protegido pela
+        guarda da página (FinanceManage + EnsureAccountAccess); sem migração.
+      - **Evidência:** novo validador check:accounting-export (complementa o check:fiscal-accounting-export genérico já existente),
+        **provado por mutação** (5 mutações: status do filtro emitidas virou canceladas, data comercial removida, evento de auditoria
+        renomeado, status do snapshot trocado e handler do formulário quebrado). Suíte C# **887 aprovados, 0 falhas, 19 ignorados**
+        (7 testes novos do mapeador); regressões verdes (fiscal-flow, fiscal-control, no-fake-fiscal, razor-pages, design-consistency,
+        routes, authenticated-navigation, public-api, api-scopes, api-security, api-idempotency, pwa, mobile-app).
+      - **Limites conhecidos (não fechados aqui):** (a) o export é LEITURA (download) — não há integração push com ERP/provedor
+        contábil externo (ex.: ContaAzul/OmniConta), que exigiria credenciais por conta e decisão R5; (b) retensões sempre 0 no
+        controle manual; (c) o pacote se limita às notas fiscais emitidas (não inclui recebíveis/pagamentos como lançamentos).
