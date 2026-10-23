@@ -20626,6 +20626,10 @@ namespace OrcaFacil.Persistence.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("number");
 
+                    b.Property<DateTime?>("OverdueMarkedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("overdue_marked_at");
+
                     b.Property<string>("PaymentMethod")
                         .HasMaxLength(80)
                         .HasColumnType("character varying(80)")
@@ -20685,6 +20689,21 @@ namespace OrcaFacil.Persistence.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("xid")
                         .HasColumnName("version");
+
+                    b.Property<string>("WaitNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("wait_note");
+
+                    b.Property<string>("WaitReason")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("wait_reason");
+
+                    b.Property<DateTime?>("WaitingSince")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("waiting_since");
 
                     b.HasKey("Id");
 

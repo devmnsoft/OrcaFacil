@@ -394,7 +394,23 @@ public sealed class CommercialJourneyService(
     }
     public Task<WorkOrderResult> StartAsync(Guid id, CancellationToken ct = default) => ChangeOrder(id, WorkOrderStatus.InProgress, x => { x.StartedAt = DateTime.UtcNow; return true; }, "Execução iniciada.", ct);
     public Task<WorkOrderResult> PauseAsync(Guid id, CancellationToken ct = default) => ChangeOrder(id, WorkOrderStatus.Paused, _ => true, "Execução pausada.", ct);
-    public Task<WorkOrderResult> ResumeAsync(Guid id, CancellationToken ct = default) => ChangeOrder(id, WorkOrderStatus.InProgress, _ => true, "Execução retomada.", ct);
+    public Task<WorkOrderResult> ResumeAsync(Guid id, CancellationToken ct = default) =>
+        ChangeOrder(id, WorkOrderStatus.InProgress, x => { x.WaitReason = WorkOrderWaitReason.None; x.WaitingSince = null; x.WaitNote = null; return true; }, "Execução retomada.", ct);
+
+    public Task<WorkOrderResult> WaitAsync(Guid id, WorkOrderWaitReason reason, string? note, CancellationToken ct = default)
+    {
+        if (!WorkOrderWaitRules.TryGetStatus(reason, out var status))
+            return Task.FromResult(Work(false, "InvalidWaitReason", "Informe se a ordem aguarda o cliente ou o material.", id, null, CorrelationId));
+        var cleanNote = Clean(note, 1000);
+        var label = WorkOrderWaitRules.Describe(reason);
+        return ChangeOrder(id, status, x =>
+        {
+            x.WaitReason = reason;
+            x.WaitingSince = DateTime.UtcNow;
+            x.WaitNote = cleanNote;
+            return true;
+        }, $"Ordem em espera: {label}.", ct);
+    }
     public Task<WorkOrderResult> CompleteAsync(Guid id, string? notes, CancellationToken ct = default) =>
         ChangeOrder(id, WorkOrderStatus.Completed, x => { x.CompletedAt = DateTime.UtcNow; if (!string.IsNullOrWhiteSpace(notes)) x.Notes = Clean(notes, 4000); return true; }, "Serviço concluído. Pendência financeira registrada quando aplicável.", ct);
     public Task<WorkOrderResult> CancelAsync(Guid id, string reason, CancellationToken ct = default)

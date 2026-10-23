@@ -83,6 +83,10 @@ public sealed class WorkOrder : Entity
     public DateTime? CompletedAt { get; set; }
     public DateTime? CancelledAt { get; set; }
     public string? CancellationReason { get; set; }
+    public WorkOrderWaitReason WaitReason { get; set; } = WorkOrderWaitReason.None;
+    public DateTime? WaitingSince { get; set; }
+    public string? WaitNote { get; set; }
+    public DateTime? OverdueMarkedAt { get; set; }
     public Guid? AssignedUserId { get; set; }
     public string AddressSnapshot { get; set; } = "{}";
     public string ClientSnapshot { get; set; } = "{}";

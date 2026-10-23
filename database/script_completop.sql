@@ -1256,6 +1256,9 @@ COMMIT;
 -- V7.7: conta da Cloud API do WhatsApp (Meta) — colunas tipadas, aditivo e idempotente.
 \ir hotfix_omnichannel_whatsapp_api_v77.sql
 
+-- V7.8: ordem de serviço — estados de espera e vencimento. Aditivo e idempotente.
+\ir hotfix_work_order_wait_overdue_v78.sql
+
 -- Sprint 42 / V4.3 is applied by database/sprint42_field_operations_v43.sql.
 \ir sprint42_field_operations_v43.sql
 

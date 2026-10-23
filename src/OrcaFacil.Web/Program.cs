@@ -169,6 +169,7 @@ builder.Services.AddScoped<CommercialJourneyService>();
 builder.Services.AddScoped<ICommercialBalanceService, CommercialBalanceService>();
 builder.Services.AddScoped<IFinancialIntegrityDiagnosticService, FinancialIntegrityDiagnosticService>();
 builder.Services.AddScoped<ICommercialJourneyService>(sp => sp.GetRequiredService<CommercialJourneyService>());
+builder.Services.AddScoped<IWorkOrderOverdueService, WorkOrderOverdueService>();
 builder.Services.AddScoped<ICommercialWorkspaceQueryService, CommercialWorkspaceQueryService>();
 builder.Services.AddScoped<IPublicDocumentAccessService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IManualPaymentRegistrationService>(sp => sp.GetRequiredService<CommercialJourneyService>());
@@ -217,6 +218,7 @@ builder.Services.AddHttpClient<IWhatsAppGraphClient, WhatsAppGraphClient>("Whats
 builder.Services.AddScoped<IWhatsAppWebhookProcessor, WhatsAppWebhookProcessor>();
 builder.Services.AddScoped<OmnichannelWhatsAppApiService>();
 builder.Services.AddHostedService<BillingBackgroundWorker>();
+builder.Services.AddHostedService<WorkOrderOverdueWorker>();
 builder.Services.AddHttpClient();
 foreach (var providerName in new[] { "Groq", "Gemini", "DeepSeek", "MercadoPago" })
 {

@@ -60,6 +60,7 @@ public sealed class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
     public void Configure(EntityTypeBuilder<WorkOrder> b)
     {
         b.ToTable("work_orders"); b.ConfigureBase(); b.Property(x => x.Status).HasConversion<string>().HasMaxLength(32); b.Property(x => x.Number).HasMaxLength(40);
+        b.Property(x => x.WaitReason).HasConversion<string>().HasMaxLength(40); b.Property(x => x.WaitNote).HasMaxLength(1000);
         b.Property(x => x.Title).HasMaxLength(180); b.Property(x => x.Description).HasMaxLength(2000); b.Property(x => x.Notes).HasMaxLength(4000);
         b.Property(x => x.AddressSnapshot).HasColumnType("jsonb"); b.Property(x => x.ClientSnapshot).HasColumnType("jsonb"); b.Property(x => x.ItemsSnapshot).HasColumnType("jsonb");
         b.Property(x => x.TotalSnapshot).HasPrecision(18, 2); b.Property(x => x.PaymentMethod).HasMaxLength(80); b.Property(x => x.Version).IsRowVersion();
