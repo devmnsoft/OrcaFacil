@@ -8889,6 +8889,10 @@ namespace OrcaFacil.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_deleted");
 
+                    b.Property<DateOnly?>("LastReminderAt")
+                        .HasColumnType("date")
+                        .HasColumnName("last_reminder_at");
+
                     b.Property<string>("Origin")
                         .IsRequired()
                         .HasMaxLength(24)
@@ -8899,6 +8903,10 @@ namespace OrcaFacil.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("paid_amount");
+
+                    b.Property<int>("ReminderCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("reminder_count");
 
                     b.Property<string>("Status")
                         .IsRequired()

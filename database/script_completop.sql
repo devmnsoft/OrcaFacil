@@ -1259,6 +1259,9 @@ COMMIT;
 -- V7.8: ordem de serviço — estados de espera e vencimento. Aditivo e idempotente.
 \ir hotfix_work_order_wait_overdue_v78.sql
 
+-- V7.9: cobrança do cliente — cadência de lembrete em financial_entries. Aditivo e idempotente.
+\ir hotfix_financial_entry_reminder_v79.sql
+
 -- Sprint 42 / V4.3 is applied by database/sprint42_field_operations_v43.sql.
 \ir sprint42_field_operations_v43.sql
 

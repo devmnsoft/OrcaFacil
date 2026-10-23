@@ -172,6 +172,7 @@ builder.Services.AddScoped<IFinancialIntegrityDiagnosticService, FinancialIntegr
 builder.Services.AddScoped<ICommercialJourneyService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IWorkOrderOverdueService, WorkOrderOverdueService>();
 builder.Services.AddScoped<IRecurringContractBillingService, RecurringContractBillingService>();
+builder.Services.AddScoped<IReceivableReminderService, ReceivableReminderService>();
 builder.Services.AddScoped<ICommercialWorkspaceQueryService, CommercialWorkspaceQueryService>();
 builder.Services.AddScoped<IPublicDocumentAccessService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IManualPaymentRegistrationService>(sp => sp.GetRequiredService<CommercialJourneyService>());
@@ -211,6 +212,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<FriendlyMessageService>();
 builder.Services.AddSingleton<IApiKeyService, ApiKeyService>();
 builder.Services.Configure<MercadoPagoOptions>(builder.Configuration.GetSection("MercadoPago"));
+builder.Services.Configure<ReceivableReminderOptions>(builder.Configuration.GetSection("ReceivableReminder"));
 builder.Services.Configure<BillingOptions>(builder.Configuration.GetSection("Billing"));
 builder.Services.AddScoped<IPaymentGateway, MercadoPagoPaymentGateway>();
 builder.Services.AddScoped<ISubscriptionCheckoutService, SubscriptionCheckoutService>();
@@ -222,6 +224,7 @@ builder.Services.AddScoped<OmnichannelWhatsAppApiService>();
 builder.Services.AddHostedService<BillingBackgroundWorker>();
 builder.Services.AddHostedService<WorkOrderOverdueWorker>();
 builder.Services.AddHostedService<RecurringContractBillingWorker>();
+builder.Services.AddHostedService<ReceivableReminderWorker>();
 builder.Services.AddHttpClient();
 foreach (var providerName in new[] { "Groq", "Gemini", "DeepSeek", "MercadoPago" })
 {

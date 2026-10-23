@@ -316,6 +316,7 @@
     "check:whatsapp-api": "node scripts/check-whatsapp-api.mjs",
     "check:work-orders": "node scripts/check-work-orders.mjs",
     "check:recurring-billing": "node scripts/check-recurring-billing.mjs",
+    "check:receivable-reminder": "node scripts/check-receivable-reminder.mjs",
     "check:omnichannel-routing": "node scripts/check-omnichannel-routing.mjs",
     "check:omnichannel-sla": "node scripts/check-omnichannel-sla.mjs",
     "check:conversation-to-ticket": "node scripts/check-conversation-to-ticket.mjs",
