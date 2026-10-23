@@ -550,3 +550,35 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
      - **Limites conhecidos (não fechados aqui):** (a) o detector roda sobre as ≤100 linhas já carregadas na visão, então um conflito com
        um serviço fora do recorte pode não aparecer ali — a checagem autoritativa continua sendo a do save via `FieldScheduleService`;
        (b) conflito é por `AssignedUserId` (um único recurso), ainda não por equipe; (c) a exibição segue em lista, não em grade visual de horas.
+
+15. **Integração fiscal — fluxo manual de fiscalização de recebíveis pagos (item 9 de `NEXT-RELEASE.md`) fechado nesta execução (2026-10-23):** commit `c429624`.
+       A auditoria achou uma base fiscal rica porém órfã: `FiscalModule.cs` traz dezenas de serviços e `FiscalRules`, provedores
+       `Noop`/`Manual` e um certificado protegido, e a entidade `FiscalDocumentRequest` (recebível/pagamento/recibo → número/chave
+       mascarada/provedor) já mapeada em tabela — mas **nenhum serviço a usava e não existia página `/Fiscal`**. O produto, por design,
+       não emite nota fiscal ("nenhum número ou chave fiscal é fabricado; credenciais futuras por env/cofre"). Escopo fechado aqui:
+       **fluxo manual de fiscalização** sobre a base existente, sem fabricar dado fiscal e sem migração.
+      - **Sem mover dinheiro, sem fabricar dado fiscal:** o operador registra o número e a chave que ele mesmo emitiu; o provedor é
+        estampado como "Controle manual auditado" (nome do `ManualFiscalProvider`), nunca como autorização de prefeitura. A chave de
+        acesso é armazenada mascarada (somente as pontas), via `FiscalRequestRules.MaskAccessKey`.
+      - **Regras puras `FiscalRequestRules`:** recebível só é fiscalizável com valor recebido e sem cancelamento; mapa de transições
+        `CanTransition` (aberto → emitida/cancelada/sem necessidade; emitida → cancelada); estados terminais não reabrem; `IsActive`
+        garante idempotência por solicitação aberta; motivo auditável (≥10 chars, reutilizando `FiscalRules.RequireReason`) exigido
+        para cancelar ou marcar como sem necessidade.
+      - **Serviço `FiscalDocumentWorkflowService`:** solicita, registra emissão, cancela e marca como sem necessidade sobre
+        `FiscalDocumentRequest`, sempre isolado por conta (`FiscalRules.EnsureSameAccount`), idempotente enquanto houver pedido aberto
+        para o mesmo recebível, com evento de atividade (`ActorUserId`) e `Touch` ao mudar de estado.
+      - **Página `/Fiscal`** (permissão `FinanceManage`, isolada por conta): lista pedidos por status, registra número/chave/data da
+        emissão, cancela ou marca como sem necessidade, e destaca o gap "Recebido sem nota fiscal" (recebíveis pagos sem nota
+        emitida). A ressalva contábil é exibida (`FiscalRules.AccountingDisclaimer`).
+      - **Configuração/DI:** `IFiscalDocumentWorkflowService` registrado como scoped no `Program.cs`. Sem chave nova em `appsettings`
+        (o modo manual não requer credencial externa) e sem migração — todas as colunas já existiam.
+      - **Evidência:** validador `check:fiscal-flow` (6 grupos), provado por mutação (3 mutações pegadas: número fabricado, gap
+        invisível, estado terminal reaberto). 33 testes novos em `FiscalRequestRulesTests` (fiscalizável, estados abertos/terminais,
+        matriz completa de transições, emitida-cancela-mas-não-reemite, número válido, máscara de chave). Suíte **880 aprovados,
+        0 falhas, 19 ignorados** (gate de PostgreSQL pré-existente); regressões verdes (schema-contract, service-lifetimes,
+        aspnet-scope, build-blockers, commercial-journey, design-consistency, razor-pages, routes, authenticated-navigation,
+        fiscal-flow).
+      - **Limites conhecidos (não fechados aqui):** (a) a emissão real (NFS-e via provedor plugável, `INfseProvider`, atrás de
+        credencial por env — critério R5) continua manual; (b) a âncora é o recebível `FinancialEntry` — pagamento/recibo avulso sem
+        lançamento ainda não ganha nota; (c) sem índice único em `(AccountId, ReceivableId)`: a idempotência é em nível de serviço
+        (um pedido aberto por recebível), suficiente para a operação de um único operador.
