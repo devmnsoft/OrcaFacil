@@ -31,7 +31,7 @@ Status usados: **Funcional** (backend + persistência + interface + regra + test
 | Orçamento (wizard) | `BudgetWizardService`, `GuidedBudgetStartService` | `documents`, `document_items` | `Pages/Documents/CreateBudget` | multi-etapa, autosave, rascunho idempotente | `BudgetWizard*` | **Funcional** |
 | Máquina de estados do documento | `DocumentStatusTransitionService` | `documents.status` | — | transições explícitas, enforcement no servidor | `CommercialStatusTransitionTests` | **Funcional** |
 | Aprovação pública | `PublicDocumentAccessService`, `PublicDocumentTokenService` | `public_document_access/decisions` (hash SHA-256) | `/p/{token}` (`Pages/PublicQuotes/View`) | hash, expiração/revogação, idempotência, concorrência | `PublicDocumentTokenServiceTests` | **Funcional** (rota difere de `/p/orcamento/{token}` citada em doc) |
-| Ordem de serviço | `CommercialJourneyService` (conversão), `WorkOrderStatusTransitionService` | `work_orders`, `work_order_checklist_items` | `Pages/WorkOrders/*` | conversão idempotente, estados, checklist, agenda | testes de transição | **Funcional** |
+| Ordem de serviço | `CommercialJourneyService` (conversão, espera), `WorkOrderStatusTransitionService`, `WorkOrderOverdueService` | `work_orders`, `work_order_checklist_items` | `Pages/WorkOrders/*` | conversão idempotente, estados (espera + vencimento alcançáveis), checklist, agenda | testes de transição, `check:work-orders` | **Funcional** |
 | Recebíveis / pagamentos / recibos | `ReceiptApplicationService`, `CommercialJourneyService`, `CommercialBalanceService` | `manual_payments`, `receipts` | `Pages/Receivables`, `Pages/Payments`, `Pages/Receipts` | idempotência, parcial/integral, estorno, recibo por pagamento | `PaymentSafetyTests`, `CommercialBalanceCalculatorTests` | **Funcional** |
 | Acompanhamento comercial | `CommercialJourneyService` (follow-up) | `commercial_follow_ups`, `documents.next_follow_up_at` | `Pages/CommercialRoutine`, detalhes | agendar/adiar/concluir | parcial | **Funcional** |
 | **Integridade financeira histórica (P0 4.3)** | **`FinancialIntegrityDiagnosticService` + `FinancialIntegrityAnalyzer`** | leitura de `manual_payments`, `receipts`, `work_orders`, `documents` | **`/SuperAdmin/Finance/Divergences`** | 9 classificações de divergência, risco e ação recomendada; revisão auditada | **`FinancialIntegrityDiagnosticsTests` (16)** | **Funcional (novo nesta execução)** |
@@ -433,3 +433,35 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
     - **Resta (fora deste repositório):** homologar handshake e envio com um número real no sandbox da
       Meta (credenciais fora do repositório, mesmo critério do R5). Nenhum envio de produção foi feito ou
       simulado aqui.
+
+11. **Ordem de serviço — estados de espera e vencimento alcançáveis (item 5 de `NEXT-RELEASE.md`) fechado nesta execução (2026-10-23):** commit `0aa3a3d`.
+     A matriz marcava o módulo como Funcional, mas a auditoria do código achou uma lacuna real: `WaitingCustomer`,
+     `WaitingMaterial` e `Overdue` existiam na tabela de transições e eram lidas pelo dashboard, porém **nada no
+     sistema conseguia gravá-las**. O KPI de "serviços atrasados" (`AnalyticsV21Service`) lia `Overdue` e ficava
+     sempre zero; o operador não tinha como registrar que a ordem parou por espera do cliente ou por falta de
+     material — só Pausar, que é outro significado (pausa interna, sem motivo externo auditável).
+    - **Espera com motivo auditável:** `WaitAsync` na jornada comercial move a ordem para `WaitingCustomer` ou
+      `WaitingMaterial` gravando motivo, data de início e observação. **Retomar limpa o estado** — sem isso a
+      próxima ordem herdaria o motivo antigo e o relatório mentiria. A regra pura `WorkOrderWaitRules` (motivo →
+      status) foi extraída do serviço que depende de `DbContext`, para ser testável sem banco, como os demais
+      rules do repositório.
+    - **Vencimento por worker, não por adivinhação:** `WorkOrderOverdueService` marca em lote, multi-conta, as
+      ordens `Scheduled` cujo fim planejado já passou, deixando evento na timeline. `WorkOrderOverdueWorker` roda
+      a cada 15 min sob `IJobLockService` (mesmo desenho do `BillingBackgroundWorker`), com trava de concorrência
+      e checagem de banco configurado. O critério é `Scheduled` + `ScheduledEnd < now`: nunca vence ordem já em
+      execução, concluída ou cancelada.
+    - **UI que o operador consegue usar:** em execução, botão "Mover para espera" (cliente/material + nota); em
+      espera, exibe **desde quando** e **por quê**, e oferece retomar. Sem exibir o tempo de espera o operador
+      decide às cegas se ainda vale cobrar o cliente.
+    - **Schema:** `wait_reason`, `waiting_since`, `wait_note` e `overdue_marked_at` (migration
+      `20261023120000` + snapshot EF) e hotfix aditivo/idempotente `hotfix_work_order_wait_overdue_v78.sql`
+      **encadeado no `script_completop.sql`**. `WaitReason` é enum convertido para `varchar(40)` como os demais
+      enums do módulo — sem a conversão a gravação falharia **só em produção**, não no build.
+    - **Evidência:** novo validador `check:work-orders` (8 grupos de contrato) — verde, e provado por mutação que
+      pega o regresso de "retomar sem limpar o estado de espera". 17 testes novos em `WorkOrderWaitAndOverdueTests`
+      (espera alcançável, retomada, proibição de concluir direto da espera, vencimento a partir do agendamento,
+      vencida ainda iniciável/cancelável, concluída/cancelada imune a vencimento, motivo `None` rejeitado). Suíte
+      **792 aprovados, 0 falhas, 19 ignorados** (gate de PostgreSQL pré-existente); build Release 0 erros, sem
+      avisos novos; `check:omnichannel-flow`, `check:commercial-journey`, `check:database-schema-contract`,
+      `check:di-consistency`, `check:service-lifetimes`, `check:aspnet-scope`, `check:quality-gate-no-fake`,
+      `check:build-blockers`, `check:git-safety` verdes.
