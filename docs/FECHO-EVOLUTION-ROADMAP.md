@@ -658,3 +658,27 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
       - **Limites conhecidos (não fechados aqui):** (a) o export é LEITURA (download) — não há integração push com ERP/provedor
         contábil externo (ex.: ContaAzul/OmniConta), que exigiria credenciais por conta e decisão R5; (b) retensões sempre 0 no
         controle manual; (c) o pacote se limita às notas fiscais emitidas (não inclui recebíveis/pagamentos como lançamentos).
+
+19. **Backup exportável — exportação self-service de dados da conta (item 13 de `NEXT-RELEASE.md`) fechado nesta execução (2026-10-23):** commit `6bac1ea`.
+       O audit mostrou a fundação mais completa até aqui: o DataExportService JÁ existia e fazia o trabalho pesado —
+       criava o DataExportJob (expira em 24h), sanitizava segredos via ISensitiveDataSanitizer (a promessa da própria página:
+       "nunca inclui senha, hash, token ou segredo"), auditava como Privacy.DataExported e devolvia um DataExportResult pronto.
+       Estava registrada no DI mas SEM nenhum chamador; a permissão Privacy.ExportData já existia e estava no catálogo All;
+       e o medidor UserUsage.BackupExports continuava órfão (nada o incrementava). Escopo fechado aqui: **ligar esse serviço
+       a um download self-service na página de Privacidade**, mais incrementando o medidor órfão.
+      - **Download self-service:** nova ação "Exportar meus dados" em /Settings/Privacy, gateada por Privacy.ExportData (+
+        EnsureAccountAccess). Gera um bundle JSON estável (sem ciclos) e devolve o arquivo ao navegador; sem migração.
+      - **Conteúdo do bundle:** clientes, serviços, documentos + itens, ordens de serviço, recibos, contratos recorrentes e
+        notas fiscais da conta — tudo isolado por conta (AccountId + !IsDeleted), AsNoTracking, enums como nome.
+      - **Financeiro só com permissão:** lançamentos/recebíveis entram no bundle APENAS se o usuário também tem permissão
+        financeira (FinanceManage); a opção é um checkbox na página. Regra testada no mapeador puro AccountDataBackupShaper
+        (inclusão condicional, tag de escopo core/full e contagem de registros).
+      - **Medidor ligado:** novo UserUsageService.RegisterBackupExportAsync incrementa BackupExports (antes órfão) a cada export.
+      - **Evidência:** novo validador check:data-export (complementa o check:privacy-compliance), **provado por mutação** (5
+        mutações: serviço não chamado, medidor não chamado, tag de escopo rompida, handler do formulário quebrado e incremento
+        do BackupExports alterado). Suíte C# **892 aprovados, 0 falhas, 19 ignorados** (5 testes novos); regressões verdes
+        (privacy-compliance, backup-restore, razor-pages, design-consistency, routes, authenticated-navigation, public-api,
+        accounting-export, fiscal-flow).
+      - **Limites conhecidos (não fechados aqui):** (a) só EXPORT — importar/restaurar de volta (round-trip) fica adiado
+        (requer remapeamento de IDs e tratamento de conflitos); (b) o bundle cobre registros de negócio, não anexos/arquivos
+        nem configuração/modelos; (c) export síncrono (sem fila assíncrona) — contas muito grandes podem demorar.
