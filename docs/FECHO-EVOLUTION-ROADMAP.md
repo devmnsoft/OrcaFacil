@@ -731,3 +731,17 @@ consultam o plano (ex.: `reports.basic`, `exports.csv`, `commercial.*`, `audit.a
         (c) a elegibilidade segue o plano vigente — override de outro plano bloqueia a compra até reverter.
        **Fim da fila:** com este item, os 15 itens do backlog de `NEXT-RELEASE.md` estão concluídos (commits registrados
        item a item acima, da rota de evolução 2.0).
+
+22. **Gate final de integração — varredura completa de 623 validadores verde e branch `fecho/evolution-2.0` entregue com registro completo (2026-10-24):** commit `15cfc09`.
+       Com o backlog encerrado no item 15, executou-se a varredura final de toda a branch: os **623** scripts `check:*` do
+       package.json rodaram sequencialmente, mais a suíte C# completa e o build limpo. É a primeira validação de ponta a
+       ponta do acumulado dos itens 9 a 15 (cada um havia passado apenas no seu lote de regressões). Resultado: exatamente
+       uma falha — e ela era, de fato, dívida desta branch.
+      - **Dívida encontrada:** o check:form-labels apontou três inputs de motivo (cancelar / sem necessidade) sem rótulo
+        em `Pages/Fiscal/Index.cshtml` — placeholders do item 9 que nenhum lote local cobria. Corrigidos com `aria-label`
+        compatível com os formulários inline compactos.
+      - **Evidência do gate:** após a correção, 623/623 validadores verdes; suíte C# **920 aprovados, 0 falhas, 19 ignorados**;
+        build com 0 erros. Nada pendente no repositório para esta branch.
+      - **Estado atual:** `fecho/evolution-2.0` em `15cfc09`, sincronizada com o origin, árvore de trabalho limpa.
+        NEXT-RELEASE com fila esgotada (itens 1 a 15); roadmap registra itens 1 a 22. A única decisão aberta segue externa:
+        provedor de pagamento real (R5) para cobrança efetiva — não bloqueia a entrega da branch.
