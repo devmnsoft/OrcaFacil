@@ -60,6 +60,7 @@ public sealed class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
     public void Configure(EntityTypeBuilder<WorkOrder> b)
     {
         b.ToTable("work_orders"); b.ConfigureBase(); b.Property(x => x.Status).HasConversion<string>().HasMaxLength(32); b.Property(x => x.Number).HasMaxLength(40);
+        b.Property(x => x.WaitReason).HasConversion<string>().HasMaxLength(40); b.Property(x => x.WaitNote).HasMaxLength(1000);
         b.Property(x => x.Title).HasMaxLength(180); b.Property(x => x.Description).HasMaxLength(2000); b.Property(x => x.Notes).HasMaxLength(4000);
         b.Property(x => x.AddressSnapshot).HasColumnType("jsonb"); b.Property(x => x.ClientSnapshot).HasColumnType("jsonb"); b.Property(x => x.ItemsSnapshot).HasColumnType("jsonb");
         b.Property(x => x.TotalSnapshot).HasPrecision(18, 2); b.Property(x => x.PaymentMethod).HasMaxLength(80); b.Property(x => x.Version).IsRowVersion();
@@ -97,6 +98,17 @@ public sealed class ManualPaymentConfiguration : IEntityTypeConfiguration<Manual
         b.HasIndex(x => new { x.AccountId, x.IdempotencyKey }).IsUnique();
         b.HasIndex(x => new { x.AccountId, x.WorkOrderId, x.PaidAt });
         b.HasIndex(x => new { x.AccountId, x.DocumentId, x.PaidAt }).HasFilter("document_id IS NOT NULL");
+
+        // Estes vínculos existem no banco (criados por SQL cru em AddManualPaymentsAndReceipts e hotfixes)
+        // mas não estavam mapeados. Sem o relacionamento o EF não ordena os INSERT por dependência e pode
+        // gravar manual_payments antes da work_order/client/document e violar as FKs (SQLSTATE 23503).
+        // DeleteBehavior.Restrict espelha ON DELETE RESTRICT das constraints reais.
+        b.HasOne<BusinessAccount>().WithMany().HasForeignKey(x => x.AccountId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<Client>().WithMany().HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<Document>().WithMany().HasForeignKey(x => x.DocumentId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.RegisteredByUserId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.ReversedByUserId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<WorkOrder>().WithMany().HasForeignKey(x => x.WorkOrderId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 

@@ -312,14 +312,14 @@ public sealed class CommercialCandidateHomologationTests
     }
 
     [Fact]
-    public void MessageDraftAiAssistant_redacts_secrets_and_appends_disclaimers()
+    public async Task MessageDraftAiAssistant_redacts_secrets_and_appends_disclaimers()
     {
-        var assistant = new MessageDraftAiAssistant(new AiRedactionService());
+        var assistant = CreateAssistantRulesOnly();
         var accountId = Guid.NewGuid();
         var context = new AiRequestContext(accountId, Guid.NewGuid(), new HashSet<string> { "Ai.Draft" });
         var policy = new AiGovernancePolicy(accountId);
 
-        var result = assistant.GenerateDraft(
+        var result = await assistant.GenerateDraftAsync(
             context,
             policy,
             "WhatsApp",
@@ -336,6 +336,12 @@ public sealed class CommercialCandidateHomologationTests
         Assert.DoesNotContain("sk_live_", result.DraftContent);
         // Never sent autonomously
         Assert.Contains(result.Disclaimers, d => d.Contains("NUNCA é enviado automaticamente"));
+    }
+
+    private static MessageDraftAiAssistant CreateAssistantRulesOnly()
+    {
+        var redaction = new AiRedactionService();
+        return new(redaction, new PromptSanitizer(redaction), new StubAiOrchestrator());
     }
 
     [Fact]
@@ -385,7 +391,7 @@ public sealed class CommercialCandidateHomologationTests
             new(accountB, "doc", "2", "Segredos Confidenciais Conta B", "url2", "Dados sensíveis da Conta B", true)
         };
 
-        var answer = await helpService.AskHelpAsync(contextA, "Faturamento", sources);
+        var answer = await helpService.AskHelpAsync(contextA, new AiGovernancePolicy(accountA), "Faturamento", sources);
 
         // Result must NOT contain or reference Account B sources!
         Assert.DoesNotContain(answer.Sources, s => s.AccountId == accountB);

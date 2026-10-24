@@ -41,7 +41,7 @@ public sealed class GlobalSearchService(ICurrentAccountService currentAccount, I
                 "/Clients/Details/" + x.Id, "Abrir cliente"))
             .ToListAsync(cancellationToken) : [];
 
-        var documents = await (currentAccount.HasPermissionAsync("documents.read", cancellationToken)) ? await db.Documents.AsNoTracking()
+        var documents = await (currentAccount.HasPermissionAsync(PermissionCodes.DocumentsView, cancellationToken)) ? await db.Documents.AsNoTracking()
             .Where(x => x.AccountId == accountId && !x.IsDeleted &&
                 (EF.Functions.ILike(x.Number, pattern) || EF.Functions.ILike(x.ClientName, pattern)))
             .OrderByDescending(x => x.Number.ToLower() == term.ToLower() || x.ClientName.ToLower() == term.ToLower())

@@ -15,7 +15,7 @@ public sealed class IndexModel(IClientWorkspaceService workspace) : PageModel
     [BindProperty(SupportsGet = true)] public string? City { get; set; }
     [BindProperty(SupportsGet = true)] public bool? Favorite { get; set; }
     [BindProperty(SupportsGet = true)] public bool? Active { get; set; }
-    [BindProperty(SupportsGet = true)] public string Sort { get; set; } = "name";
+    [BindProperty(SupportsGet = true)] public string? Sort { get; set; } = "name";
     [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
     [BindProperty(SupportsGet = true)] public int PageSize { get; set; } = 20;
     public ClientWorkspaceResult Result { get; private set; } = new(ClientResultCode.Success, [], 0, 0, 0, 0, 0, 1, 20);

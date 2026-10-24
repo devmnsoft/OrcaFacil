@@ -1,0 +1,46 @@
+/* App-shell bottom tab bar for the installed (standalone) PWA.
+   Hidden by default; revealed by mobile-app-shell.js on <body class="of-appstandalone">,
+   which is only set when the app runs standalone AND the viewport is small. Kept separate from
+   app.css so it does not affect the desktop/browser experience or the existing hamburger menu. */
+
+.of-app-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: none;
+  align-items: stretch;
+  justify-content: space-around;
+  gap: 2px;
+  padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-top: 1px solid #dbe4ee;
+  box-shadow: 0 -6px 18px rgb(2 14 27 / 8%);
+}
+
+.of-app-tabbar a {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 2px;
+  text-decoration: none;
+  color: #5a6b7d;
+  font-size: 0.68rem;
+  font-weight: 650;
+  line-height: 1.1;
+}
+
+.of-app-tabbar a svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.of-app-tabbar a.is-active { color: #0b3835; }
+
+/* When the shell activates: reveal the bar and inset the main content so nothing sits behind it. */
+body.of-appstandalone .of-app-tabbar { display: flex; }
+body.of-appstandalone .of-main { padding-bottom: calc(58px + env(safe-area-inset-bottom)); }

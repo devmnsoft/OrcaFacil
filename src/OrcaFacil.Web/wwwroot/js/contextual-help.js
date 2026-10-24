@@ -32,4 +32,77 @@ export function initializeContextualHelp() {
       host.setAttribute('aria-busy', 'false');
     }
   });
+
+  initializeHelpAsk(trigger);
+}
+
+/**
+ * Pergunta livre sobre a tela atual (E-3). Usa o endpoint governado de RAG:
+ * resposta só com base em guias/artigos publicados, sem executar ações.
+ */
+function initializeHelpAsk(trigger) {
+  const form = document.querySelector('[data-help-ask-form]');
+  const input = document.querySelector('[data-help-ask-question]');
+  const answer = document.querySelector('[data-help-ask-answer]');
+  const submit = document.querySelector('[data-help-ask-submit]');
+  if (!form || !input || !answer || !submit) return;
+
+  const token = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const question = input.value.trim();
+    if (question.length < 3) {
+      answer.innerHTML = '<p role="alert">Descreva sua dúvida com pelo menos 3 caracteres.</p>';
+      input.focus();
+      return;
+    }
+
+    submit.disabled = true;
+    input.disabled = true;
+    answer.setAttribute('aria-busy', 'true');
+    answer.innerHTML = '<p>Consultando os guias e artigos publicados…</p>';
+
+    try {
+      const response = await fetch('/Internal/Help/Ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token(), Accept: 'application/json' },
+        body: JSON.stringify({ question, helpCode: trigger?.dataset.helpCode ?? '' }),
+      });
+      const data = await response.json().catch(() => null);
+      if (response.status === 403) {
+        answer.innerHTML = `<p role="alert">${escapeHtml(data?.message ?? 'Sua conta não tem permissão para usar a ajuda inteligente.')}</p>`;
+        return;
+      }
+      if (!response.ok || !data) {
+        answer.innerHTML = '<p role="alert">Não foi possível consultar a ajuda agora. Tente novamente.</p>';
+        return;
+      }
+
+      if (!data.succeeded) {
+        answer.innerHTML = `<p>${escapeHtml(data.answer || 'Não encontrei informação suficiente nas fontes publicadas.')}</p>
+          ${(data.limitations ?? []).map((item) => `<p class="of-help-ask__note">${escapeHtml(item)}</p>`).join('')}`;
+        return;
+      }
+
+      const sources = (data.sources ?? []).length
+        ? `<h4>Fontes consultadas</h4><ul>${data.sources.map((source) =>
+            `<li><a href="${escapeHtml(source.url)}">${escapeHtml(source.title)}</a></li>`).join('')}</ul>`
+        : '';
+      const limitations = (data.limitations ?? []).map((item) => `<li>${escapeHtml(item)}</li>`).join('');
+
+      answer.innerHTML = `<div class="of-help-ask__answer">
+          <p>${escapeHtml(data.answer)}</p>
+          ${sources}
+          ${limitations ? `<h4>Limites desta resposta</h4><ul>${limitations}</ul>` : ''}
+          <p class="of-help-ask__note">${escapeHtml(data.notice)}</p>
+        </div>`;
+    } catch {
+      answer.innerHTML = '<p role="alert">Falha de comunicação com a ajuda. Tente novamente.</p>';
+    } finally {
+      submit.disabled = false;
+      input.disabled = false;
+      answer.setAttribute('aria-busy', 'false');
+    }
+  });
 }

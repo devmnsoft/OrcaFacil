@@ -9,6 +9,9 @@ public enum DocumentRevisionStatus { Draft, Sent, Superseded, Approved, Rejected
 public enum PublicAccessStatus { Active, Expired, Revoked }
 public enum PublicDocumentDecisionType { Approved, Rejected, ChangeRequested }
 public enum WorkOrderStatus { Planned, Scheduled, InProgress, WaitingCustomer, WaitingMaterial, Completed, Cancelled, Paused, Overdue }
+
+/// <summary>Why an in-progress order moved to a waiting state; keeps the audit trail explicit.</summary>
+public enum WorkOrderWaitReason { None, WaitingCustomer, WaitingMaterial }
 public enum FollowUpChannel { Phone, WhatsApp, Email, InPerson, Other }
 public enum FollowUpResult { NoResponse, RequestedTime, RequestedChange, Interested, NotInterested, VerballyApproved, Other }
 public enum FollowUpStatus { None, Scheduled, Completed, Snoozed }

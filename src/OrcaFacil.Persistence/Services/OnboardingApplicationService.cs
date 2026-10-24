@@ -128,11 +128,18 @@ public sealed class OnboardingApplicationService(
 
     public async Task<OperationResult> SkipAsync(OnboardingStep step, CancellationToken ct = default)
     {
-        if (step is OnboardingStep.BusinessProfile or OnboardingStep.DocumentIdentity)
+        if (OnboardingStepRules.IsRequired(step))
         {
             return OperationResult.Failure(
                 "required_step",
                 "Esta etapa prepara os dados obrigatórios do orçamento.");
+        }
+
+        if (!OnboardingStepRules.CanSkip(step))
+        {
+            return OperationResult.Failure(
+                "invalid_step",
+                "Não há etapa para pular neste momento.");
         }
 
         var (state, error) = await Resolve(ct);
@@ -142,9 +149,7 @@ public sealed class OnboardingApplicationService(
         }
 
         state!.Skip();
-        state.Advance(step == OnboardingStep.Welcome
-            ? OnboardingStep.Welcome
-            : (OnboardingStep)((int)step + 1));
+        state.Advance(OnboardingStepRules.NextAfterSkip(step));
         await db.SaveChangesAsync(ct);
         return OperationResult.Success();
     }

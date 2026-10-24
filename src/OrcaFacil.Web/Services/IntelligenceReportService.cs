@@ -14,6 +14,7 @@ public sealed record IntelligenceReport(string Title, IReadOnlyList<Metric> Metr
 public interface IIntelligenceReportService
 {
     Task<IntelligenceReport> CommercialFunnelAsync(ReportFilter filter, CancellationToken ct);
+    Task<IntelligenceReport> ConversionAsync(ReportFilter filter, CancellationToken ct);
     Task<IntelligenceReport> FinancialAsync(ReportFilter filter, CancellationToken ct);
     Task<IntelligenceReport> ClientsAsync(ReportFilter filter, CancellationToken ct);
     Task<IntelligenceReport> ServicesAsync(ReportFilter filter, CancellationToken ct);
@@ -51,6 +52,23 @@ public sealed class IntelligenceReportService(ICurrentAccountService account, Or
         var decided = documents.Count(x => x.ClientDecision is ClientDecision.Approved or ClientDecision.Rejected);
         var approved = documents.Count(x => x.ClientDecision == ClientDecision.Approved);
         return new("Funil comercial", [new("Propostas", documents.Count), new("Valor proposto", documents.Sum(x => x.Total), true), new("Valor aprovado", documents.Where(x => x.ClientDecision == ClientDecision.Approved).Sum(x => x.Total), true), new("Taxa de aprovação", decided == 0 ? -1 : approved * 100m / decided, false, "%")], rows);
+    }
+
+    public async Task<IntelligenceReport> ConversionAsync(ReportFilter filter, CancellationToken ct)
+    {
+        var (from, to) = Period(filter);
+        var accountId = AccountId;
+        var query = db.Documents.AsNoTracking().Where(x => x.AccountId == accountId && !x.IsDeleted && x.Type == DocumentType.Budget && x.ClientDecision == ClientDecision.Approved && x.CreatedAt >= from && x.CreatedAt < to);
+        if (filter.ClientId is { } clientId) query = query.Where(x => x.ClientId == clientId);
+        if (!string.IsNullOrWhiteSpace(filter.Status)) query = query.Where(x => x.Status == filter.Status);
+        var documents = await query.Select(x => new { x.Id, x.ClientName, x.Total, x.Status, x.ConvertedReceiptId, x.CreatedAt, x.ClientDecisionAt, x.UpdatedAt }).ToListAsync(ct);
+        var budgetIds = documents.Select(x => x.Id).ToList();
+        var payments = await db.ManualPayments.AsNoTracking()
+            .Where(p => p.AccountId == accountId && !p.IsDeleted && p.Status == FinancialRecordStatus.Active && p.PaidAt >= from && p.PaidAt < to && p.DocumentId != null && budgetIds.Contains(p.DocumentId.Value))
+            .ToListAsync(ct);
+        var receivedById = payments.GroupBy(p => p.DocumentId!.Value).ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
+        var rows = documents.Select(x => new ApprovedBudgetRow(x.Id, x.ClientName, x.Total, ConversionReportRules.IsConvertedStatus(x.Status), x.ConvertedReceiptId is not null, receivedById.GetValueOrDefault(x.Id), x.CreatedAt, x.ClientDecisionAt, x.UpdatedAt)).ToArray();
+        return new("Conversão comercial", ConversionReportRules.BuildMetrics(rows), ConversionReportRules.BuildClientRows(rows));
     }
 
     public async Task<IntelligenceReport> FinancialAsync(ReportFilter f, CancellationToken ct)

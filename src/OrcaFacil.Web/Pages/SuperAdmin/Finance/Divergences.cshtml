@@ -1,0 +1,122 @@
+@page
+@model OrcaFacil.Web.Pages.SuperAdmin.Finance.DivergencesModel
+@{
+    ViewData["Title"] = "Divergências financeiras";
+    string Severity(OrcaFacil.Application.Commercial.FinancialDivergenceSeverity severity) => severity switch
+    {
+        OrcaFacil.Application.Commercial.FinancialDivergenceSeverity.Critical => "Crítica",
+        OrcaFacil.Application.Commercial.FinancialDivergenceSeverity.High => "Alta",
+        OrcaFacil.Application.Commercial.FinancialDivergenceSeverity.Medium => "Média",
+        _ => "Baixa"
+    };
+}
+<main class="page-shell">
+    <header class="page-hero">
+        <nav class="breadcrumb"><a asp-page="/SuperAdmin/Index">SuperAdmin</a> / Financeiro</nav>
+        <p class="of-eyebrow">Integridade financeira</p>
+        <h1>Divergências de vínculo financeiro</h1>
+        <p>Diagnóstico não destrutivo do histórico de orçamento, ordem, recebimento e recibo. Nenhum registro é alterado automaticamente; cada ocorrência exige revisão autorizada e auditada.</p>
+    </header>
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="form-panel" role="status">@success</div>
+    }
+
+    <section class="of-metric-grid" aria-label="Resumo do diagnóstico">
+        <article class="metric-card"><span>Contas analisadas</span><strong>@Model.Report.ScannedAccounts</strong></article>
+        <article class="metric-card"><span>Críticas</span><strong>@Model.Report.CriticalCount</strong></article>
+        <article class="metric-card"><span>Altas</span><strong>@Model.Report.HighCount</strong></article>
+        <article class="metric-card"><span>Médias</span><strong>@Model.Report.MediumCount</strong></article>
+        <article class="metric-card"><span>Valor afetado (referência)</span><strong>@Model.Report.AffectedAmount.ToString("C")</strong></article>
+    </section>
+
+    <section class="form-panel">
+        <form method="get" class="action-bar">
+            <label for="accountId">Filtrar por conta</label>
+            <select id="accountId" name="accountId">
+                <option value="">Toda a plataforma</option>
+                @foreach (var account in Model.Accounts)
+                {
+                    <option value="@account.Value" selected="@(Model.AccountId == account.Value)">@account.Label</option>
+                }
+            </select>
+            <button type="submit" class="of-button of-button-secondary">Analisar</button>
+        </form>
+        @if (Model.Report.Truncated)
+        {
+            <p role="alert">A varredura da plataforma atingiu o limite de segurança e pode estar incompleta. Analise conta por conta para o diagnóstico integral.</p>
+        }
+    </section>
+
+    @if (!Model.Report.HasFindings)
+    {
+        <section class="form-panel">
+            <div class="empty-state">
+                <h2>Nenhuma divergência encontrada</h2>
+                <p>Os vínculos financeiros analisados estão consistentes com as regras atuais de origem contratual.</p>
+            </div>
+        </section>
+    }
+    else
+    {
+        <section class="form-panel">
+            <div class="action-bar"><h2>@Model.Report.Findings.Count ocorrência(s)</h2></div>
+            <div class="responsive-table">
+                <div class="of-responsive-table"><table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Severidade</th>
+                            <th>Tipo</th>
+                            <th>Conta</th>
+                            <th>Origem</th>
+                            <th>Valor</th>
+                            <th>Risco operacional</th>
+                            <th>Ação recomendada</th>
+                            <th>Revisão</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var finding in Model.Report.Findings)
+                    {
+                        <tr>
+                            <td>@Severity(finding.Severity)</td>
+                            <td>
+                                <strong>@finding.TypeLabel</strong><br />
+                                <code>@finding.FindingId</code>
+                            </td>
+                            <td>@finding.AccountName</td>
+                            <td>@finding.Origin</td>
+                            <td>@finding.Amount.ToString("C")</td>
+                            <td>@finding.Risk</td>
+                            <td>@finding.RecommendedAction</td>
+                            <td>
+                                @if (Model.ReviewedFindings.TryGetValue(finding.FindingId, out var reviewed))
+                                {
+                                    <p role="status">Revisado: @reviewed</p>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-page-handler="Review">
+                                        <input type="hidden" name="FindingId" value="@finding.FindingId" />
+                                        <input type="hidden" name="OccurrenceId" value="@finding.OccurrenceId" />
+                                        <input type="hidden" name="FindingAccountId" value="@finding.AccountId" />
+                                        <select name="Decision" aria-label="Decisão da revisão">
+                                            @foreach (var decision in OrcaFacil.Web.Pages.SuperAdmin.Finance.DivergencesModel.ReviewDecisions)
+                                            {
+                                                <option value="@decision">@decision</option>
+                                            }
+                                        </select>
+                                        <input name="Note" type="text" maxlength="2000" aria-label="Justificativa" placeholder="Justificativa obrigatória" />
+                                        <button type="submit" class="of-button of-button-secondary">Registrar revisão</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table></div>
+            </div>
+        </section>
+    }
+</main>

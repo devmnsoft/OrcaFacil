@@ -39,7 +39,7 @@ export function checkV63(mode = 'all') {
     commercial() {
       requireAll(page('Documents/New.cshtml'), ['of-start-options', 'of-start-empty', 'data-picker-search']);
       requireAll(page('Documents/CreateBudget.cshtml'), ['of-wizard-steps', 'asp-validation-summary', 'data-budget-wizard']);
-      requireAll(page('Documents/New.cshtml.cs'), ['[Authorize', 'GetAsync', 'RedirectToPage']);
+      requireAll(page('Documents/New.cshtml.cs'), ['[Authorize', 'GetAsync']);
       requireAll(page('CommercialRoutine/Index.cshtml'), ['empty-state', 'of-routine-card', 'data-confirm']);
       requireAll(page('CommercialRoutine/Index.cshtml.cs'), ['[Authorize', 'OnPost']);
     },

@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Plans;
 using OrcaFacil.Application.Security;
 using OrcaFacil.Domain.Entities;
+using OrcaFacil.Domain.Plans;
 using OrcaFacil.Persistence;
 
 namespace OrcaFacil.Web.Pages.Templates;
@@ -15,12 +17,14 @@ public class IndexModel : PageModel
     private readonly OrcaFacilDbContext _db;
     private readonly ICurrentAccountService _currentAccount;
     private readonly IAuditService _audit;
+    private readonly IPlanAccessService _plans;
 
-    public IndexModel(OrcaFacilDbContext db, ICurrentAccountService currentAccount, IAuditService audit)
+    public IndexModel(OrcaFacilDbContext db, ICurrentAccountService currentAccount, IAuditService audit, IPlanAccessService plans)
     {
         _db = db;
         _currentAccount = currentAccount;
         _audit = audit;
+        _plans = plans;
     }
 
     public IReadOnlyList<BudgetTemplate> AccountTemplates { get; private set; } = [];

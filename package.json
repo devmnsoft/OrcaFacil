@@ -50,6 +50,7 @@
     "check:authenticated-navigation": "node scripts/check-authenticated-navigation.mjs",
     "check:routes": "node scripts/check-routes.mjs",
     "check:razor-pages": "node scripts/check-razor-pages.mjs",
+    "check:mobile-app": "node scripts/check-mobile-app.mjs",
     "check:open-features": "node scripts/check-open-features.mjs",
     "check:release-readiness": "node scripts/check-release-readiness.mjs",
     "check:authenticated-ui": "node scripts/check-authenticated-ui-legacy-dependencies.mjs",
@@ -103,6 +104,7 @@
     "check:pdf-real": "node scripts/check-pdf-real.mjs",
     "check:public-document-safety": "node scripts/check-public-document-safety.mjs",
     "check:privacy-compliance": "node scripts/check-privacy-compliance.mjs",
+    "check:data-export": "node scripts/check-data-export.mjs",
     "check:lgpd-flows": "node scripts/check-lgpd-flows.mjs",
     "check:audit-sanitization": "node scripts/check-audit-sanitization.mjs",
     "check:sensitive-data": "node scripts/check-sensitive-data.mjs",
@@ -262,6 +264,8 @@
     "check:growth-revenue": "node scripts/check-growth-revenue.mjs",
     "check:no-fake-growth": "node scripts/check-no-fake-growth.mjs",
     "check:public-site": "node scripts/check-public-site.mjs",
+    "check:pwa": "node scripts/check-pwa.mjs",
+    "check:feature-gates": "node scripts/check-feature-gates.mjs",
     "check:seo-technical": "node scripts/check-seo-technical.mjs",
     "check:sitemap-robots": "node scripts/check-sitemap-robots.mjs",
     "check:structured-data": "node scripts/check-structured-data.mjs",
@@ -311,6 +315,14 @@
     "check:web-chat": "node scripts/check-web-chat.mjs",
     "check:inbound-email": "node scripts/check-inbound-email.mjs",
     "check:whatsapp-control": "node scripts/check-whatsapp-control.mjs",
+    "check:whatsapp-api": "node scripts/check-whatsapp-api.mjs",
+    "check:work-orders": "node scripts/check-work-orders.mjs",
+    "check:recurring-billing": "node scripts/check-recurring-billing.mjs",
+    "check:receivable-reminder": "node scripts/check-receivable-reminder.mjs",
+    "check:fiscal-flow": "node scripts/check-fiscal-flow.mjs",
+    "check:accounting-export": "node scripts/check-accounting-export.mjs",
+    "check:conversion-report": "node scripts/check-conversion-report.mjs",
+    "check:additional-seats": "node scripts/check-additional-seats.mjs",
     "check:omnichannel-routing": "node scripts/check-omnichannel-routing.mjs",
     "check:omnichannel-sla": "node scripts/check-omnichannel-sla.mjs",
     "check:conversation-to-ticket": "node scripts/check-conversation-to-ticket.mjs",
@@ -645,10 +657,10 @@
   "engines": {
     "node": ">=18"
   },
-  "dependencies": {},
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "esbuild": "latest",
-    "terser": "latest",
-    "javascript-obfuscator": "latest"
+    "javascript-obfuscator": "latest",
+    "terser": "latest"
   }
 }

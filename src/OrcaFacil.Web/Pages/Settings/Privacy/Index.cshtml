@@ -9,6 +9,7 @@
   <span class="risk-badge risk-ok">Dados protegidos por conta</span>
 </header>
 @if (TempData["Success"] is string success) { <div class="privacy-notice" role="status">@success</div> }
+@if (TempData["Error"] is string error) { <div class="privacy-notice" role="alert" style="border-color:#f0a9a9;background:#fdecec;color:#8b2424">@error</div> }
 <section class="privacy-metrics" aria-label="Resumo dos dados pessoais">
   <article><strong>@Model.ClientsWithDocument</strong><span>clientes com documento</span></article>
   <article><strong>@Model.ClientsWithEmail</strong><span>clientes com e-mail</span></article>
@@ -17,6 +18,23 @@
   <article><strong>@Model.ActivePublicLinks</strong><span>links públicos ativos</span></article>
   <article><strong>@Model.OpenRequests</strong><span>solicitações abertas</span></article>
 </section>
+@if (Model.CanExport)
+{
+<section class="privacy-panel" style="margin-top:1rem">
+  <div class="panel-heading"><div><h2>Exportar meus dados (backup)</h2><p>Gere uma cópia em JSON dos dados da conta para guardar ou levar com você. O arquivo expira e nunca inclui senha, hash, token ou segredo.</p></div></div>
+  <form method="get" asp-page-handler="Export" class="privacy-form">
+    @if (Model.CanExportFinancial)
+    {
+      <label style="display:inline-flex;gap:.5rem;align-items:center"><input type="checkbox" name="includeFinancial" value="true" /> Incluir dados financeiros (lançamentos/recebíveis)</label>
+    }
+    else
+    {
+      <p style="color:#5a6b7d;font-size:.85rem">Dados financeiros não serão incluídos (exige permissão financeira).</p>
+    }
+    <button type="submit" class="of-btn of-btn-primary">Baixar backup (JSON)</button>
+  </form>
+</section>
+}
 <div class="privacy-columns">
 <section class="privacy-panel"><div class="panel-heading"><div><h2>Seus consentimentos</h2><p>Nenhum aceite é feito automaticamente.</p></div></div>
 @if (Model.Consents.Count == 0) { <div class="empty-state"><strong>Nenhum aceite registrado</strong><span>Revise cada finalidade antes de aceitar.</span></div> }

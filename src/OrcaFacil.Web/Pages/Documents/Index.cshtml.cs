@@ -20,7 +20,7 @@ public sealed class IndexModel(IQuoteWorkspaceService quotes, OrcaFacilDbContext
     [BindProperty(SupportsGet = true)] public DateTime? To { get; set; }
     [BindProperty(SupportsGet = true)] public decimal? Minimum { get; set; }
     [BindProperty(SupportsGet = true)] public decimal? Maximum { get; set; }
-    [BindProperty(SupportsGet = true)] public string Sort { get; set; } = "newest";
+    [BindProperty(SupportsGet = true)] public string? Sort { get; set; } = "newest";
     [BindProperty(SupportsGet = true)] public int CurrentPage { get; set; } = 1;
 
     public PagedResult<QuoteWorkspaceItem> Quotes { get; private set; } = new([], 0, 1, 20);

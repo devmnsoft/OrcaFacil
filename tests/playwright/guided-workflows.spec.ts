@@ -17,5 +17,5 @@ test('navegação mobile abre folha de criação', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.getByRole('button', { name: 'Novo' }).click();
   await expect(page.getByRole('dialog', { name: /O que você quer criar/i })).toBeVisible();
-  await expect(page.getByText('Prepare uma proposta com serviços')).toBeVisible();
+  await expect(page.getByText('Escolha cliente, serviço, modelo ou rascunho.')).toBeVisible();
 });

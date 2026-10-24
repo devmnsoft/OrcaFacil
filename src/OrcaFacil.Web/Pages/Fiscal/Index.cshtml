@@ -1,0 +1,129 @@
+@page "/Fiscal"
+@model OrcaFacil.Web.Pages.Fiscal.IndexModel
+@section Styles { <link rel="stylesheet" href="~/css/documents.css" asp-append-version="true" /> }
+@{ ViewData["Title"] = "Fiscal"; }
+<partial name="Partials/_PageIntro" model='new PageIntroViewModel("Integração fiscal", "Fiscal", "Solicite e registre as notas fiscais dos valores já recebidos, em controle manual auditado.", "document", WhatThisPageDoes: "Vincula recebíveis pagos às suas notas fiscais e mostra o que ainda foi recebido sem nota. O sistema registra o número e a chave informados por quem emitiu — nunca fabrica dados fiscais.", NextStepText: "Solicite uma nota para um recebível pago e, depois, registre o número emitido.")' />
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <p class="of-alert" role="alert" style="border-color:#f0a9a9;background:#fdecec;color:#8b2424;border-radius:12px">@Model.ErrorMessage</p>
+}
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <p class="of-alert" role="status" style="border-color:#9fdcb2;background:#eafaf0;color:#17643b;border-radius:12px">@Model.SuccessMessage</p>
+}
+
+<section style="display:flex;gap:16px;flex-wrap:wrap;margin:1rem 0">
+    <div class="of-panel" style="flex:1;min-width:180px"><span class="of-status">@Model.OpenCount</span><p>Solicitações abertas</p></div>
+    <div class="of-panel" style="flex:1;min-width:180px"><span class="of-status">@Model.IssuedCount</span><p>Notas emitidas</p></div>
+    <div class="of-panel" style="flex:1;min-width:180px;border-left:3px solid #e0a12b"><span class="of-status">@Model.UnfiscalizedCount</span><p>Recebido sem nota fiscal</p></div>
+</section>
+
+<section class="of-panel" style="margin-top:1rem">
+    <h2>Pacote para a contabilidade</h2>
+    <p style="color:#5a6b7d;font-size:.88rem">Baixe os documentos fiscais <strong>emitidos</strong> desta conta em CSV ou JSON, prontos para o contador importar e conciliar. Dá para limitar o período por competência (data de emissão no fuso comercial). @OrcaFacil.Application.Fiscal.FiscalRules.AccountingDisclaimer</p>
+    @if (Model.IssuedCount == 0)
+    {
+        <p style="color:#5a6b7d;font-size:.88rem;margin-top:.5rem">Ainda não há notas emitidas para exportar.</p>
+    }
+    else
+    {
+        <form method="get" asp-page-handler="Export" style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-end;max-width:72ch;margin-top:.6rem">
+            <label style="display:grid;gap:.25rem;font-size:.85rem">De (competência)<input type="date" name="desde" /></label>
+            <label style="display:grid;gap:.25rem;font-size:.85rem">Até<input type="date" name="ate" /></label>
+            <div style="display:flex;gap:.5rem">
+                <button type="submit" name="format" value="csv" class="of-button">Baixar CSV</button>
+                <button type="submit" name="format" value="json" class="of-button">Baixar JSON</button>
+            </div>
+        </form>
+    }
+</section>
+
+<section class="of-panel" style="margin-top:1rem">
+    <h2>Solicitar nota para um recebível pago</h2>
+    @if (Model.Receivables.Count == 0)
+    {
+        <p>Nenhum recebível com valor recebido disponível. Registre um pagamento primeiro.</p>
+    }
+    else
+    {
+        <form method="post" asp-page-handler="Request" style="display:grid;gap:.75rem;max-width:52ch">
+            <label>Recebível
+                <select name="receivableId" required>
+                    <option value="" disabled selected>Escolha um recebível pago…</option>
+                    @foreach (var r in Model.Receivables)
+                    {
+                        <option value="@r.Id">@r.Label</option>
+                    }
+                </select>
+            </label>
+            <label>Tipo de documento <input type="text" name="docType" value="NFS-e" maxlength="40" /></label>
+            <label>Observações <textarea name="notes" rows="2" maxlength="500"></textarea></label>
+            <button type="submit" class="of-button">Solicitar nota</button>
+        </form>
+    }
+</section>
+
+<section class="of-panel" style="margin-top:1rem">
+    <h2>Solicitações</h2>
+    @if (Model.Items.Count == 0)
+    {
+        <partial name="Partials/_EmptyState" model='new EmptyStateViewModel { Icon="document", Title="Nenhuma solicitação de nota", Text="Escolha um recebível pago acima e solicite a emissão da nota fiscal." }' />
+    }
+    else
+    {
+        foreach (var item in Model.Items)
+        {
+            <article style="border:1px solid #dbe4ee;border-radius:12px;padding:1rem;margin-bottom:.9rem">
+                <div style="display:flex;justify-content:space-between;gap:.75rem;align-items:flex-start;flex-wrap:wrap">
+                    <div>
+                        <span class="@item.StatusBadge">@item.StatusLabel</span>
+                        <h3>@item.Description <small>@item.ClientName · @item.DocType</small></h3>
+                        <p>Recebido: <strong>@item.Received.ToString("C")</strong> · solicitado em @item.RequestedAt.ToString("dd/MM/yyyy")</p>
+                        @if (item.IsIssued)
+                        {
+                            <p>Nº <strong>@item.Number</strong>@(string.IsNullOrEmpty(item.KeyMasked) ? "" : $" · chave {item.KeyMasked}")@((item.IssuedAt.HasValue) ? $" · emitida em {item.IssuedAt.Value.ToString("dd/MM/yyyy")}" : "")</p>
+                        }
+                    </div>
+                </div>
+
+                @if (item.IsOpen)
+                {
+                    <details style="margin-top:.75rem">
+                        <summary class="of-button">Registrar emissão</summary>
+                        <form method="post" asp-page-handler="Issue" style="display:grid;gap:.6rem;max-width:60ch;margin-top:.5rem">
+                            <input type="hidden" name="requestId" value="@item.Id" />
+                            <label>Número do documento <input type="text" name="number" required maxlength="40" /></label>
+                            <label>Chave de acesso (opcional) <input type="text" name="key" maxlength="80" /></label>
+                            <label>Data de emissão <input type="date" name="date" /></label>
+                            <label>Motivo auditável (mín. 10 caracteres) <input type="text" name="justification" required minlength="10" maxlength="500" /></label>
+                            <button type="submit" class="of-button">Registrar como emitida</button>
+                        </form>
+                    </details>
+
+                    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem">
+                        <form method="post" asp-page-handler="Cancel" style="display:flex;gap:.5rem;align-items:center">
+                            <input type="hidden" name="requestId" value="@item.Id" />
+                            <input type="text" name="reason" aria-label="Motivo do cancelamento (mínimo 10 caracteres)" placeholder="Motivo do cancelamento (mín. 10)" required minlength="10" maxlength="500" />
+                            <button type="submit" class="of-button">Cancelar</button>
+                        </form>
+                        <form method="post" asp-page-handler="NotRequired" style="display:flex;gap:.5rem;align-items:center">
+                            <input type="hidden" name="requestId" value="@item.Id" />
+                            <input type="text" name="reason" aria-label="Por que não precisa de nota (mínimo 10 caracteres)" placeholder="Por que não precisa de nota? (mín. 10)" required minlength="10" maxlength="500" />
+                            <button type="submit" class="of-button">Sem necessidade</button>
+                        </form>
+                    </div>
+                }
+                else if (item.IsIssued)
+                {
+                    <form method="post" asp-page-handler="Cancel" style="display:flex;gap:.5rem;align-items:center;margin-top:.6rem;max-width:60ch">
+                        <input type="hidden" name="requestId" value="@item.Id" />
+                        <input type="text" name="reason" aria-label="Motivo do cancelamento (mínimo 10 caracteres)" placeholder="Motivo do cancelamento (mín. 10)" required minlength="10" maxlength="500" />
+                        <button type="submit" class="of-button">Cancelar nota</button>
+                    </form>
+                }
+            </article>
+        }
+    }
+    <p style="color:#5a6b7d;font-size:.82rem;margin-top:.75rem">@OrcaFacil.Application.Fiscal.FiscalRules.AccountingDisclaimer</p>
+</section>

@@ -51,8 +51,7 @@ commandRail?.addEventListener('keydown', (event) => {
   commandToggle?.focus({ preventScroll: true });
 });
 
-const shareCenter = document.querySelector('[data-share-center]');
-if (shareCenter) {
+document.querySelectorAll('[data-share-center]').forEach((shareCenter) => {
   const message = shareCenter.querySelector('[data-share-message]');
   const encode = () => encodeURIComponent(message.value);
   const update = () => {
@@ -64,7 +63,7 @@ if (shareCenter) {
     await navigator.clipboard.writeText(message.value);
     event.currentTarget.textContent = 'Mensagem copiada';
   });
-}
+});
 
 const tabList = document.querySelector('[data-workspace-tabs]');
 if (tabList) {

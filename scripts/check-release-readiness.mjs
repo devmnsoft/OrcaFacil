@@ -17,7 +17,7 @@ if (/Password\s*=|Host=.*;|postgres:\/\//i.test(serialized)) {
   process.exit(1);
 }
 for (const check of ['check:js-safety', 'check:public-navigation', 'check:authenticated-navigation', 'check:routes', 'check:razor-pages', 'check:open-features', 'check:design-consistency', 'check:persona-flows']) {
-  const result = spawnSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', check], { stdio: 'inherit' });
+  const result = spawnSync(`npm run ${check}`, { stdio: 'inherit', shell: process.platform === 'win32' });
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 console.log('Release readiness: artefatos operacionais, configuração e verificações estáticas aprovados.');

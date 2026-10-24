@@ -83,6 +83,10 @@ public sealed class WorkOrder : Entity
     public DateTime? CompletedAt { get; set; }
     public DateTime? CancelledAt { get; set; }
     public string? CancellationReason { get; set; }
+    public WorkOrderWaitReason WaitReason { get; set; } = WorkOrderWaitReason.None;
+    public DateTime? WaitingSince { get; set; }
+    public string? WaitNote { get; set; }
+    public DateTime? OverdueMarkedAt { get; set; }
     public Guid? AssignedUserId { get; set; }
     public string AddressSnapshot { get; set; } = "{}";
     public string ClientSnapshot { get; set; } = "{}";
@@ -148,6 +152,10 @@ public sealed class FinancialEntry : Entity
     public DateTime? CanceledAt { get; set; }
     public Guid? CanceledByUserId { get; set; }
     public string? CancellationReason { get; set; }
+    /// <summary>Civil date (business zone) of the last dunning reminder actually dispatched to this receivable.</summary>
+    public DateOnly? LastReminderAt { get; set; }
+    /// <summary>How many times this receivable has been reminded; bounded to avoid endless dunning.</summary>
+    public int ReminderCount { get; set; }
 }
 
 public sealed class Receipt : Entity

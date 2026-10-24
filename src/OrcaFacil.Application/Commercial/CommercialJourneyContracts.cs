@@ -32,6 +32,7 @@ public interface ICommercialJourneyService
     Task<WorkOrderResult> StartAsync(Guid workOrderId, CancellationToken ct = default);
     Task<WorkOrderResult> PauseAsync(Guid workOrderId, CancellationToken ct = default);
     Task<WorkOrderResult> ResumeAsync(Guid workOrderId, CancellationToken ct = default);
+    Task<WorkOrderResult> WaitAsync(Guid workOrderId, WorkOrderWaitReason reason, string? note, CancellationToken ct = default);
     Task<WorkOrderResult> CompleteAsync(Guid workOrderId, string? notes, CancellationToken ct = default);
     Task<WorkOrderResult> CancelAsync(Guid workOrderId, string reason, CancellationToken ct = default);
     Task<ReceiptGenerationResult> GenerateReceiptAsync(Guid paymentId, CancellationToken ct = default);

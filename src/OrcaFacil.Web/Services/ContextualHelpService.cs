@@ -5,6 +5,8 @@ public interface IContextualHelpService
     HelpContentDefinition? Find(string code);
     Task<HelpContentDefinition?> GetAsync(string code, CancellationToken cancellationToken = default);
     IReadOnlyList<HelpContentDefinition> ForPage(string page);
+    HelpContentDefinition? ForPath(string path);
+    IReadOnlyList<HelpContentDefinition> All();
 }
 
 public sealed class ContextualHelpService : IContextualHelpService
@@ -29,16 +31,59 @@ public sealed class ContextualHelpService : IContextualHelpService
         Help("payment", "Registrar pagamento", "Informe um recebimento ligado à ordem.", "Após a execução ou conforme a condição acordada.", "Confira valor previsto, já registrado e saldo.", ["Informe valor, método e data.", "Adicione uma observação útil.", "Confirme o registro."], "Este registro é informado por você e não representa confirmação bancária automática.", ["Não registre novamente ao recarregar; a operação é idempotente."], "O recibo pode ser emitido após a confirmação.", "/Payments/Register"),
         Help("receipt", "Recibo", "Comprove o pagamento informado na operação.", "Depois de registrar o pagamento.", "Revise emitente, cliente, valor e serviço.", ["Confira a prévia.", "Gere ou baixe o PDF.", "Compartilhe com o cliente."], "O valor também aparece por extenso.", ["O recibo não substitui documento fiscal quando exigido."], "O evento aparece no histórico do cliente e da ordem.", "/Receipts/Details"),
         Help("my-plan", "Meu plano", "Entenda benefícios, uso, limites e regularização.", "Antes de usar um recurso ou ao receber um aviso de limite.", "Confira o plano escolhido e o disponível agora.", ["Veja os usos.", "Compare planos.", "Regularize benefícios pausados quando necessário."], "No fallback Grátis, seus dados continuam preservados.", ["Plano escolhido e plano efetivo podem ser diferentes durante suspensão."], "A regularização restaura benefícios automaticamente.", "/Subscription/Index"),
-        Help("admin.dashboard", "Central operacional", "Monitore contas, receita, filas, erros e saúde.", "Na rotina do SuperAdministrador.", "Use uma conta com autorização de plataforma.", ["Revise alertas prioritários.", "Abra a conta afetada.", "Audite a ação tomada."], "Uma outbox acumulada exige verificar SMTP e worker.", ["Não trate readiness estático como evidência de saúde."], "A Conta 360 reúne a investigação.", "/Admin/Index"),
+        Help("admin.dashboard", "Central operacional", "Monitore contas, receita, filas, erros e saúde.", "Na rotina do SuperAdministrador.", "Use uma conta com autorização de plataforma.", ["Revise alertas prioritários.", "Abra a conta afetada.", "Audite a ação tomada."], "Uma outbox acumulada exige verificar SMTP e worker.", ["Não trate readiness estático como evidência de saúde."], "A conta reúne a investigação.", "/Admin/Index"),
         Help("admin.account360", "Conta 360", "Investigue plano, uso, financeiro e operação em um só lugar.", "Ao atender ou auditar uma conta.", "Localize a conta pela busca administrativa.", ["Escolha a aba.", "Consulte dados paginados.", "Execute ações autorizadas e registre o motivo."], "Compare plano escolhido, efetivo, consumo e pagamentos.", ["PII permanece mascarada sem permissão de revelação."], "Toda ação sensível produz auditoria.", "/Admin/Accounts/Details"),
         Help("admin.payments", "Pagamentos da plataforma", "Acompanhe cobranças e eventos financeiros.", "Ao conciliar ou investigar uma suspensão.", "Tenha identificador da conta ou pagamento.", ["Filtre o período e status.", "Abra o pagamento.", "Compare eventos e assinatura."], "Pagamento pendente pode manter carência antes do fallback.", ["Não confunda pagamento manual de ordem com cobrança do plano."], "Uma correção atualiza a experiência de plano.", "/Admin/Payments/Index"),
         Help("admin.health", "Saúde da plataforma", "Verifique dependências reais da operação.", "Diante de readiness degradado, filas ou erros.", "Tenha acesso operacional autorizado.", ["Confira banco, schema e migrations.", "Valide SMTP, outbox e workers.", "Correlacione erros antes de agir."], "Banco saudável com worker parado ainda degrada envios.", ["Nunca exponha segredos ou PII em diagnósticos."], "Registre a investigação e acompanhe a recuperação.", "/Admin/Health/Index"),
-        Help("golive", "Checklist de go-live", "Reúna evidências reais antes de liberar a conta.", "Durante implantação, piloto e publicação.", "Selecione a conta correta e confirme seu perfil.", ["Resolva primeiro os itens críticos.", "Registre responsável e observação nos itens manuais.", "Solicite readiness somente após revisar as evidências."], "Backup e console exigem verificação humana documentada.", ["Não marque uma verificação que ainda não foi executada.", "Itens automáticos não aceitam confirmação manual."], "A conta poderá avançar ao piloto quando não houver bloqueios.", "/GoLive/Checklist")
+        Help("golive", "Checklist de go-live", "Reúna evidências reais antes de liberar a conta.", "Durante implantação, piloto e publicação.", "Selecione a conta correta e confirme seu perfil.", ["Resolva primeiro os itens críticos.", "Registre responsável e observação nos itens manuais.", "Solicite readiness somente após revisar as evidências."], "Backup e console exigem verificação humana documentada.", ["Não marque uma verificação que ainda não foi executada.", "Itens automáticos não aceitam confirmação manual."], "A conta poderá avançar ao piloto quando não houver bloqueios.", "/GoLive/Checklist"),
+        Help("reports", "Relatorios", "Acompanhe desempenho, receita e conversao.", "Em revisoes periodicas do negocio.", "Confira o periodo e a conta correta.", ["Escolha o periodo.", "Leia os indicadores.", "Exporte quando necessario."], "Relatorios basicos estao disponiveis no Profissional; avancados no Negocio.", ["Dados sem registro nao aparecem no periodo."], "Use os numeros para ajustar precos e metas.", "/Reports/Index"),
+        Help("exports", "Exportacao", "Baixe dados em CSV para analise externa.", "Quando precisar de planilhas ou auditoria.", "Confirme o periodo e os filtros.", ["Escolha o formato.", "Filtre os dados.", "Baixe o arquivo."], "Exporte antes de fechar o mes para manter historico.", ["Arquivos grandes podem levar alguns segundos."], "O arquivo reflete os filtros aplicados.", "/Exports/Index"),
+        Help("analytics", "Indicadores comerciais", "Visualize metricas de vendas e execucao.", "Em reunioes de gestao ou revisao semanal.", "Tenha propostas e ordens atualizadas.", ["Escolha o periodo.", "Compare metricas.", "Identifique gargalos."], "Aproveitamento alto com baixa conversao pede revisao de preco.", ["Metricas usam dados confirmados no sistema."], "Use os indicadores para ajustar o funil.", "/Analytics/Index"),
+        Help("commercial-pipeline", "Pipeline comercial", "Veja oportunidades por estagio.", "Em revisoes diarias de vendas.", "Mantenha propostas e decisoes atualizadas.", ["Observe as colunas.", "Identifique itens sem atividade.", "Abra a proxima acao."], "Visualizado sugere acompanhamento; aprovado permite criar ordem.", ["O estagio vem do backend e nao muda por arrastar cartoes."], "A timeline registra a evolucao.", "/CommercialPipeline/Index"),
+        Help("commercial-routine", "Rotina comercial", "Organize acompanhamentos e retornos.", "Na rotina diaria de vendas.", "Tenha propostas pendentes de retorno.", ["Agende acompanhamentos.", "Adie ou conclua conforme o cliente.", "Priorize itens vencidos."], "Acompanhamento concluido registra o resultado.", ["Nao deixe itens sem data de retorno."], "O historico fica vinculado ao cliente e ao orcamento.", "/CommercialRoutine/Index"),
+        Help("settings", "Configuracoes", "Ajuste dados da conta, emitente e preferencias.", "Ao configurar ou atualizar a conta.", "Confirme a conta selecionada.", ["Revise emitente e contato.", "Ajuste preferencias.", "Salve as alteracoes."], "Mantenha CNPJ e dados fiscais corretos.", ["Alteracoes afetam novos documentos emitidos."], "Os dados sao usados em propostas e recibos.", "/Settings/Index"),
+        Help("profile", "Meu perfil", "Atualize seus dados pessoais e de acesso.", "Ao entrar pela primeira vez ou mudar de responsavel.", "Tenha seus dados a mao.", ["Revise nome e contato.", "Atualize senha se necessario.", "Salve as alteracoes."], "Use um e-mail valido para recuperacao.", ["Nao compartilhe sua senha."], "As alteracoes valem no proximo acesso.", "/Profile/Index"),
+        Help("alerts", "Alertas", "Acompanhe avisos importantes da conta.", "Na rotina diaria.", "Revise alertas pendentes.", ["Leia cada alerta.", "Resolva a causa.", "Marque como lido."], "Alertas criticos pedem acao imediata.", ["Ignorar alertas pode gerar pendencias."], "O historico de alertas fica disponivel.", "/Alerts/Index"),
+        Help("notifications", "Notificacoes", "Gerencie avisos e comunicacoes da conta.", "Ao receber novas notificacoes.", "Confira as nao lidas.", ["Leia as notificacoes.", "Ajuste preferencias.", "Marque como lidas."], "Notificacoes importantes nao devem ser desativadas.", ["Desativar pode ocultar avisos de pagamento."], "As preferencias sao salvas por conta.", "/Notifications/Index"),
+        Help("receivables", "Recebiveis", "Acompanhe valores a receber e vencidos.", "Na gestao financeira.", "Tenha ordens e pagamentos atualizados.", ["Filtre por status.", "Identifique vencidos.", "Registre o pagamento."], "Valores vencidos pedem contato com o cliente.", ["Nao confunda previsto com recebido."], "O saldo atualiza apos cada pagamento.", "/Receivables/Index"),
+        Help("receipts", "Recibos", "Emita comprovantes de pagamento.", "Apos registrar um pagamento.", "Confira valor, cliente e servico.", ["Revise a previa.", "Gere o PDF.", "Compartilhe com o cliente."], "O recibo nao substitui documento fiscal quando exigido.", ["Verifique os dados antes de gerar."], "O evento entra no historico.", "/Receipts/Index"),
+        Help("contracts", "Contratos", "Gerencie contratos e termos comerciais.", "Quando formalizar uma relacao comercial.", "Tenha os dados do cliente e servico.", ["Crie ou edite o contrato.", "Revise clausulas.", "Salve e vincule ao cliente."], "Contratos assinados preservam condicoes.", ["Revise antes de enviar ao cliente."], "O contrato fica vinculado ao cliente.", "/Contracts/Index"),
+        Help("cashflow", "Fluxo de caixa", "Visualize entradas e saidas.", "Na gestao financeira.", "Tenha pagamentos e despesas registrados.", ["Escolha o periodo.", "Analise entradas e saidas.", "Identifique tendencias."], "Saldo negativo pede acao imediata.", ["Dados incompletos distorcem o saldo."], "Use para planejar o mes.", "/CashFlow/Index")
     ];
 
     public HelpContentDefinition? Find(string code) => Content.FirstOrDefault(x => x.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
     public Task<HelpContentDefinition?> GetAsync(string code, CancellationToken cancellationToken = default) => Task.FromResult(Find(code));
     public IReadOnlyList<HelpContentDefinition> ForPage(string page) => Content.Where(x => x.RelatedPage.Equals(page, StringComparison.OrdinalIgnoreCase)).ToArray();
+
+    // O layout resolve o guia pela rota atual. Detalhes como /Documents/Details/{id} e
+    // /Receipts/Details/{id} herdam o guia da página-mãe, e o código só precisa ser
+    // explícito quando a tela tem mais de um guia (etapas do orçamento).
+    public HelpContentDefinition? ForPath(string path)
+    {
+        var normalized = NormalizePath(path);
+        if (normalized.Length == 0) return null;
+
+        return Content
+            .Where(x => MatchesPath(normalized, x.RelatedPage))
+            .OrderByDescending(x => x.RelatedPage.Length)
+            .FirstOrDefault();
+    }
+
+    public IReadOnlyList<HelpContentDefinition> All() => Content.ToArray();
+
+    private static bool MatchesPath(string path, string relatedPage)
+    {
+        if (string.IsNullOrWhiteSpace(relatedPage)) return false;
+        return path.Equals(relatedPage, StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith(relatedPage + "/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizePath(string path)
+    {
+        var value = (path ?? string.Empty).Trim();
+        if (value.Length > 1) value = value.TrimEnd('/');
+        return value;
+    }
 
     private static HelpContentDefinition Help(string code, string title, string purpose, string whenToUse, string beforeStarting,
         IReadOnlyList<string> steps, string example, IReadOnlyList<string> commonErrors, string whatHappensNext, string relatedPage, string? requiredPlan = null) =>

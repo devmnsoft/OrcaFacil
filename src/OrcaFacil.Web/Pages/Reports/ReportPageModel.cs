@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Plans;
 using OrcaFacil.Persistence;
+using OrcaFacil.Web.Extensions;
 using OrcaFacil.Web.Services;
 
 namespace OrcaFacil.Web.Pages.Reports;
 
-public abstract class ReportPageModel(IIntelligenceReportService reports, ICurrentAccountService account, OrcaFacilDbContext db) : PageModel
+public abstract class ReportPageModel(IIntelligenceReportService reports, ICurrentAccountService account, IPlanAccessService plans, OrcaFacilDbContext db) : PageModel
 {
     [BindProperty(SupportsGet = true)] public DateTime? From { get; set; }
     [BindProperty(SupportsGet = true)] public DateTime? To { get; set; }
@@ -22,21 +24,37 @@ public abstract class ReportPageModel(IIntelligenceReportService reports, ICurre
     protected abstract Task<IntelligenceReport> LoadAsync(ReportFilter filter, CancellationToken ct);
     protected abstract string FilePrefix { get; }
 
-    public async Task OnGetAsync(CancellationToken ct)
+    /// <summary>Recurso do plano exigido para abrir este relatório (null = nenhum gate além do plano básico).</summary>
+    protected virtual string? RequiredFeature => null;
+
+    public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
         var accountId = account.AccountId ?? throw new UnauthorizedAccessException("Selecione uma conta para consultar relatórios.");
+        if (RequiredFeature is not null &&
+            !(await plans.CanUseAsync(accountId, RequiredFeature, ct)).IsAllowed)
+        {
+            TempData.Warning("Este indicador está disponível em planos superiores. Conheça os planos.");
+            return RedirectToPage("/Subscription/Index");
+        }
         Clients = await db.Clients.AsNoTracking()
             .Where(x => x.AccountId == accountId && !x.IsDeleted && x.IsActive)
             .OrderBy(x => x.Name)
             .Select(x => new ReportClientOption(x.Id, x.Name))
             .ToListAsync(ct);
 
-        if (!ValidatePeriod()) return;
+        if (!ValidatePeriod()) return Page();
         Report = await LoadAsync(Filter, ct);
+        return Page();
     }
 
     public async Task<IActionResult> OnGetExportAsync(CancellationToken ct)
     {
+        if (account.AccountId is { } exportingAccount && RequiredFeature is not null &&
+            !(await plans.CanUseAsync(exportingAccount, RequiredFeature, ct)).IsAllowed)
+        {
+            TempData.Warning("Este indicador está disponível em planos superiores. Conheça os planos.");
+            return RedirectToPage("/Subscription/Index");
+        }
         if (!ValidatePeriod())
         {
             TempData["Error"] = "Revise o período informado antes de exportar.";

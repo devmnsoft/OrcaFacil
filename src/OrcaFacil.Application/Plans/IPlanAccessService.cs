@@ -30,6 +30,8 @@ public interface IPlanAccessDataSource
     Task<AccountStatus?> GetAccountStatusAsync(Guid accountId, CancellationToken ct);
     Task<IReadOnlyList<PlanFeatureCandidate>> GetPublicPlanCandidatesAsync(string featureCode, DateTime utcNow, CancellationToken ct);
     Task<int> GetUsageAsync(Guid accountId, string featureCode, DateTime periodStartUtc, CancellationToken ct);
+    /// <summary>Incremento ativo de limite por código de recurso vindo de addons contratados pela conta.</summary>
+    Task<IReadOnlyDictionary<string, int>> GetAddonIncrementsAsync(Guid accountId, CancellationToken ct);
 }
 
 public sealed record PlanFeatureSetting(bool? Enabled = null, int? Limit = null, bool IsUnlimited = false);

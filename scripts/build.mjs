@@ -72,6 +72,6 @@ const js = await processJs();
 const css = await processCss();
 await updateHtml(new Map([...js, ...css]));
 const pkg = JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8'));
-const versionInfo = { app: 'OrçaFácil', version: pkg.version, buildDate: new Date().toISOString(), commit: process.env.GITHUB_SHA || process.env.COMMIT_SHA || 'optional', environment: prod ? 'production' : 'development' };
+const versionInfo = { app: 'Fechô', version: pkg.version, buildDate: new Date().toISOString(), commit: process.env.GITHUB_SHA || process.env.COMMIT_SHA || 'optional', environment: prod ? 'production' : 'development' };
 await fs.writeFile(path.join(dist, 'version.json'), JSON.stringify(versionInfo, null, 2) + '\n');
 console.log(`[build] dist gerada (${prod ? 'produção' : 'desenvolvimento'})`);

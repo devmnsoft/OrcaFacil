@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Billing;
+using OrcaFacil.Application.Plans;
+using OrcaFacil.Application.Security;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
 using OrcaFacil.Persistence;
@@ -17,12 +19,15 @@ public sealed class IndexModel(
     ISubscriptionCheckoutService checkoutService,
     ICurrentAccountService currentAccount,
     ICurrentUserService currentUser,
+    IAdditionalSeatService seatService,
     OrcaFacilDbContext db) : PageModel
 {
     public PlanExperienceViewModel Plan { get; private set; } = default!;
     public BillingCustomerProfile? BillingProfile { get; private set; }
     public IReadOnlyList<InvoiceHistoryRow> Invoices { get; private set; } = [];
     public Payment? ActiveCheckoutPayment { get; private set; }
+    public AdditionalSeatStatus? Seats { get; private set; }
+    public bool CanManageSubscription { get; private set; }
 
     public async Task OnGetAsync(CancellationToken ct)
     {
@@ -50,6 +55,9 @@ public sealed class IndexModel(
                 .Where(x => x.AccountId == accountId && x.Status == PaymentStatus.Pending && !x.IsDeleted)
                 .OrderByDescending(x => x.CreatedAt)
                 .FirstOrDefaultAsync(ct);
+
+            Seats = await seatService.GetStatusAsync(accountId, ct);
+            CanManageSubscription = await currentAccount.HasPermissionAsync(PermissionCodes.SubscriptionsManage, ct);
         }
     }
 
@@ -98,6 +106,23 @@ public sealed class IndexModel(
         }
 
         TempData["Success"] = $"Solicitação de assinatura iniciada com sucesso ({result.Code}). Conclua o pagamento pelo link de checkout.";
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostPurchaseSeatsAsync(int quantity, CancellationToken ct)
+    {
+        if (currentAccount.AccountId is not { } accountId)
+        {
+            TempData["Error"] = "Selecione uma conta para contratar vagas extras.";
+            return RedirectToPage();
+        }
+        if (!await currentAccount.HasPermissionAsync(PermissionCodes.SubscriptionsManage, ct))
+        {
+            TempData["Error"] = "Apenas quem gerencia a assinatura pode contratar usuários adicionais.";
+            return RedirectToPage();
+        }
+        var result = await seatService.PurchaseAsync(accountId, currentUser.UserId, quantity, ct);
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Message;
         return RedirectToPage();
     }
 }

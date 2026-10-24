@@ -1,13 +1,19 @@
 @using System.Linq
 @using OrcaFacil.Web.Services
 @inject IClientShellViewModelFactory ShellFactory
+@inject IContextualHelpService ContextualHelp
 @{
     var authenticated = User.Identity?.IsAuthenticated == true;
     var shell = authenticated ? await ShellFactory.CreateAsync(Context.RequestAborted) : null;
     var currentPath = Context.Request.Path.Value ?? string.Empty;
     var pageTitle = ViewData["Title"]?.ToString() ?? "Fechô";
     var pageSection = ViewData["Section"]?.ToString() ?? "Início";
-    var helpCode = ViewData["HelpCode"]?.ToString() ?? "dashboard";
+    // Código informado pela página pode não existir mais; nesse caso a rota atual decide o
+    // guia e, por último, a visão geral. O drawer nunca abre num guia de outra tela.
+    var requestedHelpCode = ViewData["HelpCode"]?.ToString();
+    var helpCode = (string.IsNullOrWhiteSpace(requestedHelpCode) ? null : ContextualHelp.Find(requestedHelpCode)?.Code)
+        ?? ContextualHelp.ForPath(currentPath)?.Code
+        ?? "dashboard";
 }
 <!doctype html>
 <html lang="@System.Globalization.CultureInfo.CurrentUICulture.Name" dir="ltr">
@@ -65,7 +71,8 @@
                             <h2>@group.Label</h2>
                             @foreach (var item in group.Items)
                             {
-                                var active = currentPath.StartsWith(item.Page, StringComparison.OrdinalIgnoreCase);
+                                var itemPath = item.Page.EndsWith("/Index", StringComparison.OrdinalIgnoreCase) ? item.Page.Substring(0, item.Page.Length - 6) : item.Page;
+var active = currentPath.Equals(itemPath, StringComparison.OrdinalIgnoreCase) || currentPath.StartsWith(itemPath + "/", StringComparison.OrdinalIgnoreCase);
                                 <a class="@(active ? "is-active" : null)" asp-page="@item.Page" aria-current="@(active ? "page" : null)" title="@item.Label">
                                     <svg class="of-icon" aria-hidden="true"><use href="#of-icon-@item.Icon" /></svg>
                                     <span class="of-menu-label">@item.Label</span>
@@ -84,7 +91,8 @@
                             {
                                 @foreach (var item in group.Items)
                                 {
-                                    var active = currentPath.StartsWith(item.Page, StringComparison.OrdinalIgnoreCase);
+                                    var itemPath = item.Page.EndsWith("/Index", StringComparison.OrdinalIgnoreCase) ? item.Page.Substring(0, item.Page.Length - 6) : item.Page;
+var active = currentPath.Equals(itemPath, StringComparison.OrdinalIgnoreCase) || currentPath.StartsWith(itemPath + "/", StringComparison.OrdinalIgnoreCase);
                                     <a class="@(active ? "is-active" : null)" asp-page="@item.Page" aria-current="@(active ? "page" : null)" title="@item.Label">
                                         <svg class="of-icon" aria-hidden="true"><use href="#of-icon-@item.Icon" /></svg>
                                         <span class="of-menu-label">@item.Label</span>
@@ -205,14 +213,25 @@
             <div>
                 <header><div><p class="of-eyebrow">Como usar esta página</p><h2 id="help-title" data-help-title>Carregando ajuda…</h2></div><button type="button" data-dialog-close aria-label="Fechar ajuda"><partial name="Partials/_Icon" model='new IconViewModel("close")' /></button></header>
                 <div data-help-content aria-live="polite" aria-busy="true"><p>Buscando orientações específicas para esta etapa.</p></div>
+                <section class="of-help-ask" data-help-ask aria-labelledby="help-ask-title">
+                    <h3 id="help-ask-title">Pergunte sobre esta tela</h3>
+                    <p class="of-help-ask__note">A resposta usa apenas os guias e artigos publicados do produto. Nada é executado automaticamente.</p>
+                    <form data-help-ask-form method="post" action="/Internal/Help/Ask">
+                        <label class="of-sr-only" for="help-ask-question">Sua dúvida sobre esta tela</label>
+                        <input id="help-ask-question" name="question" type="text" maxlength="500" autocomplete="off"
+                               placeholder="Ex.: como revogar o link público?" data-help-ask-question />
+                        <button class="of-button-secondary" type="submit" data-help-ask-submit>Perguntar</button>
+                    </form>
+                    <div data-help-ask-answer aria-live="polite" aria-busy="false"></div>
+                </section>
             </div>
         </div>
     }
-    <partial name="Partials/_OverlayHost" />
     else
     {
         <main id="main-content"><partial name="Partials/_ToastHost" />@RenderBody()</main>
     }
+    <partial name="Partials/_OverlayHost" />
     <environment include="Development"><script src="~/js/diagnostics/js-health.js" asp-append-version="true"></script></environment>
     <script src="~/js/experience.js" asp-append-version="true"></script>
     <script type="module" src="~/js/shell.js" asp-append-version="true"></script>

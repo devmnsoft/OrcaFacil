@@ -556,8 +556,14 @@ CREATE INDEX IF NOT EXISTS ix_user_usage_account_period ON orcafacil.user_usage(
 CREATE INDEX IF NOT EXISTS ix_public_quotes_account_created ON orcafacil.public_quotes(account_id,created_at);
 CREATE UNIQUE INDEX IF NOT EXISTS ix_payments_idempotency_key ON orcafacil.payments(idempotency_key) WHERE idempotency_key IS NOT NULL;
 
-INSERT INTO orcafacil.plan_versions(id,plan_id,version_number,monthly_price,annual_price,currency,valid_from,status,published_at)
-SELECT md5(p.code || ':v1')::uuid,p.id,1,v.monthly,v.annual,'BRL',now(),'Published',now() FROM orcafacil.plans p JOIN (VALUES ('FREE',0::numeric,0::numeric),('PROFESSIONAL',24.90,249),('BUSINESS',49.90,499),('ENTERPRISE',0,0)) v(code,monthly,annual) ON v.code=p.code ON CONFLICT(plan_id,version_number) DO NOTHING;
+-- Carencia paga de 3 dias: alinhada a BillingOptions.GracePeriodDays (BillingStatusService).
+-- Sem este valor (DEFAULT 0), o PlanAccessService corta os beneficios pagos no mesmo
+-- instante do vencimento, tornando a carencia anunciada no evento de atraso ficticia.
+INSERT INTO orcafacil.plan_versions(id,plan_id,version_number,monthly_price,annual_price,currency,grace_period_days,valid_from,status,published_at)
+SELECT md5(p.code || ':v1')::uuid,p.id,1,v.monthly,v.annual,'BRL',CASE WHEN p.code='FREE' THEN 0 ELSE 3 END,now(),'Published',now() FROM orcafacil.plans p JOIN (VALUES ('FREE',0::numeric,0::numeric),('PROFESSIONAL',24.90,249),('BUSINESS',49.90,499),('ENTERPRISE',0,0)) v(code,monthly,annual) ON v.code=p.code ON CONFLICT(plan_id,version_number) DO NOTHING;
+-- A carencia minima paga tambem e elevada a 3 dias pelo patch v76 encadeado no fim
+-- (database/hotfix_plan_grace_period_v76.sql), que corrige versoes ja semeadas em
+-- bases anteriores sem reduzir valores ja configurados.
 INSERT INTO orcafacil.features(id,code,display_name,description,value_type,category)
 SELECT md5(code)::uuid,code,name,name,type,category FROM (VALUES
 ('team.members_limit','Pessoas da equipe','Integer','Equipe'),('clients.active_limit','Clientes ativos','Integer','Clientes'),('services.active_limit','Serviços ativos','Integer','Serviços'),('documents.monthly_limit','Documentos mensais','Integer','Documentos'),('pdf.monthly_limit','PDFs mensais','Integer','Documentos'),('pdf.watermark','Marca OrçaFácil','Boolean','Documentos'),('branding.custom_logo','Logo próprio','Boolean','Marca'),('history.days_visible','Histórico visível','Integer','Histórico'),('templates.basic_limit','Modelos básicos','Integer','Modelos'),('templates.custom_enabled','Modelos personalizados','Boolean','Modelos'),('public_approval.enabled','Aprovação pública','Boolean','Documentos'),('public_approval.monthly_limit','Aprovações mensais','Integer','Documentos'),('document.convert_to_receipt','Conversão em recibo','Boolean','Documentos'),('sharing.whatsapp','Compartilhamento por WhatsApp','Boolean','Compartilhamento'),('sharing.public_link','Link público','Boolean','Compartilhamento'),('numbering.custom_prefix','Prefixo personalizado','Boolean','Documentos'),('commercial.pipeline','Pipeline comercial','Boolean','Comercial'),('commercial.followups','Acompanhamentos','Boolean','Comercial'),('commercial.metrics','Indicadores comerciais','Boolean','Comercial'),('reports.basic','Relatórios básicos','Boolean','Relatórios'),('reports.advanced','Relatórios avançados','Boolean','Relatórios'),('exports.csv','Exportação CSV','Boolean','Relatórios'),('audit.account','Auditoria da conta','Boolean','Auditoria'),('support.priority','Suporte prioritário','Boolean','Suporte')) f(code,name,type,category) ON CONFLICT(code) DO NOTHING;
@@ -613,6 +619,15 @@ COMMIT;
 -- RELEASE OPERACIONAL 4: recuperação segura e fila transacional
 CREATE TABLE IF NOT EXISTS orcafacil.password_reset_tokens (id uuid PRIMARY KEY, user_id uuid NOT NULL REFERENCES orcafacil.users(id) ON DELETE RESTRICT, token_hash varchar(64) NOT NULL UNIQUE, created_at timestamptz NOT NULL, updated_at timestamptz, expires_at timestamptz NOT NULL, used_at timestamptz, revoked_at timestamptz, requested_correlation_id varchar(100) NOT NULL, requested_ip_hash varchar(64), user_agent_hash varchar(64), created_by varchar(60) NOT NULL, is_deleted boolean NOT NULL DEFAULT false);
 CREATE TABLE IF NOT EXISTS orcafacil.email_outbox_messages (id uuid PRIMARY KEY, template_code varchar(80) NOT NULL, recipient_hash varchar(64) NOT NULL, recipient_masked varchar(254) NOT NULL, protected_recipient text NOT NULL, protected_payload text, status varchar(20) NOT NULL, priority varchar(20) NOT NULL, attempts integer NOT NULL DEFAULT 0, next_attempt_at timestamptz NOT NULL, processing_started_at timestamptz, processing_instance_id varchar(100), created_at timestamptz NOT NULL, updated_at timestamptz, sent_at timestamptz, dead_lettered_at timestamptz, last_error_code varchar(80), correlation_id varchar(100) NOT NULL, idempotency_key varchar(160) NOT NULL UNIQUE, is_deleted boolean NOT NULL DEFAULT false);
+-- Convites de equipe por e-mail (migration 20261021120031). Aditivo, reversível, sem reuso de token:
+-- cru nunca persistido, so SHA-256; aceite unico com expiracao; revogacao expira no ato.
+CREATE TABLE IF NOT EXISTS orcafacil.account_invitations (id uuid PRIMARY KEY, account_id uuid NOT NULL REFERENCES orcafacil.business_accounts(id) ON DELETE RESTRICT, email varchar(254) NOT NULL, full_name varchar(180) NOT NULL, role_code varchar(40) NOT NULL, invited_by_user_id uuid NOT NULL REFERENCES orcafacil.users(id) ON DELETE RESTRICT, token_hash varchar(64) NOT NULL UNIQUE, expires_at timestamptz NOT NULL, used_at timestamptz, used_by_user_id uuid, requested_correlation_id varchar(100) NOT NULL, created_at timestamptz NOT NULL, updated_at timestamptz, is_deleted boolean NOT NULL DEFAULT false);
+CREATE INDEX IF NOT EXISTS IX_account_invitations_account_id ON orcafacil.account_invitations(account_id);
+CREATE INDEX IF NOT EXISTS IX_account_invitations_account_id_email ON orcafacil.account_invitations(account_id, email);
+CREATE INDEX IF NOT EXISTS IX_account_invitations_created_at ON orcafacil.account_invitations(created_at);
+CREATE INDEX IF NOT EXISTS IX_account_invitations_expires_at ON orcafacil.account_invitations(expires_at);
+CREATE INDEX IF NOT EXISTS IX_account_invitations_invited_by_user_id ON orcafacil.account_invitations(invited_by_user_id);
+CREATE INDEX IF NOT EXISTS IX_account_invitations_used_at ON orcafacil.account_invitations(used_at);
 
 
 -- RELEASE OPERACIONAL 6: jornada comercial (migration 20260729000000)
@@ -1234,7 +1249,18 @@ CREATE INDEX IF NOT EXISTS ix_tenant_domain_audit_account_date ON orcafacil.tena
 COMMIT;
 
 -- Sprint 37 is maintained in database/sprint37_support_desk_v38.sql and applied by patch_release_candidate_schema.sql.
--- Sprint 38 is maintained in database/sprint38_omnichannel_v39.sql and applied by patch_release_candidate_schema.sql.
+-- Sprint 38 / omnichannel: encadeado na base nova. Antes, só o patch aplicava — base nova nascia sem o
+-- módulo (canal, conversas, contas WhatsApp). Aditivo e idempotente.
+\ir sprint38_omnichannel_v39.sql
+
+-- V7.7: conta da Cloud API do WhatsApp (Meta) — colunas tipadas, aditivo e idempotente.
+\ir hotfix_omnichannel_whatsapp_api_v77.sql
+
+-- V7.8: ordem de serviço — estados de espera e vencimento. Aditivo e idempotente.
+\ir hotfix_work_order_wait_overdue_v78.sql
+
+-- V7.9: cobrança do cliente — cadência de lembrete em financial_entries. Aditivo e idempotente.
+\ir hotfix_financial_entry_reminder_v79.sql
 
 -- Sprint 42 / V4.3 is applied by database/sprint42_field_operations_v43.sql.
 \ir sprint42_field_operations_v43.sql
@@ -1851,3 +1877,11 @@ WHERE r.code IN ('Owner', 'Administrator') AND r.is_deleted = false
       SELECT 1 FROM orcafacil.role_permissions rp
       WHERE rp.role_id = r.id AND rp.permission_id = p.id AND rp.is_deleted = false
   );
+
+-- Provisioning integral de bases novas: encadeia os patches de RBAC de IA (v74),
+-- catalogo de planos (v75) e carencia minima paga (v76). Sem eles, uma base sai do
+-- consolidado com divergencias travadas pelos guards PostgreSQL (RbacAiGovernanceSeedTests
+-- e PlanCatalogPostgresSeedTests). Todos os patches sao aditivos, idempotentes e reversiveis.
+\ir hotfix_ai_governance_permissions_v74.sql
+\ir hotfix_plan_feature_catalog_v75.sql
+\ir hotfix_plan_grace_period_v76.sql

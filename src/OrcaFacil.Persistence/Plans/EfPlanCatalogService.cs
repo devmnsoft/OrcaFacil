@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Plans;
 using OrcaFacil.Domain.Enums;
+using OrcaFacil.Domain.Plans;
 
 namespace OrcaFacil.Persistence.Plans;
 
@@ -67,11 +68,8 @@ public sealed class EfPlanCatalogService(OrcaFacilDbContext db) : IPlanCatalogSe
         return new(cards, now, true);
     }
 
-    private static string Humanize(string code) => code switch
-    {
-        "team.members_limit" => "Usuários", "clients.active_limit" => "Clientes ativos",
-        "services.active_limit" => "Serviços ativos", "pdf.monthly_limit" => "PDFs por mês",
-        "templates.basic_limit" => "Templates", "history.days_visible" => "Dias de histórico",
-        _ => code.Replace('.', ' ').Replace('_', ' ')
-    };
+    private static string Humanize(string code) =>
+        PlanFeatureCodes.DisplayNames.TryGetValue(code, out var name)
+            ? name
+            : code.Replace('.', ' ').Replace('_', ' ');
 }

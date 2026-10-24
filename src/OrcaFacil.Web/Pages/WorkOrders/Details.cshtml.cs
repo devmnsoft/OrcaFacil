@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Commercial;
 using OrcaFacil.Domain.Entities;
+using OrcaFacil.Domain.Enums;
 using OrcaFacil.Persistence;
 
 namespace OrcaFacil.Web.Pages.WorkOrders;
@@ -63,6 +64,16 @@ public sealed class DetailsModel(OrcaFacilDbContext db, ICurrentAccountService a
 
     public async Task<IActionResult> OnPostPauseAsync(Guid id, CancellationToken ct) => await RunStatusAsync(id, journey.PauseAsync(id, ct));
     public async Task<IActionResult> OnPostResumeAsync(Guid id, CancellationToken ct) => await RunStatusAsync(id, journey.ResumeAsync(id, ct));
+
+    public async Task<IActionResult> OnPostWaitAsync(Guid id, string reason, string? waitNote, CancellationToken ct)
+    {
+        if (!Enum.TryParse<WorkOrderWaitReason>(reason, out var parsed) || parsed == WorkOrderWaitReason.None)
+        {
+            TempData["Error"] = "Informe se a ordem aguarda o cliente ou o material.";
+            return RedirectToPage(new { id });
+        }
+        return await RunStatusAsync(id, journey.WaitAsync(id, parsed, waitNote, ct));
+    }
 
     public async Task<IActionResult> OnPostCancelAsync(Guid id, CancellationToken ct)
     {

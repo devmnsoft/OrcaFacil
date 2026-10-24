@@ -69,12 +69,21 @@ public sealed class EfPlanAccessDataSource(OrcaFacilDbContext db) : IPlanAccessD
         return featureCode switch
         {
             PlanFeatureCodes.ClientsActiveLimit => await db.Clients.CountAsync(x => x.AccountId == accountId && !x.IsDeleted, ct),
-            PlanFeatureCodes.ServicesActiveLimit => await db.ActivityEvents.CountAsync(x => x.AccountId == accountId && !x.IsDeleted &&
-                x.EntityType == "ServiceCatalogItem" && x.Action == "ServiceActivated" && x.Result == "Success", ct),
+            // "Serviços ativos" é o catálogo ativo; o contador anterior somava eventos
+            // "ServiceActivated" que ninguém grava (limite sempre em zero).
+            PlanFeatureCodes.ServicesActiveLimit => await db.ServiceCatalogItems.CountAsync(x => x.AccountId == accountId &&
+                !x.IsDeleted && x.IsActive, ct),
             "documents.monthly_limit" => await db.Documents.CountAsync(x => x.AccountId == accountId && !x.IsDeleted &&
                 x.CreatedAt >= periodStartUtc && x.CreatedAt < periodEndUtc, ct),
-            PlanFeatureCodes.PdfMonthlyLimit => await db.UserUsage.Where(x => x.AccountId == accountId && !x.IsDeleted &&
-                x.Period == period).SumAsync(x => x.PdfGenerated, ct),
+            // PDFs gerados no mês pelas pessoas ativas da conta (linha única por
+            // usuário/período em user_usage; a soma via membros não pode ser
+            // contornada trocando de conta e erra sempre para cima, nunca para baixo).
+            PlanFeatureCodes.PdfMonthlyLimit => await (from usage in db.UserUsage.AsNoTracking()
+                                                       join member in db.AccountMembers.AsNoTracking() on usage.UserId equals member.UserId
+                                                       where member.AccountId == accountId && !member.IsDeleted &&
+                                                             member.Status == AccountMemberStatus.Active &&
+                                                             !usage.IsDeleted && usage.Period == period
+                                                       select usage.PdfGenerated).SumAsync(ct),
             PlanFeatureCodes.TeamMembersLimit => await db.AccountMembers.CountAsync(x => x.AccountId == accountId && !x.IsDeleted &&
                 x.Status == AccountMemberStatus.Active, ct),
             "public_approval.monthly_limit" => await (from quote in db.PublicQuotes
@@ -88,6 +97,18 @@ public sealed class EfPlanAccessDataSource(OrcaFacilDbContext db) : IPlanAccessD
                 x.CreatedAt >= periodStartUtc && x.CreatedAt < periodEndUtc && (x.Status == "Succeeded" || x.Status == "Failed" || x.Status == "Cancelled"), ct),
             _ => 0
         };
+    }
+
+    public async Task<IReadOnlyDictionary<string, int>> GetAddonIncrementsAsync(Guid accountId, CancellationToken ct)
+    {
+        var rows = await (from addon in db.AccountAddons.AsNoTracking()
+                          join planAddon in db.PlanAddons.AsNoTracking() on addon.AddonId equals planAddon.Id
+                          where addon.AccountId == accountId && !addon.IsDeleted && addon.DeactivatedAt == null &&
+                                !planAddon.IsDeleted && planAddon.IsActive && planAddon.LimitType != ""
+                          select new { planAddon.LimitType, Increment = (int)addon.Quantity * (int)planAddon.LimitIncrement })
+                         .ToListAsync(ct);
+
+        return rows.GroupBy(x => x.LimitType).ToDictionary(g => g.Key, g => g.Sum(x => x.Increment));
     }
 
 }

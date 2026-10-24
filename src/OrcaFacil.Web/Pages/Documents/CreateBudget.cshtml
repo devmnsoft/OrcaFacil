@@ -4,7 +4,7 @@
 @{
     ViewData["Title"] = "Novo orçamento";
     ViewData["Section"] = "Comercial";
-    ViewData["HelpCode"] = "budget-create";
+    ViewData["HelpCode"] = "budget.client";
 }
 
 <header class="of-page-header of-budget-heading">
@@ -185,11 +185,11 @@ else
                             const preview = document.getElementById('ai-assist-preview');
                             const findingsBox = document.getElementById('ai-findings-container');
                             const improvedBox = document.getElementById('ai-improved-notes');
-                            if (findingsBox && data.findings && data.findings.length > 0) {
-                                findingsBox.innerHTML = '<strong style="font-size:0.85rem; color:var(--of-warning, #d97706);">Pontos de atenção / dados faltantes:</strong><ul style="font-size:0.8rem; margin:0.25rem 0 0.5rem 1.25rem;">' + 
+                            if (findingsBox && data.findings && data.findings.length > 0) { if (data.notice) { findingsBox.innerHTML = '<div style="font-size:0.78rem; color:var(--of-muted, #64748b); margin:0.15rem 0 0.45rem;">' + data.notice + '</div>'; } else { findingsBox.innerHTML = ''; }
+                                findingsBox.innerHTML += '<strong style="font-size:0.85rem; color:var(--of-warning, #d97706);">Pontos de atenção / dados faltantes:</strong><ul style="font-size:0.8rem; margin:0.25rem 0 0.5rem 1.25rem;">' +
                                     data.findings.map(f => '<li><b>[' + f.category + ']</b> ' + f.message + (f.suggestion ? ' <i>(' + f.suggestion + ')</i>' : '') + '</li>').join('') + '</ul>';
                             } else if (findingsBox) {
-                                findingsBox.innerHTML = '<span style="font-size:0.8rem; color:var(--of-success, #16a34a);">✓ Nenhum dado faltante crítico detectado.</span>';
+                                findingsBox.innerHTML = (data.notice ? '<div style="font-size:0.78rem; color:var(--of-muted, #64748b); margin:0.15rem 0 0.45rem;">' + data.notice + '</div>' : '') + '<span style="font-size:0.8rem; color:var(--of-success, #16a34a);">✓ Nenhum dado faltante crítico detectado.</span>';
                             }
                             if (improvedBox) improvedBox.value = data.improvedNotes || '';
                             if (preview) preview.style.display = 'block';

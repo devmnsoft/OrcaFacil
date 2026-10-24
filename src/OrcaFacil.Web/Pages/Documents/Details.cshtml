@@ -87,6 +87,15 @@
                         <div class="of-follow-up-shortcuts" aria-label="Atalhos de data"><button type="button" data-follow-up-days="1">Amanhã</button><button type="button" data-follow-up-days="3">Em 3 dias</button><button type="button" data-follow-up-days="7">Próxima semana</button></div>
                         <div class="of-home-actions"><button class="of-button-primary" type="submit" data-loading-text="Agendando…">Agendar retorno</button>@if(d.NextFollowUpAt is not null){<button class="of-button-secondary" type="submit" formaction="?handler=SnoozeFollowUp&amp;id=@d.Id">Adiar retorno</button><button class="of-button-secondary" type="submit" formnovalidate formaction="?handler=CompleteFollowUp&amp;id=@d.Id">Concluir acompanhamento</button>}</div>
                     </form>
+                    <div class="of-home-actions of-follow-up-drafts"><form method="post" asp-page-handler="DraftMessage" asp-route-id="@d.Id" asp-route-channel="WhatsApp"><button class="of-button-secondary" type="submit" data-loading-text="Gerando…">Rascunho para WhatsApp</button></form><form method="post" asp-page-handler="DraftMessage" asp-route-id="@d.Id" asp-route-channel="Email"><button class="of-button-secondary" type="submit" data-loading-text="Gerando…">Rascunho para e-mail</button></form></div>
+                    @if (TempData["AiDraftMessage"] is string aiDraft && aiDraft.Length > 0)
+                    {
+                        <div class="of-share-center" data-share-center>
+                            <label><span>Rascunho sugerido (@(TempData["AiDraftChannel"] is string aiDraftChannel ? aiDraftChannel : "WhatsApp"))</span><textarea data-share-message rows="5">@aiDraft</textarea></label>
+                            <div><button class="of-button-secondary" type="button" data-copy-message>Copiar mensagem</button><a class="of-button-secondary" data-share-whatsapp target="_blank" rel="noopener noreferrer">WhatsApp</a><a class="of-button-secondary" data-share-email>E-mail</a></div>
+                            @if (TempData["AiDraftDisclaimers"] is string aiDisclaimers && aiDisclaimers.Length > 0) { <small>@aiDisclaimers</small> }
+                        </div>
+                    }
                 </section>
             </section>
 
@@ -226,7 +235,7 @@
                 <summary>Salvar como modelo</summary>
                 <form method="post" asp-page-handler="SaveAsTemplate" asp-route-id="@d.Id">
                     @Html.AntiForgeryToken()
-                    <input type="text" name="templateTitle" placeholder="Nome do modelo (ex: Pintura Residencial)" required />
+                    <input type="text" name="templateTitle" aria-label="Nome do modelo" placeholder="Nome do modelo (ex: Pintura Residencial)" required />
                     <button class="of-button-secondary" type="submit">Salvar modelo</button>
                 </form>
             </details>

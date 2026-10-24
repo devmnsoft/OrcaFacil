@@ -5,9 +5,12 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Application.Abstractions;
+using OrcaFacil.Application.Plans;
 using OrcaFacil.Application.Receipts;
 using OrcaFacil.Domain.Enums;
+using OrcaFacil.Domain.Plans;
 using OrcaFacil.Persistence;
+using OrcaFacil.Web.Extensions;
 using OrcaFacil.Web.ViewModels.Receipts;
 
 namespace OrcaFacil.Web.Pages.Receipts;
@@ -16,6 +19,7 @@ namespace OrcaFacil.Web.Pages.Receipts;
 public sealed class IndexModel(
     IReceiptQueryService receipts,
     ICurrentAccountService account,
+    IPlanAccessService plans,
     OrcaFacilDbContext db) : PageModel
 {
     private const string DefaultSort = "recent";
@@ -91,6 +95,13 @@ public sealed class IndexModel(
         if (!account.HasAccount)
         {
             return Forbid();
+        }
+
+        if (account.AccountId is Guid receiptsAccountId &&
+            !(await plans.CanUseAsync(receiptsAccountId, PlanFeatureCodes.OperationalReceiptsEnabled, ct)).IsAllowed)
+        {
+            TempData.Warning("Recibos não estão incluídos no seu plano atual. Conheça os planos.");
+            return RedirectToPage("/Subscription/Index");
         }
 
         Clients = await db.Clients

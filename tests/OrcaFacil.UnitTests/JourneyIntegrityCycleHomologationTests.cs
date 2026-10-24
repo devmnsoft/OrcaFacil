@@ -478,5 +478,7 @@ public sealed class JourneyIntegrityCycleHomologationTests
         public Task<int> GetUsageAsync(Guid id, string featureCode, DateTime startOfUtcMonth, CancellationToken ct) => Task.FromResult(0);
         public Task<IReadOnlyList<PlanFeatureCandidate>> GetPublicPlanCandidatesAsync(string featureCode, DateTime utcNow, CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<PlanFeatureCandidate>>([]);
+        public Task<IReadOnlyDictionary<string, int>> GetAddonIncrementsAsync(Guid id, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyDictionary<string, int>>(new Dictionary<string, int>());
     }
 }

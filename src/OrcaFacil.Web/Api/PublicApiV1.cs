@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using OrcaFacil.Domain.Entities;
+using OrcaFacil.Domain.Enums;
 using OrcaFacil.Persistence;
 
 namespace OrcaFacil.Web.Api;
@@ -33,6 +34,78 @@ public static class PublicApiV1
         api.MapGet("/services", async (int? page, int? pageSize, ClaimsPrincipal user, OrcaFacilDbContext db, CancellationToken ct) =>
         { var n=Math.Max(page??1,1);var s=Math.Clamp(pageSize??20,1,100);var q=db.ServiceCatalogItems.AsNoTracking().Where(x=>x.AccountId==Account(user)&&x.IsActive&&!x.IsDeleted);var total=await q.CountAsync(ct);var items=await q.OrderBy(x=>x.Name).Skip((n-1)*s).Take(s).Select(x=>new{x.Id,x.Code,x.Name,x.Description,unit=x.UnitCode,price=x.StandardPrice,x.SuggestedDurationMinutes}).ToListAsync(ct);return Results.Ok(Page(items,n,s,total)); }).WithMetadata(new RequiredScope("services.read"));
         api.MapGet("/services/{id:guid}", async (Guid id, ClaimsPrincipal user, OrcaFacilDbContext db, CancellationToken ct) => await db.ServiceCatalogItems.AsNoTracking().Where(x=>x.Id==id&&x.AccountId==Account(user)&&!x.IsDeleted).Select(x=>new{x.Id,x.Code,x.Name,x.Description,unit=x.UnitCode,price=x.StandardPrice,x.SuggestedDurationMinutes}).SingleOrDefaultAsync(ct) is {} item?Results.Ok(item):ApiError(404,"not_found","Serviço não encontrado.")).WithMetadata(new RequiredScope("services.read"));
+        api.MapGet("/quotes", async (int? page, int? pageSize, ClaimsPrincipal user, OrcaFacilDbContext db, CancellationToken ct) =>
+        {
+            var n = Math.Max(page ?? 1, 1); var s = Math.Clamp(pageSize ?? 20, 1, 100);
+            var q = db.Documents.AsNoTracking().Where(x => x.Type == DocumentType.Budget && x.AccountId == Account(user) && !x.IsDeleted);
+            var total = await q.CountAsync(ct);
+            var rows = await q.OrderByDescending(x => x.IssueDate).Skip((n - 1) * s).Take(s)
+                .Select(x => new { x.Id, x.Number, x.Status, x.ClientName, clientDocument = x.ClientDocument, x.IssueDate, validUntil = x.ValidUntil, total = x.Total, decision = x.ClientDecision, x.CreatedAt, x.UpdatedAt }).ToListAsync(ct);
+            var items = rows.Select(r => new { r.Id, r.Number, r.Status, r.ClientName, r.clientDocument, r.IssueDate, r.validUntil, r.total, decision = r.decision.ToString(), r.CreatedAt, r.UpdatedAt }).ToList();
+            return Results.Ok(Page(items, n, s, total));
+        }).WithMetadata(new RequiredScope("quotes.read"));
+        api.MapGet("/quotes/{id:guid}", async (Guid id, ClaimsPrincipal user, OrcaFacilDbContext db, CancellationToken ct) =>
+        {
+            var r = await db.Documents.AsNoTracking().Where(x => x.Id == id && x.Type == DocumentType.Budget && x.AccountId == Account(user) && !x.IsDeleted)
+                .Select(x => new { x.Id, x.Number, x.Status, x.ClientName, clientDocument = x.ClientDocument, clientPhone = x.ClientPhone, clientEmail = x.ClientEmail, clientCity = x.ClientCity, x.IssueDate, validUntil = x.ValidUntil, paymentMethod = x.PaymentMethod, installments = x.InstallmentCount, subtotal = x.Subtotal, discount = x.Discount, total = x.Total, decision = x.ClientDecision, decisionNote = x.ClientDecisionNote, notes = x.Notes, originBudgetNumber = x.OriginBudgetNumber, convertedReceiptNumber = x.ConvertedReceiptNumber, nextFollowUpAt = x.NextFollowUpAt, x.CreatedAt, x.UpdatedAt }).SingleOrDefaultAsync(ct);
+            if (r is null) return ApiError(404, "not_found", "Orçamento não encontrado.");
+            return Results.Ok(new { r.Id, r.Number, r.Status, r.ClientName, r.clientDocument, r.clientPhone, r.clientEmail, r.clientCity, r.IssueDate, r.validUntil, r.paymentMethod, r.installments, r.subtotal, r.discount, r.total, decision = r.decision.ToString(), r.decisionNote, r.notes, r.originBudgetNumber, r.convertedReceiptNumber, r.nextFollowUpAt, r.CreatedAt, r.UpdatedAt });
+        }).WithMetadata(new RequiredScope("quotes.read"));
+
+        api.MapGet("/work-orders", async (int? page, int? pageSize, ClaimsPrincipal user, OrcaFacilDbContext db, CancellationToken ct) =>
+        {
+            var n = Math.Max(page ?? 1, 1); var s = Math.Clamp(pageSize ?? 20, 1, 100);
+            var q = db.WorkOrders.AsNoTracking().Where(x => x.AccountId == Account(user) && !x.IsDeleted);
+            var total = await q.CountAsync(ct);
+            var rows = await q.OrderByDescending(x => x.ScheduledStart ?? DateTime.MinValue).Skip((n - 1) * s).Take(s)
+                .Select(x => new { x.Id, x.Number, x.Title, status = x.Status, x.ClientId, scheduledStart = x.ScheduledStart, scheduledEnd = x.ScheduledEnd, startedAt = x.StartedAt, completedAt = x.CompletedAt, total = x.TotalSnapshot, paymentReceived = x.PaymentReceived, x.CreatedAt, x.UpdatedAt }).ToListAsync(ct);
+            var items = rows.Select(r => new { r.Id, r.Number, r.Title, status = r.status.ToString(), r.ClientId, r.scheduledStart, r.scheduledEnd, r.startedAt, r.completedAt, r.total, r.paymentReceived, r.CreatedAt, r.UpdatedAt }).ToList();
+            return Results.Ok(Page(items, n, s, total));
+        }).WithMetadata(new RequiredScope("work_orders.read"));
+        api.MapGet("/work-orders/{id:guid}", async (Guid id, ClaimsPrincipal user, OrcaFacilDbContext db, CancellationToken ct) =>
+        {
+            var r = await db.WorkOrders.AsNoTracking().Where(x => x.Id == id && x.AccountId == Account(user) && !x.IsDeleted)
+                .Select(x => new { x.Id, x.Number, x.Title, description = x.Description, status = x.Status, x.ClientId, assignedUserId = x.AssignedUserId, serviceCompetence = x.ServiceCompetence, scheduledStart = x.ScheduledStart, scheduledEnd = x.ScheduledEnd, startedAt = x.StartedAt, completedAt = x.CompletedAt, cancelledAt = x.CancelledAt, cancellationReason = x.CancellationReason, waitReason = x.WaitReason, total = x.TotalSnapshot, paymentReceived = x.PaymentReceived, paymentMethod = x.PaymentMethod, notes = x.Notes, x.CreatedAt, x.UpdatedAt }).SingleOrDefaultAsync(ct);
+            if (r is null) return ApiError(404, "not_found", "Ordem de serviço não encontrada.");
+            return Results.Ok(new { r.Id, r.Number, r.Title, r.description, status = r.status.ToString(), r.ClientId, r.assignedUserId, r.serviceCompetence, r.scheduledStart, r.scheduledEnd, r.startedAt, r.completedAt, r.cancelledAt, r.cancellationReason, waitReason = r.waitReason.ToString(), r.total, r.paymentReceived, r.paymentMethod, r.notes, r.CreatedAt, r.UpdatedAt });
+        }).WithMetadata(new RequiredScope("work_orders.read"));
+
+        api.MapGet("/receipts", async (int? page, int? pageSize, ClaimsPrincipal user, OrcaFacilDbContext db, CancellationToken ct) =>
+        {
+            var n = Math.Max(page ?? 1, 1); var s = Math.Clamp(pageSize ?? 20, 1, 100);
+            var q = db.Receipts.AsNoTracking().Where(x => x.AccountId == Account(user) && !x.IsDeleted);
+            var total = await q.CountAsync(ct);
+            var rows = await q.OrderByDescending(x => x.IssuedAt).Skip((n - 1) * s).Take(s)
+                .Select(x => new { x.Id, x.Number, x.Amount, paymentMethod = x.PaymentMethod, x.IssuedAt, serviceDescription = x.ServiceDescription, originType = x.OriginType, x.ClientId, cancelledAt = x.CancelledAt, x.CreatedAt, x.UpdatedAt }).ToListAsync(ct);
+            var items = rows.Select(r => new { r.Id, r.Number, r.Amount, r.paymentMethod, r.IssuedAt, r.serviceDescription, originType = r.originType.ToString(), r.ClientId, r.cancelledAt, cancelled = r.cancelledAt != null, r.CreatedAt, r.UpdatedAt }).ToList();
+            return Results.Ok(Page(items, n, s, total));
+        }).WithMetadata(new RequiredScope("receipts.read"));
+        api.MapGet("/receipts/{id:guid}", async (Guid id, ClaimsPrincipal user, OrcaFacilDbContext db, CancellationToken ct) =>
+        {
+            var r = await db.Receipts.AsNoTracking().Where(x => x.Id == id && x.AccountId == Account(user) && !x.IsDeleted)
+                .Select(x => new { x.Id, x.Number, x.Amount, amountInWords = x.AmountInWords, paymentMethod = x.PaymentMethod, x.IssuedAt, city = x.City, serviceDescription = x.ServiceDescription, fiscalNotice = x.FiscalNotice, originType = x.OriginType, notes = x.Notes, sentAt = x.SentAt, lastSharedAt = x.LastSharedAt, cancelledAt = x.CancelledAt, cancellationReason = x.CancellationReason, x.ClientId, x.CreatedAt, x.UpdatedAt }).SingleOrDefaultAsync(ct);
+            if (r is null) return ApiError(404, "not_found", "Recibo não encontrado.");
+            return Results.Ok(new { r.Id, r.Number, r.Amount, r.amountInWords, r.paymentMethod, r.IssuedAt, r.city, r.serviceDescription, r.fiscalNotice, originType = r.originType.ToString(), r.notes, r.sentAt, r.lastSharedAt, r.cancelledAt, cancelled = r.cancelledAt != null, r.cancellationReason, r.ClientId, r.CreatedAt, r.UpdatedAt });
+        }).WithMetadata(new RequiredScope("receipts.read"));
+
+        api.MapGet("/contracts", async (int? page, int? pageSize, ClaimsPrincipal user, OrcaFacilDbContext db, CancellationToken ct) =>
+        {
+            var n = Math.Max(page ?? 1, 1); var s = Math.Clamp(pageSize ?? 20, 1, 100);
+            var q = db.RecurringContracts.AsNoTracking().Where(x => x.AccountId == Account(user) && !x.IsDeleted);
+            var total = await q.CountAsync(ct);
+            var rows = await q.OrderByDescending(x => x.CreatedAt).Skip((n - 1) * s).Take(s)
+                .Select(x => new { x.Id, x.Number, x.Title, status = x.Status, periodicity = x.Periodicity, x.ClientId, recurringAmount = x.RecurringAmount, dueDay = x.DueDay, nextBillingDate = x.NextBillingDate, autoRenew = x.AutoRenew, activatedAt = x.ActivatedAt, cancelledAt = x.CanceledAt, x.CreatedAt, x.UpdatedAt }).ToListAsync(ct);
+            var items = rows.Select(r => new { r.Id, r.Number, r.Title, status = r.status.ToString(), periodicity = r.periodicity.ToString(), r.ClientId, r.recurringAmount, r.dueDay, r.nextBillingDate, r.autoRenew, r.activatedAt, r.cancelledAt, cancelled = r.cancelledAt != null, r.CreatedAt, r.UpdatedAt }).ToList();
+            return Results.Ok(Page(items, n, s, total));
+        }).WithMetadata(new RequiredScope("contracts.read"));
+        api.MapGet("/contracts/{id:guid}", async (Guid id, ClaimsPrincipal user, OrcaFacilDbContext db, CancellationToken ct) =>
+        {
+            var r = await db.RecurringContracts.AsNoTracking().Where(x => x.Id == id && x.AccountId == Account(user) && !x.IsDeleted)
+                .Select(x => new { x.Id, x.Number, x.Title, description = x.Description, status = x.Status, periodicity = x.Periodicity, x.ClientId, recurringAmount = x.RecurringAmount, startDate = x.StartDate, endDate = x.EndDate, dueDay = x.DueDay, nextBillingDate = x.NextBillingDate, nextServiceDate = x.NextServiceDate, autoRenew = x.AutoRenew, renewalNoticeDays = x.RenewalNoticeDays, commercialTerms = x.CommercialTerms, internalNotes = x.InternalNotes, activatedAt = x.ActivatedAt, cancelledAt = x.CanceledAt, cancellationReason = x.CancellationReason, x.CreatedAt, x.UpdatedAt }).SingleOrDefaultAsync(ct);
+            if (r is null) return ApiError(404, "not_found", "Contrato não encontrado.");
+            return Results.Ok(new { r.Id, r.Number, r.Title, r.description, status = r.status.ToString(), periodicity = r.periodicity.ToString(), r.ClientId, r.recurringAmount, r.startDate, r.endDate, r.dueDay, r.nextBillingDate, r.nextServiceDate, r.autoRenew, r.renewalNoticeDays, r.commercialTerms, r.internalNotes, r.activatedAt, r.cancelledAt, cancelled = r.cancelledAt != null, r.cancellationReason, r.CreatedAt, r.UpdatedAt });
+        }).WithMetadata(new RequiredScope("contracts.read"));
+
         api.MapGet("/webhooks/events", () => Results.Ok(new { items = Events })).WithMetadata(new RequiredScope("webhooks.read"));
         return endpoints;
     }

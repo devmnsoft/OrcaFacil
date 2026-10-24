@@ -39,7 +39,7 @@ public sealed class DashboardDesignModelTests
     {
         var page = Sprint55Source.Read("src", "OrcaFacil.Web", "Pages", "Dashboard", "Index.cshtml");
         Assert.Contains("dashboard.TotalBudgets", page);
-        Assert.Contains("dashboard.BudgetTotal", page);
+        Assert.Contains("dashboard.TotalDocuments", page);
         Assert.Contains("_EmptyState", page);
         Assert.DoesNotContain("Math.random", page, StringComparison.OrdinalIgnoreCase);
     }

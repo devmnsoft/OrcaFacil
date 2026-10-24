@@ -10,11 +10,13 @@ using OrcaFacil.Application.Documents;
 using OrcaFacil.Application.Plans;
 using OrcaFacil.Application.Payments;
 using OrcaFacil.Application.Notifications;
+using OrcaFacil.Application.Omnichannel;
 using OrcaFacil.Application.Billing;
 using OrcaFacil.Application.Ai;
 using OrcaFacil.Infrastructure.Ai;
 using OrcaFacil.Web.Billing;
 using OrcaFacil.Infrastructure.Payments;
+using OrcaFacil.Infrastructure.WhatsApp;
 using OrcaFacil.Application.Profile;
 using OrcaFacil.Infrastructure;
 using OrcaFacil.Infrastructure.Pdf;
@@ -39,6 +41,7 @@ using OrcaFacil.Web.Security;
 using Microsoft.Extensions.Options;
 using OrcaFacil.Application.WorkOrders;
 using OrcaFacil.Application.Commercial;
+using OrcaFacil.Application.Contracts;
 using OrcaFacil.Application.Receipts;
 using OrcaFacil.Application.Clients;
 using OrcaFacil.Application.Pricing;
@@ -165,12 +168,17 @@ builder.Services.AddSingleton<ITechnicalFingerprintService>(
     _ => new OrcaFacil.Persistence.Services.TechnicalFingerprintService(technicalFingerprintPepper));
 builder.Services.AddScoped<CommercialJourneyService>();
 builder.Services.AddScoped<ICommercialBalanceService, CommercialBalanceService>();
+builder.Services.AddScoped<IFinancialIntegrityDiagnosticService, FinancialIntegrityDiagnosticService>();
 builder.Services.AddScoped<ICommercialJourneyService>(sp => sp.GetRequiredService<CommercialJourneyService>());
+builder.Services.AddScoped<IWorkOrderOverdueService, WorkOrderOverdueService>();
+builder.Services.AddScoped<IRecurringContractBillingService, RecurringContractBillingService>();
+builder.Services.AddScoped<IReceivableReminderService, ReceivableReminderService>();
 builder.Services.AddScoped<ICommercialWorkspaceQueryService, CommercialWorkspaceQueryService>();
 builder.Services.AddScoped<IPublicDocumentAccessService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IManualPaymentRegistrationService>(sp => sp.GetRequiredService<CommercialJourneyService>());
 builder.Services.AddScoped<IReceiptApplicationService, ReceiptApplicationService>();
 builder.Services.AddScoped<IReceiptQueryService, ReceiptQueryService>();
+builder.Services.AddScoped<OrcaFacil.Application.Fiscal.IFiscalDocumentWorkflowService, FiscalDocumentWorkflowService>();
 builder.Services.AddScoped<IClientWorkspaceService, ClientWorkspaceService>();
 builder.Services.AddScoped<OrcaFacil.Application.Onboarding.IOnboardingApplicationService, OnboardingApplicationService>();
 builder.Services.AddScoped<IQuoteWorkspaceService, QuoteWorkspaceService>();
@@ -199,16 +207,25 @@ builder.Services.AddScoped<IPlanCatalogService, EfPlanCatalogService>();
 builder.Services.AddScoped<TrialProService>();
 builder.Services.Configure<PlanOptions>(builder.Configuration.GetSection("Plans"));
 builder.Services.AddScoped<BillingStatusService>();
+builder.Services.AddScoped<IBillingNoticeService, BillingNoticeEmailService>();
 builder.Services.AddScoped<BillingPaymentService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<FriendlyMessageService>();
 builder.Services.AddSingleton<IApiKeyService, ApiKeyService>();
 builder.Services.Configure<MercadoPagoOptions>(builder.Configuration.GetSection("MercadoPago"));
+builder.Services.Configure<ReceivableReminderOptions>(builder.Configuration.GetSection("ReceivableReminder"));
 builder.Services.Configure<BillingOptions>(builder.Configuration.GetSection("Billing"));
 builder.Services.AddScoped<IPaymentGateway, MercadoPagoPaymentGateway>();
 builder.Services.AddScoped<ISubscriptionCheckoutService, SubscriptionCheckoutService>();
 builder.Services.AddScoped<IMercadoPagoWebhookProcessor, MercadoPagoWebhookProcessor>();
+builder.Services.AddHttpClient<IWhatsAppGraphClient, WhatsAppGraphClient>("WhatsApp",
+    client => client.Timeout = TimeSpan.FromSeconds(30));
+builder.Services.AddScoped<IWhatsAppWebhookProcessor, WhatsAppWebhookProcessor>();
+builder.Services.AddScoped<OmnichannelWhatsAppApiService>();
 builder.Services.AddHostedService<BillingBackgroundWorker>();
+builder.Services.AddHostedService<WorkOrderOverdueWorker>();
+builder.Services.AddHostedService<RecurringContractBillingWorker>();
+builder.Services.AddHostedService<ReceivableReminderWorker>();
 builder.Services.AddHttpClient();
 foreach (var providerName in new[] { "Groq", "Gemini", "DeepSeek", "MercadoPago" })
 {
@@ -218,9 +235,11 @@ foreach (var providerName in new[] { "Groq", "Gemini", "DeepSeek", "MercadoPago"
 builder.Services.Configure<AiOptions>(builder.Configuration.GetSection("Ai"));
 builder.Services.AddSingleton<AiCircuitBreaker>();
 builder.Services.AddSingleton<AiAccountRateLimiter>();
-builder.Services.AddSingleton<IAiModelClient, GroqAiClient>();
-builder.Services.AddSingleton<IAiModelClient, GeminiAiClient>();
-builder.Services.AddSingleton<IAiModelClient, DeepSeekAiClient>();
+// Scoped on purpose: each request gets a fresh HttpClient from the named client factory, avoiding a
+// long-lived client captured by a singleton (stale DNS / socket handling). The orchestrator is scoped.
+builder.Services.AddScoped<IAiModelClient, GroqAiClient>();
+builder.Services.AddScoped<IAiModelClient, GeminiAiClient>();
+builder.Services.AddScoped<IAiModelClient, DeepSeekAiClient>();
 builder.Services.AddScoped<IAiOrchestrator, AiOrchestrator>();
 builder.Services.AddScoped<IAiConsumptionService, AiConsumptionService>();
 builder.Services.AddScoped<IAiSuggestionReviewService, AiSuggestionReviewService>();
@@ -233,7 +252,10 @@ builder.Services.AddScoped<IMessageDraftAiAssistant, MessageDraftAiAssistant>();
 builder.Services.AddScoped<MessageDraftAiAssistant>();
 builder.Services.AddScoped<IContextualAiHelpService, ContextualAiHelpService>();
 builder.Services.AddScoped<ContextualAiHelpService>();
+builder.Services.AddScoped<OrcaFacil.Web.Services.ContextualAiHelpEndpoint>();
+builder.Services.AddScoped<OrcaFacil.Web.Services.IHelpKnowledgeSource, OrcaFacil.Web.Services.EfHelpKnowledgeSource>();
 builder.Services.AddScoped<UserUsageService>();
+builder.Services.AddScoped<IAdditionalSeatService, AdditionalSeatService>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.Configure<EmailOutboxOptions>(builder.Configuration.GetSection("EmailOutbox"));
@@ -245,6 +267,7 @@ builder.Services.AddSingleton<IValidateOptions<PasswordResetOptions>, PasswordRe
 builder.Services.AddSingleton<IValidateOptions<SecuritySecretOptions>, SecuritySecretOptionsValidator>();
 builder.Services.AddScoped<IPasswordResetTokenService, PasswordResetTokenService>();
 builder.Services.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
+builder.Services.AddScoped<IAccountInvitationService, AccountInvitationService>();
 builder.Services.AddScoped<IEmailSender, GmailSmtpEmailSender>();
 builder.Services.AddHostedService<EmailOutboxWorker>();
 builder.Services.AddHostedService<ProductionConfigurationValidator>();
@@ -485,6 +508,24 @@ app.MapPost("/api/webhooks/mercadopago", async (HttpRequest request, IMercadoPag
         return Results.Unauthorized();
     return Results.Ok(new { received = true, eventKey = result.EventKey, duplicate = result.Duplicate, status = result.Status });
 }).AllowAnonymous();
+// Webhook oficial da Cloud API do WhatsApp (Meta). GET = handshake de verificação,
+// POST = eventos (mensagens de entrada e callbacks de status). Assinatura HMAC
+// verificada com o app secret da conta; eventos duplicados são ignorados.
+app.MapGet("/api/webhooks/whatsapp", async (IWhatsAppWebhookProcessor processor, string? hub_mode, string? hub_verify_token, string? hub_challenge, CancellationToken ct) =>
+{
+    var (ok, challenge) = await processor.VerifyHandshakeAsync(hub_mode, hub_verify_token, hub_challenge, ct);
+    return ok ? Results.Text(challenge) : Results.Unauthorized();
+}).AllowAnonymous();
+app.MapPost("/api/webhooks/whatsapp", async (HttpRequest request, IWhatsAppWebhookProcessor processor, CancellationToken ct) =>
+{
+    using var reader = new StreamReader(request.Body);
+    var body = await reader.ReadToEndAsync(ct);
+    var headers = request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString());
+    var result = await processor.ProcessAsync(body, headers, ct);
+    if (!result.Succeeded)
+        return Results.Unauthorized();
+    return Results.Ok(new { received = true, eventKey = result.EventKey, duplicate = result.Duplicate, status = result.Status });
+}).AllowAnonymous();
 app.MapGet("/health/version", () => new { app = "OrcaFacil", version = "1.0.0", environment = app.Environment.EnvironmentName, date = DateTime.UtcNow });
 app.MapGet("/Internal/Search", async Task<IResult> (string? q, int? limit, IGlobalSearchService search, ICurrentAccountService account, CancellationToken ct) =>
 {
@@ -528,6 +569,14 @@ app.MapGet("/Internal/Help/{code}", async Task<IResult> (string code, IContextua
     var content = await help.GetAsync(code, ct);
     return content is null ? Results.NotFound(new { message = "Ajuda não encontrada para esta página." }) : Results.Ok(content);
 }).RequireAuthorization();
+app.MapPost("/Internal/Help/Ask", async Task<IResult> (OrcaFacil.Web.Services.ContextualAiHelpEndpoint.AskHelpRequest input,
+    HttpContext httpContext, Microsoft.AspNetCore.Antiforgery.IAntiforgery antiforgery,
+    OrcaFacil.Web.Services.ContextualAiHelpEndpoint endpoint, CancellationToken ct) =>
+{
+    await antiforgery.ValidateRequestAsync(httpContext);
+    var (status, body) = await endpoint.AskAsync(input, ct);
+    return Results.Json(body, statusCode: status);
+}).RequireAuthorization();
 app.MapControllers();
 app.MapPublicApiV1();
 app.MapGet("/robots.txt", (IConfiguration configuration) =>
@@ -550,6 +599,7 @@ app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (
     OrcaFacil.Application.Abstractions.ICurrentUserService currentUser,
     OrcaFacil.Application.Abstractions.ICurrentAccountService currentAccount,
     OrcaFacil.Application.Plans.IPlanAccessService plans,
+    OrcaFacil.Application.Plans.UserUsageService usage,
     OrcaFacil.Application.Commercial.ICommercialRevisionResolver resolver,
     OrcaFacil.Application.Abstractions.IPdfService pdf,
     OrcaFacil.Persistence.OrcaFacilDbContext db,
@@ -579,7 +629,7 @@ app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (
         // Prévia de rascunho mutável exige permissão ativa de criação/edição comercial
         if (targetAccountId.HasValue)
         {
-            var canDraft = await plans.CanUseAsync(targetAccountId.Value, "documents.create", ct);
+            var canDraft = await plans.CanUseAsync(targetAccountId.Value, OrcaFacil.Domain.Plans.PlanFeatureCodes.DocumentsMonthlyLimit, ct);
             if (!canDraft.IsAllowed)
                 return Results.Problem(statusCode: StatusCodes.Status403Forbidden, title: "Plano não autorizado", detail: canDraft.UserMessage);
         }
@@ -592,6 +642,20 @@ app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (
             var canHistory = await plans.CanUseAsync(targetAccountId.Value, OrcaFacil.Domain.Plans.PlanFeatureCodes.HistoryDaysVisible, ct);
             if (!canHistory.IsAllowed)
                 return Results.Problem(statusCode: StatusCodes.Status403Forbidden, title: "Histórico indisponível", detail: canHistory.UserMessage);
+        }
+    }
+
+    // Cota mensal de PDFs do plano (Free: 10). A checagem usa limite/uso diretamente
+    // para não reabrir a política de consulta histórica pós-trial já garantida acima.
+    if (targetAccountId.HasValue)
+    {
+        var pdfLimit = await plans.GetLimitAsync(targetAccountId.Value, OrcaFacil.Domain.Plans.PlanFeatureCodes.PdfMonthlyLimit, ct);
+        if (pdfLimit.HasValue)
+        {
+            var pdfUsage = await plans.GetUsageAsync(targetAccountId.Value, OrcaFacil.Domain.Plans.PlanFeatureCodes.PdfMonthlyLimit, ct);
+            if (pdfUsage >= pdfLimit.Value)
+                return Results.Problem(statusCode: StatusCodes.Status403Forbidden, title: "Limite de PDFs do plano",
+                    detail: $"Seu plano permite {pdfLimit.Value} PDF(s) por mês. Conheça os planos e regularize sua conta.");
         }
     }
 
@@ -626,6 +690,8 @@ app.MapGet("/Documents/Pdf/{id:guid}", async Task<IResult> (
 
     var resolved = resolution.Value!;
     var bytes = await pdf.GenerateDocumentPdfAsync(resolved.Document, resolved.Issuer, resolved.EffectivePlan, resolved.LanguageCode, resolved.CurrencyCode, ct);
+    if (accountId.HasValue)
+        await usage.RegisterPdfAsync(currentUser.UserId, accountId, ct);
     return Results.File(bytes, "application/pdf", $"{document.Number}.pdf");
 }).RequireAuthorization();
 app.Run();

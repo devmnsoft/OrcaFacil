@@ -6,9 +6,11 @@ using OrcaFacil.Application.Abstractions;
 using OrcaFacil.Application.Ai;
 using OrcaFacil.Application.Clients;
 using OrcaFacil.Application.Documents;
+using OrcaFacil.Application.Plans;
 using OrcaFacil.Application.Security;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
+using OrcaFacil.Domain.Plans;
 using OrcaFacil.Persistence;
 
 namespace OrcaFacil.Web.Pages.Documents;
@@ -22,8 +24,9 @@ public sealed class CreateBudgetModel : PageModel
     private readonly OrcaFacilDbContext _db;
     private readonly ICommercialAiReviewer _aiReviewer;
     private readonly IClientWorkspaceService _clients;
-    public CreateBudgetModel(ICurrentUserService current, ICurrentAccountService account, BudgetWizardService wizard, OrcaFacilDbContext db, ICommercialAiReviewer aiReviewer, IClientWorkspaceService clients)
-    { _current = current; _account = account; _wizard = wizard; _db = db; _aiReviewer = aiReviewer; _clients = clients; }
+    private readonly IPlanAccessService _plans;
+    public CreateBudgetModel(ICurrentUserService current, ICurrentAccountService account, BudgetWizardService wizard, OrcaFacilDbContext db, ICommercialAiReviewer aiReviewer, IClientWorkspaceService clients, IPlanAccessService plans)
+    { _current = current; _account = account; _wizard = wizard; _db = db; _aiReviewer = aiReviewer; _clients = clients; _plans = plans; }
 
     public BudgetWizardViewModel Draft { get; private set; } = default!;
     public IReadOnlyList<ClientChoice> Clients { get; private set; } = [];
@@ -227,8 +230,13 @@ public sealed class CreateBudgetModel : PageModel
         if (canEdit) grantedPermissions.Add("documents.edit");
         if (await HasPermissionAsync(PermissionCodes.AiApplySuggestions, ct)) grantedPermissions.Add(PermissionCodes.AiApplySuggestions);
 
+        // Governança igual aos demais recursos de IA do orçamento: conta ativa e IA externa
+        // liberada pelo plano (AiExternalProvidersEnabled, padrão do BudgetAssistant).
+        var accountActive = _account.AccountStatus is null or AccountStatus.Active;
+        var externalAiAllowed = accountActive
+            && (await _plans.CanUseAsync(_account.AccountId.Value, PlanFeatureCodes.AiExternalProvidersEnabled, ct)).IsAllowed;
         var context = new OrcaFacil.Application.Ai.AiRequestContext(_account.AccountId.Value, _current.UserId, grantedPermissions);
-        var policy = new OrcaFacil.Application.Ai.AiGovernancePolicy(_account.AccountId.Value);
+        var policy = new OrcaFacil.Application.Ai.AiGovernancePolicy(_account.AccountId.Value, AccountActive: accountActive, FeatureEnabled: externalAiAllowed);
         var correlationId = Guid.NewGuid().ToString("N");
 
         try
@@ -283,8 +291,10 @@ public sealed class CreateBudgetModel : PageModel
                 improvedNotes = sb.ToString().Trim(),
                 suggestedConditions = review.SuggestedConditions ?? doc.ConditionsText,
                 findings = review.Findings.Select(f => new { f.Category, f.Severity, f.Message, f.Suggestion }),
-                isProviderGenerated = false,
-                notice = "Revisão baseada em regras de consistência da proposta. Nenhuma condição ou garantia foi inventada sem o seu consentimento.",
+                isProviderGenerated = !review.IsRuleBased,
+                notice = review.IsRuleBased
+                    ? "Revisão baseada em regras de consistência da proposta. Nenhuma condição ou garantia foi inventada sem o seu consentimento."
+                    : "Revisão sugerida com apoio de IA a partir apenas dos dados desta proposta. Confira os apontamentos antes de aplicar — nada foi alterado no orçamento.",
                 correlationId
             });
         }

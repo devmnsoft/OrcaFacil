@@ -17,6 +17,9 @@ src/OrcaFacil.Api/appsettings.Local.json
 
 # Build/produção
 node_modules/
+.vs/
+bin/
+obj/
 dist/
 .env
 .env.local
@@ -25,3 +28,8 @@ functions/.env
 *.log
 *.map
 .DS_Store
+
+# Playwright E2E (artefatos de execucao local)
+tests/playwright/auth/
+tests/playwright/test-results/
+

@@ -9,6 +9,7 @@ using OrcaFacil.Application.Plans;
 using OrcaFacil.Application.Security;
 using OrcaFacil.Domain.Entities;
 using OrcaFacil.Domain.Enums;
+using OrcaFacil.Domain.Plans;
 using OrcaFacil.Persistence;
 using OrcaFacil.Shared;
 
@@ -32,6 +33,7 @@ public class DocumentsController : ControllerBase
     private readonly OrcaFacilDbContext _db;
     private readonly IAuditService _audit;
     private readonly ICommercialRevisionResolver _revisionResolver;
+    private readonly UserUsageService _userUsage;
     private readonly ILogger<DocumentsController> _logger;
 
     public DocumentsController(DocumentService documents, IDocumentQueries queries, ICurrentUserService currentUser,
@@ -39,6 +41,7 @@ public class DocumentsController : ControllerBase
         IPdfService pdfService, ICommercialJourneyService journey, IRepository<Document> documentRepository,
         IRepository<IssuerProfile> profiles, IRepository<UserAccount> users, OrcaFacilDbContext db, IAuditService audit,
         ICommercialRevisionResolver revisionResolver,
+        UserUsageService userUsage,
         ILogger<DocumentsController> logger)
     {
         _documents = documents;
@@ -54,6 +57,7 @@ public class DocumentsController : ControllerBase
         _db = db;
         _audit = audit;
         _revisionResolver = revisionResolver;
+        _userUsage = userUsage;
         _logger = logger;
     }
 
@@ -257,9 +261,30 @@ public class DocumentsController : ControllerBase
         }
 
         var resolved = resolution.Value!;
+
+        // Cota mensal de PDFs do plano (Free: 10). Limite/uso direto preserva a política
+        // de consulta histórica pós-trial já garantida pelas checagens de revisão.
+        if (targetAccountId.HasValue)
+        {
+            var pdfLimit = await _planAccess.GetLimitAsync(targetAccountId.Value, PlanFeatureCodes.PdfMonthlyLimit, ct);
+            if (pdfLimit.HasValue)
+            {
+                var pdfUsage = await _planAccess.GetUsageAsync(targetAccountId.Value, PlanFeatureCodes.PdfMonthlyLimit, ct);
+                if (pdfUsage >= pdfLimit.Value)
+                    return StatusCode(StatusCodes.Status403Forbidden, new
+                    {
+                        code = "PdfMonthlyLimitReached",
+                        message = $"Seu plano permite {pdfLimit.Value} PDF(s) por mês. Conheça os planos e regularize sua conta."
+                    });
+            }
+        }
+
         var bytes = await _pdfService.GenerateDocumentPdfAsync(
             resolved.Document, resolved.Issuer, resolved.EffectivePlan, resolved.LanguageCode, resolved.CurrencyCode, ct);
         await _audit.RegisterAsync(_currentUser.UserId, "PDF_GENERATED", nameof(Document), document.Id.ToString(), null, new { document.Number, RevisionId = currentRevision?.Id }, null, ct, document.AccountId);
+        await _db.SaveChangesAsync(ct);
+        if (targetAccountId.HasValue)
+            await _userUsage.RegisterPdfAsync(_currentUser.UserId, targetAccountId, ct);
         return File(bytes, "application/pdf", $"{document.Number}.pdf");
     }
 

@@ -55,7 +55,8 @@ public sealed class SuperAdminMenuComposer(IHttpContextAccessor accessor) : ISup
         new("Global", "Visão geral", "/SuperAdmin/Index", "GLOBAL"), new("Global", "Clientes", "/SuperAdmin/Clients/Index", "GLOBAL"),
         new("Global", "Módulos e preços", "/SuperAdmin/Modules/Index", "GLOBAL"), new("Global", "Usuários", "/SuperAdmin/Users/Index", "GLOBAL"),
         new("Operação", "Billing", "/SuperAdmin/Billing/Index", "GLOBAL"), new("Operação", "Uso por cliente", "/SuperAdmin/Usage/Index", "GLOBAL"),
-        new("Governança", "Auditoria", "/SuperAdmin/Audit/Index", "GLOBAL"), new("Governança", "System Health", "/SystemHealth/Database", "GLOBAL"),
+        new("Governança", "Auditoria", "/SuperAdmin/Audit/Index", "GLOBAL"), new("Governança", "Integridade financeira", "/SuperAdmin/Finance/Divergences", "GLOBAL"),
+        new("Governança", "System Health", "/SystemHealth/Database", "GLOBAL"),
         new("Governança", "Quality Gate", "/Admin/QualityGate", "GLOBAL")
     ];
     public Task<IReadOnlyList<ModuleMenuItem>> ComposeAsync(CancellationToken ct = default)

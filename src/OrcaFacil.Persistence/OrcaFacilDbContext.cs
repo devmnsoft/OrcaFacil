@@ -92,6 +92,7 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<ActivityEvent> ActivityEvents => Set<ActivityEvent>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<EmailOutboxMessage> EmailOutboxMessages => Set<EmailOutboxMessage>();
+    public DbSet<AccountInvitation> AccountInvitations => Set<AccountInvitation>();
     public DbSet<DocumentRevision> DocumentRevisions => Set<DocumentRevision>();
     public DbSet<PublicDocumentAccess> PublicDocumentAccesses => Set<PublicDocumentAccess>();
     public DbSet<PublicDocumentDecision> PublicDocumentDecisions => Set<PublicDocumentDecision>();
@@ -139,6 +140,7 @@ public class OrcaFacilDbContext : DbContext
     public DbSet<OmnichannelOptOutEvent> OmnichannelOptOutEvents => Set<OmnichannelOptOutEvent>();
     public DbSet<OmnichannelSlaEvent> OmnichannelSlaEvents => Set<OmnichannelSlaEvent>();
     public DbSet<OmnichannelCsatResponse> OmnichannelCsatResponses => Set<OmnichannelCsatResponse>();
+    public DbSet<OmnichannelWhatsAppAccount> OmnichannelWhatsAppAccounts => Set<OmnichannelWhatsAppAccount>();
     public DbSet<UserFeedback> UserFeedback => Set<UserFeedback>();
     public DbSet<KnowledgeBaseArticle> KnowledgeBaseArticles => Set<KnowledgeBaseArticle>();
     public DbSet<ReleaseNote> ReleaseNotes => Set<ReleaseNote>();

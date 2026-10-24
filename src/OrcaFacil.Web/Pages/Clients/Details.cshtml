@@ -3,7 +3,7 @@
 @section Styles { <link rel="stylesheet" href="~/css/clients.css" asp-append-version="true" /> }
 @using OrcaFacil.Domain.Enums
 @{
-    ViewData["Title"] = "Cliente 360";
+    ViewData["Title"] = "Cliente";
     ViewData["Section"] = "Comercial";
     var client = Model.Details.Client;
     var primary = Model.Details.Contacts.FirstOrDefault(contact => contact.IsPrimary && contact.IsActive);
@@ -12,7 +12,7 @@
 <header class="client-page-head client-hero">
     <div class="client-identity">
         <span class="client-avatar">@client.Name[..1].ToUpperInvariant()</span>
-        <div><p class="of-eyebrow">Cliente 360</p><h1>@client.Name</h1><p>@(client.PersonType == PersonType.Company ? "PJ" : "PF") · @Model.MaskedDocument · @(client.City ?? "Cidade não informada")</p></div>
+        <div><p class="of-eyebrow">Cliente</p><h1>@client.Name</h1><p>@(client.PersonType == PersonType.Company ? "PJ" : "PF") · @Model.MaskedDocument · @(client.City ?? "Cidade não informada")</p></div>
     </div>
     <div class="client-head-actions">
         <a class="client-button primary" asp-page="/Documents/New" asp-route-clientId="@client.Id">Novo orçamento</a>

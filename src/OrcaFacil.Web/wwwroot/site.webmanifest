@@ -15,6 +15,25 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/img/brand/fecho-pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/img/brand/fecho-pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
+  ],
+  "shortcuts": [
+    { "name": "Início", "short_name": "Início", "url": "/Dashboard", "description": "Abrir o painel do Fechô", "icons": [{ "src": "/img/brand/fecho-pwa-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Agenda", "short_name": "Agenda", "url": "/Schedule", "description": "Ver a agenda operacional", "icons": [{ "src": "/img/brand/fecho-pwa-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Ordens de serviço", "short_name": "Ordens", "url": "/WorkOrders", "description": "Abrir as ordens de serviço", "icons": [{ "src": "/img/brand/fecho-pwa-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Pagamentos", "short_name": "Pag.", "url": "/Payments", "description": "Registrar e ver pagamentos", "icons": [{ "src": "/img/brand/fecho-pwa-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Fiscal", "short_name": "Fiscal", "url": "/Fiscal", "description": "Solicitar e registrar notas fiscais", "icons": [{ "src": "/img/brand/fecho-pwa-192.png", "sizes": "192x192", "type": "image/png" }] }
   ]
 }

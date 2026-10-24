@@ -131,6 +131,17 @@ public sealed class WebCompositionRootTests
         Assert.DoesNotContain("builder.Services.AddSingleton<IAiOrchestrator, AiOrchestrator>();", source, StringComparison.Ordinal);
         Assert.Contains("builder.Services.AddSingleton<AiAccountRateLimiter>();", source, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Web_registers_ai_model_clients_as_scoped()
+    {
+        var source = CompositionRootSource.Read("OrcaFacil.Web");
+
+        Assert.Contains("builder.Services.AddScoped<IAiModelClient, GroqAiClient>();", source, StringComparison.Ordinal);
+        Assert.Contains("builder.Services.AddScoped<IAiModelClient, GeminiAiClient>();", source, StringComparison.Ordinal);
+        Assert.Contains("builder.Services.AddScoped<IAiModelClient, DeepSeekAiClient>();", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("AddSingleton<IAiModelClient", source, StringComparison.Ordinal);
+    }
 }
 
 public sealed class AiDependencyInjectionTests

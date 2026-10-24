@@ -98,9 +98,33 @@ public sealed class PlanAccessService(IPlanAccessDataSource dataSource, TimeProv
     public async Task<IReadOnlyDictionary<string, PlanFeatureSetting>> GetPlanFeaturesAsync(Guid accountId, DateTime utcNow, CancellationToken ct = default)
     {
         var version = await GetEffectivePlanVersionAsync(accountId, utcNow, ct);
-        return version is null
-            ? new Dictionary<string, PlanFeatureSetting>()
-            : await dataSource.GetFeaturesAsync(version.Id, ct);
+        if (version is null) return new Dictionary<string, PlanFeatureSetting>();
+        var plan = await dataSource.GetPlanAsync(version.PlanId, ct);
+        var stored = await dataSource.GetFeaturesAsync(version.Id, ct);
+        var merged = new Dictionary<string, PlanFeatureSetting>(MergeWithCatalog(plan?.Code, stored), StringComparer.OrdinalIgnoreCase);
+        // Addons contratados pela conta (ex.: assentos de equipe adicionais) somam ao teto base do plano.
+        var increments = await dataSource.GetAddonIncrementsAsync(accountId, ct);
+        foreach (var (code, extra) in increments)
+        {
+            if (extra <= 0 || !merged.TryGetValue(code, out var setting) || setting.IsUnlimited || setting.Limit is null) continue;
+            merged[code] = new PlanFeatureSetting(setting.Enabled, AdditionalSeatRules.AddLimitIncrement(setting.Limit, extra), setting.IsUnlimited);
+        }
+        return merged;
+    }
+
+    /// <summary>
+    /// Combina os recursos cadastrados no banco com a matriz de referência do plano.
+    /// O banco tem precedência; a matriz cobre recursos que ainda não foram
+    /// provisionados para a versão do plano (evita negar recurso anunciado).
+    /// </summary>
+    public static IReadOnlyDictionary<string, PlanFeatureSetting> MergeWithCatalog(
+        string? planCode, IReadOnlyDictionary<string, PlanFeatureSetting> stored)
+    {
+        var defaults = PlanCatalogDefinitions.ForPlan(planCode);
+        if (defaults.Count == 0) return stored;
+        var merged = new Dictionary<string, PlanFeatureSetting>(defaults, StringComparer.OrdinalIgnoreCase);
+        foreach (var item in stored) merged[item.Key] = item.Value;
+        return merged;
     }
 
     public async Task<PlanAccessDecision> CanUseAsync(Guid accountId, string featureCode, CancellationToken ct = default)

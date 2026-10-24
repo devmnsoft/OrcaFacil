@@ -2,6 +2,12 @@ using OrcaFacil.Domain.Plans;
 
 namespace OrcaFacil.Application.Plans;
 
+/// <summary>
+/// Matriz de referência do catálogo de planos. É a fonte de verdade usada como
+/// fallback quando a base ainda não provisionou o recurso para a versão do plano
+/// (ver <see cref="PlanAccessService"/>) e quando o catálogo público não pode ser
+/// lido do banco (ver EfPlanCatalogService).
+/// </summary>
 public static class PlanCatalogDefinitions
 {
     public static readonly IReadOnlyDictionary<string, (string Name, decimal Monthly, decimal Annual)> Plans =
@@ -13,49 +19,154 @@ public static class PlanCatalogDefinitions
             ["ENTERPRISE"] = ("Enterprise", 0m, 0m)
         };
 
-    private static PlanFeatureSetting Unlimited => new(true, null, true);
-    private static PlanFeatureSetting Enabled => new(true);
-    private static PlanFeatureSetting Disabled => new(false);
+    /// <summary>Recurso sem teto (habilitado e ilimitado).</summary>
+    public static PlanFeatureSetting Unlimited { get; } = new(true, null, true);
+
+    /// <summary>Recurso habilitado sem contagem (plano com acesso completo).</summary>
+    public static PlanFeatureSetting Enabled { get; } = new(true);
+
+    /// <summary>Recurso não incluído no plano.</summary>
+    public static PlanFeatureSetting Disabled { get; } = new(false);
+
+    /// <summary>Recurso habilitado com um teto numérico.</summary>
+    public static PlanFeatureSetting Limit(int value) => new(true, value);
 
     public static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, PlanFeatureSetting>> Features =
         new Dictionary<string, IReadOnlyDictionary<string, PlanFeatureSetting>>(StringComparer.OrdinalIgnoreCase)
         {
-            ["FREE"] = Matrix(1, 25, 20, 10, true, 90, 3, false, false, false, false, false, false, true, false, false, false, false, false, false, false, aiExternal: false, aiMonthly: 10),
-            ["PROFESSIONAL"] = Matrix(1, null, null, null, false, null, null, true, true, true, true, true, true, true, true, false, false, false, false, false, false, aiExternal: true, aiMonthly: 200),
-            ["BUSINESS"] = Matrix(3, null, null, null, false, null, null, true, true, true, true, true, true, true, true, true, true, true, true, true, true, aiExternal: true, aiMonthly: 1000),
-            ["ENTERPRISE"] = Matrix(10, null, null, null, false, null, null, true, true, true, true, true, true, true, true, true, true, true, true, true, true, aiExternal: true, aiMonthly: null)
+            ["FREE"] = new Dictionary<string, PlanFeatureSetting>(StringComparer.OrdinalIgnoreCase)
+            {
+                [PlanFeatureCodes.TeamMembersLimit] = Limit(1),
+                [PlanFeatureCodes.ClientsActiveLimit] = Limit(25),
+                [PlanFeatureCodes.ServicesActiveLimit] = Limit(20),
+                [PlanFeatureCodes.DocumentsMonthlyLimit] = Limit(20),
+                [PlanFeatureCodes.PdfMonthlyLimit] = Limit(10),
+                [PlanFeatureCodes.PdfWatermark] = Enabled,
+                [PlanFeatureCodes.HistoryDaysVisible] = Limit(90),
+                [PlanFeatureCodes.BasicTemplatesLimit] = Limit(3),
+                [PlanFeatureCodes.CustomTemplatesEnabled] = Disabled,
+                [PlanFeatureCodes.CustomBrandingEnabled] = Disabled,
+                [PlanFeatureCodes.NumberingCustomPrefix] = Disabled,
+                [PlanFeatureCodes.PublicApprovalEnabled] = Disabled,
+                [PlanFeatureCodes.PublicApprovalMonthlyLimit] = Disabled,
+                [PlanFeatureCodes.WhatsAppSharingEnabled] = Disabled,
+                [PlanFeatureCodes.PublicLinkSharingEnabled] = Disabled,
+                [PlanFeatureCodes.WorkOrdersEnabled] = Disabled,
+                [PlanFeatureCodes.ManualPaymentsEnabled] = Disabled,
+                [PlanFeatureCodes.OperationalReceiptsEnabled] = Enabled,
+                [PlanFeatureCodes.DocumentConvertToReceiptEnabled] = Enabled,
+                [PlanFeatureCodes.BasicReportsEnabled] = Disabled,
+                [PlanFeatureCodes.AdvancedReportsEnabled] = Disabled,
+                [PlanFeatureCodes.CommercialPipelineEnabled] = Disabled,
+                [PlanFeatureCodes.CommercialFollowUpsEnabled] = Disabled,
+                [PlanFeatureCodes.CommercialMetricsEnabled] = Disabled,
+                [PlanFeatureCodes.CsvExportEnabled] = Disabled,
+                [PlanFeatureCodes.AccountAuditEnabled] = Disabled,
+                [PlanFeatureCodes.SupportPriorityEnabled] = Disabled,
+                [PlanFeatureCodes.AiExternalProvidersEnabled] = Disabled,
+                [PlanFeatureCodes.AiMonthlyLimit] = Limit(10)
+            },
+            ["PROFESSIONAL"] = new Dictionary<string, PlanFeatureSetting>(StringComparer.OrdinalIgnoreCase)
+            {
+                [PlanFeatureCodes.TeamMembersLimit] = Limit(1),
+                [PlanFeatureCodes.ClientsActiveLimit] = Unlimited,
+                [PlanFeatureCodes.ServicesActiveLimit] = Unlimited,
+                [PlanFeatureCodes.DocumentsMonthlyLimit] = Unlimited,
+                [PlanFeatureCodes.PdfMonthlyLimit] = Unlimited,
+                [PlanFeatureCodes.PdfWatermark] = Disabled,
+                [PlanFeatureCodes.HistoryDaysVisible] = Unlimited,
+                [PlanFeatureCodes.BasicTemplatesLimit] = Unlimited,
+                [PlanFeatureCodes.CustomTemplatesEnabled] = Enabled,
+                [PlanFeatureCodes.CustomBrandingEnabled] = Enabled,
+                [PlanFeatureCodes.NumberingCustomPrefix] = Enabled,
+                [PlanFeatureCodes.PublicApprovalEnabled] = Enabled,
+                [PlanFeatureCodes.PublicApprovalMonthlyLimit] = Unlimited,
+                [PlanFeatureCodes.WhatsAppSharingEnabled] = Enabled,
+                [PlanFeatureCodes.PublicLinkSharingEnabled] = Enabled,
+                [PlanFeatureCodes.WorkOrdersEnabled] = Enabled,
+                [PlanFeatureCodes.ManualPaymentsEnabled] = Enabled,
+                [PlanFeatureCodes.OperationalReceiptsEnabled] = Enabled,
+                [PlanFeatureCodes.DocumentConvertToReceiptEnabled] = Enabled,
+                [PlanFeatureCodes.BasicReportsEnabled] = Enabled,
+                [PlanFeatureCodes.AdvancedReportsEnabled] = Disabled,
+                [PlanFeatureCodes.CommercialPipelineEnabled] = Disabled,
+                [PlanFeatureCodes.CommercialFollowUpsEnabled] = Disabled,
+                [PlanFeatureCodes.CommercialMetricsEnabled] = Disabled,
+                [PlanFeatureCodes.CsvExportEnabled] = Disabled,
+                [PlanFeatureCodes.AccountAuditEnabled] = Disabled,
+                [PlanFeatureCodes.SupportPriorityEnabled] = Disabled,
+                [PlanFeatureCodes.AiExternalProvidersEnabled] = Enabled,
+                [PlanFeatureCodes.AiMonthlyLimit] = Limit(200)
+            },
+            ["BUSINESS"] = new Dictionary<string, PlanFeatureSetting>(StringComparer.OrdinalIgnoreCase)
+            {
+                [PlanFeatureCodes.TeamMembersLimit] = Limit(3),
+                [PlanFeatureCodes.ClientsActiveLimit] = Unlimited,
+                [PlanFeatureCodes.ServicesActiveLimit] = Unlimited,
+                [PlanFeatureCodes.DocumentsMonthlyLimit] = Unlimited,
+                [PlanFeatureCodes.PdfMonthlyLimit] = Unlimited,
+                [PlanFeatureCodes.PdfWatermark] = Disabled,
+                [PlanFeatureCodes.HistoryDaysVisible] = Unlimited,
+                [PlanFeatureCodes.BasicTemplatesLimit] = Unlimited,
+                [PlanFeatureCodes.CustomTemplatesEnabled] = Enabled,
+                [PlanFeatureCodes.CustomBrandingEnabled] = Enabled,
+                [PlanFeatureCodes.NumberingCustomPrefix] = Enabled,
+                [PlanFeatureCodes.PublicApprovalEnabled] = Enabled,
+                [PlanFeatureCodes.PublicApprovalMonthlyLimit] = Unlimited,
+                [PlanFeatureCodes.WhatsAppSharingEnabled] = Enabled,
+                [PlanFeatureCodes.PublicLinkSharingEnabled] = Enabled,
+                [PlanFeatureCodes.WorkOrdersEnabled] = Enabled,
+                [PlanFeatureCodes.ManualPaymentsEnabled] = Enabled,
+                [PlanFeatureCodes.OperationalReceiptsEnabled] = Enabled,
+                [PlanFeatureCodes.DocumentConvertToReceiptEnabled] = Enabled,
+                [PlanFeatureCodes.BasicReportsEnabled] = Enabled,
+                [PlanFeatureCodes.AdvancedReportsEnabled] = Enabled,
+                [PlanFeatureCodes.CommercialPipelineEnabled] = Enabled,
+                [PlanFeatureCodes.CommercialFollowUpsEnabled] = Enabled,
+                [PlanFeatureCodes.CommercialMetricsEnabled] = Enabled,
+                [PlanFeatureCodes.CsvExportEnabled] = Enabled,
+                [PlanFeatureCodes.AccountAuditEnabled] = Enabled,
+                [PlanFeatureCodes.SupportPriorityEnabled] = Enabled,
+                [PlanFeatureCodes.AiExternalProvidersEnabled] = Enabled,
+                [PlanFeatureCodes.AiMonthlyLimit] = Limit(1000)
+            },
+            ["ENTERPRISE"] = new Dictionary<string, PlanFeatureSetting>(StringComparer.OrdinalIgnoreCase)
+            {
+                [PlanFeatureCodes.TeamMembersLimit] = Limit(10),
+                [PlanFeatureCodes.ClientsActiveLimit] = Unlimited,
+                [PlanFeatureCodes.ServicesActiveLimit] = Unlimited,
+                [PlanFeatureCodes.DocumentsMonthlyLimit] = Unlimited,
+                [PlanFeatureCodes.PdfMonthlyLimit] = Unlimited,
+                [PlanFeatureCodes.PdfWatermark] = Disabled,
+                [PlanFeatureCodes.HistoryDaysVisible] = Unlimited,
+                [PlanFeatureCodes.BasicTemplatesLimit] = Unlimited,
+                [PlanFeatureCodes.CustomTemplatesEnabled] = Enabled,
+                [PlanFeatureCodes.CustomBrandingEnabled] = Enabled,
+                [PlanFeatureCodes.NumberingCustomPrefix] = Enabled,
+                [PlanFeatureCodes.PublicApprovalEnabled] = Enabled,
+                [PlanFeatureCodes.PublicApprovalMonthlyLimit] = Unlimited,
+                [PlanFeatureCodes.WhatsAppSharingEnabled] = Enabled,
+                [PlanFeatureCodes.PublicLinkSharingEnabled] = Enabled,
+                [PlanFeatureCodes.WorkOrdersEnabled] = Enabled,
+                [PlanFeatureCodes.ManualPaymentsEnabled] = Enabled,
+                [PlanFeatureCodes.OperationalReceiptsEnabled] = Enabled,
+                [PlanFeatureCodes.DocumentConvertToReceiptEnabled] = Enabled,
+                [PlanFeatureCodes.BasicReportsEnabled] = Enabled,
+                [PlanFeatureCodes.AdvancedReportsEnabled] = Enabled,
+                [PlanFeatureCodes.CommercialPipelineEnabled] = Enabled,
+                [PlanFeatureCodes.CommercialFollowUpsEnabled] = Enabled,
+                [PlanFeatureCodes.CommercialMetricsEnabled] = Enabled,
+                [PlanFeatureCodes.CsvExportEnabled] = Enabled,
+                [PlanFeatureCodes.AccountAuditEnabled] = Enabled,
+                [PlanFeatureCodes.SupportPriorityEnabled] = Enabled,
+                [PlanFeatureCodes.AiExternalProvidersEnabled] = Enabled,
+                [PlanFeatureCodes.AiMonthlyLimit] = Unlimited
+            }
         };
 
-    private static IReadOnlyDictionary<string, PlanFeatureSetting> Matrix(int team, int? clients, int? services, int? pdf,
-        bool watermark, int? history, int? templates, bool customTemplates, bool branding, bool approval, bool whatsapp,
-        bool workOrders, bool payments, bool receipts, bool basicReports, bool advancedReports, bool pipeline,
-        bool followups, bool metrics, bool csv, bool audit, bool aiExternal, int? aiMonthly) => new Dictionary<string, PlanFeatureSetting>
-    {
-        [PlanFeatureCodes.TeamMembersLimit] = new(true, team),
-        [PlanFeatureCodes.ClientsActiveLimit] = Limit(clients),
-        [PlanFeatureCodes.ServicesActiveLimit] = Limit(services),
-        [PlanFeatureCodes.PdfMonthlyLimit] = Limit(pdf),
-        [PlanFeatureCodes.PdfWatermark] = watermark ? Enabled : Disabled,
-        [PlanFeatureCodes.HistoryDaysVisible] = Limit(history),
-        [PlanFeatureCodes.BasicTemplatesLimit] = Limit(templates),
-        [PlanFeatureCodes.CustomTemplatesEnabled] = Flag(customTemplates),
-        [PlanFeatureCodes.CustomBrandingEnabled] = Flag(branding),
-        [PlanFeatureCodes.PublicApprovalEnabled] = Flag(approval),
-        [PlanFeatureCodes.WhatsAppSharingEnabled] = Flag(whatsapp),
-        [PlanFeatureCodes.WorkOrdersEnabled] = Flag(workOrders),
-        [PlanFeatureCodes.ManualPaymentsEnabled] = Flag(payments),
-        [PlanFeatureCodes.OperationalReceiptsEnabled] = Flag(receipts),
-        [PlanFeatureCodes.BasicReportsEnabled] = Flag(basicReports),
-        [PlanFeatureCodes.AdvancedReportsEnabled] = Flag(advancedReports),
-        [PlanFeatureCodes.CommercialPipelineEnabled] = Flag(pipeline),
-        [PlanFeatureCodes.CommercialFollowUpsEnabled] = Flag(followups),
-        [PlanFeatureCodes.CommercialMetricsEnabled] = Flag(metrics),
-        [PlanFeatureCodes.CsvExportEnabled] = Flag(csv),
-        [PlanFeatureCodes.AccountAuditEnabled] = Flag(audit),
-        [PlanFeatureCodes.AiExternalProvidersEnabled] = Flag(aiExternal),
-        [PlanFeatureCodes.AiMonthlyLimit] = Limit(aiMonthly)
-    };
-
-    private static PlanFeatureSetting Limit(int? value) => value is null ? Unlimited : new(true, value);
-    private static PlanFeatureSetting Flag(bool enabled) => enabled ? Enabled : Disabled;
+    /// <summary>Recursos de referência de um plano, ou vazio quando o código é desconhecido.</summary>
+    public static IReadOnlyDictionary<string, PlanFeatureSetting> ForPlan(string? planCode) =>
+        planCode is not null && Features.TryGetValue(planCode, out var settings)
+            ? settings
+            : new Dictionary<string, PlanFeatureSetting>();
 }
