@@ -104,12 +104,12 @@
                     <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem">
                         <form method="post" asp-page-handler="Cancel" style="display:flex;gap:.5rem;align-items:center">
                             <input type="hidden" name="requestId" value="@item.Id" />
-                            <input type="text" name="reason" placeholder="Motivo do cancelamento (mín. 10)" required minlength="10" maxlength="500" />
+                            <input type="text" name="reason" aria-label="Motivo do cancelamento (mínimo 10 caracteres)" placeholder="Motivo do cancelamento (mín. 10)" required minlength="10" maxlength="500" />
                             <button type="submit" class="of-button">Cancelar</button>
                         </form>
                         <form method="post" asp-page-handler="NotRequired" style="display:flex;gap:.5rem;align-items:center">
                             <input type="hidden" name="requestId" value="@item.Id" />
-                            <input type="text" name="reason" placeholder="Por que não precisa de nota? (mín. 10)" required minlength="10" maxlength="500" />
+                            <input type="text" name="reason" aria-label="Por que não precisa de nota (mínimo 10 caracteres)" placeholder="Por que não precisa de nota? (mín. 10)" required minlength="10" maxlength="500" />
                             <button type="submit" class="of-button">Sem necessidade</button>
                         </form>
                     </div>
@@ -118,7 +118,7 @@
                 {
                     <form method="post" asp-page-handler="Cancel" style="display:flex;gap:.5rem;align-items:center;margin-top:.6rem;max-width:60ch">
                         <input type="hidden" name="requestId" value="@item.Id" />
-                        <input type="text" name="reason" placeholder="Motivo do cancelamento (mín. 10)" required minlength="10" maxlength="500" />
+                        <input type="text" name="reason" aria-label="Motivo do cancelamento (mínimo 10 caracteres)" placeholder="Motivo do cancelamento (mín. 10)" required minlength="10" maxlength="500" />
                         <button type="submit" class="of-button">Cancelar nota</button>
                     </form>
                 }
