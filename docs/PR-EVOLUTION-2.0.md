@@ -1,6 +1,6 @@
-# PR — Fechô 2.0: branch de evolução completa (84 commits)
+# PR — Fechô 2.0: branch de evolução completa
 
-**Base:** `rebranding/fecho` · **Head:** `fecho/evolution-2.0` @ `df2713b` · **Data:** 24/10/2026
+**Base:** `rebranding/fecho` · **Head:** `fecho/evolution-2.0` · **Data:** 24/10/2026
 
 > Descrição pronta para colar na criação do PR no GitHub
 > (URL de criação: `<repo>/compare/rebranding/fecho...fecho/evolution-2.0?expand=1`).
